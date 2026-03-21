@@ -117,11 +117,13 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 - Sort is applied **within each category group** (items with no category form their own group)
 
 ### Filtering (per list view)
-- Due date is set (has a due date)
+- **Hide future items** — when enabled, items with a `dueDate` in the future (i.e. `dueDate > today`) are hidden; items with no due date and items due today or earlier are always shown. Default: **off** (all items visible).
+- **Hide undated items** — when enabled, items with no `dueDate` set are hidden. Default: **off**.
 - Starred only
 - By specific category
 - Assigned to a specific user
 - Filters are combinable; applied before sort
+- **Filtering is client-side** — all items are fetched from the server; the frontend applies filters locally. This ensures filters work while offline.
 
 ### Categories
 - CRUD per list (EDITOR+)
@@ -154,6 +156,7 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 - On mark-done: backend creates next instance with `dueDate = originalDueDate + interval`
   - The original due date is always used as the base — completing late does not shift future dates
   - If the item had no due date: `dueDate = today + interval`
+- The new instance is visible immediately, even if its due date is in the future (it is not hidden by default; "hide future items" filter applies equally to recurring instances)
 - Completed instances kept in history, linked via `parentItemId`
 - Recurrence indicator shown on item cards
 
@@ -235,7 +238,7 @@ POST   /api/lists/{id}/categories
 PUT    /api/lists/{id}/categories/{cid}
 DELETE /api/lists/{id}/categories/{cid}
 
-GET    /api/lists/{id}/items             ← ?category=&assignee=&starred=&hasDueDate=&cursor=&limit=
+GET    /api/lists/{id}/items             ← ?cursor=&limit= (all items returned; filtering is client-side)
 POST   /api/lists/{id}/items
 GET    /api/lists/{id}/items/{iid}
 PUT    /api/lists/{id}/items/{iid}
