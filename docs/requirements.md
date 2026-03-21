@@ -287,6 +287,12 @@ todo/
 ├── backend/Dockerfile              # Multi-stage: Gradle build → JRE 25 runtime image
 ├── frontend/Dockerfile             # Multi-stage: Node build → Node runtime image
 ├── e2e/                            # End-to-end test suite (Playwright)
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml                  # Build + unit/integration tests (backend & frontend in parallel)
+│   │   ├── e2e.yml                 # Full-stack Playwright tests (main branch only)
+│   │   └── release.yml             # Build & push Docker images to ghcr.io
+│   └── dependabot.yml              # Weekly dependency updates
 └── docker-compose.yml              # Orchestrates: PostgreSQL + backend + frontend + (optional) MinIO
 ```
 
@@ -306,3 +312,33 @@ todo/
   - Tests run against the full stack (backend + frontend + PostgreSQL via Docker Compose)
   - Covers key user flows: login, create list, add items, check off grocery items, share list, account deletion confirmation
   - Can be run in headless mode in CI
+
+---
+
+## CI/CD
+
+### Workflows
+
+| Workflow | Trigger | Purpose |
+|---|---|---|
+| `ci.yml` | Push and PRs → `main` | Backend (Gradle build + tests) and frontend (type-check + Vitest) run in parallel |
+| `e2e.yml` | Push → `main` only | Spins up the full stack via `docker compose`, runs Playwright (Chromium) |
+| `release.yml` | Push → `main` or `v*` tag | Builds backend and frontend Docker images in parallel, pushes to `ghcr.io` |
+
+### Docker Image Registry
+
+Images are published to GitHub Container Registry (`ghcr.io`) using the default `GITHUB_TOKEN` — no extra credentials required.
+
+**Tagging strategy:**
+- Push to `main` → `main` + short SHA (e.g. `sha-a1b2c3d`)
+- Push of `v*` tag → semver tags (`1.2.3`, `1.2`) + short SHA
+
+Docker layer caching uses GitHub Actions cache (`type=gha`) to speed up repeat builds.
+
+### Dependency Updates
+
+Dependabot is configured to open weekly PRs for:
+- Gradle dependencies (`/backend`)
+- npm dependencies (`/frontend`, `/e2e`)
+- Dockerfile base images (`/backend`, `/frontend`)
+- GitHub Actions versions (`/`)
