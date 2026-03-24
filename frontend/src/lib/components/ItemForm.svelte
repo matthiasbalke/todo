@@ -26,6 +26,7 @@
   let categoryId = $state<string>(item?.categoryId ?? '');
   let assignedUserId = $state<string>(item?.assignedUserId ?? '');
   let recurrencePreset = $state<string>(getInitialRecurrencePreset(item?.recurrenceRule ?? null));
+  let titleInput = $state<HTMLInputElement | null>(null);
 
   function getInitialRecurrencePreset(rule: RecurrenceRule | null): string {
     if (!rule) return '';
@@ -44,7 +45,7 @@
     e.preventDefault();
     const now = new Date().toISOString().split('T')[0];
     const submitted: TodoItem = {
-      id: item?.id ?? crypto.randomUUID(),
+      id: item?.id ?? (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)),
       listId,
       categoryId: categoryId || null,
       title,
@@ -60,6 +61,16 @@
       createdAt: item?.createdAt ?? now
     };
     onsubmit(submitted);
+    if (isNew) {
+      title = '';
+      notes = '';
+      priority = '';
+      dueDate = '';
+      categoryId = '';
+      assignedUserId = '';
+      recurrencePreset = '';
+      titleInput?.focus();
+    }
   }
 </script>
 
@@ -67,7 +78,9 @@
   <div>
     <input
       type="text"
+      bind:this={titleInput}
       bind:value={title}
+      onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit(e); } }}
       placeholder="Item title"
       required
       class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"

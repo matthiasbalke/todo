@@ -28,7 +28,6 @@
 
   function handleAddItem(item: TodoItem) {
     saveItem(item);
-    showAddForm = false;
   }
 </script>
 
