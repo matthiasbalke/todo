@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
   import type { PageData } from './$types';
   let { data }: { data: PageData } = $props();
 </script>
@@ -23,13 +24,12 @@
         </div>
         <div class="flex items-center gap-2">
           {#if list.id === 'grocery'}
-            <a
-              href="/lists/{list.id}/grocery"
-              onclick={(e) => e.stopPropagation()}
+            <button
+              onclick={(e) => { e.preventDefault(); e.stopPropagation(); goto(`/lists/${list.id}/grocery`); }}
               class="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full font-medium hover:bg-green-200 transition-colors"
             >
               Grocery mode
-            </a>
+            </button>
           {/if}
           <span class="text-gray-300">›</span>
         </div>
