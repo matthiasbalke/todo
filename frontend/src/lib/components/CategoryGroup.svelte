@@ -7,16 +7,22 @@
     category,
     items,
     allCategories,
-    users
+    users,
+    hideDone = false
   }: {
     categoryId: string | null;
     category: Category | null;
     items: TodoItem[];
     allCategories: Category[];
     users: User[];
+    hideDone?: boolean;
   } = $props();
 
   let collapsed = $state(false);
+  let doneCollapsed = $state(true);
+
+  const undoneItems = $derived(items.filter(i => !i.done));
+  const doneItems = $derived(items.filter(i => i.done));
 </script>
 
 <div class="mb-6">
@@ -32,9 +38,26 @@
   </button>
   {#if !collapsed}
     <div class="space-y-2">
-      {#each items as item (item.id)}
+      {#each undoneItems as item (item.id)}
         <ItemCard {item} categories={allCategories} {users} />
       {/each}
     </div>
+
+    {#if !hideDone && doneItems.length > 0}
+      <button
+        onclick={() => { doneCollapsed = !doneCollapsed; }}
+        class="mt-2 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-500 transition-colors px-1"
+      >
+        <span>{doneCollapsed ? '▶' : '▼'}</span>
+        <span>{doneItems.length} checked</span>
+      </button>
+      {#if !doneCollapsed}
+        <div class="space-y-2 mt-1">
+          {#each doneItems as item (item.id)}
+            <ItemCard {item} categories={allCategories} {users} />
+          {/each}
+        </div>
+      {/if}
+    {/if}
   {/if}
 </div>

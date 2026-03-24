@@ -3,6 +3,15 @@ import type { List, Category } from '$lib/mock-data';
 
 let lists = $state<List[]>([...mockLists]);
 let categories = $state<Category[]>([...mockCategories]);
+let hideDoneMap = $state<Map<string, boolean>>(new Map());
+
+export function isHideDone(listId: string): boolean {
+  return hideDoneMap.get(listId) ?? false;
+}
+
+export function setHideDone(listId: string, value: boolean): void {
+  hideDoneMap = new Map(hideDoneMap).set(listId, value);
+}
 
 export function getLists() {
   return lists;

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { getItems, saveItem } from '$lib/stores/items.svelte';
-  import { getList, saveList, getCategoriesForList } from '$lib/stores/lists.svelte';
+  import { getList, saveList, getCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
   import { applyFilters, applySort, groupByCategory } from '$lib/utils';
   import type { Filters } from '$lib/utils';
   import type { SortField, SortDirection, TodoItem } from '$lib/mock-data';
@@ -173,6 +173,15 @@
                 </div>
               {/if}
             </div>
+            <div class="border-t border-gray-100 mt-1 pt-1">
+              <button
+                onclick={() => { setHideDone(data.id, !isHideDone(data.id)); menuOpen = false; }}
+                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between"
+              >
+                <span>Hide checked</span>
+                {#if isHideDone(data.id)}<span>✓</span>{/if}
+              </button>
+            </div>
           </div>
         {/if}
       </div>
@@ -192,6 +201,7 @@
           {items}
           allCategories={categories}
           users={data.users}
+          hideDone={isHideDone(data.id)}
         />
       {/each}
     </div>
