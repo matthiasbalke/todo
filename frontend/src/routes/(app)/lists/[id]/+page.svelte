@@ -77,12 +77,7 @@
       </div>
     {:else}
       <h1 class="text-xl font-bold text-gray-900">{list.emoji} {list.name}</h1>
-      {#if list.id === 'grocery'}
-        <a href="/lists/{list.id}/grocery" class="ml-auto px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full font-medium">
-          Grocery mode
-        </a>
-      {/if}
-      <div class="relative {list.id === 'grocery' ? '' : 'ml-auto'}">
+      <div class="relative ml-auto">
         <button
           onclick={() => { menuOpen = !menuOpen; sortSubmenuOpen = false; filterSubmenuOpen = false; }}
           class="p-1 text-gray-400 hover:text-gray-600 transition-colors"
@@ -97,6 +92,16 @@
             role="presentation"
           ></div>
           <div class="absolute right-0 top-8 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+            {#if list.id === 'grocery'}
+              <a
+                href="/lists/{list.id}/grocery"
+                onclick={() => { menuOpen = false; }}
+                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Grocery mode
+              </a>
+              <div class="border-t border-gray-100 mt-1 pt-1"></div>
+            {/if}
             <button
               onclick={() => { showEditForm = true; menuOpen = false; }}
               class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
