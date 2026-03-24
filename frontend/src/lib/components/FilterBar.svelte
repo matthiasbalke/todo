@@ -12,52 +12,43 @@
     onchange: (f: Filters) => void;
   } = $props();
 
-  function toggle(key: keyof Filters) {
-    onchange({ ...filters, [key]: !filters[key] });
-  }
+  const dueDateValue = $derived(
+    filters.hideFuture ? 'hideFuture' : filters.hideUndated ? 'hideUndated' : 'all'
+  );
 
-  function setCategory(id: string | null) {
-    onchange({ ...filters, categoryId: id });
+  function setDueDate(value: string) {
+    onchange({ ...filters, hideFuture: value === 'hideFuture', hideUndated: value === 'hideUndated' });
   }
 </script>
 
-<div class="flex items-center gap-2 overflow-x-auto pb-1">
-  <button
-    onclick={() => toggle('starredOnly')}
-    class="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors
-      {filters.starredOnly ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
+<div class="flex items-center gap-2 flex-wrap">
+  <select
+    value={filters.starredOnly ? 'starred' : 'all'}
+    onchange={(e) => onchange({ ...filters, starredOnly: (e.target as HTMLSelectElement).value === 'starred' })}
+    class="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
   >
-    ★ Starred
-  </button>
-  <button
-    onclick={() => toggle('hideFuture')}
-    class="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors
-      {filters.hideFuture ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
+    <option value="all">All items</option>
+    <option value="starred">Starred only</option>
+  </select>
+
+  <select
+    value={dueDateValue}
+    onchange={(e) => setDueDate((e.target as HTMLSelectElement).value)}
+    class="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
   >
-    Hide future
-  </button>
-  <button
-    onclick={() => toggle('hideUndated')}
-    class="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors
-      {filters.hideUndated ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
+    <option value="all">Any due date</option>
+    <option value="hideFuture">Hide future</option>
+    <option value="hideUndated">Has due date</option>
+  </select>
+
+  <select
+    value={filters.categoryId ?? ''}
+    onchange={(e) => onchange({ ...filters, categoryId: (e.target as HTMLSelectElement).value || null })}
+    class="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
   >
-    Has due date
-  </button>
-  <div class="w-px h-5 bg-gray-200 flex-shrink-0"></div>
-  <button
-    onclick={() => setCategory(null)}
-    class="flex-shrink-0 inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-colors
-      {filters.categoryId === null ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
-  >
-    All
-  </button>
-  {#each categories as cat (cat.id)}
-    <button
-      onclick={() => setCategory(cat.id)}
-      class="flex-shrink-0 inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-colors
-        {filters.categoryId === cat.id ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
-    >
-      {cat.name}
-    </button>
-  {/each}
+    <option value="">All categories</option>
+    {#each categories as cat (cat.id)}
+      <option value={cat.id}>{cat.name}</option>
+    {/each}
+  </select>
 </div>

@@ -13,18 +13,18 @@
   // Get live item from store (so mutations show up)
   const liveItem = $derived(getItems().find(i => i.id === data.item.id) ?? data.item);
 
-  let editing = $state(false);
+  let editing = $state(true);
 
   const category = $derived(data.categories.find(c => c.id === liveItem.categoryId));
   const assignedUser = $derived(data.users.find(u => u.id === liveItem.assignedUserId));
 
   function handleSave(updated: TodoItem) {
     saveItem(updated);
-    editing = false;
+    goto(`/lists/${data.list.id}`);
   }
 
   function handleCancel() {
-    editing = false;
+    goto(`/lists/${data.list.id}`);
   }
 </script>
 
