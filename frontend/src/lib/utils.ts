@@ -4,7 +4,6 @@ export interface Filters {
   starredOnly: boolean;
   hideFuture: boolean;
   hideUndated: boolean;
-  categoryId: string | null; // null = all categories
 }
 
 export function applyFilters(items: TodoItem[], filters: Filters): TodoItem[] {
@@ -17,7 +16,6 @@ export function applyFilters(items: TodoItem[], filters: Filters): TodoItem[] {
       if (due > today) return false;
     }
     if (filters.hideUndated && !item.dueDate) return false;
-    if (filters.categoryId !== null && item.categoryId !== filters.categoryId) return false;
     return true;
   });
 }

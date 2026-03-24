@@ -13,15 +13,26 @@
     items: TodoItem[];
     allCategories: Category[];
   } = $props();
+
+  let collapsed = $state(false);
 </script>
 
 <div class="mb-6">
-  <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2 px-1">
+  <button
+    class="flex items-center justify-between w-full px-1 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-500 transition-colors"
+    onclick={() => { collapsed = !collapsed; }}
+    role="heading"
+    aria-level={3}
+    aria-expanded={!collapsed}
+  >
     {category?.name ?? 'Uncategorized'}
-  </h3>
-  <div class="space-y-2">
-    {#each items as item (item.id)}
-      <ItemCard {item} categories={allCategories} />
-    {/each}
-  </div>
+    <span class="font-normal normal-case tracking-normal" aria-hidden="true">{collapsed ? '▶' : '▼'}</span>
+  </button>
+  {#if !collapsed}
+    <div class="space-y-2">
+      {#each items as item (item.id)}
+        <ItemCard {item} categories={allCategories} />
+      {/each}
+    </div>
+  {/if}
 </div>

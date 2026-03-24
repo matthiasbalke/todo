@@ -230,3 +230,183 @@ test.describe('Item detail edit + save', () => {
     await expect(page.getByRole('heading', { name: 'Apples (Updated)' })).toBeVisible();
   });
 });
+
+test.describe('Category config dialog', () => {
+  async function openCategoryDialog(page: Page) {
+    await page.getByRole('button', { name: 'Configure categories' }).click();
+    await expect(page.getByRole('heading', { name: 'Categories' })).toBeVisible();
+  }
+
+  test('open dialog', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await page.getByRole('button', { name: 'Configure categories' }).click();
+    await expect(page.getByRole('heading', { name: 'Categories' })).toBeVisible();
+  });
+
+  test('close via ✕ button', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    await page.getByRole('button', { name: 'Close' }).click();
+    await expect(page.getByRole('heading', { name: 'Categories' })).not.toBeVisible();
+  });
+
+  test('close via backdrop click', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    // Click near top-left corner of the overlay — outside the centered white panel
+    await page.locator('[role="dialog"]').click({ position: { x: 10, y: 10 } });
+    await expect(page.getByRole('heading', { name: 'Categories' })).not.toBeVisible();
+  });
+
+  test('existing categories are displayed', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    const dialog = page.locator('[role="dialog"]');
+    await expect(dialog.getByRole('button', { name: 'Produce' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Dairy' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Bakery' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Meat' })).toBeVisible();
+  });
+
+  test('▲ disabled on first item, ▼ disabled on last item', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    await expect(page.getByRole('button', { name: 'Move up' }).first()).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Move down' }).last()).toBeDisabled();
+  });
+
+  test('Add button disabled when input is empty', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    await expect(page.getByRole('button', { name: 'Add', exact: true })).toBeDisabled();
+  });
+
+  test('add new category via button', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    const dialog = page.locator('[role="dialog"]');
+    await page.getByPlaceholder('New category name').fill('Frozen');
+    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await expect(dialog.getByText('Frozen')).toBeVisible();
+    await expect(page.getByPlaceholder('New category name')).toHaveValue('');
+  });
+
+  test('add new category via Enter key', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    const dialog = page.locator('[role="dialog"]');
+    await page.getByPlaceholder('New category name').fill('Beverages');
+    await page.getByPlaceholder('New category name').press('Enter');
+    await expect(dialog.getByText('Beverages')).toBeVisible();
+  });
+
+  test('inline rename via name click — commit with Enter', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    const dialog = page.locator('[role="dialog"]');
+    await dialog.getByRole('button', { name: 'Produce' }).click();
+    // The inline edit input has no placeholder (footer input has placeholder="New category name")
+    const inlineInput = dialog.locator('input:not([placeholder])');
+    await expect(inlineInput).toBeVisible();
+    await expect(inlineInput).toHaveValue('Produce');
+    await inlineInput.fill('Fresh Produce');
+    await inlineInput.press('Enter');
+    await expect(dialog.getByText('Fresh Produce')).toBeVisible();
+    await expect(inlineInput).not.toBeVisible();
+  });
+
+  test('inline rename via ✏️ button — commit with ✓', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    const dialog = page.locator('[role="dialog"]');
+    // Rename buttons are ordered: Produce(0), Dairy(1), Bakery(2), Meat(3)
+    await dialog.getByRole('button', { name: 'Rename' }).nth(1).click();
+    const inlineInput = dialog.locator('input:not([placeholder])');
+    await inlineInput.fill('Dairy & Eggs');
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(dialog.getByText('Dairy & Eggs')).toBeVisible();
+  });
+
+  test('cancel inline rename with ✕', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    const dialog = page.locator('[role="dialog"]');
+    await dialog.getByRole('button', { name: 'Rename' }).nth(2).click();
+    const inlineInput = dialog.locator('input:not([placeholder])');
+    await inlineInput.fill('Baked Goods');
+    await page.keyboard.press('Escape');
+    await expect(dialog.getByRole('button', { name: 'Bakery' })).toBeVisible();
+    await expect(dialog.getByText('Baked Goods')).not.toBeVisible();
+  });
+
+  test('delete a category', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    await page.getByRole('button', { name: 'Delete' }).last().click();
+    await expect(page.getByText('Meat')).not.toBeVisible();
+  });
+
+  test('reorder — move item down', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    const rows = page.locator('[role="dialog"] [role="button"]');
+    const firstRowText = await rows.first().textContent();
+    await page.getByRole('button', { name: 'Move down' }).first().click();
+    const newFirstRowText = await rows.first().textContent();
+    expect(newFirstRowText).not.toBe(firstRowText);
+  });
+
+  test('clicking category heading collapses and expands its items', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+
+    // Produce heading is visible and Apples (a Produce item) is visible initially
+    const produceHeading = page.getByRole('heading', { name: 'Produce' });
+    await expect(produceHeading).toBeVisible();
+    await expect(page.getByText('Apples')).toBeVisible();
+
+    // Click heading to collapse
+    await produceHeading.click();
+    await expect(page.getByText('Apples')).not.toBeVisible();
+
+    // Click again to expand
+    await produceHeading.click();
+    await expect(page.getByText('Apples')).toBeVisible();
+  });
+
+  test('renamed category reflected in group header after closing dialog', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    await page.getByRole('button', { name: 'Produce' }).click();
+    const inlineInput = page.locator('[role="dialog"] input').first();
+    await inlineInput.fill('Fresh Produce');
+    await inlineInput.press('Enter');
+    await page.getByRole('button', { name: 'Close' }).click();
+    await expect(page.getByRole('heading', { name: /Fresh Produce/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Produce$/i })).not.toBeVisible();
+  });
+
+  test('deleted category — its items appear under Uncategorized', async ({ page }) => {
+    await page.goto('/lists/grocery');
+    await waitForHydration(page);
+    await openCategoryDialog(page);
+    await page.getByRole('button', { name: 'Delete' }).first().click();
+    await page.getByRole('button', { name: 'Close' }).click();
+    await expect(page.getByRole('heading', { name: /^Produce$/i })).not.toBeVisible();
+    await expect(page.getByText('Apples')).toBeVisible();
+  });
+});
