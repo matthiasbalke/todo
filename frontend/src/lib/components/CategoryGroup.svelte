@@ -1,17 +1,19 @@
 <script lang="ts">
-  import type { TodoItem, Category } from '$lib/mock-data';
+  import type { TodoItem, Category, User } from '$lib/mock-data';
   import ItemCard from './ItemCard.svelte';
 
   let {
     categoryId,
     category,
     items,
-    allCategories
+    allCategories,
+    users
   }: {
     categoryId: string | null;
     category: Category | null;
     items: TodoItem[];
     allCategories: Category[];
+    users: User[];
   } = $props();
 
   let collapsed = $state(false);
@@ -31,7 +33,7 @@
   {#if !collapsed}
     <div class="space-y-2">
       {#each items as item (item.id)}
-        <ItemCard {item} categories={allCategories} />
+        <ItemCard {item} categories={allCategories} {users} />
       {/each}
     </div>
   {/if}

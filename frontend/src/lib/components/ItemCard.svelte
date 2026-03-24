@@ -1,11 +1,12 @@
 <script lang="ts">
-  import type { TodoItem, Category } from '$lib/mock-data';
+  import type { TodoItem, Category, User } from '$lib/mock-data';
   import { toggleDone, toggleStarred } from '$lib/stores/items.svelte';
   import PriorityBadge from './PriorityBadge.svelte';
   import DueDateChip from './DueDateChip.svelte';
   import RecurrenceIndicator from './RecurrenceIndicator.svelte';
 
-  let { item, categories }: { item: TodoItem; categories: Category[] } = $props();
+  let { item, categories, users }: { item: TodoItem; categories: Category[]; users: User[] } = $props();
+  const assignedUser = $derived(users.find(u => u.id === item.assignedUserId) ?? null);
 
   function handleDone(e: Event) {
     e.preventDefault();
@@ -48,6 +49,15 @@
       {/if}
     </div>
   </a>
+
+  {#if assignedUser}
+    <div
+      class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold"
+      title={assignedUser.name}
+    >
+      {assignedUser.name[0].toUpperCase()}
+    </div>
+  {/if}
 
   <button
     onclick={handleStar}

@@ -191,6 +191,7 @@
           {category}
           {items}
           allCategories={categories}
+          users={data.users}
         />
       {/each}
     </div>
