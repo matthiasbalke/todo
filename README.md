@@ -42,16 +42,16 @@ cd backend
 **Frontend**
 ```bash
 cd frontend
-npm install
-npm run dev              # start Vite dev server
-npm run test -- --run    # run unit tests
+bun install
+bun run dev              # start Vite dev server
+bun run test -- --run    # run unit tests
 ```
 
 **E2E tests**
 ```bash
 cd e2e
-npm install
-npx playwright test
+bun install
+bunx playwright test
 ```
 
 ## Architecture

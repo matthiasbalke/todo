@@ -342,6 +342,6 @@ Docker layer caching uses GitHub Actions cache (`type=gha`) to speed up repeat b
 
 Dependabot is configured to open weekly PRs for:
 - Gradle dependencies (`/backend`)
-- npm dependencies (`/frontend`, `/e2e`)
+- npm dependencies (`/frontend`, `/e2e` — via `package-ecosystem: npm`, which works for bun projects)
 - Dockerfile base images (`/backend`, `/frontend`)
 - GitHub Actions versions (`/`)

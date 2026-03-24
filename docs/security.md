@@ -174,7 +174,7 @@ This document maps the OWASP Top 10 risks to this app's specific stack and archi
 - **Dependabot:** Already configured for Gradle, npm (frontend + e2e), Dockerfiles, and GitHub Actions on a weekly schedule — keep it enabled and auto-merge patch updates after CI passes.
 - **Gradle dependency verification:** Add `verification-metadata.xml` (`./gradlew --write-verification-metadata sha256`) to detect supply-chain tampering of resolved artifacts.
 - **Docker base images:** Pin to specific digest (`FROM eclipse-temurin:25-jre@sha256:...`) in Dockerfiles for reproducible builds. Dependabot will open PRs to update digests.
-- **`npm ci` in CI:** Use `npm ci` (not `npm install`) in CI to enforce the lockfile. Run `npm audit --audit-level=high` as a CI gate.
+- **`bun install --frozen-lockfile` in CI:** Use `bun install --frozen-lockfile` (not `bun install`) in CI to enforce the lockfile. Run `bun audit` as a CI gate.
 - **Advisories:** Subscribe to:
   - [Spring Security advisories](https://spring.io/security)
   - [SvelteKit / Vite release notes](https://github.com/sveltejs/kit/releases)
@@ -230,7 +230,7 @@ This document maps the OWASP Top 10 risks to this app's specific stack and archi
 ### Mitigations
 
 - **Gradle:** Enable dependency verification (`verification-metadata.xml`). Use the [Gradle version catalog](https://docs.gradle.org/current/userguide/platforms.html) (`libs.versions.toml`) to centralize and audit dependency declarations.
-- **npm:** Use `npm ci` (enforces `package-lock.json`). Run `npm audit` in CI. Prefer scoped packages; be alert to typosquatting on well-known package names.
+- **bun:** Use `bun install --frozen-lockfile` (enforces `bun.lockb`). Run `bun audit` in CI. Prefer scoped packages; be alert to typosquatting on well-known package names.
 - **GitHub Actions — pin to SHA:** Replace mutable tags with full commit SHAs in all workflow files.
   ```yaml
   # Instead of:
@@ -325,7 +325,7 @@ Use this checklist at code review time to confirm each control is implemented be
 | A05 | Security headers set on all responses | Backend/nginx |
 | A05 | DB and MinIO not exposed outside Docker network | Docker Compose |
 | A06 | Dependabot enabled and PRs merged promptly | GitHub |
-| A06 | `npm ci` + `npm audit` in CI | GitHub Actions |
+| A06 | `bun install --frozen-lockfile` + `bun audit` in CI | GitHub Actions |
 | A06 | Gradle dependency verification metadata committed | Backend |
 | A07 | WebAuthn `userVerification: required` | Backend |
 | A07 | OAuth2 state + PKCE validated | Backend |

@@ -38,7 +38,7 @@ todo/
 | `e2e.yml` | push → `main` only | full stack via `docker compose`, then Playwright (Chromium only) |
 | `release.yml` | push → `main` or `v*` tag | build + push backend and frontend Docker images to `ghcr.io` in parallel |
 
-Docker images are tagged with branch name, short SHA, and semver (on tags). Layer caching uses GitHub Actions cache (`type=gha`). Dependabot covers Gradle, npm (frontend + e2e), Dockerfiles, and Actions — all on a weekly schedule.
+Docker images are tagged with branch name, short SHA, and semver (on tags). Layer caching uses GitHub Actions cache (`type=gha`). Dependabot covers Gradle, npm (frontend + e2e — Dependabot uses `package-ecosystem: npm` which works for bun projects), Dockerfiles, and Actions — all on a weekly schedule.
 
 ## Planned Commands
 
@@ -52,17 +52,17 @@ Docker images are tagged with branch name, short SHA, and semver (on tags). Laye
 
 ### Frontend
 ```bash
-npm install        # install deps
-npm run dev        # dev server (Vite HMR)
-npm run build      # production build
-npm run check      # Svelte type-check
-npm run test       # Vitest unit tests
+bun install        # install deps
+bun run dev        # dev server (Vite HMR)
+bun run build      # production build
+bun run check      # Svelte type-check
+bun run test       # Vitest unit tests
 ```
 
 ### E2E
 ```bash
-npx playwright test            # all E2E tests
-npx playwright test <file>     # single spec
+bunx playwright test            # all E2E tests
+bunx playwright test <file>     # single spec
 ```
 
 ### Full stack
