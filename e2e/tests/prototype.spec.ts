@@ -4,11 +4,11 @@ async function waitForHydration(page: Page) {
   await page.waitForSelector('body[data-hydrated="true"]');
 }
 
-test.describe('/ redirects to /lists', () => {
-  test('root redirects to lists page', async ({ page }) => {
+test.describe('/ redirects to /auth', () => {
+  test('root redirects to auth page', async ({ page }) => {
     await page.goto('/');
     await waitForHydration(page);
-    await expect(page).toHaveURL(/\/lists$/);
+    await expect(page).toHaveURL(/\/auth$/);
   });
 });
 
@@ -59,16 +59,21 @@ test.describe('List view renders grouped items', () => {
   });
 });
 
-test.describe('Filter chip toggles', () => {
-  test('clicking Starred chip filters to only starred items', async ({ page }) => {
+test.describe('Filter toggles', () => {
+  test('filtering to Starred only hides unstarred items', async ({ page }) => {
     await page.goto('/lists/grocery');
     await waitForHydration(page);
 
     // Verify unstarred items are visible before filtering
     await expect(page.getByText('Bananas')).toBeVisible();
 
-    // Click the Starred filter chip
-    await page.getByRole('button', { name: '★ Starred' }).click();
+    // Open kebab menu → Filter → Starred only
+    await page.getByRole('button', { name: 'List options' }).click();
+    await page.getByRole('button', { name: 'Filter' }).click();
+    await page.getByRole('button', { name: 'Starred only' }).click();
+
+    // Close menu by clicking outside
+    await page.keyboard.press('Escape');
 
     // After filtering: only Apples (starred) and Cheddar Cheese (starred) remain — 2 items
     await expect(page.getByText('2 items')).toBeVisible();
@@ -86,14 +91,14 @@ test.describe('Sort selector works', () => {
     // Default MANUAL sort: Dairy items are Whole Milk (1), Greek Yogurt (2), Cheddar Cheese (3)
     // After ALPHA sort: Cheddar Cheese, Greek Yogurt, Whole Milk
 
-    // Verify default order: Whole Milk appears before Cheddar Cheese
-    const dairyItems = page.locator('h3').filter({ hasText: 'Dairy' }).locator('..').locator('button').filter({ hasText: /Whole Milk|Cheddar Cheese/ });
+    // Open kebab menu → Sort → Alphabetical
+    await page.getByRole('button', { name: 'List options' }).click();
+    await page.getByRole('button', { name: 'Sort' }).click();
+    await page.getByRole('button', { name: 'Alphabetical' }).click();
 
-    // Switch to Alphabetical sort
-    await page.getByRole('combobox').selectOption('ALPHA');
-    await expect(page.getByRole('combobox')).toHaveValue('ALPHA');
+    // Close menu by clicking outside
+    await page.keyboard.press('Escape');
 
-    // Verify sort value updated — items are now in alphabetical order
     // Cheddar Cheese (C) should now appear before Whole Milk (W)
     const sortedItems = page.locator('text=Cheddar Cheese').first();
     await expect(sortedItems).toBeVisible();
@@ -233,6 +238,7 @@ test.describe('Item detail edit + save', () => {
 
 test.describe('Category config dialog', () => {
   async function openCategoryDialog(page: Page) {
+    await page.getByRole('button', { name: 'List options' }).click();
     await page.getByRole('button', { name: 'Configure categories' }).click();
     await expect(page.getByRole('heading', { name: 'Categories' })).toBeVisible();
   }
@@ -240,6 +246,7 @@ test.describe('Category config dialog', () => {
   test('open dialog', async ({ page }) => {
     await page.goto('/lists/grocery');
     await waitForHydration(page);
+    await page.getByRole('button', { name: 'List options' }).click();
     await page.getByRole('button', { name: 'Configure categories' }).click();
     await expect(page.getByRole('heading', { name: 'Categories' })).toBeVisible();
   });
