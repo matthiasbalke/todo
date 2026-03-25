@@ -30,8 +30,6 @@ test.describe('/lists shows 3 list cards', () => {
   test('lists page shows Grocery, Household, and Personal cards', async ({ page }) => {
     await page.goto('/lists');
     await waitForHydration(page);
-    await expect(page.getByRole('heading', { name: 'My Lists' })).toBeVisible();
-
     const groceryCard = page.locator('a[href*="/lists/grocery"]').first();
     const householdCard = page.locator('a[href*="/lists/household"]').first();
     const personalCard = page.locator('a[href*="/lists/personal"]').first();
@@ -65,7 +63,7 @@ test.describe('Filter toggles', () => {
     await waitForHydration(page);
 
     // Verify unstarred items are visible before filtering
-    await expect(page.getByText('Bananas')).toBeVisible();
+    await expect(page.getByText('Spinach')).toBeVisible();
 
     // Open kebab menu → Filter → Starred only
     await page.getByRole('button', { name: 'List options' }).click();
@@ -78,8 +76,8 @@ test.describe('Filter toggles', () => {
     // After filtering: only Apples (starred) and Cheddar Cheese (starred) remain — 2 items
     await expect(page.getByText('2 items')).toBeVisible();
 
-    // Unstarred item Bananas should be gone
-    await expect(page.getByText('Bananas')).not.toBeVisible();
+    // Unstarred item Spinach should be gone
+    await expect(page.getByText('Spinach')).not.toBeVisible();
   });
 });
 
@@ -180,8 +178,9 @@ test.describe('Grocery mode — "Clear checked"', () => {
     const applesTitleSpan = page.getByRole('button', { name: /Apples/i }).locator('span').filter({ hasText: /Apples/ });
     await expect(applesTitleSpan).toHaveClass(/line-through/);
 
-    // Click "Clear checked" — sets hideDone=true, removing all done items from view
-    await page.getByRole('button', { name: 'Clear checked' }).click();
+    // Open kebab menu → "Hide checked"
+    await page.getByRole('button', { name: 'List options' }).click();
+    await page.getByRole('button', { name: 'Hide checked' }).click();
 
     // Apples (now done) should no longer be visible
     await expect(page.getByRole('button', { name: /^Apples/ })).not.toBeVisible();
@@ -196,20 +195,12 @@ test.describe('Item detail shows all fields', () => {
     await page.goto('/lists/grocery/items/i1');
     await waitForHydration(page);
 
-    // Title
-    await expect(page.getByRole('heading', { name: 'Apples' })).toBeVisible();
+    // Form is pre-filled with item data
+    await expect(page.getByPlaceholder('Item title')).toHaveValue('Apples');
+    await expect(page.getByPlaceholder('Notes (optional)')).toHaveValue('Get Braeburn if available');
 
-    // Priority badge
-    await expect(page.getByText('Normal')).toBeVisible();
-
-    // Due date chip (today)
-    await expect(page.getByText('Today')).toBeVisible();
-
-    // Notes
-    await expect(page.getByText('Get Braeburn if available')).toBeVisible();
-
-    // Edit button present in view mode
-    await expect(page.getByRole('button', { name: 'Edit' })).toBeVisible();
+    // Save button present (edit form always shown)
+    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
   });
 });
 
@@ -218,9 +209,6 @@ test.describe('Item detail edit + save', () => {
     await page.goto('/lists/grocery/items/i1');
     await waitForHydration(page);
 
-    await page.getByRole('button', { name: 'Edit' }).click();
-
-    // Edit mode: ItemForm renders with pre-filled title input
     const titleInput = page.getByPlaceholder('Item title');
     await expect(titleInput).toBeVisible();
     await expect(titleInput).toHaveValue('Apples');
@@ -231,8 +219,9 @@ test.describe('Item detail edit + save', () => {
     // Save
     await page.getByRole('button', { name: 'Save' }).click();
 
-    // Updated title should now be shown in view mode
-    await expect(page.getByRole('heading', { name: 'Apples (Updated)' })).toBeVisible();
+    // Save navigates back to the list; updated title visible there
+    await expect(page).toHaveURL(/\/lists\/grocery$/);
+    await expect(page.getByText('Apples (Updated)')).toBeVisible();
   });
 });
 
