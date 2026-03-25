@@ -9,10 +9,10 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [ ] Create `backend/` directory with `build.gradle.kts`, `settings.gradle.kts`, and Gradle wrapper
 - [ ] Configure `build.gradle.kts`: Kotlin, Spring Boot, Java 25 toolchain, dependencies (Spring Web, Security, Data JPA, Flyway, Testcontainers)
 - [ ] Create Spring Boot main application class (`TodoApplication.kt`)
-- [ ] Create `frontend/` directory and scaffold SvelteKit project (`bun create svelte`)
-- [ ] Install frontend dependencies: TailwindCSS, `@vite-pwa/sveltekit`, `@sveltejs/adapter-node`
-- [ ] Configure `tailwind.config.ts` and `vite.config.ts`
-- [ ] Create `e2e/` directory, install Playwright (`bunx playwright install --with-deps chromium`)
+- [x] Create `frontend/` directory and scaffold SvelteKit project (`bun create svelte`)
+- [x] Install frontend dependencies: TailwindCSS, `@vite-pwa/sveltekit`, `@sveltejs/adapter-node`
+- [x] Configure `tailwind.config.ts` and `vite.config.ts`
+- [x] Create `e2e/` directory, install Playwright (`bunx playwright install --with-deps chromium`)
 - [ ] Create root `docker-compose.yml` with `postgres`, `backend`, `frontend` services
 - [ ] Create `backend/Dockerfile` (multi-stage: Gradle build → JRE 25 runtime)
 - [ ] Create `frontend/Dockerfile` (multi-stage: bun build → Node runtime)
@@ -188,19 +188,19 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 
 ## 13. Frontend — Project Setup & Routing
 
-- [ ] Configure `@sveltejs/adapter-node` in `svelte.config.js`
-- [ ] Configure `@vite-pwa/sveltekit` in `vite.config.ts` (manifest, service worker strategy)
-- [ ] Set up root layout (`+layout.svelte`): global styles, auth guard, top-level Svelte stores
+- [x] Configure `@sveltejs/adapter-node` in `svelte.config.js`
+- [x] Configure `@vite-pwa/sveltekit` in `vite.config.ts` (manifest, service worker strategy)
+- [x] Set up root layout (`+layout.svelte`): global styles, auth guard, top-level Svelte stores
 - [ ] Create typed API client in `src/lib/api/` (one file per resource: `lists.ts`, `items.ts`, `auth.ts`, etc.) wrapping `fetch` with JWT header injection and token refresh
-- [ ] Create Svelte stores: `currentUser`, `lists`, `currentListItems`, `connectionStatus`
-- [ ] Set up route structure: `(app)/lists/`, `(app)/lists/[id]/`, `(app)/lists/[id]/grocery/`, `auth/login`
-- [ ] Verify `bun run check` passes with no type errors on the skeleton
+- [x] Create Svelte stores: `currentUser`, `lists`, `currentListItems`, `connectionStatus`
+- [x] Set up route structure: `(app)/lists/`, `(app)/lists/[id]/`, `(app)/lists/[id]/grocery/`, `auth/login`
+- [x] Verify `bun run check` passes with no type errors on the skeleton
 
 ---
 
 ## 14. Frontend — Auth Pages
 
-- [ ] Create `auth/login/+page.svelte`: email input field, "Continue with passkey" button, "Sign in with Google" button
+- [x] Create `auth/login/+page.svelte`: email input field, "Continue with passkey" button, "Sign in with Google" button
 - [ ] Implement passkey registration flow: call `register-options` → `navigator.credentials.create()` → `register` → store JWT → redirect
 - [ ] Implement passkey login flow: call `login-options` → `navigator.credentials.get()` → `login` → store JWT → redirect
 - [ ] Implement Google OAuth2 button: redirects to `/api/auth/oauth2/google`; handle callback page that stores JWT
@@ -212,9 +212,9 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 
 ## 15. Frontend — List Index
 
-- [ ] Create `(app)/lists/+page.svelte`: fetches and displays all lists as cards with emoji + name
-- [ ] Implement "Create list" modal/drawer: emoji picker, name field, submit calls `POST /api/lists`
-- [ ] Implement "Edit list" action: pre-filled modal for name/emoji/description/sort settings
+- [x] Create `(app)/lists/+page.svelte`: fetches and displays all lists as cards with emoji + name
+- [x] Implement "Create list" modal/drawer: emoji picker, name field, submit calls `POST /api/lists`
+- [x] Implement "Edit list" action: pre-filled modal for name/emoji/description/sort settings
 - [ ] Implement "Delete list" action: confirmation dialog; OWNER only
 - [ ] Implement "Members" panel: shows member list, invite by email input, role change dropdown, remove button; OWNER only
 - [ ] Render list index grouped into named collapsible sections; ungrouped lists shown at bottom in a distinct "Ungrouped" section
@@ -228,11 +228,11 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 
 ## 16. Frontend — List Detail View
 
-- [ ] Create `(app)/lists/[id]/+page.svelte`: loads items for the list, renders grouped by category
-- [ ] Implement category group component (`CategoryGroup.svelte`): collapsible, shows category color and name, contains item cards
+- [x] Create `(app)/lists/[id]/+page.svelte`: loads items for the list, renders grouped by category
+- [x] Implement category group component (`CategoryGroup.svelte`): collapsible, shows category color and name, contains item cards
 - [ ] Implement "no category" group rendered alongside named categories
-- [ ] Implement client-side filtering controls: hide future items toggle, hide undated items toggle, starred-only toggle, filter by category dropdown, filter by assignee dropdown
-- [ ] Implement client-side sorting: apply current list sort setting within each category group
+- [x] Implement client-side filtering controls: hide future items toggle, hide undated items toggle, starred-only toggle, filter by category dropdown, filter by assignee dropdown
+- [x] Implement client-side sorting: apply current list sort setting within each category group
 - [ ] Connect SSE: subscribe on mount to `GET /api/lists/{id}/events`; patch local store on incoming events; auto-reconnect
 - [ ] Write Vitest component test: items are grouped correctly by category from mock data
 
@@ -240,12 +240,12 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 
 ## 17. Frontend — Todo Item CRUD
 
-- [ ] Implement `ItemCard.svelte`: shows title, due date, priority badge, starred icon, recurrence indicator, assignee avatars, attachment thumbnail count; tap opens detail drawer
-- [ ] Implement item detail drawer/modal: all fields (title, notes, due date, priority, category, assigned users, recurrence, attachments); edit mode
-- [ ] Implement "Create item" inline form or FAB: title input with saved-item autocomplete, optional fields
-- [ ] Implement `PriorityBadge.svelte`: color-coded chip for URGENT / HIGH / NORMAL / LOW
-- [ ] Implement done toggle: optimistic UI update, calls `PATCH /done`
-- [ ] Implement starred toggle: optimistic UI update, calls `PUT` on item
+- [x] Implement `ItemCard.svelte`: shows title, due date, priority badge, starred icon, recurrence indicator, assignee avatars, attachment thumbnail count; tap opens detail drawer
+- [x] Implement item detail drawer/modal: all fields (title, notes, due date, priority, category, assigned users, recurrence, attachments); edit mode
+- [x] Implement "Create item" inline form or FAB: title input with saved-item autocomplete, optional fields
+- [x] Implement `PriorityBadge.svelte`: color-coded chip for URGENT / HIGH / NORMAL / LOW
+- [x] Implement done toggle: optimistic UI update, calls `PATCH /done`
+- [x] Implement starred toggle: optimistic UI update, calls `PUT` on item
 - [ ] Implement delete item: confirmation prompt, calls `DELETE`
 - [ ] Implement drag-and-drop reorder (only shown/active when list sort = MANUAL): calls `PATCH /order`
 - [ ] Implement attachment upload: file input in item detail, calls `POST /attachments`, shows thumbnail gallery
@@ -256,11 +256,11 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 
 ## 18. Frontend — Grocery Mode
 
-- [ ] Create `(app)/lists/[id]/grocery/+page.svelte`: items grouped by category, collapsible sections
-- [ ] Within each category group: unchecked items first, checked items (grayed out) at the bottom
-- [ ] Style for one-handed mobile use: large tap targets (min 48 px), generous spacing
-- [ ] Implement "Clear checked" button: bulk-marks done items for removal from view (or deletes them)
-- [ ] Add navigation link from list detail to grocery mode
+- [x] Create `(app)/lists/[id]/grocery/+page.svelte`: items grouped by category, collapsible sections
+- [x] Within each category group: unchecked items first, checked items (grayed out) at the bottom
+- [x] Style for one-handed mobile use: large tap targets (min 48 px), generous spacing
+- [x] Implement "Clear checked" button: bulk-marks done items for removal from view (or deletes them)
+- [x] Add navigation link from list detail to grocery mode
 
 ---
 
@@ -295,7 +295,7 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 
 ## 22. E2E Tests
 
-- [ ] Configure Playwright: `playwright.config.ts` pointing to `http://localhost:3000` (frontend); set up `docker compose` global setup
+- [x] Configure Playwright: `playwright.config.ts` pointing to `http://localhost:3000` (frontend); set up `docker compose` global setup
 - [ ] E2E: user registration via passkey (using Playwright's WebAuthn virtual authenticator)
 - [ ] E2E: create a list, verify it appears on the list index
 - [ ] E2E: add items to a list, verify they appear in the list detail view
@@ -309,10 +309,10 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 
 ## 23. CI/CD
 
-- [ ] Create `.github/workflows/ci.yml`: two parallel jobs — `backend` (Gradle build + test) and `frontend` (bun type-check + Vitest); triggers on push/PR to `main`
+- [x] Create `.github/workflows/ci.yml`: two parallel jobs — `backend` (Gradle build + test) and `frontend` (bun type-check + Vitest); triggers on push/PR to `main`
 - [ ] Create `.github/workflows/e2e.yml`: single job — `docker compose up`, wait for health checks, run Playwright (Chromium); triggers on push to `main` only
-- [ ] Create `.github/workflows/release.yml`: two parallel jobs — build and push `backend` and `frontend` Docker images to `ghcr.io`; triggers on push to `main` or `v*` tag
-- [ ] Configure Docker image tagging in `release.yml`: `main` → `main` + `sha-<short>` tags; `v*` tag → semver tags + `sha-<short>`
-- [ ] Add GitHub Actions cache (`type=gha`) for Docker layer caching in `release.yml`
-- [ ] Create `.github/dependabot.yml`: weekly updates for `gradle` (`/backend`), `npm` (`/frontend`, `/e2e`), `docker` (`/backend`, `/frontend`), `github-actions` (`/`)
+- [x] Create `.github/workflows/release.yml`: two parallel jobs — build and push `backend` and `frontend` Docker images to `ghcr.io`; triggers on push to `main` or `v*` tag
+- [x] Configure Docker image tagging in `release.yml`: `main` → `main` + `sha-<short>` tags; `v*` tag → semver tags + `sha-<short>`
+- [x] Add GitHub Actions cache (`type=gha`) for Docker layer caching in `release.yml`
+- [x] Create `.github/dependabot.yml`: weekly updates for `gradle` (`/backend`), `npm` (`/frontend`, `/e2e`), `docker` (`/backend`, `/frontend`), `github-actions` (`/`)
 - [ ] Verify CI passes on a push to `main` (green checkmarks on all three workflows)
