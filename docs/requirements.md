@@ -44,6 +44,12 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 - `id`, `name`, `emoji` (icon), `description`, `createdAt`
 - No single owner — membership roles define access
 - `defaultSortField` (ALPHA | DUE_DATE | STARRED | CREATED | MANUAL), `defaultSortDirection` (ASC | DESC)
+- `groupId` (nullable FK → ListGroup)
+- `sortOrderInGroup` (int — manual order within the group; also used for ungrouped lists)
+
+### ListGroup
+- `id`, `userId` (FK → User), `name`, `sortOrder` (int — manual order per user), `createdAt`
+- Personal: scoped to a single user; not visible to or shared with other list members
 
 ### ListMembership
 - `listId`, `userId`, `role` (OWNER | EDITOR | VIEWER)
@@ -116,12 +122,23 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
   - Manual (drag-and-drop within category groups)
 - Sort is applied **within each category group** (items with no category form their own group)
 
+### List Groups
+- Named collapsible sections on the list index (e.g. "Home", "Work")
+- Per-user: each user manages their own groups independently; grouping does not affect other members of a list
+- A list belongs to at most one group; ungrouped lists appear at the bottom of the index in a distinct section
+- CRUD: any user can create, rename, and delete their own groups
+- Deleting a group does not delete the lists inside it — they become ungrouped
+- Drag-and-drop reordering: groups can be reordered relative to each other; lists within a group can be reordered
+- Ungrouped lists can also be manually reordered among themselves
+
 ### Filtering (per list view)
-- Due date is set (has a due date)
+- **Hide future items** — when enabled, items with a `dueDate` in the future (i.e. `dueDate > today`) are hidden; items with no due date and items due today or earlier are always shown. Default: **off** (all items visible).
+- **Hide undated items** — when enabled, items with no `dueDate` set are hidden. Default: **off**.
 - Starred only
 - By specific category
 - Assigned to a specific user
 - Filters are combinable; applied before sort
+- **Filtering is client-side** — all items are fetched from the server; the frontend applies filters locally. This ensures filters work while offline.
 
 ### Categories
 - CRUD per list (EDITOR+)
@@ -154,6 +171,7 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 - On mark-done: backend creates next instance with `dueDate = originalDueDate + interval`
   - The original due date is always used as the base — completing late does not shift future dates
   - If the item had no due date: `dueDate = today + interval`
+- The new instance is visible immediately, even if its due date is in the future (it is not hidden by default; "hide future items" filter applies equally to recurring instances)
 - Completed instances kept in history, linked via `parentItemId`
 - Recurrence indicator shown on item cards
 
@@ -193,7 +211,7 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 - Mobile-first responsive UI with TailwindCSS
 
 ### Performance
-- PostgreSQL indexes on `(listId, done)`, `(listId, categoryId)`, `(listId, dueDate)`, `(userId)` on memberships, `(itemId)` on assignments
+- PostgreSQL indexes on `(listId, done)`, `(listId, categoryId)`, `(listId, dueDate)`, `(userId)` on memberships, `(itemId)` on assignments, `(user_id)` on `list_groups`
 - Pagination for item lists (cursor-based, page size ~50)
 - List index uses lightweight projections (no items loaded until list is opened)
 - SSE connections are per-list (not global), limiting fan-out scope
@@ -217,6 +235,14 @@ PUT    /api/users/me                     ← update display name / email
 GET    /api/users/me/deletion-preview    ← returns summary of what will be deleted (for confirmation screen)
 DELETE /api/users/me                     ← delete own account after user confirms summary
 
+GET    /api/list-groups                    ← current user's groups
+POST   /api/list-groups
+PUT    /api/list-groups/{gid}
+DELETE /api/list-groups/{gid}
+PATCH  /api/list-groups/{gid}/order        ← reorder groups (body: {sortOrder})
+PATCH  /api/lists/{id}/group               ← assign list to group or ungrouped (body: {groupId: uuid|null})
+PATCH  /api/lists/{id}/group-order         ← reorder list within its current group/ungrouped section
+
 GET    /api/lists                        ← paginated, lightweight projection
 POST   /api/lists
 GET    /api/lists/{id}
@@ -235,7 +261,7 @@ POST   /api/lists/{id}/categories
 PUT    /api/lists/{id}/categories/{cid}
 DELETE /api/lists/{id}/categories/{cid}
 
-GET    /api/lists/{id}/items             ← ?category=&assignee=&starred=&hasDueDate=&cursor=&limit=
+GET    /api/lists/{id}/items             ← ?cursor=&limit= (all items returned; filtering is client-side)
 POST   /api/lists/{id}/items
 GET    /api/lists/{id}/items/{iid}
 PUT    /api/lists/{id}/items/{iid}
@@ -287,6 +313,12 @@ todo/
 ├── backend/Dockerfile              # Multi-stage: Gradle build → JRE 25 runtime image
 ├── frontend/Dockerfile             # Multi-stage: Node build → Node runtime image
 ├── e2e/                            # End-to-end test suite (Playwright)
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml                  # Build + unit/integration tests (backend & frontend in parallel)
+│   │   ├── e2e.yml                 # Full-stack Playwright tests (main branch only)
+│   │   └── release.yml             # Build & push Docker images to ghcr.io
+│   └── dependabot.yml              # Weekly dependency updates
 └── docker-compose.yml              # Orchestrates: PostgreSQL + backend + frontend + (optional) MinIO
 ```
 
@@ -306,3 +338,33 @@ todo/
   - Tests run against the full stack (backend + frontend + PostgreSQL via Docker Compose)
   - Covers key user flows: login, create list, add items, check off grocery items, share list, account deletion confirmation
   - Can be run in headless mode in CI
+
+---
+
+## CI/CD
+
+### Workflows
+
+| Workflow | Trigger | Purpose |
+|---|---|---|
+| `ci.yml` | Push and PRs → `main` | Backend (Gradle build + tests) and frontend (type-check + Vitest) run in parallel |
+| `e2e.yml` | Push → `main` only | Spins up the full stack via `docker compose`, runs Playwright (Chromium) |
+| `release.yml` | Push → `main` or `v*` tag | Builds backend and frontend Docker images in parallel, pushes to `ghcr.io` |
+
+### Docker Image Registry
+
+Images are published to GitHub Container Registry (`ghcr.io`) using the default `GITHUB_TOKEN` — no extra credentials required.
+
+**Tagging strategy:**
+- Push to `main` → `main` + short SHA (e.g. `sha-a1b2c3d`)
+- Push of `v*` tag → semver tags (`1.2.3`, `1.2`) + short SHA
+
+Docker layer caching uses GitHub Actions cache (`type=gha`) to speed up repeat builds.
+
+### Dependency Updates
+
+Dependabot is configured to open weekly PRs for:
+- Gradle dependencies (`/backend`)
+- npm dependencies (`/frontend`, `/e2e` — via `package-ecosystem: npm`, which works for bun projects)
+- Dockerfile base images (`/backend`, `/frontend`)
+- GitHub Actions versions (`/`)

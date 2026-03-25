@@ -12,7 +12,7 @@ Early setup — no source code exists yet. The `.gitignore` is pre-configured fo
 
 ## Planned Tech Stack
 
-- **Backend:** Kotlin + Spring Boot, Java 25 (LTS), Gradle
+- **Backend:** Kotlin + Spring Boot, Java 21 (LTS), Gradle
 - **Frontend:** SvelteKit + TailwindCSS + Vite, PWA via `@vite-pwa/sveltekit`
 - **Database:** PostgreSQL
 - **Auth:** Spring Security 6.3+ (WebAuthn/passkeys + Google OAuth2 + JWT) — no passwords stored
@@ -38,7 +38,7 @@ todo/
 | `e2e.yml` | push → `main` only | full stack via `docker compose`, then Playwright (Chromium only) |
 | `release.yml` | push → `main` or `v*` tag | build + push backend and frontend Docker images to `ghcr.io` in parallel |
 
-Docker images are tagged with branch name, short SHA, and semver (on tags). Layer caching uses GitHub Actions cache (`type=gha`). Dependabot covers Gradle, npm (frontend + e2e), Dockerfiles, and Actions — all on a weekly schedule.
+Docker images are tagged with branch name, short SHA, and semver (on tags). Layer caching uses GitHub Actions cache (`type=gha`). Dependabot covers Gradle, npm (frontend + e2e — Dependabot uses `package-ecosystem: npm` which works for bun projects), Dockerfiles, and Actions — all on a weekly schedule.
 
 ## Planned Commands
 
@@ -52,23 +52,27 @@ Docker images are tagged with branch name, short SHA, and semver (on tags). Laye
 
 ### Frontend
 ```bash
-npm install        # install deps
-npm run dev        # dev server (Vite HMR)
-npm run build      # production build
-npm run check      # Svelte type-check
-npm run test       # Vitest unit tests
+bun install        # install deps
+bun run dev        # dev server (Vite HMR)
+bun run build      # production build
+bun run check      # Svelte type-check
+bun run test       # Vitest unit tests
 ```
 
 ### E2E
 ```bash
-npx playwright test            # all E2E tests
-npx playwright test <file>     # single spec
+bunx playwright test            # all E2E tests
+bunx playwright test <file>     # single spec
 ```
 
 ### Full stack
 ```bash
 docker compose up --build      # start all services
 ```
+
+## Known Constraints & Future Upgrades
+
+- **Java version is 21 (not 25)** — Kotlin 2.2.x does not yet support JVM target 25 (falls back to 24, causing a Java/Kotlin compiler target mismatch at build time). Java 21 LTS is used until Kotlin adds JVM 25 support. Upgrade path: bump `languageVersion` in `build.gradle.kts` and the base images in `backend/Dockerfile` once a Kotlin release lists JVM 25 as a supported target.
 
 ## Key Architecture Decisions
 

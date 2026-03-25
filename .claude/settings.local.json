@@ -3,7 +3,12 @@
     "allow": [
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(bunx playwright:*)",
+      "WebFetch(domain:spring.io)",
+      "WebFetch(domain:github.com)",
+      "Bash(./gradlew test:*)",
+      "Bash(git fetch:*)"
     ]
   }
 }
