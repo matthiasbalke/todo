@@ -15,16 +15,6 @@
 </script>
 
 <div>
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">My Lists</h1>
-    <button
-      onclick={() => { showAddForm = true; }}
-      class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-    >
-      + New List
-    </button>
-  </div>
-
   <div class="grid gap-3">
     {#each lists as list (list.id)}
       <a
@@ -35,17 +25,7 @@
         <div class="flex-1">
           <h2 class="font-semibold text-gray-900">{list.name}</h2>
         </div>
-        <div class="flex items-center gap-2">
-          {#if list.id === 'grocery'}
-            <button
-              onclick={(e) => { e.preventDefault(); e.stopPropagation(); goto(`/lists/${list.id}/grocery`); }}
-              class="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full font-medium hover:bg-green-200 transition-colors"
-            >
-              Grocery mode
-            </button>
-          {/if}
-          <span class="text-gray-300">›</span>
-        </div>
+        <span class="text-gray-300">›</span>
       </a>
     {/each}
   </div>
@@ -57,5 +37,12 @@
         oncancel={() => { showAddForm = false; }}
       />
     </div>
+  {:else}
+    <button
+      onclick={() => { showAddForm = true; }}
+      class="mt-4 w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors"
+    >
+      + New list
+    </button>
   {/if}
 </div>
