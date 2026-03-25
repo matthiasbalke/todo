@@ -12,7 +12,7 @@ Early setup — no source code exists yet. The `.gitignore` is pre-configured fo
 
 ## Planned Tech Stack
 
-- **Backend:** Kotlin + Spring Boot, Java 25 (LTS), Gradle
+- **Backend:** Kotlin + Spring Boot, Java 21 (LTS), Gradle
 - **Frontend:** SvelteKit + TailwindCSS + Vite, PWA via `@vite-pwa/sveltekit`
 - **Database:** PostgreSQL
 - **Auth:** Spring Security 6.3+ (WebAuthn/passkeys + Google OAuth2 + JWT) — no passwords stored
@@ -69,6 +69,10 @@ bunx playwright test <file>     # single spec
 ```bash
 docker compose up --build      # start all services
 ```
+
+## Known Constraints & Future Upgrades
+
+- **Java version is 21 (not 25)** — Kotlin 2.2.x does not yet support JVM target 25 (falls back to 24, causing a Java/Kotlin compiler target mismatch at build time). Java 21 LTS is used until Kotlin adds JVM 25 support. Upgrade path: bump `languageVersion` in `build.gradle.kts` and the base images in `backend/Dockerfile` once a Kotlin release lists JVM 25 as a supported target.
 
 ## Key Architecture Decisions
 

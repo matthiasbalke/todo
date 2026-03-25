@@ -6,15 +6,15 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 
 ## 1. Infrastructure & Project Setup
 
-- [ ] Create `backend/` directory with `build.gradle.kts`, `settings.gradle.kts`, and Gradle wrapper
-- [ ] Configure `build.gradle.kts`: Kotlin, Spring Boot, Java 25 toolchain, dependencies (Spring Web, Security, Data JPA, Flyway, Testcontainers)
-- [ ] Create Spring Boot main application class (`TodoApplication.kt`)
+- [x] Create `backend/` directory with `build.gradle.kts`, `settings.gradle.kts`, and Gradle wrapper
+- [x] Configure `build.gradle.kts`: Kotlin, Spring Boot, Java 21 toolchain, dependencies (Spring Web, Security, Data JPA, Flyway, Testcontainers)
+- [x] Create Spring Boot main application class (`TodoApplication.kt`)
 - [x] Create `frontend/` directory and scaffold SvelteKit project (`bun create svelte`)
 - [x] Install frontend dependencies: TailwindCSS, `@vite-pwa/sveltekit`, `@sveltejs/adapter-node`
 - [x] Configure `tailwind.config.ts` and `vite.config.ts`
 - [x] Create `e2e/` directory, install Playwright (`bunx playwright install --with-deps chromium`)
-- [ ] Create root `docker-compose.yml` with `postgres`, `backend`, `frontend` services
-- [ ] Create `backend/Dockerfile` (multi-stage: Gradle build → JRE 25 runtime)
+- [x] Create root `docker-compose.yml` with `postgres`, `backend`, `frontend` services
+- [x] Create `backend/Dockerfile` (multi-stage: Gradle build → JRE 21 runtime)
 - [ ] Create `frontend/Dockerfile` (multi-stage: bun build → Node runtime)
 - [ ] Verify `docker compose up --build` starts all services and each reaches its health check
 
@@ -22,7 +22,7 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 
 ## 2. Backend — Project Skeleton & Database
 
-- [ ] Create Flyway migration `V1__create_users.sql`: `users`, `webauthn_credentials`, `oauth_identities` tables
+- [x] Create Flyway migration `V1__create_users.sql`: `users`, `webauthn_credentials`, `oauth_identities` tables
 - [ ] Create Flyway migration `V2__create_lists.sql`: `lists`, `list_memberships` tables with indexes
 - [ ] Create Flyway migration `V2b__create_list_groups.sql`: `list_groups` table; add `group_id` (nullable FK) and `sort_order_in_group` columns to `lists`; index on `(user_id)` on `list_groups`
 - [ ] Create Flyway migration `V3__create_categories.sql`: `categories` table
@@ -31,9 +31,9 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [ ] Create Flyway migration `V6__create_attachments.sql`: `item_attachments` table
 - [ ] Create Flyway migration `V7__create_audit_log.sql`: `audit_log` table
 - [ ] Create Flyway migration `V8__create_push_subscriptions.sql`: `push_subscriptions` table
-- [ ] Create `AbstractIntegrationTest` base class that starts a shared Testcontainers PostgreSQL instance (reuse mode)
-- [ ] Write a smoke test that runs all Flyway migrations against the Testcontainers PostgreSQL and confirms schema applies cleanly
-- [ ] Configure `application.yml` with datasource, JPA, Flyway settings (dev profile uses `localhost:5432`)
+- [x] Create `AbstractIntegrationTest` base class that starts a shared Testcontainers PostgreSQL instance (reuse mode)
+- [x] Write a smoke test that runs all Flyway migrations against the Testcontainers PostgreSQL and confirms schema applies cleanly
+- [x] Configure `application.yml` with datasource, JPA, Flyway settings (dev profile uses `localhost:5432`)
 
 ---
 
