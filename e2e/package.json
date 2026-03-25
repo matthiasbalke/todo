@@ -1,0 +1,10 @@
+{
+  "name": "todo-e2e",
+  "private": true,
+  "scripts": {
+    "test": "bunx playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
+  }
+}
