@@ -44,6 +44,12 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 - `id`, `name`, `emoji` (icon), `description`, `createdAt`
 - No single owner — membership roles define access
 - `defaultSortField` (ALPHA | DUE_DATE | STARRED | CREATED | MANUAL), `defaultSortDirection` (ASC | DESC)
+- `groupId` (nullable FK → ListGroup)
+- `sortOrderInGroup` (int — manual order within the group; also used for ungrouped lists)
+
+### ListGroup
+- `id`, `userId` (FK → User), `name`, `sortOrder` (int — manual order per user), `createdAt`
+- Personal: scoped to a single user; not visible to or shared with other list members
 
 ### ListMembership
 - `listId`, `userId`, `role` (OWNER | EDITOR | VIEWER)
@@ -115,6 +121,15 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
   - Created date
   - Manual (drag-and-drop within category groups)
 - Sort is applied **within each category group** (items with no category form their own group)
+
+### List Groups
+- Named collapsible sections on the list index (e.g. "Home", "Work")
+- Per-user: each user manages their own groups independently; grouping does not affect other members of a list
+- A list belongs to at most one group; ungrouped lists appear at the bottom of the index in a distinct section
+- CRUD: any user can create, rename, and delete their own groups
+- Deleting a group does not delete the lists inside it — they become ungrouped
+- Drag-and-drop reordering: groups can be reordered relative to each other; lists within a group can be reordered
+- Ungrouped lists can also be manually reordered among themselves
 
 ### Filtering (per list view)
 - **Hide future items** — when enabled, items with a `dueDate` in the future (i.e. `dueDate > today`) are hidden; items with no due date and items due today or earlier are always shown. Default: **off** (all items visible).
@@ -196,7 +211,7 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 - Mobile-first responsive UI with TailwindCSS
 
 ### Performance
-- PostgreSQL indexes on `(listId, done)`, `(listId, categoryId)`, `(listId, dueDate)`, `(userId)` on memberships, `(itemId)` on assignments
+- PostgreSQL indexes on `(listId, done)`, `(listId, categoryId)`, `(listId, dueDate)`, `(userId)` on memberships, `(itemId)` on assignments, `(user_id)` on `list_groups`
 - Pagination for item lists (cursor-based, page size ~50)
 - List index uses lightweight projections (no items loaded until list is opened)
 - SSE connections are per-list (not global), limiting fan-out scope
@@ -219,6 +234,14 @@ GET    /api/users/me                     ← current user profile
 PUT    /api/users/me                     ← update display name / email
 GET    /api/users/me/deletion-preview    ← returns summary of what will be deleted (for confirmation screen)
 DELETE /api/users/me                     ← delete own account after user confirms summary
+
+GET    /api/list-groups                    ← current user's groups
+POST   /api/list-groups
+PUT    /api/list-groups/{gid}
+DELETE /api/list-groups/{gid}
+PATCH  /api/list-groups/{gid}/order        ← reorder groups (body: {sortOrder})
+PATCH  /api/lists/{id}/group               ← assign list to group or ungrouped (body: {groupId: uuid|null})
+PATCH  /api/lists/{id}/group-order         ← reorder list within its current group/ungrouped section
 
 GET    /api/lists                        ← paginated, lightweight projection
 POST   /api/lists
