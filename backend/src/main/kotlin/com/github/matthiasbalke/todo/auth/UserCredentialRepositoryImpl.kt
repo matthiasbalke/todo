@@ -7,16 +7,17 @@ import org.springframework.security.web.webauthn.api.ImmutablePublicKeyCose
 import org.springframework.security.web.webauthn.management.UserCredentialRepository
 import org.springframework.stereotype.Component
 import java.nio.ByteBuffer
+import java.util.Base64
 import java.util.UUID
 
 @Component
 class UserCredentialRepositoryImpl(
     private val credentialRepository: WebAuthnCredentialRepository,
-    private val userRepository: UserRepository,
 ) : UserCredentialRepository {
 
     override fun save(credentialRecord: CredentialRecord) {
-        val existing = credentialRepository.findByCredentialId(credentialRecord.credentialId.bytes)
+        val id = credentialRecord.credentialId.toBase64Url()
+        val existing = credentialRepository.findByCredentialId(id)
         if (existing != null) {
             existing.signCount = credentialRecord.signatureCount
             credentialRepository.save(existing)
@@ -26,7 +27,7 @@ class UserCredentialRepositoryImpl(
             credentialRepository.save(
                 WebAuthnCredential(
                     userId = userId,
-                    credentialId = credentialRecord.credentialId.bytes,
+                    credentialId = id,
                     publicKey = credentialRecord.publicKey.bytes,
                     signCount = credentialRecord.signatureCount,
                     attestationObject = credentialRecord.attestationObject?.bytes
@@ -37,7 +38,7 @@ class UserCredentialRepositoryImpl(
     }
 
     override fun findByCredentialId(credentialId: Bytes): CredentialRecord? {
-        val credential = credentialRepository.findByCredentialId(credentialId.bytes) ?: return null
+        val credential = credentialRepository.findByCredentialId(credentialId.toBase64Url()) ?: return null
         return credential.toCredentialRecord()
     }
 
@@ -47,18 +48,21 @@ class UserCredentialRepositoryImpl(
     }
 
     override fun delete(credentialId: Bytes) {
-        val credential = credentialRepository.findByCredentialId(credentialId.bytes) ?: return
+        val credential = credentialRepository.findByCredentialId(credentialId.toBase64Url()) ?: return
         credentialRepository.delete(credential)
     }
 
     private fun WebAuthnCredential.toCredentialRecord(): CredentialRecord =
         ImmutableCredentialRecord.builder()
-            .credentialId(Bytes(credentialId))
+            .credentialId(Bytes(Base64.getUrlDecoder().decode(credentialId)))
             .userEntityUserId(Bytes(uuidToBytes(userId)))
             .publicKey(ImmutablePublicKeyCose(publicKey))
             .signatureCount(signCount)
             .attestationObject(Bytes(attestationObject))
             .build()
+
+    private fun Bytes.toBase64Url(): String =
+        Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
 
     private fun uuidToBytes(uuid: UUID): ByteArray {
         val buffer = ByteBuffer.allocate(16)

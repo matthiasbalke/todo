@@ -17,7 +17,7 @@ class WebAuthnCredential(
     val userId: UUID,
 
     @Column(name = "credential_id", nullable = false, unique = true)
-    val credentialId: ByteArray,
+    val credentialId: String,
 
     @Column(name = "public_key", nullable = false)
     val publicKey: ByteArray,
