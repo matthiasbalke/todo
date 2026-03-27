@@ -5,13 +5,17 @@ import io.github.bucket4j.Bucket
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 @Component
-class AuthRateLimitFilter : OncePerRequestFilter() {
+class AuthRateLimitFilter(
+    @Value("\${app.security.rate-limit.capacity:50}") private val capacity: Long,
+    @Value("\${app.security.rate-limit.window-minutes:1}") private val windowMinutes: Long,
+) : OncePerRequestFilter() {
 
     private val buckets = ConcurrentHashMap<String, Bucket>()
 
@@ -36,6 +40,6 @@ class AuthRateLimitFilter : OncePerRequestFilter() {
 
     private fun newBucket(): Bucket =
         Bucket.builder()
-            .addLimit(Bandwidth.builder().capacity(10).refillGreedy(10, Duration.ofMinutes(1)).build())
+            .addLimit(Bandwidth.builder().capacity(capacity).refillGreedy(capacity, Duration.ofMinutes(windowMinutes)).build())
             .build()
 }
