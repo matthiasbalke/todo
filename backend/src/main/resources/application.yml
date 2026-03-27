@@ -26,6 +26,9 @@ jwt:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  security:
+    rate-limit:
+      capacity: 50
 
 management:
   endpoints:

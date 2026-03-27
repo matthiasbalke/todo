@@ -16,4 +16,4 @@ app:
     allowed-origins: http://localhost:5173
   security:
     rate-limit:
-      capacity: 50
+      capacity: 10
