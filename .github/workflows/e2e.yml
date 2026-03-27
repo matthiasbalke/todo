@@ -22,7 +22,7 @@ jobs:
           load: true
           tags: todo-backend:ci
           cache-from: type=gha,scope=backend
-          cache-to: type=gha,mode=max,scope=backend
+          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max,scope=backend' || '' }}
 
       - name: Start postgres and backend
         run: docker compose up postgres backend --wait -d
