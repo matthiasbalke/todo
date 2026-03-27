@@ -1,9 +1,20 @@
 <script lang="ts">
-  import { getCurrentUser } from '$lib/stores/auth.svelte';
   import { goto } from '$app/navigation';
+  import { logout } from '$lib/api/auth';
+  import { clearSession, getAccessToken, getCurrentUser } from '$lib/stores/auth.svelte';
   let { children } = $props();
   const user = getCurrentUser();
   let userMenuOpen = $state(false);
+
+  async function handleLogout() {
+    userMenuOpen = false;
+    const token = getAccessToken();
+    if (token) {
+      await logout(token);
+    }
+    clearSession();
+    await goto('/auth');
+  }
 </script>
 
 <div class="min-h-screen bg-gray-50">
@@ -25,16 +36,16 @@
           class="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-gray-100 transition-colors"
           aria-label="User menu"
         >
-          <span class="text-sm text-gray-500">{user.name}</span>
+          <span class="text-sm text-gray-500">{user?.displayName ?? ''}</span>
           <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold select-none">
-            {user.name[0]}
+            {(user?.displayName ?? '?')[0]}
           </div>
         </button>
 
         {#if userMenuOpen}
           <div class="absolute right-0 top-10 z-20 w-44 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
             <button
-              onclick={() => { userMenuOpen = false; goto('/auth'); }}
+              onclick={handleLogout}
               class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               Log out

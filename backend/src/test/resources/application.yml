@@ -1,0 +1,16 @@
+jwt:
+  # 32-byte base64-encoded key used only in tests; never use in production
+  secret: dGVzdC1zZWNyZXQta2V5LXRoYXQtaXMtbG9uZy1lbm91Z2gtZm9yLUhTMjU2
+  issuer: todo-app-test
+  audience: todo-api-test
+  access-token-ttl: PT15M
+  refresh-token-ttl: P30D
+
+webauthn:
+  rp:
+    id: localhost
+    name: Todo Test
+
+app:
+  cors:
+    allowed-origins: http://localhost:5173
