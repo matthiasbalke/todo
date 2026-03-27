@@ -16,7 +16,7 @@ import java.util.UUID
 class JwtTokenService(private val jwtProperties: JwtProperties) {
 
     private val signingKey by lazy {
-        Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.secret))
+        Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(jwtProperties.secret))
     }
 
     fun generateAccessToken(user: User): String {

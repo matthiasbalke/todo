@@ -2,9 +2,10 @@
  * Passkey (WebAuthn) e2e tests.
  *
  * Each test provisions a virtual FIDO2 authenticator via the Chrome DevTools
- * Protocol before the page loads. The authenticator silently completes every
- * WebAuthn ceremony (register / authenticate) without any UI interaction, which
- * is the standard way to drive WebAuthn flows in Playwright.
+ * Protocol *after* the page has navigated to the app origin. The CDP WebAuthn
+ * domain must be enabled on an active page context (not before any navigation),
+ * otherwise the authenticator is not wired up to the correct security origin
+ * and every ceremony silently times out.
  *
  * Prerequisites: backend running on http://localhost:8080
  * (proxied to /api by the Vite dev server on port 5173).
@@ -41,17 +42,19 @@ function uniqueEmail(): string {
 }
 
 // Register a new account and land on /lists.
+// The virtual authenticator is set up AFTER page.goto() so the CDP session is
+// bound to the correct security origin.
 async function registerPasskey(
 	page: Page,
 	context: BrowserContext,
 	displayName: string,
 	email: string,
 ): Promise<void> {
-	const cdp = await context.newCDPSession(page);
-	await addVirtualAuthenticator(cdp);
-
 	await page.goto('/auth');
 	await waitForHydration(page);
+
+	const cdp = await context.newCDPSession(page);
+	await addVirtualAuthenticator(cdp);
 
 	await page.getByRole('button', { name: 'Create account' }).click();
 	await page.getByPlaceholder('Your name').fill(displayName);
@@ -67,11 +70,11 @@ async function registerPasskey(
 
 test.describe('Passkey registration', () => {
 	test('fills form → passkey ceremony → redirects to /lists', async ({ page, context }) => {
-		const cdp = await context.newCDPSession(page);
-		await addVirtualAuthenticator(cdp);
-
 		await page.goto('/auth');
 		await waitForHydration(page);
+
+		const cdp = await context.newCDPSession(page);
+		await addVirtualAuthenticator(cdp);
 
 		await page.getByRole('button', { name: 'Create account' }).click();
 		await page.getByPlaceholder('Your name').fill('E2E User');
@@ -94,11 +97,12 @@ test.describe('Passkey registration', () => {
 test.describe('Passkey sign-in', () => {
 	test('sign in with passkey after logging out', async ({ page, context }) => {
 		// Register first — the virtual authenticator stores the credential in memory.
+		await page.goto('/auth');
+		await waitForHydration(page);
+
 		const cdp: CDPSession = await context.newCDPSession(page);
 		await addVirtualAuthenticator(cdp);
 
-		await page.goto('/auth');
-		await waitForHydration(page);
 		await page.getByRole('button', { name: 'Create account' }).click();
 		await page.getByPlaceholder('Your name').fill('Bob Passkey');
 		await page.getByPlaceholder('you@example.com').fill(uniqueEmail());
