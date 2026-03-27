@@ -17,7 +17,7 @@ webauthn:
     name: ${WEBAUTHN_RP_NAME:Todo}
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50}
   issuer: ${JWT_ISSUER:todo-app}
   audience: ${JWT_AUDIENCE:todo-api}
   access-token-ttl: PT15M

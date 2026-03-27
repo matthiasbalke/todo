@@ -21,6 +21,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/todo
       SPRING_DATASOURCE_USERNAME: todo
       SPRING_DATASOURCE_PASSWORD: todo
+      JWT_SECRET: ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50
     depends_on:
       postgres:
         condition: service_healthy

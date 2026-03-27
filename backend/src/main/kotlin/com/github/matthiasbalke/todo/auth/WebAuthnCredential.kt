@@ -25,6 +25,9 @@ class WebAuthnCredential(
     @Column(name = "sign_count", nullable = false)
     var signCount: Long = 0,
 
+    @Column(name = "attestation_object", nullable = false)
+    val attestationObject: ByteArray,
+
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now(),
 )

@@ -29,6 +29,8 @@ class UserCredentialRepositoryImpl(
                     credentialId = credentialRecord.credentialId.bytes,
                     publicKey = credentialRecord.publicKey.bytes,
                     signCount = credentialRecord.signatureCount,
+                    attestationObject = credentialRecord.attestationObject?.bytes
+                        ?: error("attestationObject is required on registration"),
                 )
             )
         }
@@ -55,6 +57,7 @@ class UserCredentialRepositoryImpl(
             .userEntityUserId(Bytes(uuidToBytes(userId)))
             .publicKey(ImmutablePublicKeyCose(publicKey))
             .signatureCount(signCount)
+            .attestationObject(Bytes(attestationObject))
             .build()
 
     private fun uuidToBytes(uuid: UUID): ByteArray {
