@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { TodoItem, Category, User, Priority, RecurrenceRule } from '$lib/mock-data';
 
   let {
@@ -19,13 +20,13 @@
 
   const isNew = $derived(!item);
 
-  let title = $state(item?.title ?? '');
-  let notes = $state(item?.notes ?? '');
-  let priority = $state<Priority | ''>(item?.priority ?? '');
-  let dueDate = $state(item?.dueDate ?? '');
-  let categoryId = $state<string>(item?.categoryId ?? '');
-  let assignedUserId = $state<string>(item?.assignedUserId ?? '');
-  let recurrencePreset = $state<string>(getInitialRecurrencePreset(item?.recurrenceRule ?? null));
+  let title = $state(untrack(() => item?.title ?? ''));
+  let notes = $state(untrack(() => item?.notes ?? ''));
+  let priority = $state<Priority | ''>(untrack(() => item?.priority ?? ''));
+  let dueDate = $state(untrack(() => item?.dueDate ?? ''));
+  let categoryId = $state<string>(untrack(() => item?.categoryId ?? ''));
+  let assignedUserId = $state<string>(untrack(() => item?.assignedUserId ?? ''));
+  let recurrencePreset = $state<string>(untrack(() => getInitialRecurrencePreset(item?.recurrenceRule ?? null)));
   let titleInput = $state<HTMLInputElement | null>(null);
 
   function getInitialRecurrencePreset(rule: RecurrenceRule | null): string {
@@ -98,8 +99,9 @@
 
   <div class="grid grid-cols-2 gap-2">
     <div>
-      <label class="text-xs text-gray-500 mb-1 block">Priority</label>
+      <label for="priority" class="text-xs text-gray-500 mb-1 block">Priority</label>
       <select
+        id="priority"
         bind:value={priority}
         class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
@@ -112,8 +114,9 @@
     </div>
 
     <div>
-      <label class="text-xs text-gray-500 mb-1 block">Due Date</label>
+      <label for="dueDate" class="text-xs text-gray-500 mb-1 block">Due Date</label>
       <input
+        id="dueDate"
         type="date"
         bind:value={dueDate}
         class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -121,8 +124,9 @@
     </div>
 
     <div>
-      <label class="text-xs text-gray-500 mb-1 block">Category</label>
+      <label for="categoryId" class="text-xs text-gray-500 mb-1 block">Category</label>
       <select
+        id="categoryId"
         bind:value={categoryId}
         class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
@@ -134,8 +138,9 @@
     </div>
 
     <div>
-      <label class="text-xs text-gray-500 mb-1 block">Assign to</label>
+      <label for="assignedUserId" class="text-xs text-gray-500 mb-1 block">Assign to</label>
       <select
+        id="assignedUserId"
         bind:value={assignedUserId}
         class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
@@ -148,8 +153,9 @@
   </div>
 
   <div>
-    <label class="text-xs text-gray-500 mb-1 block">Recurrence</label>
+    <label for="recurrencePreset" class="text-xs text-gray-500 mb-1 block">Recurrence</label>
     <select
+      id="recurrencePreset"
       bind:value={recurrencePreset}
       class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
     >

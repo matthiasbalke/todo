@@ -4,6 +4,7 @@
   import { getList, saveList, getCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
   import { applyFilters, applySort, groupByCategory } from '$lib/utils';
   import type { Filters } from '$lib/utils';
+  import { untrack } from 'svelte';
   import type { SortField, SortDirection } from '$lib/mock-data';
   import GroceryCategorySection from '$lib/components/GroceryCategorySection.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
@@ -26,8 +27,8 @@
   const list = $derived(getList(data.list.id));
   const categories = $derived(getCategoriesForList(data.list.id));
 
-  let sortField = $state<SortField>(data.list.sortField ?? 'MANUAL');
-  let sortDirection = $state<SortDirection>(data.list.sortDirection ?? 'ASC');
+  let sortField = $state<SortField>(untrack(() => data.list.sortField ?? 'MANUAL'));
+  let sortDirection = $state<SortDirection>(untrack(() => data.list.sortDirection ?? 'ASC'));
 
   const dueDateOptions = [
     { value: 'all', label: 'Any due date' },

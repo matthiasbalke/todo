@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { List } from '$lib/mock-data';
   import { mockUsers } from '$lib/mock-data';
 
@@ -14,7 +15,7 @@
 
   const isNew = $derived(!list);
 
-  let name = $state(list?.name ?? '');
+  let name = $state(untrack(() => list?.name ?? ''));
 
   function extractEmoji(str: string): string {
     const match = str.match(/^\p{Emoji_Presentation}/u);

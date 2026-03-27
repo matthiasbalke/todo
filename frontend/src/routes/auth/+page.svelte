@@ -3,7 +3,7 @@
   import { ApiError, loginWithPasskey, registerWithPasskey } from '$lib/api/auth';
   import { setSession } from '$lib/stores/auth.svelte';
 
-  type Mode = 'idle' | 'register-form' | 'in-progress' | 'error';
+  type Mode = 'idle' | 'register-form' | 'signing-in' | 'registering' | 'error';
 
   let mode = $state<Mode>('idle');
   let errorMessage = $state('');
@@ -17,7 +17,7 @@
   }
 
   async function handleSignIn() {
-    mode = 'in-progress';
+    mode = 'signing-in';
     errorMessage = '';
     try {
       const result = await loginWithPasskey();
@@ -32,7 +32,7 @@
   async function handleRegister(e: Event) {
     e.preventDefault();
     if (!email.trim() || !displayName.trim()) return;
-    mode = 'in-progress';
+    mode = 'registering';
     errorMessage = '';
     try {
       const result = await registerWithPasskey(email.trim(), displayName.trim());
@@ -66,7 +66,7 @@
       </div>
     {/if}
 
-    {#if mode === 'register-form' || mode === 'error'}
+    {#if mode === 'register-form' || mode === 'registering' || mode === 'error'}
       <form onsubmit={handleRegister} class="space-y-4">
         <div>
           <label class="text-sm font-medium text-gray-700 mb-1 block" for="displayName">
@@ -95,10 +95,10 @@
 
         <button
           type="submit"
-          disabled={mode === 'in-progress'}
+          disabled={mode === 'registering'}
           class="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
         >
-          {#if mode === 'in-progress'}
+          {#if mode === 'registering'}
             <span>Creating account…</span>
           {:else}
             <span>🔑</span>
@@ -119,10 +119,10 @@
         <button
           type="button"
           onclick={handleSignIn}
-          disabled={mode === 'in-progress'}
+          disabled={mode === 'signing-in'}
           class="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
         >
-          {#if mode === 'in-progress'}
+          {#if mode === 'signing-in'}
             <span>Waiting for passkey…</span>
           {:else}
             <span>🔑</span>
