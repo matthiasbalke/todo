@@ -59,6 +59,7 @@ class UserCredentialRepositoryImpl(
             .publicKey(ImmutablePublicKeyCose(publicKey))
             .signatureCount(signCount)
             .attestationObject(Bytes(attestationObject))
+            .transports(emptySet())
             .build()
 
     private fun Bytes.toBase64Url(): String =
