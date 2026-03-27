@@ -42,8 +42,8 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
             jsonPath("$.rp.id") { exists() }
             jsonPath("$.user.name") { value(email) }
             // residentKey: required enforced
-            jsonPath("$.authenticatorSelection.residentKey.value") { value("required") }
-            jsonPath("$.authenticatorSelection.userVerification.value") { value("required") }
+            jsonPath("$.authenticatorSelection.residentKey") { value("required") }
+            jsonPath("$.authenticatorSelection.userVerification") { value("required") }
         }
 
         assertNotNull(userRepository.findByEmail(email), "User must be created in DB")
@@ -77,7 +77,7 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
             // empty allowCredentials = discoverable credentials (no email enumeration)
             jsonPath("$.allowCredentials") { isArray() }
             jsonPath("$.allowCredentials.length()") { value(0) }
-            jsonPath("$.userVerification.value") { value("required") }
+            jsonPath("$.userVerification") { value("required") }
         }
     }
 

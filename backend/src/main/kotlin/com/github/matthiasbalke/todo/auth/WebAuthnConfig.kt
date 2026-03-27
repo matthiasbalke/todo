@@ -7,6 +7,7 @@ import org.springframework.security.web.webauthn.api.AuthenticatorSelectionCrite
 import org.springframework.security.web.webauthn.api.PublicKeyCredentialRpEntity
 import org.springframework.security.web.webauthn.api.ResidentKeyRequirement
 import org.springframework.security.web.webauthn.api.UserVerificationRequirement
+import org.springframework.security.web.webauthn.jackson.WebauthnJacksonModule
 import org.springframework.security.web.webauthn.management.UserCredentialRepository
 import org.springframework.security.web.webauthn.management.WebAuthnRelyingPartyOperations
 import org.springframework.security.web.webauthn.management.Webauthn4JRelyingPartyOperations
@@ -17,6 +18,9 @@ class WebAuthnConfig(
     @Value("\${webauthn.rp.name}") private val rpName: String,
     @Value("\${app.cors.allowed-origins}") private val allowedOrigins: String,
 ) {
+
+    @Bean
+    fun webAuthnJacksonModule() = WebauthnJacksonModule()
 
     @Bean
     fun webAuthnRelyingPartyOperations(
