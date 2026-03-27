@@ -10,5 +10,5 @@ export default defineConfig({
       $app: resolve(__dirname, 'node_modules/@sveltejs/kit/src/runtime/app'),
     },
   },
-  test: { environment: 'jsdom', globals: true, include: ['src/**/*.{test,spec}.{js,ts}'] },
+  test: { environment: 'jsdom', globals: true, include: ['src/**/*.{test,spec}.{js,ts}'], setupFiles: ['src/vitest.setup.ts'] },
 });
