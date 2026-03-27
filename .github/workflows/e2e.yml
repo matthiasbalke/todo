@@ -13,6 +13,20 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v7
+        with:
+          context: backend
+          load: true
+          tags: todo-backend:ci
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Start postgres and backend
+        run: docker compose up postgres backend --wait -d
+
       - uses: oven-sh/setup-bun@v2
 
       - name: Install frontend dependencies
@@ -38,3 +52,7 @@ jobs:
           name: playwright-report
           path: e2e/playwright-report/
           retention-days: 7
+
+      - name: Stop services
+        if: always()
+        run: docker compose down
