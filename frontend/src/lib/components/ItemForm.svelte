@@ -17,7 +17,7 @@
     oncancel: () => void;
   } = $props();
 
-  const isNew = !item;
+  const isNew = $derived(!item);
 
   let title = $state(item?.title ?? '');
   let notes = $state(item?.notes ?? '');

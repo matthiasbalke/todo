@@ -6,7 +6,6 @@ import org.springframework.security.web.webauthn.api.ImmutableCredentialRecord
 import org.springframework.security.web.webauthn.api.ImmutablePublicKeyCose
 import org.springframework.security.web.webauthn.management.UserCredentialRepository
 import org.springframework.stereotype.Component
-import java.nio.ByteBuffer
 import java.util.Base64
 import java.util.UUID
 
@@ -64,17 +63,4 @@ class UserCredentialRepositoryImpl(
 
     private fun Bytes.toBase64Url(): String =
         Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
-
-    private fun uuidToBytes(uuid: UUID): ByteArray {
-        val buffer = ByteBuffer.allocate(16)
-        buffer.putLong(uuid.mostSignificantBits)
-        buffer.putLong(uuid.leastSignificantBits)
-        return buffer.array()
-    }
-
-    private fun bytesToUuid(bytes: ByteArray): UUID? {
-        if (bytes.size != 16) return null
-        val buffer = ByteBuffer.wrap(bytes)
-        return UUID(buffer.long, buffer.long)
-    }
 }

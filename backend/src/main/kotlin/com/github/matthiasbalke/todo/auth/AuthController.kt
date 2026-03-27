@@ -207,27 +207,22 @@ class AuthController(
     }
 
     private fun refreshTokenCookie(value: String): ResponseCookie =
+        buildRefreshCookie(value, jwtProperties.refreshTokenTtl)
+
+    private fun clearRefreshCookie(): ResponseCookie =
+        buildRefreshCookie("", java.time.Duration.ZERO)
+
+    private fun buildRefreshCookie(value: String, maxAge: java.time.Duration): ResponseCookie =
         ResponseCookie.from("refreshToken", value)
             .httpOnly(true)
             .secure(true)
             .sameSite("Strict")
             .path("/api/auth")
-            .maxAge(jwtProperties.refreshTokenTtl)
-            .build()
-
-    private fun clearRefreshCookie(): ResponseCookie =
-        ResponseCookie.from("refreshToken", "")
-            .httpOnly(true)
-            .secure(true)
-            .sameSite("Strict")
-            .path("/api/auth")
-            .maxAge(0)
+            .maxAge(maxAge)
             .build()
 
     private fun resolveUserFromUserHandle(userHandle: ByteArray): User? {
-        if (userHandle.size != 16) return null
-        val buffer = java.nio.ByteBuffer.wrap(userHandle)
-        val uuid = UUID(buffer.long, buffer.long)
+        val uuid = bytesToUuid(userHandle) ?: return null
         return userRepository.findById(uuid).orElse(null)
     }
 

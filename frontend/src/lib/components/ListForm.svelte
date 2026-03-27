@@ -12,7 +12,7 @@
     oncancel: () => void;
   } = $props();
 
-  const isNew = !list;
+  const isNew = $derived(!list);
 
   let name = $state(list?.name ?? '');
 

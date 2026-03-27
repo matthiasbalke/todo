@@ -5,7 +5,7 @@ import org.springframework.security.web.webauthn.api.ImmutablePublicKeyCredentia
 import org.springframework.security.web.webauthn.api.PublicKeyCredentialUserEntity
 import org.springframework.security.web.webauthn.management.PublicKeyCredentialUserEntityRepository
 import org.springframework.stereotype.Component
-import java.nio.ByteBuffer
+import java.util.Base64
 import java.util.UUID
 
 @Component
@@ -36,21 +36,8 @@ class PublicKeyCredentialUserEntityRepositoryImpl(
 
     private fun User.toUserEntity(): PublicKeyCredentialUserEntity =
         ImmutablePublicKeyCredentialUserEntity.builder()
-            .id(Bytes.fromBase64(uuidToBase64(id)))
+            .id(Bytes.fromBase64(Base64.getUrlEncoder().withoutPadding().encodeToString(uuidToBytes(id))))
             .name(email)
             .displayName(displayName)
             .build()
-
-    private fun uuidToBase64(uuid: UUID): String {
-        val buffer = ByteBuffer.allocate(16)
-        buffer.putLong(uuid.mostSignificantBits)
-        buffer.putLong(uuid.leastSignificantBits)
-        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(buffer.array())
-    }
-
-    private fun bytesToUuid(bytes: ByteArray): UUID? {
-        if (bytes.size != 16) return null
-        val buffer = ByteBuffer.wrap(bytes)
-        return UUID(buffer.long, buffer.long)
-    }
 }

@@ -10,6 +10,12 @@
   let email = $state('');
   let displayName = $state('');
 
+  function passkeyErrorMessage(err: unknown): string {
+    if (err instanceof DOMException && err.name === 'NotAllowedError') return 'Cancelled — try again';
+    if (err instanceof ApiError && err.status === 429) return 'Too many attempts — please wait a moment';
+    return 'Something went wrong — try again';
+  }
+
   async function handleSignIn() {
     mode = 'in-progress';
     errorMessage = '';
@@ -19,13 +25,7 @@
       await goto('/lists');
     } catch (err) {
       mode = 'error';
-      if (err instanceof DOMException && err.name === 'NotAllowedError') {
-        errorMessage = 'Cancelled — try again';
-      } else if (err instanceof ApiError && err.status === 429) {
-        errorMessage = 'Too many attempts — please wait a moment';
-      } else {
-        errorMessage = 'Something went wrong — try again';
-      }
+      errorMessage = passkeyErrorMessage(err);
     }
   }
 
@@ -40,13 +40,7 @@
       await goto('/lists');
     } catch (err) {
       mode = 'error';
-      if (err instanceof DOMException && err.name === 'NotAllowedError') {
-        errorMessage = 'Cancelled — try again';
-      } else if (err instanceof ApiError && err.status === 429) {
-        errorMessage = 'Too many attempts — please wait a moment';
-      } else {
-        errorMessage = 'Something went wrong — try again';
-      }
+      errorMessage = passkeyErrorMessage(err);
     }
   }
 
