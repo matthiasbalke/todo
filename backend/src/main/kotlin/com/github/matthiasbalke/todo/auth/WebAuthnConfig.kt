@@ -3,10 +3,13 @@ package com.github.matthiasbalke.todo.auth
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.security.web.webauthn.api.ImmutablePublicKeyCredentialRpEntity
+import org.springframework.security.web.webauthn.api.AuthenticatorSelectionCriteria
+import org.springframework.security.web.webauthn.api.PublicKeyCredentialRpEntity
+import org.springframework.security.web.webauthn.api.ResidentKeyRequirement
+import org.springframework.security.web.webauthn.api.UserVerificationRequirement
 import org.springframework.security.web.webauthn.management.UserCredentialRepository
 import org.springframework.security.web.webauthn.management.WebAuthnRelyingPartyOperations
-import org.springframework.security.webauthn4j.Webauthn4JRelyingPartyOperations
+import org.springframework.security.web.webauthn.management.Webauthn4JRelyingPartyOperations
 
 @Configuration
 class WebAuthnConfig(
@@ -20,7 +23,7 @@ class WebAuthnConfig(
         userEntityRepository: PublicKeyCredentialUserEntityRepositoryImpl,
         credentialRepository: UserCredentialRepository,
     ): WebAuthnRelyingPartyOperations {
-        val rp = ImmutablePublicKeyCredentialRpEntity.builder()
+        val rp = PublicKeyCredentialRpEntity.builder()
             .id(rpId)
             .name(rpName)
             .build()
@@ -32,6 +35,18 @@ class WebAuthnConfig(
             add("http://localhost:5173")
         }
 
-        return Webauthn4JRelyingPartyOperations(userEntityRepository, credentialRepository, rp, origins)
+        val ops = Webauthn4JRelyingPartyOperations(userEntityRepository, credentialRepository, rp, origins)
+        ops.setCustomizeCreationOptions { builder ->
+            builder.authenticatorSelection(
+                AuthenticatorSelectionCriteria.builder()
+                    .residentKey(ResidentKeyRequirement.REQUIRED)
+                    .userVerification(UserVerificationRequirement.REQUIRED)
+                    .build()
+            )
+        }
+        ops.setCustomizeRequestOptions { builder ->
+            builder.userVerification(UserVerificationRequirement.REQUIRED)
+        }
+        return ops
     }
 }

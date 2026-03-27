@@ -7,14 +7,18 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.web.webauthn.api.AuthenticatorAssertionResponse
 import org.springframework.security.web.webauthn.api.AuthenticatorAttestationResponse
 import org.springframework.security.web.webauthn.api.PublicKeyCredential
 import org.springframework.security.web.webauthn.api.PublicKeyCredentialCreationOptions
 import org.springframework.security.web.webauthn.api.PublicKeyCredentialRequestOptions
+import org.springframework.security.web.webauthn.management.ImmutablePublicKeyCredentialCreationOptionsRequest
+import org.springframework.security.web.webauthn.management.ImmutablePublicKeyCredentialRequestOptionsRequest
+import org.springframework.security.web.webauthn.management.ImmutableRelyingPartyRegistrationRequest
 import org.springframework.security.web.webauthn.management.RelyingPartyAuthenticationRequest
-import org.springframework.security.web.webauthn.management.RelyingPartyRegistrationRequest
+import org.springframework.security.web.webauthn.management.RelyingPartyPublicKey
 import org.springframework.security.web.webauthn.management.WebAuthnRelyingPartyOperations
 import org.springframework.security.web.webauthn.registration.HttpSessionPublicKeyCredentialCreationOptionsRepository
 import org.springframework.security.web.webauthn.registration.PublicKeyCredentialCreationOptionsRepository
@@ -54,20 +58,18 @@ class AuthController(
     fun registerOptions(
         @RequestBody body: RegisterOptionsRequest,
         request: HttpServletRequest,
+        response: HttpServletResponse,
     ): ResponseEntity<PublicKeyCredentialCreationOptions> {
         // Upsert user — create if new, return existing if already registered
         val user = userRepository.findByEmail(body.email)
             ?: userRepository.save(User(email = body.email, displayName = body.displayName))
 
-        // Store email in session so rpOperations can look up the user entity
-        request.getSession(true).setAttribute(REGISTRATION_USERNAME_ATTR, user.email)
-
         val options = rpOperations.createPublicKeyCredentialCreationOptions(
-            org.springframework.security.web.webauthn.management.WebAuthnRegistrationRequest(
-                request, user.email
+            ImmutablePublicKeyCredentialCreationOptionsRequest(
+                UsernamePasswordAuthenticationToken.authenticated(user.email, null, emptyList())
             )
         )
-        creationOptionsRepository.save(request, null, options)
+        creationOptionsRepository.save(request, response, options)
         return ResponseEntity.ok(options)
     }
 
@@ -81,11 +83,7 @@ class AuthController(
             ?: return ResponseEntity.badRequest().build()
 
         val credentialRecord = rpOperations.registerCredential(
-            RelyingPartyRegistrationRequest.builder()
-                .publicKeyCredentialCreationOptions(savedOptions)
-                .publicKey(credential)
-                .label("Passkey")
-                .build()
+            ImmutableRelyingPartyRegistrationRequest(savedOptions, RelyingPartyPublicKey(credential, "Passkey"))
         )
         request.getSession(false)?.invalidate()
 
@@ -100,13 +98,14 @@ class AuthController(
     @PostMapping("/webauthn/login-options")
     fun loginOptions(
         request: HttpServletRequest,
+        response: HttpServletResponse,
     ): ResponseEntity<PublicKeyCredentialRequestOptions> {
         // No email — discoverable credentials; browser shows credential picker.
         // Empty allowCredentials prevents email enumeration (security.md A07).
-        val options = rpOperations.createPublicKeyCredentialRequestOptions(
-            org.springframework.security.web.webauthn.management.WebAuthnAuthenticationRequest(request)
+        val options = rpOperations.createCredentialRequestOptions(
+            ImmutablePublicKeyCredentialRequestOptionsRequest(null)
         )
-        requestOptionsRepository.save(request, null, options)
+        requestOptionsRepository.save(request, response, options)
         return ResponseEntity.ok(options)
     }
 
@@ -120,14 +119,11 @@ class AuthController(
             ?: return ResponseEntity.badRequest().build()
 
         val auth = rpOperations.authenticate(
-            RelyingPartyAuthenticationRequest.builder()
-                .publicKeyCredentialRequestOptions(savedOptions)
-                .publicKey(credential)
-                .build()
+            RelyingPartyAuthenticationRequest(savedOptions, credential)
         )
         request.getSession(false)?.invalidate()
 
-        val user = resolveUserFromUserHandle(auth.userEntityUserId.bytes)
+        val user = resolveUserFromUserHandle(auth.id.bytes)
             ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
 
         return issueTokens(user, response)
@@ -235,7 +231,4 @@ class AuthController(
         return userRepository.findById(uuid).orElse(null)
     }
 
-    companion object {
-        private const val REGISTRATION_USERNAME_ATTR = "webauthn.registration.username"
-    }
 }

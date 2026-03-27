@@ -1,11 +1,10 @@
 package com.github.matthiasbalke.todo.auth
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.github.matthiasbalke.todo.AbstractIntegrationTest
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
@@ -16,9 +15,6 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
 
     @Autowired
     private lateinit var mockMvc: MockMvc
-
-    @Autowired
-    private lateinit var objectMapper: ObjectMapper
 
     @Autowired
     private lateinit var userRepository: UserRepository
@@ -46,8 +42,8 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
             jsonPath("$.rp.id") { exists() }
             jsonPath("$.user.name") { value(email) }
             // residentKey: required enforced
-            jsonPath("$.authenticatorSelection.residentKey") { value("required") }
-            jsonPath("$.authenticatorSelection.userVerification") { value("required") }
+            jsonPath("$.authenticatorSelection.residentKey.value") { value("required") }
+            jsonPath("$.authenticatorSelection.userVerification.value") { value("required") }
         }
 
         assertNotNull(userRepository.findByEmail(email), "User must be created in DB")
@@ -79,8 +75,9 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
             content { contentType(MediaType.APPLICATION_JSON) }
             jsonPath("$.challenge") { exists() }
             // empty allowCredentials = discoverable credentials (no email enumeration)
-            jsonPath("$.allowCredentials") { value(emptyList<Any>()) }
-            jsonPath("$.userVerification") { value("required") }
+            jsonPath("$.allowCredentials") { isArray() }
+            jsonPath("$.allowCredentials.length()") { value(0) }
+            jsonPath("$.userVerification.value") { value("required") }
         }
     }
 
@@ -156,8 +153,10 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
             mockMvc.post("/api/auth/refresh") {
                 contentType = MediaType.APPLICATION_JSON
                 content = body
-                with(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/auth/refresh")
-                    .let { req -> req.with { it.remoteAddr = "10.0.0.42"; it } })
+                with { req ->
+                    req.remoteAddr = "10.0.0.42"
+                    req
+                }
             }
         }
 

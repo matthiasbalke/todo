@@ -56,7 +56,7 @@ class JwtTokenService(private val jwtProperties: JwtProperties) {
         Jwts.parser()
             .verifyWith(signingKey)
             .requireIssuer(jwtProperties.issuer)
-            .require("aud", jwtProperties.audience)
+            .requireAudience(jwtProperties.audience)
             .build()
             .parseSignedClaims(token)
             .payload

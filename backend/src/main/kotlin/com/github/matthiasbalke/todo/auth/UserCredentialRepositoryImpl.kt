@@ -3,7 +3,7 @@ package com.github.matthiasbalke.todo.auth
 import org.springframework.security.web.webauthn.api.Bytes
 import org.springframework.security.web.webauthn.api.CredentialRecord
 import org.springframework.security.web.webauthn.api.ImmutableCredentialRecord
-import org.springframework.security.web.webauthn.api.PublicKeyCose
+import org.springframework.security.web.webauthn.api.ImmutablePublicKeyCose
 import org.springframework.security.web.webauthn.management.UserCredentialRepository
 import org.springframework.stereotype.Component
 import java.nio.ByteBuffer
@@ -51,9 +51,9 @@ class UserCredentialRepositoryImpl(
 
     private fun WebAuthnCredential.toCredentialRecord(): CredentialRecord =
         ImmutableCredentialRecord.builder()
-            .credentialId(Bytes.fromByteArray(credentialId))
-            .userEntityUserId(Bytes.fromByteArray(uuidToBytes(userId)))
-            .publicKey(PublicKeyCose.fromByteArray(publicKey))
+            .credentialId(Bytes(credentialId))
+            .userEntityUserId(Bytes(uuidToBytes(userId)))
+            .publicKey(ImmutablePublicKeyCose(publicKey))
             .signatureCount(signCount)
             .build()
 
