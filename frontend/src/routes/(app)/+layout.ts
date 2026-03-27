@@ -1,3 +1,5 @@
+export const ssr = false;
+
 import { redirect } from '@sveltejs/kit';
 import { isAuthenticated, restoreSession } from '$lib/stores/auth.svelte';
 
