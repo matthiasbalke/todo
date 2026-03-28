@@ -30,6 +30,34 @@ docker compose up --build
 Frontend: http://localhost:3000
 Backend API: http://localhost:8080
 
+## All-in-one image
+
+A single container bundling nginx, the Spring Boot backend, and the SvelteKit frontend.
+nginx listens on port 80 and routes `/api/*` to Spring Boot (8080) and everything else to
+SvelteKit (3000).
+
+Required env vars:
+
+| Env var | Local | Production | Purpose |
+|---|---|---|---|
+| `ORIGIN` | `http://localhost` | `https://yourdomain.com` | SvelteKit CSRF protection — must include protocol and non-standard port |
+| `WEBAUTHN_RP_ID` | `localhost` | `yourdomain.com` | WebAuthn Relying Party ID — effective domain only, no protocol or port |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost` | `https://yourdomain.com` | Spring CORS + WebAuthn origin allowlist — must match the browser origin (protocol + host + port) |
+| `JWT_SECRET` | *(has insecure default)* | random 256-bit base64 string | Signs JWT tokens — **must be overridden in production** |
+
+```bash
+docker run \
+  -e ORIGIN=http://localhost \
+  -e WEBAUTHN_RP_ID=localhost \
+  -e CORS_ALLOWED_ORIGINS=http://localhost \
+  -e JWT_SECRET=$(openssl rand -base64 32) \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/todo \
+  -e SPRING_DATASOURCE_USERNAME=todo \
+  -e SPRING_DATASOURCE_PASSWORD=todo \
+  -p 80:80 \
+  ghcr.io/matthiasbalke/todo/all-in-one:main
+```
+
 ## Development
 
 **Backend**
