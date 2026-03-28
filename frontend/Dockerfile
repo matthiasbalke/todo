@@ -5,7 +5,7 @@ RUN bun install --frozen-lockfile
 COPY . .
 RUN bun run build
 
-FROM node:22-alpine AS runtime
+FROM node:25-alpine AS runtime
 WORKDIR /app
 COPY --from=build /app/build ./build
 COPY --from=build /app/node_modules ./node_modules
