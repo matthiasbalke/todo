@@ -79,11 +79,15 @@ export function groupByCategory(
   return result;
 }
 
+function midnight(d: Date): Date {
+  const copy = new Date(d);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
 export function formatDueDate(dueDate: string): string {
-  const date = new Date(dueDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  date.setHours(0, 0, 0, 0);
+  const date = midnight(new Date(dueDate));
+  const today = midnight(new Date());
 
   const diff = (date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
 
@@ -95,19 +99,11 @@ export function formatDueDate(dueDate: string): string {
 }
 
 export function isDueDateOverdue(dueDate: string): boolean {
-  const date = new Date(dueDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  date.setHours(0, 0, 0, 0);
-  return date < today;
+  return midnight(new Date(dueDate)) < midnight(new Date());
 }
 
 export function isDueDateToday(dueDate: string): boolean {
-  const date = new Date(dueDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  date.setHours(0, 0, 0, 0);
-  return date.getTime() === today.getTime();
+  return midnight(new Date(dueDate)).getTime() === midnight(new Date()).getTime();
 }
 
 export function recurrenceRuleToHuman(rule: RecurrenceRule): string {

@@ -17,7 +17,7 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 
 | Layer | Technology | Rationale |
 |---|---|---|
-| Backend | Kotlin + Spring Boot | User's domain expertise; Kotlin preferred; Java 25 (LTS) |
+| Backend | Kotlin + Spring Boot | User's domain expertise; Kotlin preferred; Java 21 (LTS) |
 | Frontend | SvelteKit + TailwindCSS | Lightweight, minimal boilerplate, first-class PWA; Tailwind for modern look |
 | Frontend build | Vite | SvelteKit's default build tool; fast HMR in dev, Rollup-based production bundles |
 | Database | PostgreSQL | Relational model fits lists/items/users/sharing well |
@@ -68,9 +68,9 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 - `sortOrder` (int — for manual ordering within category)
 - `recurrenceRule` (nullable JSON):
   ```json
-  { "intervalUnit": "DAYS"|"WEEKS"|"MONTHS", "intervalValue": 5 }
+  { "intervalUnit": "DAYS"|"WEEKS"|"MONTHS"|"YEARS", "intervalValue": 5 }
   ```
-  Examples: every 1 day, every 5 days, every 1 week, every 2 weeks, every 1 month, every 3 months
+  Examples: every 1 day, every 1 week, every 2 weeks, every 1 month, every 3 months, every 1 year
 - `parentItemId` (nullable FK → self — links recurring instances to their template)
 - `createdAt`, `updatedAt`
 
@@ -166,8 +166,8 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 - Inline drag-and-drop reorder (updates `sortOrder`; only active when sort = MANUAL)
 
 ### Recurrence
-- Rule: `intervalValue` + `intervalUnit` (DAYS / WEEKS / MONTHS)
-- Supported examples: every 1 day, every 5 days, every 1 week, every 2 weeks, every 1 month, every 3 months
+- Rule: `intervalValue` + `intervalUnit` (DAYS / WEEKS / MONTHS / YEARS)
+- Supported examples: every 1 day, every 1 week, every 2 weeks, every 1 month, every 3 months, every 1 year
 - On mark-done: backend creates next instance with `dueDate = originalDueDate + interval`
   - The original due date is always used as the base — completing late does not shift future dates
   - If the item had no due date: `dueDate = today + interval`
@@ -267,6 +267,7 @@ GET    /api/lists/{id}/items/{iid}
 PUT    /api/lists/{id}/items/{iid}
 DELETE /api/lists/{id}/items/{iid}
 PATCH  /api/lists/{id}/items/{iid}/done
+PATCH  /api/lists/{id}/items/{iid}/starred
 PATCH  /api/lists/{id}/items/{iid}/order ← manual reorder
 
 POST   /api/lists/{id}/items/{iid}/attachments
@@ -310,7 +311,7 @@ todo/
 │   │   └── service-worker.ts
 │   ├── tailwind.config.ts
 │   └── vite.config.ts
-├── backend/Dockerfile              # Multi-stage: Gradle build → JRE 25 runtime image
+├── backend/Dockerfile              # Multi-stage: Gradle build → JRE 21 runtime image
 ├── frontend/Dockerfile             # Multi-stage: Node build → Node runtime image
 ├── e2e/                            # End-to-end test suite (Playwright)
 ├── .github/
