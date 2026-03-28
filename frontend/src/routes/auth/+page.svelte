@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { ApiError, loginWithPasskey, registerWithPasskey } from '$lib/api/auth';
+  import { ApiError, getAuthConfig, loginWithPasskey, registerWithPasskey } from '$lib/api/auth';
   import { setSession } from '$lib/stores/auth.svelte';
 
   type Mode = 'idle' | 'register-form' | 'signing-in' | 'registering' | 'error';
@@ -9,12 +10,23 @@
   let errorMessage = $state('');
   let email = $state('');
   let displayName = $state('');
+  let registrationEnabled = $state(true);
+
+  onMount(async () => {
+    try {
+      const config = await getAuthConfig();
+      registrationEnabled = config.registrationEnabled;
+    } catch {
+      // default to true if config fetch fails — backend will enforce the real value
+    }
+  });
 
   function passkeyErrorMessage(err: unknown): string {
     if (err instanceof DOMException && err.name === 'NotAllowedError') return 'Cancelled — try again';
+    if (err instanceof ApiError && err.status === 403) return 'Registration is currently disabled';
     if (err instanceof ApiError && err.status === 409) return err.message;
     if (err instanceof ApiError && err.status === 429) return 'Too many attempts — please wait a moment';
-    if (err instanceof ApiError && err.status === 404) return err.message;
+    if (err instanceof ApiError && err.status === 404) return registrationEnabled ? err.message : 'This passkey is not registered';
     return 'Something went wrong — try again';
   }
 
@@ -60,7 +72,7 @@
 <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
   <div class="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
     <h1 class="text-2xl font-bold text-gray-900 mb-2">Welcome</h1>
-    <p class="text-gray-500 text-sm mb-6">Sign in or create an account</p>
+    <p class="text-gray-500 text-sm mb-6">{registrationEnabled ? 'Sign in or create an account' : 'Sign in'}</p>
 
     {#if errorMessage}
       <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -132,22 +144,24 @@
           {/if}
         </button>
 
-        <div class="relative my-4">
-          <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-200"></div>
+        {#if registrationEnabled}
+          <div class="relative my-4">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-200"></div>
+            </div>
+            <div class="relative flex justify-center text-xs text-gray-400">
+              <span class="bg-white px-2">or</span>
+            </div>
           </div>
-          <div class="relative flex justify-center text-xs text-gray-400">
-            <span class="bg-white px-2">or</span>
-          </div>
-        </div>
 
-        <button
-          type="button"
-          onclick={showRegisterForm}
-          class="w-full border border-gray-200 text-gray-700 rounded-lg py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors"
-        >
-          Create account
-        </button>
+          <button
+            type="button"
+            onclick={showRegisterForm}
+            class="w-full border border-gray-200 text-gray-700 rounded-lg py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            Create account
+          </button>
+        {/if}
       </div>
     {/if}
   </div>
