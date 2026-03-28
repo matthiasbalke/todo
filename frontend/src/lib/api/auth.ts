@@ -38,7 +38,14 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 		},
 	});
 	if (!response.ok) {
-		throw new ApiError(response.status, `${response.status} ${response.statusText}`);
+		let message = `${response.status} ${response.statusText}`;
+		try {
+			const body = (await response.json()) as { message?: string };
+			if (typeof body.message === 'string') message = body.message;
+		} catch {
+			// not JSON or no message — use status text fallback
+		}
+		throw new ApiError(response.status, message);
 	}
 	return response.json() as Promise<T>;
 }

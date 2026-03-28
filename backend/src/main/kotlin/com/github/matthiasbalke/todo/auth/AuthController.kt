@@ -38,6 +38,7 @@ class AuthController(
     private val jwtTokenService: JwtTokenService,
     private val rpOperations: WebAuthnRelyingPartyOperations,
     private val jwtProperties: JwtProperties,
+    private val userCredentialRepository: org.springframework.security.web.webauthn.management.UserCredentialRepository,
 ) {
 
     private val creationOptionsRepository: PublicKeyCredentialCreationOptionsRepository =
@@ -51,6 +52,7 @@ class AuthController(
     data class RegisterOptionsRequest(val email: String, val displayName: String)
     data class UserDto(val id: String, val email: String, val displayName: String)
     data class TokenResponse(val accessToken: String, val user: UserDto)
+    data class ErrorResponse(val code: String, val message: String)
 
     // ─── Registration ────────────────────────────────────────────────────────
 
@@ -114,9 +116,15 @@ class AuthController(
         @RequestBody credential: PublicKeyCredential<AuthenticatorAssertionResponse>,
         request: HttpServletRequest,
         response: HttpServletResponse,
-    ): ResponseEntity<TokenResponse> {
+    ): ResponseEntity<*> {
         val savedOptions = requestOptionsRepository.load(request)
-            ?: return ResponseEntity.badRequest().build()
+            ?: return ResponseEntity.badRequest().build<Any>()
+
+        if (userCredentialRepository.findByCredentialId(credential.rawId) == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse("PASSKEY_NOT_REGISTERED",
+                    "This passkey is not registered. Please create an account first."))
+        }
 
         val auth = rpOperations.authenticate(
             RelyingPartyAuthenticationRequest(savedOptions, credential)
@@ -124,7 +132,7 @@ class AuthController(
         request.getSession(false)?.invalidate()
 
         val user = resolveUserFromUserHandle(auth.id.bytes)
-            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build<Any>()
 
         return issueTokens(user, response)
     }
