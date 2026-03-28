@@ -21,5 +21,8 @@ COPY --from=frontend-build /app/build ./frontend/build
 COPY --from=frontend-build /app/node_modules ./frontend/node_modules
 COPY all-in-one/nginx.conf /etc/nginx/nginx.conf
 COPY all-in-one/supervisord.conf /etc/supervisord.conf
+
+ENV NODE_ENV "production"
+
 EXPOSE 80
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]
