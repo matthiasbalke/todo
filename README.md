@@ -43,7 +43,7 @@ Required env vars:
 | `ORIGIN` | `http://localhost` | `https://yourdomain.com` | SvelteKit CSRF protection — must include protocol and non-standard port |
 | `WEBAUTHN_RP_ID` | `localhost` | `yourdomain.com` | WebAuthn Relying Party ID — effective domain only, no protocol or port |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost` | `https://yourdomain.com` | Spring CORS + WebAuthn origin allowlist — must match the browser origin (protocol + host + port) |
-| `JWT_SECRET` | *(has insecure default)* | random 256-bit base64 string | Signs JWT tokens — **must be overridden in production** |
+| `JWT_SECRET` | *(has insecure default — do not use in production)* | `openssl rand -base64 32` → 32 random bytes (256 bits) encoded as base64 | Signs JWT tokens — **must be overridden in production** |
 
 ```bash
 docker run \
