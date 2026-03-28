@@ -27,6 +27,17 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
     @Autowired
     private lateinit var jwtTokenService: JwtTokenService
 
+    // ─── config ───────────────────────────────────────────────────────────────
+
+    @Test
+    fun `config returns registrationEnabled true by default`() {
+        mockMvc.get("/api/auth/config").andExpect {
+            status { isOk() }
+            content { contentType(MediaType.APPLICATION_JSON) }
+            jsonPath("$.registrationEnabled") { value(true) }
+        }
+    }
+
     // ─── register-options ────────────────────────────────────────────────────
 
     @Test

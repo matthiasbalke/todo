@@ -7,6 +7,10 @@ import {
 	type RegistrationResponseJSON,
 } from '@simplewebauthn/browser';
 
+export interface AuthConfig {
+	registrationEnabled: boolean;
+}
+
 export interface AuthUser {
 	id: string;
 	email: string;
@@ -48,6 +52,10 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 		throw new ApiError(response.status, message);
 	}
 	return response.json() as Promise<T>;
+}
+
+export async function getAuthConfig(): Promise<AuthConfig> {
+	return fetchJson<AuthConfig>('/api/auth/config', { method: 'GET' });
 }
 
 export async function getRegisterOptions(

@@ -22,6 +22,7 @@ import org.springframework.security.web.webauthn.management.RelyingPartyPublicKe
 import org.springframework.security.web.webauthn.management.WebAuthnRelyingPartyOperations
 import org.springframework.security.web.webauthn.registration.HttpSessionPublicKeyCredentialCreationOptionsRepository
 import org.springframework.security.web.webauthn.registration.PublicKeyCredentialCreationOptionsRepository
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -39,6 +40,7 @@ class AuthController(
     private val rpOperations: WebAuthnRelyingPartyOperations,
     private val jwtProperties: JwtProperties,
     private val userCredentialRepository: org.springframework.security.web.webauthn.management.UserCredentialRepository,
+    @Value("\${app.registration.enabled:true}") private val registrationEnabled: Boolean,
 ) {
 
     private val creationOptionsRepository: PublicKeyCredentialCreationOptionsRepository =
@@ -53,6 +55,12 @@ class AuthController(
     data class UserDto(val id: String, val email: String, val displayName: String)
     data class TokenResponse(val accessToken: String, val user: UserDto)
     data class ErrorResponse(val code: String, val message: String)
+    data class AuthConfigResponse(val registrationEnabled: Boolean)
+
+    // ─── Config ──────────────────────────────────────────────────────────────
+
+    @GetMapping("/config")
+    fun config() = AuthConfigResponse(registrationEnabled)
 
     // ─── Registration ────────────────────────────────────────────────────────
 
@@ -62,6 +70,10 @@ class AuthController(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ResponseEntity<*> {
+        if (!registrationEnabled) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponse("REGISTRATION_DISABLED", "Registration is currently disabled"))
+        }
         if (userRepository.findByEmail(body.email) != null) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ErrorResponse("EMAIL_ALREADY_REGISTERED",
@@ -83,9 +95,13 @@ class AuthController(
         @RequestBody credential: PublicKeyCredential<AuthenticatorAttestationResponse>,
         request: HttpServletRequest,
         response: HttpServletResponse,
-    ): ResponseEntity<TokenResponse> {
+    ): ResponseEntity<*> {
+        if (!registrationEnabled) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponse("REGISTRATION_DISABLED", "Registration is currently disabled"))
+        }
         val savedOptions = creationOptionsRepository.load(request)
-            ?: return ResponseEntity.badRequest().build()
+            ?: return ResponseEntity.badRequest().build<Any>()
 
         val credentialRecord = rpOperations.registerCredential(
             ImmutableRelyingPartyRegistrationRequest(savedOptions, RelyingPartyPublicKey(credential, "Passkey"))
@@ -93,7 +109,7 @@ class AuthController(
         request.getSession(false)?.invalidate()
 
         val user = resolveUserFromUserHandle(credentialRecord.userEntityUserId.bytes)
-            ?: return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
+            ?: return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build<Any>()
 
         return issueTokens(user, response)
     }
