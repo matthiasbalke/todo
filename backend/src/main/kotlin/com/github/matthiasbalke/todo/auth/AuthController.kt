@@ -61,10 +61,13 @@ class AuthController(
         @RequestBody body: RegisterOptionsRequest,
         request: HttpServletRequest,
         response: HttpServletResponse,
-    ): ResponseEntity<PublicKeyCredentialCreationOptions> {
-        // Upsert user — create if new, return existing if already registered
-        val user = userRepository.findByEmail(body.email)
-            ?: userRepository.save(User(email = body.email, displayName = body.displayName))
+    ): ResponseEntity<*> {
+        if (userRepository.findByEmail(body.email) != null) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorResponse("EMAIL_ALREADY_REGISTERED",
+                    "This email address is already registered."))
+        }
+        val user = userRepository.save(User(email = body.email, displayName = body.displayName))
 
         val options = rpOperations.createPublicKeyCredentialCreationOptions(
             ImmutablePublicKeyCredentialCreationOptionsRequest(

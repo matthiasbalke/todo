@@ -52,7 +52,7 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `register-options returns 200 for existing user without creating duplicate`() {
+    fun `register-options returns 409 with EMAIL_ALREADY_REGISTERED for existing email`() {
         val email = "existing-user@example.com"
         userRepository.save(User(email = email, displayName = "Existing"))
         val body = """{"email":"$email","displayName":"Different Name"}"""
@@ -61,7 +61,9 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
             contentType = MediaType.APPLICATION_JSON
             content = body
         }.andExpect {
-            status { isOk() }
+            status { isEqualTo(409) }
+            jsonPath("$.code") { value("EMAIL_ALREADY_REGISTERED") }
+            jsonPath("$.message") { value("This email address is already registered.") }
         }
     }
 

@@ -12,6 +12,7 @@
 
   function passkeyErrorMessage(err: unknown): string {
     if (err instanceof DOMException && err.name === 'NotAllowedError') return 'Cancelled — try again';
+    if (err instanceof ApiError && err.status === 409) return err.message;
     if (err instanceof ApiError && err.status === 429) return 'Too many attempts — please wait a moment';
     if (err instanceof ApiError && err.status === 404) return err.message;
     return 'Something went wrong — try again';
