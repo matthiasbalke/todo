@@ -4,6 +4,7 @@
   import { getList, saveList, getCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
   import { applyFilters, applySort, groupByCategory } from '$lib/utils';
   import type { Filters } from '$lib/utils';
+  import { untrack } from 'svelte';
   import type { SortField, SortDirection, TodoItem } from '$lib/mock-data';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
   import ItemForm from '$lib/components/ItemForm.svelte';
@@ -20,8 +21,8 @@
     hideFuture: false,
     hideUndated: false
   });
-  let sortField = $state<SortField>(list?.sortField ?? 'MANUAL');
-  let sortDirection = $state<SortDirection>(list?.sortDirection ?? 'ASC');
+  let sortField = $state<SortField>(untrack(() => list?.sortField ?? 'MANUAL'));
+  let sortDirection = $state<SortDirection>(untrack(() => list?.sortDirection ?? 'ASC'));
   let showAddForm = $state(false);
   let showEditForm = $state(false);
   let showCategoryDialog = $state(false);
