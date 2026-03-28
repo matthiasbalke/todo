@@ -101,6 +101,7 @@
 
             {#if editingId === cat.id}
               <!-- Inline edit -->
+              <!-- svelte-ignore a11y_autofocus -->
               <input
                 class="flex-1 text-sm border border-blue-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 bind:value={editingName}

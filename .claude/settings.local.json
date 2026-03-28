@@ -8,7 +8,9 @@
       "WebFetch(domain:spring.io)",
       "WebFetch(domain:github.com)",
       "Bash(./gradlew test:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "WebFetch(domain:mvnrepository.com)",
+      "WebFetch(domain:www.npmjs.com)"
     ]
   }
 }
