@@ -93,6 +93,21 @@ describe('AuthPage', () => {
 		});
 	});
 
+	it('shows passkey-not-registered message on 404 error', async () => {
+		const ApiErrorClass = vi.mocked(authApi).ApiError as typeof authApi.ApiError;
+		const error = new ApiErrorClass(404, 'This passkey is not registered. Please create an account first.');
+		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
+
+		render(AuthPage);
+		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
+
+		await waitFor(() => {
+			expect(
+				screen.getByText('This passkey is not registered. Please create an account first.'),
+			).toBeInTheDocument();
+		});
+	});
+
 	it('calls registerWithPasskey on form submit', async () => {
 		const mockResult = { accessToken: 'tok', user: { id: '1', email: 'a@b.com', displayName: 'A' } };
 		vi.mocked(authApi.registerWithPasskey).mockResolvedValue(mockResult);

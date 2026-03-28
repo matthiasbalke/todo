@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+	ApiError,
 	getLoginOptions,
 	getRegisterOptions,
 	logout,
@@ -111,6 +112,50 @@ describe('auth API client', () => {
 			'/api/auth/refresh',
 			expect.objectContaining({ credentials: 'include', method: 'POST' }),
 		);
+	});
+
+	it('fetchJson surfaces message from structured error body', async () => {
+		fetchSpy.mockReturnValue(
+			Promise.resolve({
+				ok: false,
+				status: 404,
+				statusText: 'Not Found',
+				json: () => Promise.resolve({ message: 'This passkey is not registered. Please create an account first.' }),
+			} as Response),
+		);
+
+		let err: unknown;
+		try {
+			await getLoginOptions();
+		} catch (e) {
+			err = e;
+		}
+
+		expect(err).toBeInstanceOf(ApiError);
+		expect((err as ApiError).status).toBe(404);
+		expect((err as ApiError).message).toBe('This passkey is not registered. Please create an account first.');
+	});
+
+	it('fetchJson falls back to status text when body has no message field', async () => {
+		fetchSpy.mockReturnValue(
+			Promise.resolve({
+				ok: false,
+				status: 500,
+				statusText: 'Internal Server Error',
+				json: () => Promise.resolve({ error: 'unexpected' }),
+			} as Response),
+		);
+
+		let err: unknown;
+		try {
+			await getLoginOptions();
+		} catch (e) {
+			err = e;
+		}
+
+		expect(err).toBeInstanceOf(ApiError);
+		expect((err as ApiError).status).toBe(500);
+		expect((err as ApiError).message).toBe('500 Internal Server Error');
 	});
 
 	it('logout sends POST with Authorization header and credentials:include', async () => {

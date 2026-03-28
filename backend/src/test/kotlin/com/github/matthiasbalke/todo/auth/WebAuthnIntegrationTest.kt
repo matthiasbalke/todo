@@ -5,9 +5,11 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
+import org.springframework.mock.web.MockHttpSession
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
+import java.util.Base64
 import kotlin.test.assertNotNull
 
 @AutoConfigureMockMvc
@@ -50,7 +52,7 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `register-options returns 200 for existing user without creating duplicate`() {
+    fun `register-options returns 409 with EMAIL_ALREADY_REGISTERED for existing email`() {
         val email = "existing-user@example.com"
         userRepository.save(User(email = email, displayName = "Existing"))
         val body = """{"email":"$email","displayName":"Different Name"}"""
@@ -59,7 +61,36 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
             contentType = MediaType.APPLICATION_JSON
             content = body
         }.andExpect {
-            status { isOk() }
+            status { isEqualTo(409) }
+            jsonPath("$.code") { value("EMAIL_ALREADY_REGISTERED") }
+            jsonPath("$.message") { value("This email address is already registered.") }
+        }
+    }
+
+    // ─── login ────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `login returns 404 with PASSKEY_NOT_REGISTERED for unknown credential`() {
+        val loginOptionsSession = mockMvc.post("/api/auth/webauthn/login-options") {
+            contentType = MediaType.APPLICATION_JSON
+            content = "{}"
+        }.andExpect { status { isOk() } }
+         .andReturn().request.session
+
+        val unknownCredId = Base64.getUrlEncoder().withoutPadding()
+            .encodeToString("unknown-credential-id".toByteArray())
+        val body = """{"id":"$unknownCredId","rawId":"$unknownCredId",
+            "response":{"clientDataJSON":"e30","authenticatorData":"e30","signature":"e30"},
+            "type":"public-key"}"""
+
+        mockMvc.post("/api/auth/webauthn/login") {
+            contentType = MediaType.APPLICATION_JSON
+            content = body
+            session = loginOptionsSession as MockHttpSession
+        }.andExpect {
+            status { isNotFound() }
+            jsonPath("$.code") { value("PASSKEY_NOT_REGISTERED") }
+            jsonPath("$.message") { value("This passkey is not registered. Please create an account first.") }
         }
     }
 
