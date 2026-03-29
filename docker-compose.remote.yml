@@ -50,7 +50,7 @@ services:
         condition: service_healthy
 
   all-in-one:
-    image: ghcr.io/matthiasbalke/todo/all-in-one
+    image: ghcr.io/matthiasbalke/todo/all-in-one:main
     ports:
       - "80:80"
     environment:
