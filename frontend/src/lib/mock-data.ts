@@ -42,7 +42,7 @@ export interface TodoItem {
   assignedUserId: string | null;
   recurrenceRule: RecurrenceRule | null;
   parentItemId: string | null;
-  createdByUserId: string;
+  createdByUserId: string | null;
   sortOrder: number;
   createdAt: string;
 }

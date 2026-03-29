@@ -56,7 +56,7 @@
       assignedUserId: assignedUserId || null,
       recurrenceRule: parseRecurrencePreset(recurrencePreset),
       parentItemId: item?.parentItemId ?? null,
-      createdByUserId: item?.createdByUserId ?? '',
+      createdByUserId: item?.createdByUserId ?? null,
       sortOrder: item?.sortOrder ?? 999,
       createdAt: item?.createdAt ?? now
     };

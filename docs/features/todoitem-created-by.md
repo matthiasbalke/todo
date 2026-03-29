@@ -6,7 +6,7 @@ Every `TodoItem` stores the user who created it via a `createdByUserId` field (n
 
 ## Design decisions
 
-- **Non-nullable**: Every item has a creator. Items created by a recurrence trigger inherit the creator of the original item (same user who created the recurrence rule).
+- **Nullable with SET NULL on delete**: When the creator's account is deleted, `createdByUserId` is set to NULL — items in shared lists are preserved and the creator becomes "unknown". CASCADE or RESTRICT would either destroy shared list content or block account deletion entirely.
 - **Set once, never updated**: `createdByUserId` is immutable after creation. It is not exposed as an editable field in the item form.
 - **Stored on the item itself** (not only in AuditLog): allows efficient queries like "show items I created" without joining the audit log table.
 
