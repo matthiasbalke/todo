@@ -1,3 +1,5 @@
+<img src="https://github.com/matthiasbalke/todo/blob/main/docs/images/Todo%20Webbanner%20GitHub.png?raw=true" height="400">
+
 # Todo
 
 A personal/household app for managing todos, grocery shopping, and recurring household tasks.
