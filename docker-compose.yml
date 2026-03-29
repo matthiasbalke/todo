@@ -25,12 +25,19 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  backend-healthcheck:
+    image: dhi.io/curl:8.14.1-dev
+    entrypoint: ["sh", "-c", "trap exit TERM; while true; do sleep 60 & wait; done"]
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      test: ["CMD", "curl", "-sf", "http://backend:8080/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
     build: ./frontend
@@ -39,4 +46,5 @@ services:
     environment:
       ORIGIN: http://localhost:3000
     depends_on:
-      - backend
+      backend-healthcheck:
+        condition: service_healthy

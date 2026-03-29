@@ -1,14 +1,11 @@
-FROM oven/bun:1 AS build
-
-ARG APP_VERSION=0.0.0
-
+FROM dhi.io/bun:1.3.11-alpine3.22-dev AS build
 WORKDIR /app
 COPY package.json bun.lockb ./
 RUN bun install --frozen-lockfile
 COPY . .
 RUN bun run build
 
-FROM node:24-alpine AS runtime
+FROM dhi.io/node:24 AS runtime
 WORKDIR /app
 COPY --from=build /app/build ./build
 COPY --from=build /app/node_modules ./node_modules
