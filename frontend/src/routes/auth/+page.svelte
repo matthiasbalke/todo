@@ -56,6 +56,10 @@
     if (err instanceof ApiError && err.status === 409) return err.message;
     if (err instanceof ApiError && err.status === 429) return 'Too many attempts — please wait a moment';
     if (err instanceof ApiError && err.status === 404) return registrationEnabled ? err.message : 'This passkey is not registered';
+
+    // log unspecific errors to console
+    console.error(err);
+
     return 'Something went wrong — try again';
   }
 
