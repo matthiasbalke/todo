@@ -59,7 +59,7 @@ jobs:
           gradle-version: 9.4.1
 
       - name: Run tests
-        run: gradle test -Prelease
+        run: gradle test --no-daemon -Prelease
         working-directory: backend
 
       - name: Upload test report
