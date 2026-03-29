@@ -36,6 +36,9 @@ export default defineConfig({
           { src: '/icons/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }
         ]
       },
+      workbox: {
+        globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}']
+      },
       devOptions: { enabled: true }
     })
   ]

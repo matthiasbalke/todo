@@ -7,7 +7,8 @@ plugins {
 }
 
 group = "com.github.matthiasbalke"
-version = "0.1.0-SNAPSHOT"
+val versionBase = "0.1.0"
+version = if (hasProperty("release")) versionBase else "$versionBase-SNAPSHOT"
 
 springBoot {
 	buildInfo()

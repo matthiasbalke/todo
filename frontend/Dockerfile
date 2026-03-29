@@ -1,18 +1,16 @@
-FROM oven/bun:1 AS build
+FROM dhi.io/bun:1.3.11-alpine3.22-dev AS build
 WORKDIR /app
 COPY package.json bun.lockb ./
 RUN bun install --frozen-lockfile
 COPY . .
-ARG APP_VERSION=0.0.1
-RUN apt-get update && apt-get install -y --no-install-recommends jq \
-    && jq --arg v "${APP_VERSION}" '.version = $v' package.json > /tmp/pkg.json \
-    && mv /tmp/pkg.json package.json
 RUN bun run build
 
-FROM node:24-alpine AS runtime
+FROM dhi.io/node:24 AS runtime
 WORKDIR /app
 COPY --from=build /app/build ./build
 COPY --from=build /app/node_modules ./node_modules
 EXPOSE 3000
 ENV NODE_ENV=production
+ARG BUILD_NUMBER=0
+ENV APP_BUILD_NUMBER=${BUILD_NUMBER}
 CMD ["node", "build/index.js"]
