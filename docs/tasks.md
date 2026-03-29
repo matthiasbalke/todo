@@ -46,21 +46,21 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [x] Create Flyway migration `V1__create_users.sql`: `users`, `webauthn_credentials`, `oauth_identities` tables
 
 ### Backend
-- [ ] Create `User` JPA entity and `UserRepository`
-- [ ] Create `WebAuthnCredential` JPA entity and repository
+- [x] Create `User` JPA entity and `UserRepository`
+- [x] Create `WebAuthnCredential` JPA entity and repository
 - [ ] Create `OAuthIdentity` JPA entity and repository
-- [ ] Configure Spring Security `SecurityFilterChain`: permit `/api/auth/**`, `/actuator/health`; require JWT for all other `/api/**`
-- [ ] Implement JWT `TokenService`: issue access token + refresh token (HS256, configurable secret + expiry)
-- [ ] Implement `JwtAuthenticationFilter`: validates JWT, sets `SecurityContext`
-- [ ] Implement `POST /api/auth/webauthn/register-options`: returns `PublicKeyCredentialCreationOptions` for given email; creates user if not exists
-- [ ] Implement `POST /api/auth/webauthn/register`: verifies attestation, stores `WebAuthnCredential`, returns JWT pair
-- [ ] Implement `POST /api/auth/webauthn/login-options`: looks up user by email, returns `PublicKeyCredentialRequestOptions`
-- [ ] Implement `POST /api/auth/webauthn/login`: verifies assertion, returns JWT pair
+- [x] Configure Spring Security `SecurityFilterChain`: permit `/api/auth/**`, `/actuator/health`; require JWT for all other `/api/**`
+- [x] Implement JWT `TokenService`: issue access token + refresh token (HS256, configurable secret + expiry)
+- [x] Implement `JwtAuthenticationFilter`: validates JWT, sets `SecurityContext`
+- [x] Implement `POST /api/auth/webauthn/register-options`: returns `PublicKeyCredentialCreationOptions` for given email; creates user if not exists
+- [x] Implement `POST /api/auth/webauthn/register`: verifies attestation, stores `WebAuthnCredential`, returns JWT pair
+- [x] Implement `POST /api/auth/webauthn/login-options`: looks up user by email, returns `PublicKeyCredentialRequestOptions`
+- [x] Implement `POST /api/auth/webauthn/login`: verifies assertion, returns JWT pair
 - [ ] Implement Google OAuth2 login (`GET /api/auth/oauth2/google` redirect + `GET /api/auth/oauth2/callback`): links or creates account by email, returns JWT pair
-- [ ] Implement `POST /api/auth/refresh`: validates refresh token, issues new access token
-- [ ] Implement `POST /api/auth/logout`: invalidates refresh token (server-side blocklist or short expiry)
-- [ ] Write unit tests for `TokenService` (issue, validate, expired, tampered)
-- [ ] Write integration tests for WebAuthn register + login flows (using a test FIDO2 authenticator/stub)
+- [x] Implement `POST /api/auth/refresh`: validates refresh token, issues new access token
+- [x] Implement `POST /api/auth/logout`: invalidates refresh token (server-side blocklist or short expiry)
+- [x] Write unit tests for `TokenService` (issue, validate, expired, tampered)
+- [x] Write integration tests for WebAuthn register + login flows (using a test FIDO2 authenticator/stub)
 
 ### Frontend
 - [x] Create `auth/login/+page.svelte`: email input field, "Continue with passkey" button, "Sign in with Google" button
