@@ -71,6 +71,7 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
   ```
   Examples: every 1 day, every 1 week, every 2 weeks, every 1 month, every 3 months, every 1 year
 - `parentItemId` (nullable FK → self — links recurring instances to their template)
+- `createdByUserId` (FK → User — the user who created this item; set at creation, never updated)
 - `createdAt`, `updatedAt`
 
 ### ItemAssignment

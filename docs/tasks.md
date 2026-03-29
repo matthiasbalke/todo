@@ -177,7 +177,7 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [ ] Create Flyway migration `V4__create_items.sql`: `todo_items`, `item_assignments` tables with indexes (`(list_id, done)`, `(list_id, category_id)`, `(list_id, due_date)`)
 
 ### Backend
-- [ ] Create `TodoItem` JPA entity (all fields per data model) and repository
+- [ ] Create `TodoItem` JPA entity (all fields per data model, including `createdByUserId`) and repository
 - [ ] Create `ItemAssignment` JPA entity and repository
 - [ ] Implement `GET /api/lists/{id}/items`: returns all items with cursor-based pagination (page size 50); VIEWER+
 - [ ] Implement `POST /api/lists/{id}/items`: creates item; EDITOR+
