@@ -96,7 +96,7 @@
   }
 </script>
 
-<div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+<div class="flex-1 flex items-center justify-center p-4">
   {#if mode === 'starting'}
     <div class="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col items-center gap-4">
       <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
