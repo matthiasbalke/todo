@@ -6,7 +6,25 @@ on:
     tags: ['v*']
 
 jobs:
+  compute-version:
+    name: Compute version
+    runs-on: ubuntu-latest
+    outputs:
+      backend-version: ${{ steps.version.outputs.backend }}
+      frontend-version: ${{ steps.version.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Extract versions
+        id: version
+        run: |
+          BACKEND_BASE=$(grep '^version = ' backend/build.gradle.kts \
+            | sed 's/version = "\(.*\)-SNAPSHOT"/\1/')
+          FRONTEND_BASE=$(node -p "require('./frontend/package.json').version")
+          echo "backend=${BACKEND_BASE}.${{ github.run_number }}" >> $GITHUB_OUTPUT
+          echo "frontend=${FRONTEND_BASE}.${{ github.run_number }}" >> $GITHUB_OUTPUT
+
   build-backend:
+    needs: [compute-version]
     name: Build backend image
     uses: docker/github-builder/.github/workflows/build.yml@v1
     permissions:
@@ -19,6 +37,7 @@ jobs:
       platforms: linux/amd64,linux/arm64
       context: backend
       cache: true
+      build-args: APP_VERSION=${{ needs.compute-version.outputs.backend-version }}
       meta-images: ghcr.io/${{ github.repository }}/backend
       meta-tags: |
         type=ref,event=branch
@@ -32,6 +51,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
   build-frontend:
+    needs: [compute-version]
     name: Build frontend image
     uses: docker/github-builder/.github/workflows/build.yml@v1
     permissions:
@@ -44,6 +64,7 @@ jobs:
       platforms: linux/amd64,linux/arm64
       context: frontend
       cache: true
+      build-args: APP_VERSION=${{ needs.compute-version.outputs.frontend-version }}
       meta-images: ghcr.io/${{ github.repository }}/frontend
       meta-tags: |
         type=ref,event=branch
@@ -57,6 +78,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
   build-all-in-one:
+    needs: [compute-version]
     name: Build all-in-one image
     uses: docker/github-builder/.github/workflows/build.yml@v1
     permissions:
@@ -70,6 +92,7 @@ jobs:
       context: .
       file: all-in-one/Dockerfile
       cache: true
+      build-args: APP_VERSION=${{ needs.compute-version.outputs.backend-version }}
       meta-images: ghcr.io/${{ github.repository }}/all-in-one
       meta-tags: |
         type=ref,event=branch
