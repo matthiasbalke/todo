@@ -1,21 +1,19 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import type { List } from '$lib/mock-data';
-  import { mockUsers } from '$lib/mock-data';
 
   let {
     list,
     onsubmit,
     oncancel
   }: {
-    list?: List | null;
-    onsubmit: (list: List) => void;
+    list?: { name: string; emoji: string | null } | null;
+    onsubmit: (data: { name: string; emoji: string }) => void;
     oncancel: () => void;
   } = $props();
 
   const isNew = $derived(!list);
 
-  let name = $state(untrack(() => list?.name ?? ''));
+  let name = $state(untrack(() => list ? `${list.emoji ?? ''}${list.emoji ? ' ' : ''}${list.name}` : ''));
 
   function extractEmoji(str: string): string {
     const match = str.match(/^\p{Emoji_Presentation}/u);
@@ -27,16 +25,7 @@
     const trimmed = name.trim();
     const emoji = extractEmoji(trimmed);
     const displayName = emoji ? trimmed.slice(emoji.length).trimStart() : trimmed;
-    const slug = displayName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const submitted: List = {
-      id: list?.id ?? `${slug}-${(crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`,
-      name: displayName || trimmed,
-      emoji: emoji || '📋',
-      sortField: list?.sortField ?? 'MANUAL',
-      sortDirection: list?.sortDirection ?? 'ASC',
-      ownerId: list?.ownerId ?? mockUsers[0].id
-    };
-    onsubmit(submitted);
+    onsubmit({ name: displayName || trimmed, emoji: emoji || '📋' });
   }
 </script>
 

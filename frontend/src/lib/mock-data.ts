@@ -17,10 +17,11 @@ export interface User {
 export interface List {
   id: string;
   name: string;
-  emoji: string;
-  sortField: SortField;
-  sortDirection: SortDirection;
-  ownerId: string;
+  emoji: string | null;
+  description: string | null;
+  defaultSortField: SortField;
+  defaultSortDirection: SortDirection;
+  createdAt: string;
 }
 
 export interface Category {
@@ -53,9 +54,9 @@ export const mockUsers: User[] = [
 ];
 
 export const mockLists: List[] = [
-  { id: 'grocery', name: 'Grocery', emoji: '🛒', sortField: 'MANUAL', sortDirection: 'ASC', ownerId: 'u1' },
-  { id: 'household', name: 'Household', emoji: '🏠', sortField: 'DUE_DATE', sortDirection: 'ASC', ownerId: 'u1' },
-  { id: 'personal', name: 'Personal', emoji: '📋', sortField: 'STARRED', sortDirection: 'DESC', ownerId: 'u1' }
+  { id: 'grocery', name: 'Grocery', emoji: '🛒', description: null, defaultSortField: 'MANUAL', defaultSortDirection: 'ASC', createdAt: '2024-01-01T00:00:00Z' },
+  { id: 'household', name: 'Household', emoji: '🏠', description: null, defaultSortField: 'DUE_DATE', defaultSortDirection: 'ASC', createdAt: '2024-01-01T00:00:00Z' },
+  { id: 'personal', name: 'Personal', emoji: '📋', description: null, defaultSortField: 'STARRED', defaultSortDirection: 'DESC', createdAt: '2024-01-01T00:00:00Z' }
 ];
 
 export const mockCategories: Category[] = [
