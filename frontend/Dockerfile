@@ -3,6 +3,10 @@ WORKDIR /app
 COPY package.json bun.lockb ./
 RUN bun install --frozen-lockfile
 COPY . .
+ARG APP_VERSION=0.0.1
+RUN apt-get update && apt-get install -y --no-install-recommends jq \
+    && jq --arg v "${APP_VERSION}" '.version = $v' package.json > /tmp/pkg.json \
+    && mv /tmp/pkg.json package.json
 RUN bun run build
 
 FROM node:24-alpine AS runtime

@@ -9,6 +9,10 @@ plugins {
 group = "com.github.matthiasbalke"
 version = "0.1.0-SNAPSHOT"
 
+springBoot {
+	buildInfo()
+}
+
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(21)

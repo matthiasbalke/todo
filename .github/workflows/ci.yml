@@ -7,7 +7,25 @@ on:
     branches: [main]
 
 jobs:
+  compute-version:
+    name: Compute version
+    runs-on: ubuntu-latest
+    outputs:
+      backend-version: ${{ steps.version.outputs.backend }}
+      frontend-version: ${{ steps.version.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Extract versions
+        id: version
+        run: |
+          BACKEND_BASE=$(grep '^version = ' backend/build.gradle.kts \
+            | sed 's/version = "\(.*\)-SNAPSHOT"/\1/')
+          FRONTEND_BASE=$(node -p "require('./frontend/package.json').version")
+          echo "backend=${BACKEND_BASE}.${{ github.run_number }}" >> $GITHUB_OUTPUT
+          echo "frontend=${FRONTEND_BASE}.${{ github.run_number }}" >> $GITHUB_OUTPUT
+
   backend:
+    needs: [compute-version]
     name: Backend
     runs-on: ubuntu-latest
     steps:
@@ -20,7 +38,7 @@ jobs:
           cache: gradle
 
       - name: Build and test
-        run: ./gradlew build test
+        run: ./gradlew build test -Pversion=${{ needs.compute-version.outputs.backend-version }}
         working-directory: backend
 
       - name: Upload test report
@@ -31,6 +49,7 @@ jobs:
           path: backend/build/reports/tests/
 
   frontend:
+    needs: [compute-version]
     name: Frontend
     runs-on: ubuntu-latest
     steps:
@@ -39,6 +58,12 @@ jobs:
       - uses: oven-sh/setup-bun@v2
 
       - run: bun install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Set version
+        run: |
+          jq --arg v "${{ needs.compute-version.outputs.frontend-version }}" '.version = $v' package.json > /tmp/pkg.json
+          mv /tmp/pkg.json package.json
         working-directory: frontend
 
       - name: Type check

@@ -33,6 +33,9 @@ app:
       capacity: 50
 
 management:
+  info:
+    build:
+      enabled: true
   endpoints:
     web:
       exposure:

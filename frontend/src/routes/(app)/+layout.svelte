@@ -17,7 +17,7 @@
   }
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div>
   <header class="bg-white border-b border-gray-100 sticky top-0 z-10">
     <div class="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
       <a href="/lists" class="text-lg font-bold text-gray-900">Todo</a>

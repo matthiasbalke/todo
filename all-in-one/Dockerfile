@@ -1,15 +1,22 @@
+ARG APP_VERSION=0.1.0-SNAPSHOT
+
 # Stage 1: build backend
 FROM gradle:8-jdk21 AS backend-build
+ARG APP_VERSION
 WORKDIR /app
 COPY backend/ .
-RUN ./gradlew bootJar --no-daemon
+RUN ./gradlew bootJar --no-daemon -Pversion=${APP_VERSION}
 
 # Stage 2: build frontend
 FROM oven/bun:1 AS frontend-build
+ARG APP_VERSION
 WORKDIR /app
 COPY frontend/package.json frontend/bun.lockb ./
 RUN bun install --frozen-lockfile
 COPY frontend/ .
+RUN apt-get update && apt-get install -y --no-install-recommends jq \
+    && jq --arg v "${APP_VERSION}" '.version = $v' package.json > /tmp/pkg.json \
+    && mv /tmp/pkg.json package.json
 RUN bun run build
 
 # Stage 3: runtime
