@@ -24,7 +24,7 @@ COPY --from=frontend-build /app/node_modules ./frontend/node_modules
 COPY all-in-one/nginx.conf /etc/nginx/nginx.conf
 COPY all-in-one/supervisord.conf /etc/supervisord.conf
 
-ENV NODE_ENV "production"
+ENV NODE_ENV="production"
 ARG BUILD_NUMBER=0
 ENV APP_BUILD_NUMBER=${BUILD_NUMBER}
 
