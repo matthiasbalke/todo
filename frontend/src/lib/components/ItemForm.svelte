@@ -85,26 +85,7 @@
     />
   </div>
 
-  <div>
-    <textarea
-      bind:value={notes}
-      placeholder="Notes (optional)"
-      rows="2"
-      class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-    ></textarea>
-  </div>
-
   <div class="grid grid-cols-2 gap-2">
-    <div>
-      <label for="dueDate" class="text-xs text-gray-500 mb-1 block">Due Date</label>
-      <input
-        id="dueDate"
-        type="date"
-        bind:value={dueDate}
-        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-    </div>
-
     <div>
       <label for="categoryId" class="text-xs text-gray-500 mb-1 block">Category</label>
       <select
@@ -116,6 +97,33 @@
         {#each categories as cat}
           <option value={cat.id}>{cat.name}</option>
         {/each}
+      </select>
+    </div>
+
+    <div>
+      <label for="dueDate" class="text-xs text-gray-500 mb-1 block">Due Date</label>
+      <input
+        id="dueDate"
+        type="date"
+        bind:value={dueDate}
+        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    <div>
+      <label for="recurrencePreset" class="text-xs text-gray-500 mb-1 block">Recurrence</label>
+      <select
+        id="recurrencePreset"
+        bind:value={recurrencePreset}
+        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="">No recurrence</option>
+        <option value="1_DAYS">Every day</option>
+        <option value="1_WEEKS">Every week</option>
+        <option value="2_WEEKS">Every 2 weeks</option>
+        <option value="1_MONTHS">Every month</option>
+        <option value="3_MONTHS">Every 3 months</option>
+        <option value="1_YEARS">Every year</option>
       </select>
     </div>
 
@@ -135,20 +143,12 @@
   </div>
 
   <div>
-    <label for="recurrencePreset" class="text-xs text-gray-500 mb-1 block">Recurrence</label>
-    <select
-      id="recurrencePreset"
-      bind:value={recurrencePreset}
-      class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-    >
-      <option value="">No recurrence</option>
-      <option value="1_DAYS">Every day</option>
-      <option value="1_WEEKS">Every week</option>
-      <option value="2_WEEKS">Every 2 weeks</option>
-      <option value="1_MONTHS">Every month</option>
-      <option value="3_MONTHS">Every 3 months</option>
-      <option value="1_YEARS">Every year</option>
-    </select>
+    <textarea
+      bind:value={notes}
+      placeholder="Notes (optional)"
+      rows="2"
+      class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+    ></textarea>
   </div>
 
   <div class="flex justify-end gap-2 pt-1">
