@@ -4,7 +4,7 @@
   import { appVersion } from '$lib/version';
   import { getBackendVersion } from '$lib/api/health';
 
-  let { children } = $props();
+  let { children, data } = $props();
 
   let backendVersion = $state<string | null>(null);
   let fetchDone = $state(false);
@@ -21,7 +21,7 @@
     {@render children()}
   </div>
   <footer class="py-4 text-center text-xs text-gray-400">
-    frontend v{appVersion}
+    frontend v{appVersion}{data.buildNumber !== '0' ? `.${data.buildNumber}` : ''}
     {#if backendVersion}
       · backend v{backendVersion}
     {:else if !fetchDone}
