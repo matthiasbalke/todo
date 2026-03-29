@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import type { TodoItem, Category, User, Priority, RecurrenceRule } from '$lib/mock-data';
+  import type { TodoItem, Category, User, RecurrenceRule } from '$lib/mock-data';
 
   let {
     item,
@@ -22,7 +22,6 @@
 
   let title = $state(untrack(() => item?.title ?? ''));
   let notes = $state(untrack(() => item?.notes ?? ''));
-  let priority = $state<Priority | ''>(untrack(() => item?.priority ?? ''));
   let dueDate = $state(untrack(() => item?.dueDate ?? ''));
   let categoryId = $state<string>(untrack(() => item?.categoryId ?? ''));
   let assignedUserId = $state<string>(untrack(() => item?.assignedUserId ?? ''));
@@ -53,7 +52,6 @@
       notes: notes || null,
       done: item?.done ?? false,
       starred: item?.starred ?? false,
-      priority: (priority as Priority) || null,
       dueDate: dueDate || null,
       assignedUserId: assignedUserId || null,
       recurrenceRule: parseRecurrencePreset(recurrencePreset),
@@ -65,7 +63,6 @@
     if (isNew) {
       title = '';
       notes = '';
-      priority = '';
       dueDate = '';
       categoryId = '';
       assignedUserId = '';
@@ -98,21 +95,6 @@
   </div>
 
   <div class="grid grid-cols-2 gap-2">
-    <div>
-      <label for="priority" class="text-xs text-gray-500 mb-1 block">Priority</label>
-      <select
-        id="priority"
-        bind:value={priority}
-        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="">None</option>
-        <option value="URGENT">Urgent</option>
-        <option value="HIGH">High</option>
-        <option value="NORMAL">Normal</option>
-        <option value="LOW">Low</option>
-      </select>
-    </div>
-
     <div>
       <label for="dueDate" class="text-xs text-gray-500 mb-1 block">Due Date</label>
       <input

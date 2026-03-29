@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { TodoItem, Category, User } from '$lib/mock-data';
   import { toggleDone, toggleStarred } from '$lib/stores/items.svelte';
-  import PriorityBadge from './PriorityBadge.svelte';
   import DueDateChip from './DueDateChip.svelte';
   import RecurrenceIndicator from './RecurrenceIndicator.svelte';
 
@@ -37,9 +36,6 @@
       <span class="text-sm font-medium text-gray-900 {item.done ? 'line-through text-gray-400' : ''}">
         {item.title}
       </span>
-      <div class="flex items-center gap-1 flex-shrink-0">
-        <PriorityBadge priority={item.priority} />
-      </div>
     </div>
     <div class="flex items-center gap-2 mt-1 flex-wrap">
       <DueDateChip dueDate={item.dueDate} />

@@ -192,17 +192,16 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 
 ### Frontend
 - [x] Create `(app)/lists/[id]/+page.svelte`: loads items for the list, renders grouped by category
-- [x] Implement `ItemCard.svelte`: shows title, due date, priority badge, starred icon, recurrence indicator, assignee avatars, attachment thumbnail count; tap opens detail drawer
+- [x] Implement `ItemCard.svelte`: shows title, due date, starred icon, recurrence indicator, assignee avatars, attachment thumbnail count; tap opens detail drawer
 - [x] Implement item detail drawer/modal: all fields (title, notes, due date, priority, category, assigned users, recurrence, attachments); edit mode
 - [x] Implement "Create item" inline form or FAB: title input with saved-item autocomplete, optional fields
-- [x] Implement `PriorityBadge.svelte`: color-coded chip for URGENT / HIGH / NORMAL / LOW
 - [x] Implement done toggle: optimistic UI update, calls `PATCH /done`
 - [x] Implement starred toggle: optimistic UI update, calls `PATCH /starred`
 - [ ] Implement delete item: confirmation prompt, calls `DELETE`
 - [ ] Implement drag-and-drop reorder (only shown/active when list sort = MANUAL): calls `PATCH /order`
 - [x] Implement client-side filtering controls: hide future items toggle, hide undated items toggle, starred-only toggle, filter by category dropdown, filter by assignee dropdown
 - [x] Implement client-side sorting: apply current list sort setting within each category group
-- [ ] Write Vitest component tests for `ItemCard` (renders all field combinations) and `PriorityBadge`
+- [ ] Write Vitest component tests for `ItemCard` (renders all field combinations)
 
 ### E2E
 - [ ] E2E: add items to a list, verify they appear in the list detail view
@@ -216,7 +215,7 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [ ] Implement recurrence service: given a completed item with a recurrence rule, compute `nextDueDate`:
   - If item has `dueDate`: `nextDueDate = dueDate + interval`
   - If item has no `dueDate`: `nextDueDate = today + interval`
-- [ ] On mark-done of a recurring item: create new `TodoItem` with `parentItemId` pointing to the just-completed item; inherit title, notes, category, priority, recurrence rule, and assignments
+- [ ] On mark-done of a recurring item: create new `TodoItem` with `parentItemId` pointing to the just-completed item; inherit title, notes, category, recurrence rule, and assignments
 - [ ] Write unit tests for `nextDueDate` computation (every N days/weeks/months/years, with and without due date, late completion does not shift future dates)
 - [ ] Write integration test: mark recurring item done → new item created with correct due date and `parentItemId`
 - [ ] Write integration test: mark recurring item done (no due date) → new item due `today + interval`
@@ -246,7 +245,7 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [ ] Create Flyway migration `V5__create_saved_items.sql`: `saved_items` table
 
 ### Backend
-- [ ] Create `SavedItem` JPA entity (listId, title, notes, categoryId, priority) and repository
+- [ ] Create `SavedItem` JPA entity (listId, title, notes, categoryId) and repository
 - [ ] Implement `GET /api/lists/{id}/saved-items`: returns all saved items; supports `?q=` prefix search for autocomplete; VIEWER+
 - [ ] Implement `POST /api/lists/{id}/saved-items`: creates saved item; EDITOR+
 - [ ] Implement `PUT /api/lists/{id}/saved-items/{sid}`: updates saved item; EDITOR+
@@ -256,7 +255,7 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ### Frontend
 - [ ] Create saved items management screen (accessible from list settings): list, create, edit, delete saved items
 - [ ] Implement autocomplete in "Create item" title input: on each keystroke, call `GET /saved-items?q={prefix}`, show dropdown of matching titles
-- [ ] On suggestion select: pre-fill notes, category, priority from the saved item; title input keeps the selected title
+- [ ] On suggestion select: pre-fill notes, category from the saved item; title input keeps the selected title
 - [ ] Write Vitest component test: autocomplete shows suggestions and pre-fills fields on selection
 
 ---

@@ -6,7 +6,7 @@
 
 A personal/household todo app that covers three use cases in one place:
 1. **Grocery shopping** — items organized by category (e.g. which market to buy from), shared with household members, checked off in real time while shopping, with a dedicated in-store view
-2. **Regular todos** — personal and shared task tracking with due dates, priorities, notes, and attachments
+2. **Regular todos** — personal and shared task tracking with due dates, notes, and attachments
 3. **Recurring household tasks** — chores and routines that repeat on a configurable schedule and auto-regenerate when completed
 
 Accessible from any browser and installable as a PWA on iPhone. Must be performant with >100 lists and lists containing hundreds of items.
@@ -63,7 +63,6 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 ### TodoItem
 - `id`, `listId`, `title`, `notes` (nullable), `done` (bool), `starred` (bool)
 - `dueDate` (nullable date)
-- `priority` (nullable enum: URGENT | HIGH | NORMAL | LOW)
 - `categoryId` (nullable FK → Category)
 - `sortOrder` (int — for manual ordering within category)
 - `recurrenceRule` (nullable JSON):
@@ -80,7 +79,6 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 
 ### SavedItem
 - `id`, `listId`, `title`, `notes` (nullable), `categoryId` (nullable FK → Category)
-- `priority` (nullable enum: URGENT | HIGH | NORMAL | LOW)
 - `createdAt`, `updatedAt`
 - A reusable item template scoped per list (e.g. "Milk", "Vacuum living room")
 - Managed independently from active todo items; does not have done/starred/recurrence state
@@ -145,21 +143,16 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 - Color picker for visual grouping
 - Category groups are the primary organizational unit in both list view and grocery mode
 
-### Priority
-- Fixed levels: **Urgent, High, Normal, Low** (not configurable per list)
-- Items can have no priority set
-- Priority visible as color badge on item cards
-
 ### Saved Items (Item Templates)
 - Each list has its own library of saved items (reusable templates)
 - Managed by EDITOR+ via a dedicated list settings screen
-- Fields per saved item: title, notes, category, priority
+- Fields per saved item: title, notes, category
 - When creating a new todo item, the title input shows autocomplete suggestions from the list's saved items (prefix search)
-- Selecting a suggestion pre-fills all matching fields (title, notes, category, priority) on the new item
+- Selecting a suggestion pre-fills all matching fields (title, notes, category) on the new item
 - Saving a suggestion does not affect the saved item itself — the created item is independent
 
 ### Todo Items
-- **Fields:** title, notes, due date, assigned users (0..many from list members), starred, category, priority, recurrence, photo attachments
+- **Fields:** title, notes, due date, assigned users (0..many from list members), starred, category, recurrence, photo attachments
 - Create, edit, delete (EDITOR+)
 - Toggle done/undone
 - Mark done → triggers recurrence logic if applicable
@@ -307,7 +300,7 @@ todo/
 │   │   ├── lib/
 │   │   │   ├── api/                # Typed API client
 │   │   │   ├── stores/             # Svelte stores (lists, items, user)
-│   │   │   └── components/         # ItemCard, CategoryGroup, PriorityBadge, …
+│   │   │   └── components/         # ItemCard, CategoryGroup, …
 │   │   └── service-worker.ts
 │   ├── tailwind.config.ts
 │   └── vite.config.ts

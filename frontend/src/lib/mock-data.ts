@@ -1,4 +1,3 @@
-export type Priority = 'URGENT' | 'HIGH' | 'NORMAL' | 'LOW';
 export type SortField = 'ALPHA' | 'DUE_DATE' | 'STARRED' | 'CREATED' | 'MANUAL';
 export type SortDirection = 'ASC' | 'DESC';
 export type IntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
@@ -39,7 +38,6 @@ export interface TodoItem {
   notes: string | null;
   done: boolean;
   starred: boolean;
-  priority: Priority | null;
   dueDate: string | null; // ISO date string
   assignedUserId: string | null;
   recurrenceRule: RecurrenceRule | null;
@@ -84,29 +82,29 @@ const lastMonthStr = lastMonth.toISOString().split('T')[0];
 
 export const mockItems: TodoItem[] = [
   // Grocery - Produce
-  { id: 'i1', listId: 'grocery', categoryId: 'c-produce', title: 'Apples', notes: 'Get Braeburn if available', done: false, starred: true, priority: 'NORMAL', dueDate: todayStr, assignedUserId: 'u1', recurrenceRule: null, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
-  { id: 'i2', listId: 'grocery', categoryId: 'c-produce', title: 'Bananas', notes: null, done: true, starred: false, priority: 'LOW', dueDate: null, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 2, createdAt: lastMonthStr },
-  { id: 'i3', listId: 'grocery', categoryId: 'c-produce', title: 'Spinach', notes: null, done: false, starred: false, priority: null, dueDate: null, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 3, createdAt: lastMonthStr },
+  { id: 'i1', listId: 'grocery', categoryId: 'c-produce', title: 'Apples', notes: 'Get Braeburn if available', done: false, starred: true, dueDate: todayStr, assignedUserId: 'u1', recurrenceRule: null, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
+  { id: 'i2', listId: 'grocery', categoryId: 'c-produce', title: 'Bananas', notes: null, done: true, starred: false, dueDate: null, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 2, createdAt: lastMonthStr },
+  { id: 'i3', listId: 'grocery', categoryId: 'c-produce', title: 'Spinach', notes: null, done: false, starred: false, dueDate: null, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 3, createdAt: lastMonthStr },
   // Grocery - Dairy
-  { id: 'i4', listId: 'grocery', categoryId: 'c-dairy', title: 'Whole Milk', notes: null, done: false, starred: false, priority: 'HIGH', dueDate: yesterdayStr, assignedUserId: 'u2', recurrenceRule: { intervalUnit: 'WEEKS', intervalValue: 1 }, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
-  { id: 'i5', listId: 'grocery', categoryId: 'c-dairy', title: 'Greek Yogurt', notes: null, done: true, starred: false, priority: 'NORMAL', dueDate: null, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 2, createdAt: lastMonthStr },
-  { id: 'i6', listId: 'grocery', categoryId: 'c-dairy', title: 'Cheddar Cheese', notes: null, done: false, starred: true, priority: null, dueDate: nextWeekStr, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 3, createdAt: lastMonthStr },
+  { id: 'i4', listId: 'grocery', categoryId: 'c-dairy', title: 'Whole Milk', notes: null, done: false, starred: false, dueDate: yesterdayStr, assignedUserId: 'u2', recurrenceRule: { intervalUnit: 'WEEKS', intervalValue: 1 }, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
+  { id: 'i5', listId: 'grocery', categoryId: 'c-dairy', title: 'Greek Yogurt', notes: null, done: true, starred: false, dueDate: null, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 2, createdAt: lastMonthStr },
+  { id: 'i6', listId: 'grocery', categoryId: 'c-dairy', title: 'Cheddar Cheese', notes: null, done: false, starred: true, dueDate: nextWeekStr, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 3, createdAt: lastMonthStr },
   // Grocery - Bakery
-  { id: 'i7', listId: 'grocery', categoryId: 'c-bakery', title: 'Sourdough Bread', notes: null, done: false, starred: false, priority: 'URGENT', dueDate: todayStr, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
+  { id: 'i7', listId: 'grocery', categoryId: 'c-bakery', title: 'Sourdough Bread', notes: null, done: false, starred: false, dueDate: todayStr, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
   // Grocery - uncategorized
-  { id: 'i8', listId: 'grocery', categoryId: null, title: 'Olive Oil', notes: 'Extra virgin, cold pressed', done: false, starred: false, priority: 'LOW', dueDate: null, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
+  { id: 'i8', listId: 'grocery', categoryId: null, title: 'Olive Oil', notes: 'Extra virgin, cold pressed', done: false, starred: false, dueDate: null, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
   // Household - Cleaning
-  { id: 'i9', listId: 'household', categoryId: 'c-cleaning', title: 'Clean bathrooms', notes: null, done: true, starred: false, priority: 'HIGH', dueDate: yesterdayStr, assignedUserId: 'u1', recurrenceRule: { intervalUnit: 'WEEKS', intervalValue: 2 }, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
-  { id: 'i10', listId: 'household', categoryId: 'c-cleaning', title: 'Vacuum living room', notes: null, done: false, starred: false, priority: 'NORMAL', dueDate: todayStr, assignedUserId: null, recurrenceRule: { intervalUnit: 'WEEKS', intervalValue: 1 }, parentItemId: null, sortOrder: 2, createdAt: lastMonthStr },
-  { id: 'i11', listId: 'household', categoryId: 'c-cleaning', title: 'Mop kitchen floor', notes: null, done: false, starred: false, priority: 'LOW', dueDate: nextWeekStr, assignedUserId: null, recurrenceRule: { intervalUnit: 'WEEKS', intervalValue: 2 }, parentItemId: null, sortOrder: 3, createdAt: lastMonthStr },
+  { id: 'i9', listId: 'household', categoryId: 'c-cleaning', title: 'Clean bathrooms', notes: null, done: true, starred: false, dueDate: yesterdayStr, assignedUserId: 'u1', recurrenceRule: { intervalUnit: 'WEEKS', intervalValue: 2 }, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
+  { id: 'i10', listId: 'household', categoryId: 'c-cleaning', title: 'Vacuum living room', notes: null, done: false, starred: false, dueDate: todayStr, assignedUserId: null, recurrenceRule: { intervalUnit: 'WEEKS', intervalValue: 1 }, parentItemId: null, sortOrder: 2, createdAt: lastMonthStr },
+  { id: 'i11', listId: 'household', categoryId: 'c-cleaning', title: 'Mop kitchen floor', notes: null, done: false, starred: false, dueDate: nextWeekStr, assignedUserId: null, recurrenceRule: { intervalUnit: 'WEEKS', intervalValue: 2 }, parentItemId: null, sortOrder: 3, createdAt: lastMonthStr },
   // Household - Maintenance
-  { id: 'i12', listId: 'household', categoryId: 'c-maintenance', title: 'Replace HVAC filter', notes: 'Use MERV-11 or higher', done: false, starred: true, priority: 'HIGH', dueDate: yesterdayStr, assignedUserId: null, recurrenceRule: { intervalUnit: 'MONTHS', intervalValue: 3 }, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
-  { id: 'i13', listId: 'household', categoryId: 'c-maintenance', title: 'Check smoke detectors', notes: null, done: false, starred: false, priority: 'URGENT', dueDate: nextWeekStr, assignedUserId: 'u1', recurrenceRule: { intervalUnit: 'MONTHS', intervalValue: 6 }, parentItemId: null, sortOrder: 2, createdAt: lastMonthStr },
+  { id: 'i12', listId: 'household', categoryId: 'c-maintenance', title: 'Replace HVAC filter', notes: 'Use MERV-11 or higher', done: false, starred: true, dueDate: yesterdayStr, assignedUserId: null, recurrenceRule: { intervalUnit: 'MONTHS', intervalValue: 3 }, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
+  { id: 'i13', listId: 'household', categoryId: 'c-maintenance', title: 'Check smoke detectors', notes: null, done: false, starred: false, dueDate: nextWeekStr, assignedUserId: 'u1', recurrenceRule: { intervalUnit: 'MONTHS', intervalValue: 6 }, parentItemId: null, sortOrder: 2, createdAt: lastMonthStr },
   // Personal - Health
-  { id: 'i14', listId: 'personal', categoryId: 'c-health', title: 'Schedule dentist appointment', notes: null, done: false, starred: false, priority: 'HIGH', dueDate: nextWeekStr, assignedUserId: null, recurrenceRule: { intervalUnit: 'MONTHS', intervalValue: 6 }, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
-  { id: 'i15', listId: 'personal', categoryId: 'c-health', title: 'Morning run', notes: 'At least 5km', done: true, starred: true, priority: 'NORMAL', dueDate: todayStr, assignedUserId: null, recurrenceRule: { intervalUnit: 'DAYS', intervalValue: 1 }, parentItemId: null, sortOrder: 2, createdAt: lastMonthStr },
+  { id: 'i14', listId: 'personal', categoryId: 'c-health', title: 'Schedule dentist appointment', notes: null, done: false, starred: false, dueDate: nextWeekStr, assignedUserId: null, recurrenceRule: { intervalUnit: 'MONTHS', intervalValue: 6 }, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
+  { id: 'i15', listId: 'personal', categoryId: 'c-health', title: 'Morning run', notes: 'At least 5km', done: true, starred: true, dueDate: todayStr, assignedUserId: null, recurrenceRule: { intervalUnit: 'DAYS', intervalValue: 1 }, parentItemId: null, sortOrder: 2, createdAt: lastMonthStr },
   // Personal - Finance
-  { id: 'i16', listId: 'personal', categoryId: 'c-finance', title: 'Review monthly budget', notes: null, done: false, starred: false, priority: 'NORMAL', dueDate: nextWeekStr, assignedUserId: null, recurrenceRule: { intervalUnit: 'MONTHS', intervalValue: 1 }, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
+  { id: 'i16', listId: 'personal', categoryId: 'c-finance', title: 'Review monthly budget', notes: null, done: false, starred: false, dueDate: nextWeekStr, assignedUserId: null, recurrenceRule: { intervalUnit: 'MONTHS', intervalValue: 1 }, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr },
   // Personal - uncategorized
-  { id: 'i17', listId: 'personal', categoryId: null, title: 'Read book', notes: 'Currently reading: The Pragmatic Programmer', done: false, starred: false, priority: null, dueDate: null, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr }
+  { id: 'i17', listId: 'personal', categoryId: null, title: 'Read book', notes: 'Currently reading: The Pragmatic Programmer', done: false, starred: false, dueDate: null, assignedUserId: null, recurrenceRule: null, parentItemId: null, sortOrder: 1, createdAt: lastMonthStr }
 ];
