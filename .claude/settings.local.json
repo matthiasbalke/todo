@@ -15,7 +15,8 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:mvnrepository.com)",
       "WebFetch(domain:www.npmjs.com)",
-      "Skill(commit-commands:commit-push-pr)"
+      "Skill(commit-commands:commit-push-pr)",
+      "Skill(commit-commands:commit)"
     ]
   }
 }
