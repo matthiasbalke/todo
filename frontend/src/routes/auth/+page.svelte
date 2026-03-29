@@ -50,7 +50,9 @@
 
   function passkeyErrorMessage(err: unknown): string {
     if (err instanceof DOMException && err.name === 'NotAllowedError') return 'Cancelled — try again';
-    if (err instanceof ApiError && err.status === 403) return 'Registration is currently disabled';
+    if (err instanceof DOMException && err.name === 'SecurityError') return 'Passkey origin not allowed — check the server configuration';
+    if (err instanceof ApiError && err.status === 403 && err.code === 'REGISTRATION_DISABLED') return 'Registration is currently disabled';
+    if (err instanceof ApiError && err.status === 403) return 'Passkey origin not allowed — check the server configuration';
     if (err instanceof ApiError && err.status === 409) return err.message;
     if (err instanceof ApiError && err.status === 429) return 'Too many attempts — please wait a moment';
     if (err instanceof ApiError && err.status === 404) return registrationEnabled ? err.message : 'This passkey is not registered';

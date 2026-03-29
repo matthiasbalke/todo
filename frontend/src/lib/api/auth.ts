@@ -27,6 +27,7 @@ export class ApiError extends Error {
 	constructor(
 		public readonly status: number,
 		message: string,
+		public readonly code?: string,
 	) {
 		super(message);
 	}
@@ -44,9 +45,11 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 	if (!response.ok) {
 		let message = `${response.status} ${response.statusText}`;
 		try {
-			const body = (await response.json()) as { message?: string };
+			const body = (await response.json()) as { message?: string; code?: string };
 			if (typeof body.message === 'string') message = body.message;
-		} catch {
+			throw new ApiError(response.status, message, body.code ?? undefined);
+		} catch (e) {
+			if (e instanceof ApiError) throw e;
 			// not JSON or no message — use status text fallback
 		}
 		throw new ApiError(response.status, message);
