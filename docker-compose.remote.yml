@@ -14,7 +14,7 @@ services:
       retries: 10
 
   backend:
-    image: ghcr.io/matthiasbalke/todo/backend:main
+    image: backend
     ports:
       - "8080:8080"
     environment:
@@ -47,4 +47,18 @@ services:
       ORIGIN: http://localhost:3000
     depends_on:
       backend-healthcheck:
+        condition: service_healthy
+
+  all-in-one:
+    image: ghcr.io/matthiasbalke/todo/all-in-one:main
+    ports:
+      - "80:80"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/todo
+      SPRING_DATASOURCE_USERNAME: todo
+      SPRING_DATASOURCE_PASSWORD: todo
+      JWT_SECRET: ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50
+      ORIGIN: http://localhost:3000
+    depends_on:
+      postgres:
         condition: service_healthy

@@ -1,10 +1,8 @@
-ARG APP_VERSION=0.1.0-SNAPSHOT
-
 # Stage 1: build backend
 FROM dhi.io/gradle:9.4.1-r1-jdk21-alpine3.23-dev AS backend-build
 WORKDIR /app
 COPY backend/ .
-RUN gradle bootJar --no-daemon -Pversion=${APP_VERSION}
+RUN gradle bootJar --no-daemon -Prelease
 
 # Stage 2: build frontend
 FROM dhi.io/bun:1.3.11-alpine3.22-dev AS frontend-build
