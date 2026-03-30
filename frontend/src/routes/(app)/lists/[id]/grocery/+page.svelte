@@ -7,13 +7,17 @@
   import { untrack } from 'svelte';
   import type { SortField, SortDirection } from '$lib/mock-data';
   import { loadListPrefs, saveListPrefs } from '$lib/listPrefs';
+  import { loadListCategoryState, saveListCategoryState } from '$lib/listCategoryState';
   import GroceryCategorySection from '$lib/components/GroceryCategorySection.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
 
   let { data }: { data: PageData } = $props();
 
-  let collapsedSections = $state<Set<string | null>>(new Set());
+  const _savedCategoryState = untrack(() => loadListCategoryState(data.list.id));
+  let collapsedSections = $state<Set<string | null>>(
+    new Set(Object.entries(_savedCategoryState?.collapsed ?? {}).filter(([, v]) => v).map(([k]) => k === '__null__' ? null : k))
+  );
   let menuOpen = $state(false);
   let sortSubmenuOpen = $state(false);
   let filterSubmenuOpen = $state(false);
@@ -37,6 +41,13 @@
 
   $effect(() => {
     saveListPrefs(data.list.id, { sortField, sortDirection, ...filters });
+  });
+  $effect(() => {
+    const collapsed: Record<string, boolean> = {};
+    for (const k of collapsedSections) {
+      collapsed[k ?? '__null__'] = true;
+    }
+    saveListCategoryState(data.list.id, { collapsed, doneCollapsed: {} });
   });
 
   const dueDateOptions = [

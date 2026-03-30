@@ -8,6 +8,7 @@
   import { untrack } from 'svelte';
   import type { SortField, SortDirection, TodoItem } from '$lib/mock-data';
   import { loadListPrefs, saveListPrefs } from '$lib/listPrefs';
+  import { loadListCategoryState, saveListCategoryState } from '$lib/listCategoryState';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
   import ItemForm from '$lib/components/ItemForm.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
@@ -25,6 +26,9 @@
   $effect(() => { loadItemsForList(data.id); });
 
   const _savedPrefs = untrack(() => loadListPrefs(data.id));
+  const _savedCategoryState = untrack(() => loadListCategoryState(data.id));
+  let collapsedMap = $state<Record<string, boolean>>(_savedCategoryState?.collapsed ?? {});
+  let doneCollapsedMap = $state<Record<string, boolean>>(_savedCategoryState?.doneCollapsed ?? {});
   let filters = $state<Filters>({
     starredOnly: _savedPrefs?.starredOnly ?? false,
     hideFuture: _savedPrefs?.hideFuture ?? false,
@@ -35,6 +39,9 @@
 
   $effect(() => {
     saveListPrefs(data.id, { sortField, sortDirection, ...filters });
+  });
+  $effect(() => {
+    saveListCategoryState(data.id, { collapsed: collapsedMap, doneCollapsed: doneCollapsedMap });
   });
   let showAddForm = $state(false);
   let showEditForm = $state(false);
@@ -271,6 +278,10 @@
           allCategories={categories}
           users={data.users}
           hideDone={isHideDone(data.id)}
+          collapsed={collapsedMap[key ?? '__null__'] ?? false}
+          doneCollapsed={doneCollapsedMap[key ?? '__null__'] ?? true}
+          oncollapsedchange={(v) => { collapsedMap = { ...collapsedMap, [key ?? '__null__']: v }; }}
+          ondonecollapsedchange={(v) => { doneCollapsedMap = { ...doneCollapsedMap, [key ?? '__null__']: v }; }}
         />
       {/each}
     </div>
