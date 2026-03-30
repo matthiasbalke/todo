@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { untrack, onMount } from 'svelte';
   import type { TodoItem, Category, User, RecurrenceRule } from '$lib/mock-data';
 
   let {
@@ -27,6 +27,8 @@
   let assignedUserId = $state<string>(untrack(() => item?.assignedUserIds[0] ?? ''));
   let recurrencePreset = $state<string>(untrack(() => getInitialRecurrencePreset(item?.recurrenceRule ?? null)));
   let titleInput = $state<HTMLInputElement | null>(null);
+
+  onMount(() => titleInput?.focus());
 
   function getInitialRecurrencePreset(rule: RecurrenceRule | null): string {
     if (!rule) return '';

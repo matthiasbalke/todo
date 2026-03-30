@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { untrack, onMount } from 'svelte';
 
   let {
     list,
@@ -14,6 +14,9 @@
   const isNew = $derived(!list);
 
   let name = $state(untrack(() => list ? `${list.emoji ?? ''}${list.emoji ? ' ' : ''}${list.name}` : ''));
+  let nameInput = $state<HTMLInputElement | null>(null);
+
+  onMount(() => nameInput?.focus());
 
   function extractEmoji(str: string): string {
     const match = str.match(/^\p{Emoji_Presentation}/u);
@@ -32,6 +35,7 @@
 <form onsubmit={handleSubmit} class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
   <input
     type="text"
+    bind:this={nameInput}
     bind:value={name}
     onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit(e); } }}
     placeholder="List name"
