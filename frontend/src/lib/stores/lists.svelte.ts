@@ -1,16 +1,19 @@
-import { mockCategories } from '$lib/mock-data';
 import type { List, Category, SortField, SortDirection } from '$lib/mock-data';
 import {
 	getLists as apiGetLists,
 	createList as apiCreateList,
 	updateList as apiUpdateList,
 	deleteList as apiDeleteList,
+	getCategories as apiGetCategories,
+	createCategory as apiCreateCategory,
+	updateCategory as apiUpdateCategory,
+	deleteCategory as apiDeleteCategory,
 	type CreateListRequest,
 	type UpdateListRequest,
 } from '$lib/api/lists';
 
 let lists = $state<List[]>([]);
-let categories = $state<Category[]>([...mockCategories]);
+let categories = $state<Category[]>([]);
 let hideDoneMap = $state<Map<string, boolean>>(new Map());
 let loading = $state(false);
 
@@ -93,13 +96,42 @@ export function getCategoriesForList(listId: string): Category[] {
   return categories.filter(c => c.listId === listId);
 }
 
-export function saveCategory(updated: Category) {
-  const idx = categories.findIndex(c => c.id === updated.id);
-  if (idx >= 0) categories[idx] = updated;
-  else categories.push(updated);
+export async function loadCategoriesForList(listId: string): Promise<void> {
+  const dtos = await apiGetCategories(listId);
+  const loaded: Category[] = dtos.map(dto => ({
+    id: dto.id,
+    listId: dto.listId,
+    name: dto.name,
+    color: dto.color,
+    sortOrder: dto.sortOrder,
+  }));
+  // Replace all categories for this list with fresh data from the API
+  const others = categories.filter(c => c.listId !== listId);
+  categories = [...others, ...loaded];
 }
 
-export function deleteCategory(id: string) {
+export async function saveCategory(updated: Category): Promise<void> {
+  const existing = categories.find(c => c.id === updated.id);
+  if (existing) {
+    const dto = await apiUpdateCategory(updated.listId, updated.id, {
+      name: updated.name,
+      color: updated.color,
+      sortOrder: updated.sortOrder,
+    });
+    const idx = categories.findIndex(c => c.id === updated.id);
+    if (idx >= 0) categories[idx] = { id: dto.id, listId: dto.listId, name: dto.name, color: dto.color, sortOrder: dto.sortOrder };
+  } else {
+    const dto = await apiCreateCategory(updated.listId, {
+      name: updated.name,
+      color: updated.color,
+      sortOrder: updated.sortOrder,
+    });
+    categories.push({ id: dto.id, listId: dto.listId, name: dto.name, color: dto.color, sortOrder: dto.sortOrder });
+  }
+}
+
+export async function deleteCategory(listId: string, id: string): Promise<void> {
+  await apiDeleteCategory(listId, id);
   const idx = categories.findIndex(c => c.id === id);
   if (idx >= 0) categories.splice(idx, 1);
 }

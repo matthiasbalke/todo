@@ -28,6 +28,7 @@ export interface Category {
   id: string;
   listId: string;
   name: string;
+  color: string | null;
   sortOrder: number;
 }
 
@@ -61,16 +62,16 @@ export const mockLists: List[] = [
 
 export const mockCategories: Category[] = [
   // Grocery categories
-  { id: 'c-produce', listId: 'grocery', name: 'Produce', sortOrder: 1 },
-  { id: 'c-dairy', listId: 'grocery', name: 'Dairy', sortOrder: 2 },
-  { id: 'c-bakery', listId: 'grocery', name: 'Bakery', sortOrder: 3 },
-  { id: 'c-meat', listId: 'grocery', name: 'Meat', sortOrder: 4 },
+  { id: 'c-produce', listId: 'grocery', name: 'Produce', color: null, sortOrder: 1 },
+  { id: 'c-dairy', listId: 'grocery', name: 'Dairy', color: null, sortOrder: 2 },
+  { id: 'c-bakery', listId: 'grocery', name: 'Bakery', color: null, sortOrder: 3 },
+  { id: 'c-meat', listId: 'grocery', name: 'Meat', color: null, sortOrder: 4 },
   // Household categories
-  { id: 'c-cleaning', listId: 'household', name: 'Cleaning', sortOrder: 1 },
-  { id: 'c-maintenance', listId: 'household', name: 'Maintenance', sortOrder: 2 },
+  { id: 'c-cleaning', listId: 'household', name: 'Cleaning', color: null, sortOrder: 1 },
+  { id: 'c-maintenance', listId: 'household', name: 'Maintenance', color: null, sortOrder: 2 },
   // Personal categories
-  { id: 'c-health', listId: 'personal', name: 'Health', sortOrder: 1 },
-  { id: 'c-finance', listId: 'personal', name: 'Finance', sortOrder: 2 }
+  { id: 'c-health', listId: 'personal', name: 'Health', color: null, sortOrder: 1 },
+  { id: 'c-finance', listId: 'personal', name: 'Finance', color: null, sortOrder: 2 }
 ];
 
 const today = new Date();

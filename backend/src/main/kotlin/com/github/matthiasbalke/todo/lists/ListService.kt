@@ -12,6 +12,7 @@ class ListService(
     private val listRepository: ListRepository,
     private val listMembershipRepository: ListMembershipRepository,
     private val userRepository: UserRepository,
+    private val listAccessService: ListAccessService,
 ) {
 
     @Transactional
@@ -42,7 +43,7 @@ class ListService(
         listRepository.findAllByMemberUserId(userId)
 
     fun getListById(listId: UUID, userId: UUID): List {
-        requireMembership(listId, userId)
+        listAccessService.requireMembership(listId, userId)
         return listRepository.findById(listId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND)
         }
@@ -58,7 +59,7 @@ class ListService(
         sortField: String,
         sortDirection: String,
     ): List {
-        requireRole(listId, userId, ListRole.OWNER)
+        listAccessService.requireMinRole(listId, userId, ListRole.OWNER)
         val list = listRepository.findById(listId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND)
         }
@@ -72,18 +73,18 @@ class ListService(
 
     @Transactional
     fun deleteList(listId: UUID, userId: UUID) {
-        requireRole(listId, userId, ListRole.OWNER)
+        listAccessService.requireMinRole(listId, userId, ListRole.OWNER)
         listRepository.deleteById(listId)
     }
 
     fun getMembers(listId: UUID, userId: UUID): kotlin.collections.List<ListMembership> {
-        requireMembership(listId, userId)
+        listAccessService.requireMembership(listId, userId)
         return listMembershipRepository.findAllByListId(listId)
     }
 
     @Transactional
     fun addMember(listId: UUID, requestingUserId: UUID, email: String, role: ListRole): ListMembership {
-        requireRole(listId, requestingUserId, ListRole.OWNER)
+        listAccessService.requireMinRole(listId, requestingUserId, ListRole.OWNER)
         val target = userRepository.findByEmail(email)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "No user found with email: $email")
         if (listMembershipRepository.findByListIdAndUserId(listId, target.id) != null) {
@@ -101,7 +102,7 @@ class ListService(
         targetUserId: UUID,
         newRole: ListRole,
     ): ListMembership {
-        requireRole(listId, requestingUserId, ListRole.OWNER)
+        listAccessService.requireMinRole(listId, requestingUserId, ListRole.OWNER)
         if (requestingUserId == targetUserId && newRole != ListRole.OWNER) {
             val ownerCount = listMembershipRepository.countByListIdAndRole(listId, ListRole.OWNER)
             if (ownerCount <= 1) {
@@ -119,7 +120,7 @@ class ListService(
 
     @Transactional
     fun removeMember(listId: UUID, requestingUserId: UUID, targetUserId: UUID) {
-        requireRole(listId, requestingUserId, ListRole.OWNER)
+        listAccessService.requireMinRole(listId, requestingUserId, ListRole.OWNER)
         if (requestingUserId == targetUserId) {
             val ownerCount = listMembershipRepository.countByListIdAndRole(listId, ListRole.OWNER)
             if (ownerCount <= 1) {
@@ -132,18 +133,5 @@ class ListService(
         val membership = listMembershipRepository.findByListIdAndUserId(listId, targetUserId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Target user is not a member of this list")
         listMembershipRepository.delete(membership)
-    }
-
-    // ─── Helpers ─────────────────────────────────────────────────────────────
-
-    private fun requireMembership(listId: UUID, userId: UUID): ListMembership =
-        listMembershipRepository.findByListIdAndUserId(listId, userId)
-            ?: throw ResponseStatusException(HttpStatus.FORBIDDEN, "You are not a member of this list")
-
-    private fun requireRole(listId: UUID, userId: UUID, required: ListRole) {
-        val membership = requireMembership(listId, userId)
-        if (membership.role != required) {
-            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Requires $required role")
-        }
     }
 }

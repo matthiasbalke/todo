@@ -2,7 +2,7 @@
   import type { PageData } from './$types';
   import { goto } from '$app/navigation';
   import { getItems, saveItem } from '$lib/stores/items.svelte';
-  import { getList, updateList, deleteList, getCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
+  import { getList, updateList, deleteList, getCategoriesForList, loadCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
   import { applyFilters, applySort, groupByCategory } from '$lib/utils';
   import type { Filters } from '$lib/utils';
   import { untrack } from 'svelte';
@@ -19,6 +19,8 @@
 
   const list = $derived(getList(data.id));
   const categories = $derived(getCategoriesForList(data.id));
+
+  $effect(() => { loadCategoriesForList(data.id); });
 
   let filters = $state<Filters>({
     starredOnly: false,

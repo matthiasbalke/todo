@@ -115,3 +115,52 @@ export function changeMemberRole(
 export function removeMember(listId: string, userId: string): Promise<void> {
 	return authedFetch(`/api/lists/${listId}/members/${userId}`, { method: 'DELETE' });
 }
+
+// ─── Categories ───────────────────────────────────────────────────────────────
+
+export interface CategoryDto {
+	id: string;
+	listId: string;
+	name: string;
+	color: string | null;
+	sortOrder: number;
+	createdAt: string;
+}
+
+export interface CreateCategoryRequest {
+	name: string;
+	color?: string | null;
+	sortOrder: number;
+}
+
+export interface UpdateCategoryRequest {
+	name: string;
+	color?: string | null;
+	sortOrder: number;
+}
+
+export function getCategories(listId: string): Promise<CategoryDto[]> {
+	return authedFetch(`/api/lists/${listId}/categories`);
+}
+
+export function createCategory(listId: string, req: CreateCategoryRequest): Promise<CategoryDto> {
+	return authedFetch(`/api/lists/${listId}/categories`, {
+		method: 'POST',
+		body: JSON.stringify(req),
+	});
+}
+
+export function updateCategory(
+	listId: string,
+	categoryId: string,
+	req: UpdateCategoryRequest,
+): Promise<CategoryDto> {
+	return authedFetch(`/api/lists/${listId}/categories/${categoryId}`, {
+		method: 'PUT',
+		body: JSON.stringify(req),
+	});
+}
+
+export function deleteCategory(listId: string, categoryId: string): Promise<void> {
+	return authedFetch(`/api/lists/${listId}/categories/${categoryId}`, { method: 'DELETE' });
+}
