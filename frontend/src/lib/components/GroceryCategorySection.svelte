@@ -34,7 +34,7 @@
     <div class="mt-1 space-y-1">
       {#each unchecked as item (item.id)}
         <button
-          onclick={() => toggleDone(item.id)}
+          onclick={() => toggleDone(item.listId, item.id)}
           class="w-full flex items-center gap-4 px-4 py-3 bg-white rounded-lg border border-gray-100 text-left"
         >
           <span class="w-6 h-6 rounded-full border-2 border-gray-300 flex-shrink-0"></span>
@@ -43,7 +43,7 @@
       {/each}
       {#each checked as item (item.id)}
         <button
-          onclick={() => toggleDone(item.id)}
+          onclick={() => toggleDone(item.listId, item.id)}
           class="w-full flex items-center gap-4 px-4 py-3 bg-white rounded-lg border border-gray-100 text-left opacity-50"
         >
           <span class="w-6 h-6 rounded-full bg-green-500 border-2 border-green-500 flex-shrink-0 flex items-center justify-center">

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { goto } from '$app/navigation';
-  import { getItems, saveItem } from '$lib/stores/items.svelte';
+  import { getItems, loadItemsForList, createItem } from '$lib/stores/items.svelte';
   import { getList, updateList, deleteList, getCategoriesForList, loadCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
   import { applyFilters, applySort, groupByCategory } from '$lib/utils';
   import type { Filters } from '$lib/utils';
@@ -21,6 +21,7 @@
   const categories = $derived(getCategoriesForList(data.id));
 
   $effect(() => { loadCategoriesForList(data.id); });
+  $effect(() => { loadItemsForList(data.id); });
 
   let filters = $state<Filters>({
     starredOnly: false,
@@ -77,8 +78,17 @@
   const sorted = $derived(applySort(filtered, sortField, sortDirection));
   const grouped = $derived(groupByCategory(sorted, categories));
 
-  function handleAddItem(item: TodoItem) {
-    saveItem(item);
+  async function handleAddItem(item: TodoItem) {
+    await createItem(data.id, {
+      title: item.title,
+      notes: item.notes,
+      categoryId: item.categoryId,
+      dueDate: item.dueDate,
+      starred: item.starred,
+      recurrenceRule: item.recurrenceRule,
+      assignedUserIds: item.assignedUserIds,
+      sortOrder: item.sortOrder,
+    });
   }
 
   async function handleDelete() {

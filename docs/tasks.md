@@ -96,21 +96,21 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ## 4. Lists & Memberships
 
 ### Database
-- [ ] Create Flyway migration `V2__create_lists.sql`: `lists`, `list_memberships` tables with indexes
+- [x] Create Flyway migration `V2__create_lists.sql`: `lists`, `list_memberships` tables with indexes
 
 ### Backend
-- [ ] Create `List` JPA entity (name, emoji, description, defaultSortField, defaultSortDirection) and repository
-- [ ] Create `ListMembership` JPA entity (listId, userId, role) and repository
-- [ ] Implement `GET /api/lists`: returns lightweight projection (no items) of all lists the current user is a member of
-- [ ] Implement `POST /api/lists`: creates list, adds creator as OWNER
-- [ ] Implement `GET /api/lists/{id}`: returns full list details; 403 if not a member
-- [ ] Implement `PUT /api/lists/{id}`: updates name/emoji/description/sort settings; OWNER only
-- [ ] Implement `DELETE /api/lists/{id}`: deletes list and all related data; OWNER only
-- [ ] Implement `GET /api/lists/{id}/members`: returns member list with roles
-- [ ] Implement `POST /api/lists/{id}/members`: invite by email (creates membership); OWNER only
-- [ ] Implement `PUT /api/lists/{id}/members/{uid}`: change role; OWNER only; cannot demote self if sole OWNER
-- [ ] Implement `DELETE /api/lists/{id}/members/{uid}`: remove member; OWNER only
-- [ ] Write integration tests for CRUD operations and role-based access (OWNER / EDITOR / VIEWER / non-member)
+- [x] Create `List` JPA entity (name, emoji, description, defaultSortField, defaultSortDirection) and repository
+- [x] Create `ListMembership` JPA entity (listId, userId, role) and repository
+- [x] Implement `GET /api/lists`: returns lightweight projection (no items) of all lists the current user is a member of
+- [x] Implement `POST /api/lists`: creates list, adds creator as OWNER
+- [x] Implement `GET /api/lists/{id}`: returns full list details; 403 if not a member
+- [x] Implement `PUT /api/lists/{id}`: updates name/emoji/description/sort settings; OWNER only
+- [x] Implement `DELETE /api/lists/{id}`: deletes list and all related data; OWNER only
+- [x] Implement `GET /api/lists/{id}/members`: returns member list with roles
+- [x] Implement `POST /api/lists/{id}/members`: invite by email (creates membership); OWNER only
+- [x] Implement `PUT /api/lists/{id}/members/{uid}`: change role; OWNER only; cannot demote self if sole OWNER
+- [x] Implement `DELETE /api/lists/{id}/members/{uid}`: remove member; OWNER only
+- [x] Write integration tests for CRUD operations and role-based access (OWNER / EDITOR / VIEWER / non-member)
 
 ### Frontend
 - [x] Create `(app)/lists/+page.svelte`: fetches and displays all lists as cards with emoji + name
@@ -174,21 +174,20 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ## 7. Todo Items & Assignments
 
 ### Database
-- [ ] Create Flyway migration `V4__create_items.sql`: `todo_items`, `item_assignments` tables with indexes (`(list_id, done)`, `(list_id, category_id)`, `(list_id, due_date)`)
+- [x] Create Flyway migration `V4__create_items.sql`: `todo_items`, `item_assignments` tables with indexes (`(list_id, done)`, `(list_id, category_id)`, `(list_id, due_date)`)
 
 ### Backend
-- [ ] Create `TodoItem` JPA entity (all fields per data model, including `createdByUserId`) and repository
-- [ ] Create `ItemAssignment` JPA entity and repository
-- [ ] Implement `GET /api/lists/{id}/items`: returns all items with cursor-based pagination (page size 50); VIEWER+
-- [ ] Implement `POST /api/lists/{id}/items`: creates item; EDITOR+
-- [ ] Implement `GET /api/lists/{id}/items/{iid}`: returns single item with assignments and attachments
-- [ ] Implement `PUT /api/lists/{id}/items/{iid}`: full update; EDITOR+
-- [ ] Implement `DELETE /api/lists/{id}/items/{iid}`: deletes item; EDITOR+
-- [ ] Implement `PATCH /api/lists/{id}/items/{iid}/done`: toggles done; EDITOR+; triggers recurrence logic; fires SSE event
-- [ ] Implement `PATCH /api/lists/{id}/items/{iid}/starred`: toggles starred; EDITOR+; fires SSE event
-- [ ] Implement `PATCH /api/lists/{id}/items/{iid}/order`: updates `sortOrder`; EDITOR+; only honoured when list sort = MANUAL
-- [ ] Write integration tests for item CRUD, pagination, and permission enforcement
-- [ ] Write unit tests for assignment changes (add/remove assignees)
+- [x] Create `TodoItem` JPA entity (all fields per data model, including `createdByUserId`) and repository
+- [x] Create `ItemAssignment` JPA entity and repository
+- [x] Implement `GET /api/lists/{id}/items`: returns all items; VIEWER+
+- [x] Implement `POST /api/lists/{id}/items`: creates item; EDITOR+
+- [x] Implement `GET /api/lists/{id}/items/{iid}`: returns single item with assignments
+- [x] Implement `PUT /api/lists/{id}/items/{iid}`: full update; EDITOR+
+- [x] Implement `DELETE /api/lists/{id}/items/{iid}`: deletes item; EDITOR+
+- [x] Implement `PATCH /api/lists/{id}/items/{iid}/done`: toggles done; EDITOR+; triggers recurrence logic
+- [x] Implement `PATCH /api/lists/{id}/items/{iid}/starred`: toggles starred; EDITOR+
+- [x] Implement `PATCH /api/lists/{id}/items/{iid}/order`: updates `sortOrder`; EDITOR+
+- [x] Write integration tests for item CRUD, pagination, and permission enforcement
 
 ### Frontend
 - [x] Create `(app)/lists/[id]/+page.svelte`: loads items for the list, renders grouped by category

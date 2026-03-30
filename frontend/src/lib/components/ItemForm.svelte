@@ -24,7 +24,7 @@
   let notes = $state(untrack(() => item?.notes ?? ''));
   let dueDate = $state(untrack(() => item?.dueDate ?? ''));
   let categoryId = $state<string>(untrack(() => item?.categoryId ?? ''));
-  let assignedUserId = $state<string>(untrack(() => item?.assignedUserId ?? ''));
+  let assignedUserId = $state<string>(untrack(() => item?.assignedUserIds[0] ?? ''));
   let recurrencePreset = $state<string>(untrack(() => getInitialRecurrencePreset(item?.recurrenceRule ?? null)));
   let titleInput = $state<HTMLInputElement | null>(null);
 
@@ -53,7 +53,7 @@
       done: item?.done ?? false,
       starred: item?.starred ?? false,
       dueDate: dueDate || null,
-      assignedUserId: assignedUserId || null,
+      assignedUserIds: assignedUserId ? [assignedUserId] : [],
       recurrenceRule: parseRecurrencePreset(recurrencePreset),
       parentItemId: item?.parentItemId ?? null,
       createdByUserId: item?.createdByUserId ?? null,

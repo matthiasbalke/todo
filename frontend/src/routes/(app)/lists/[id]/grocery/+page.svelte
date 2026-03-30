@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { getItems } from '$lib/stores/items.svelte';
-  import { getList, updateList, getCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
+  import { getItems, loadItemsForList } from '$lib/stores/items.svelte';
+  import { getList, updateList, getCategoriesForList, loadCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
   import { applyFilters, applySort, groupByCategory } from '$lib/utils';
   import type { Filters } from '$lib/utils';
   import { untrack } from 'svelte';
@@ -26,6 +26,9 @@
   });
   const list = $derived(getList(data.list.id));
   const categories = $derived(getCategoriesForList(data.list.id));
+
+  $effect(() => { loadCategoriesForList(data.list.id); });
+  $effect(() => { loadItemsForList(data.list.id); });
 
   let sortField = $state<SortField>(untrack(() => data.list.defaultSortField ?? 'MANUAL'));
   let sortDirection = $state<SortDirection>(untrack(() => data.list.defaultSortDirection ?? 'ASC'));
