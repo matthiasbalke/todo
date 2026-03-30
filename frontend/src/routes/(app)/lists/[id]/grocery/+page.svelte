@@ -6,32 +6,57 @@
   import type { Filters } from '$lib/utils';
   import { untrack } from 'svelte';
   import type { SortField, SortDirection } from '$lib/mock-data';
+  import { loadListPrefs, saveListPrefs, deleteListPrefs } from '$lib/listPrefs';
+  import { loadListCategoryState, saveListCategoryState, deleteListCategoryState } from '$lib/listCategoryState';
   import GroceryCategorySection from '$lib/components/GroceryCategorySection.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
 
   let { data }: { data: PageData } = $props();
 
-  let collapsedSections = $state<Set<string | null>>(new Set());
+  const _savedCategoryState = untrack(() => loadListCategoryState(data.list.id));
+  let collapsedSections = $state<Set<string | null>>(
+    new Set(Object.entries(_savedCategoryState?.collapsed ?? {}).filter(([, v]) => v).map(([k]) => k === '__null__' ? null : k))
+  );
   let menuOpen = $state(false);
   let sortSubmenuOpen = $state(false);
   let filterSubmenuOpen = $state(false);
   let showEditForm = $state(false);
   let showCategoryDialog = $state(false);
 
-  let filters = $state<Filters>({
-    starredOnly: false,
-    hideFuture: false,
-    hideUndated: false
-  });
   const list = $derived(getList(data.list.id));
   const categories = $derived(getCategoriesForList(data.list.id));
 
   $effect(() => { loadCategoriesForList(data.list.id); });
   $effect(() => { loadItemsForList(data.list.id); });
 
-  let sortField = $state<SortField>(untrack(() => data.list.defaultSortField ?? 'MANUAL'));
-  let sortDirection = $state<SortDirection>(untrack(() => data.list.defaultSortDirection ?? 'ASC'));
+  const _savedPrefs = untrack(() => loadListPrefs(data.list.id));
+  untrack(() => setHideDone(data.list.id, _savedPrefs?.hideDone ?? false));
+  let filters = $state<Filters>({
+    starredOnly: _savedPrefs?.starredOnly ?? false,
+    hideFuture: _savedPrefs?.hideFuture ?? false,
+    hideUndated: _savedPrefs?.hideUndated ?? false
+  });
+  let sortField = $state<SortField>(_savedPrefs?.sortField ?? untrack(() => data.list.defaultSortField ?? 'MANUAL'));
+  let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => data.list.defaultSortDirection ?? 'ASC'));
+
+  $effect(() => {
+    const prefs = { sortField, sortDirection, ...filters, hideDone: isHideDone(data.list.id) };
+    const isDefault =
+      prefs.sortField === (data.list.defaultSortField ?? 'MANUAL') &&
+      prefs.sortDirection === (data.list.defaultSortDirection ?? 'ASC') &&
+      !prefs.starredOnly && !prefs.hideFuture && !prefs.hideUndated && !prefs.hideDone;
+    if (isDefault) deleteListPrefs(data.list.id); else saveListPrefs(data.list.id, prefs);
+  });
+  $effect(() => {
+    if (collapsedSections.size === 0) {
+      deleteListCategoryState(data.list.id);
+    } else {
+      const collapsed: Record<string, boolean> = {};
+      for (const k of collapsedSections) collapsed[k ?? '__null__'] = true;
+      saveListCategoryState(data.list.id, { collapsed, doneCollapsed: {} });
+    }
+  });
 
   const dueDateOptions = [
     { value: 'all', label: 'Any due date' },

@@ -7,6 +7,8 @@
   import type { Filters } from '$lib/utils';
   import { untrack } from 'svelte';
   import type { SortField, SortDirection, TodoItem } from '$lib/mock-data';
+  import { loadListPrefs, saveListPrefs, deleteListPrefs } from '$lib/listPrefs';
+  import { loadListCategoryState, saveListCategoryState, deleteListCategoryState } from '$lib/listCategoryState';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
   import ItemForm from '$lib/components/ItemForm.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
@@ -23,13 +25,32 @@
   $effect(() => { loadCategoriesForList(data.id); });
   $effect(() => { loadItemsForList(data.id); });
 
+  const _savedPrefs = untrack(() => loadListPrefs(data.id));
+  untrack(() => setHideDone(data.id, _savedPrefs?.hideDone ?? false));
+  const _savedCategoryState = untrack(() => loadListCategoryState(data.id));
+  let collapsedMap = $state<Record<string, boolean>>(_savedCategoryState?.collapsed ?? {});
+  let doneCollapsedMap = $state<Record<string, boolean>>(_savedCategoryState?.doneCollapsed ?? {});
   let filters = $state<Filters>({
-    starredOnly: false,
-    hideFuture: false,
-    hideUndated: false
+    starredOnly: _savedPrefs?.starredOnly ?? false,
+    hideFuture: _savedPrefs?.hideFuture ?? false,
+    hideUndated: _savedPrefs?.hideUndated ?? false
   });
-  let sortField = $state<SortField>(untrack(() => list?.defaultSortField ?? 'MANUAL'));
-  let sortDirection = $state<SortDirection>(untrack(() => list?.defaultSortDirection ?? 'ASC'));
+  let sortField = $state<SortField>(_savedPrefs?.sortField ?? untrack(() => list?.defaultSortField ?? 'MANUAL'));
+  let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => list?.defaultSortDirection ?? 'ASC'));
+
+  $effect(() => {
+    const prefs = { sortField, sortDirection, ...filters, hideDone: isHideDone(data.id) };
+    const isDefault =
+      prefs.sortField === (list?.defaultSortField ?? 'MANUAL') &&
+      prefs.sortDirection === (list?.defaultSortDirection ?? 'ASC') &&
+      !prefs.starredOnly && !prefs.hideFuture && !prefs.hideUndated && !prefs.hideDone;
+    if (isDefault) deleteListPrefs(data.id); else saveListPrefs(data.id, prefs);
+  });
+  $effect(() => {
+    const isEmpty = Object.keys(collapsedMap).length === 0 && Object.keys(doneCollapsedMap).length === 0;
+    if (isEmpty) deleteListCategoryState(data.id);
+    else saveListCategoryState(data.id, { collapsed: collapsedMap, doneCollapsed: doneCollapsedMap });
+  });
   let showAddForm = $state(false);
   let showEditForm = $state(false);
   let showCategoryDialog = $state(false);
@@ -265,6 +286,18 @@
           allCategories={categories}
           users={data.users}
           hideDone={isHideDone(data.id)}
+          collapsed={collapsedMap[key ?? '__null__'] ?? false}
+          doneCollapsed={doneCollapsedMap[key ?? '__null__'] ?? true}
+          oncollapsedchange={(v) => {
+            const next = { ...collapsedMap };
+            if (v) next[key ?? '__null__'] = true; else delete next[key ?? '__null__'];
+            collapsedMap = next;
+          }}
+          ondonecollapsedchange={(v) => {
+            const next = { ...doneCollapsedMap };
+            if (!v) next[key ?? '__null__'] = false; else delete next[key ?? '__null__'];
+            doneCollapsedMap = next;
+          }}
         />
       {/each}
     </div>

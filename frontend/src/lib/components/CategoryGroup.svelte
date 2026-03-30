@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { TodoItem, Category, User } from '$lib/mock-data';
   import ItemCard from './ItemCard.svelte';
 
@@ -8,7 +9,11 @@
     items,
     allCategories,
     users,
-    hideDone = false
+    hideDone = false,
+    collapsed: collapsedProp = false,
+    doneCollapsed: doneCollapsedProp = true,
+    oncollapsedchange,
+    ondonecollapsedchange
   }: {
     categoryId: string | null;
     category: Category | null;
@@ -16,10 +21,14 @@
     allCategories: Category[];
     users: User[];
     hideDone?: boolean;
+    collapsed?: boolean;
+    doneCollapsed?: boolean;
+    oncollapsedchange?: (v: boolean) => void;
+    ondonecollapsedchange?: (v: boolean) => void;
   } = $props();
 
-  let collapsed = $state(false);
-  let doneCollapsed = $state(true);
+  let collapsed = $state(untrack(() => collapsedProp));
+  let doneCollapsed = $state(untrack(() => doneCollapsedProp));
 
   const undoneItems = $derived(items.filter(i => !i.done));
   const doneItems = $derived(items.filter(i => i.done));
@@ -29,7 +38,7 @@
   <h3 class="px-1 mb-2">
     <button
       class="flex items-center justify-between w-full text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-500 transition-colors"
-      onclick={() => { collapsed = !collapsed; }}
+      onclick={() => { collapsed = !collapsed; oncollapsedchange?.(collapsed); }}
       aria-expanded={!collapsed}
     >
       <span class="flex items-center gap-1.5">
@@ -50,7 +59,7 @@
 
     {#if !hideDone && doneItems.length > 0}
       <button
-        onclick={() => { doneCollapsed = !doneCollapsed; }}
+        onclick={() => { doneCollapsed = !doneCollapsed; ondonecollapsedchange?.(doneCollapsed); }}
         class="mt-2 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-500 transition-colors px-1"
       >
         <span>{doneCollapsed ? '▶' : '▼'}</span>
