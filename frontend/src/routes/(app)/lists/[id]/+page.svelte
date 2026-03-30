@@ -7,6 +7,7 @@
   import type { Filters } from '$lib/utils';
   import { untrack } from 'svelte';
   import type { SortField, SortDirection, TodoItem } from '$lib/mock-data';
+  import { loadListPrefs, saveListPrefs } from '$lib/listPrefs';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
   import ItemForm from '$lib/components/ItemForm.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
@@ -23,13 +24,18 @@
   $effect(() => { loadCategoriesForList(data.id); });
   $effect(() => { loadItemsForList(data.id); });
 
+  const _savedPrefs = untrack(() => loadListPrefs(data.id));
   let filters = $state<Filters>({
-    starredOnly: false,
-    hideFuture: false,
-    hideUndated: false
+    starredOnly: _savedPrefs?.starredOnly ?? false,
+    hideFuture: _savedPrefs?.hideFuture ?? false,
+    hideUndated: _savedPrefs?.hideUndated ?? false
   });
-  let sortField = $state<SortField>(untrack(() => list?.defaultSortField ?? 'MANUAL'));
-  let sortDirection = $state<SortDirection>(untrack(() => list?.defaultSortDirection ?? 'ASC'));
+  let sortField = $state<SortField>(_savedPrefs?.sortField ?? untrack(() => list?.defaultSortField ?? 'MANUAL'));
+  let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => list?.defaultSortDirection ?? 'ASC'));
+
+  $effect(() => {
+    saveListPrefs(data.id, { sortField, sortDirection, ...filters });
+  });
   let showAddForm = $state(false);
   let showEditForm = $state(false);
   let showCategoryDialog = $state(false);
