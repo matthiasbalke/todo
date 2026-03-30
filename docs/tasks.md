@@ -154,19 +154,19 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ## 6. Categories
 
 ### Database
-- [ ] Create Flyway migration `V3__create_categories.sql`: `categories` table
+- [x] Create Flyway migration `V3__create_categories.sql`: `categories` table
 
 ### Backend
-- [ ] Create `Category` JPA entity (listId, name, color, sortOrder) and repository
-- [ ] Implement `GET /api/lists/{id}/categories`: returns categories for the list
-- [ ] Implement `POST /api/lists/{id}/categories`: creates category; EDITOR+
-- [ ] Implement `PUT /api/lists/{id}/categories/{cid}`: updates name/color/sortOrder; EDITOR+
-- [ ] Implement `DELETE /api/lists/{id}/categories/{cid}`: deletes category (items become uncategorised); EDITOR+
-- [ ] Write integration tests for category CRUD and permission enforcement
+- [x] Create `Category` JPA entity (listId, name, color, sortOrder) and repository
+- [x] Implement `GET /api/lists/{id}/categories`: returns categories for the list
+- [x] Implement `POST /api/lists/{id}/categories`: creates category; EDITOR+
+- [x] Implement `PUT /api/lists/{id}/categories/{cid}`: updates name/color/sortOrder; EDITOR+
+- [x] Implement `DELETE /api/lists/{id}/categories/{cid}`: deletes category (items become uncategorised); EDITOR+
+- [x] Write integration tests for category CRUD and permission enforcement
 
 ### Frontend
 - [x] Implement category group component (`CategoryGroup.svelte`): collapsible, shows category color and name, contains item cards
-- [ ] Implement "no category" group rendered alongside named categories
+- [x] Implement "no category" group rendered alongside named categories
 - [ ] Write Vitest component test: items are grouped correctly by category from mock data
 
 ---
