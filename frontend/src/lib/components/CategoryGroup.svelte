@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { TodoItem, Category, User } from '$lib/mock-data';
   import ItemCard from './ItemCard.svelte';
 
@@ -26,8 +27,8 @@
     ondonecollapsedchange?: (v: boolean) => void;
   } = $props();
 
-  let collapsed = $state(collapsedProp);
-  let doneCollapsed = $state(doneCollapsedProp);
+  let collapsed = $state(untrack(() => collapsedProp));
+  let doneCollapsed = $state(untrack(() => doneCollapsedProp));
 
   const undoneItems = $derived(items.filter(i => !i.done));
   const doneItems = $derived(items.filter(i => i.done));
