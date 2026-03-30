@@ -32,7 +32,12 @@
       onclick={() => { collapsed = !collapsed; }}
       aria-expanded={!collapsed}
     >
-      {category?.name ?? 'Uncategorized'}
+      <span class="flex items-center gap-1.5">
+        {#if category?.color}
+          <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: {category.color}"></span>
+        {/if}
+        {category?.name ?? 'Uncategorized'}
+      </span>
       <span class="font-normal normal-case tracking-normal" aria-hidden="true">{collapsed ? '▶' : '▼'}</span>
     </button>
   </h3>

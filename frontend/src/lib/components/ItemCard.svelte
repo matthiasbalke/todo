@@ -1,21 +1,20 @@
 <script lang="ts">
   import type { TodoItem, Category, User } from '$lib/mock-data';
   import { toggleDone, toggleStarred } from '$lib/stores/items.svelte';
-  import PriorityBadge from './PriorityBadge.svelte';
   import DueDateChip from './DueDateChip.svelte';
   import RecurrenceIndicator from './RecurrenceIndicator.svelte';
 
   let { item, categories, users }: { item: TodoItem; categories: Category[]; users: User[] } = $props();
-  const assignedUser = $derived(users.find(u => u.id === item.assignedUserId) ?? null);
+  const assignedUsers = $derived(users.filter(u => item.assignedUserIds.includes(u.id)));
 
   function handleDone(e: Event) {
     e.preventDefault();
-    toggleDone(item.id);
+    toggleDone(item.listId, item.id);
   }
 
   function handleStar(e: Event) {
     e.preventDefault();
-    toggleStarred(item.id);
+    toggleStarred(item.listId, item.id);
   }
 </script>
 
@@ -37,9 +36,6 @@
       <span class="text-sm font-medium text-gray-900 {item.done ? 'line-through text-gray-400' : ''}">
         {item.title}
       </span>
-      <div class="flex items-center gap-1 flex-shrink-0">
-        <PriorityBadge priority={item.priority} />
-      </div>
     </div>
     <div class="flex items-center gap-2 mt-1 flex-wrap">
       <DueDateChip dueDate={item.dueDate} />
@@ -50,14 +46,14 @@
     </div>
   </a>
 
-  {#if assignedUser}
+  {#each assignedUsers as assignedUser}
     <div
       class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold"
       title={assignedUser.name}
     >
       {assignedUser.name[0].toUpperCase()}
     </div>
-  {/if}
+  {/each}
 
   <button
     onclick={handleStar}

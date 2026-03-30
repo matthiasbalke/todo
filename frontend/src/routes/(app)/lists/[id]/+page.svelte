@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { getItems, saveItem } from '$lib/stores/items.svelte';
-  import { getList, saveList, getCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
+  import { goto } from '$app/navigation';
+  import { getItems, loadItemsForList, createItem } from '$lib/stores/items.svelte';
+  import { getList, updateList, deleteList, getCategoriesForList, loadCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
   import { applyFilters, applySort, groupByCategory } from '$lib/utils';
   import type { Filters } from '$lib/utils';
   import { untrack } from 'svelte';
@@ -10,25 +11,45 @@
   import ItemForm from '$lib/components/ItemForm.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
+  import MembersDialog from '$lib/components/MembersDialog.svelte';
+  import { getCurrentUser } from '$lib/stores/auth.svelte';
+  import { getMembers } from '$lib/api/lists';
 
   let { data }: { data: PageData } = $props();
 
   const list = $derived(getList(data.id));
   const categories = $derived(getCategoriesForList(data.id));
 
+  $effect(() => { loadCategoriesForList(data.id); });
+  $effect(() => { loadItemsForList(data.id); });
+
   let filters = $state<Filters>({
     starredOnly: false,
     hideFuture: false,
     hideUndated: false
   });
-  let sortField = $state<SortField>(untrack(() => list?.sortField ?? 'MANUAL'));
-  let sortDirection = $state<SortDirection>(untrack(() => list?.sortDirection ?? 'ASC'));
+  let sortField = $state<SortField>(untrack(() => list?.defaultSortField ?? 'MANUAL'));
+  let sortDirection = $state<SortDirection>(untrack(() => list?.defaultSortDirection ?? 'ASC'));
   let showAddForm = $state(false);
   let showEditForm = $state(false);
   let showCategoryDialog = $state(false);
+  let showMembersDialog = $state(false);
   let menuOpen = $state(false);
   let sortSubmenuOpen = $state(false);
   let filterSubmenuOpen = $state(false);
+  let deleting = $state(false);
+
+  // Determine current user's role in this list
+  let myRole = $state<string | null>(null);
+  $effect(() => {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+    getMembers(data.id).then(members => {
+      myRole = members.find(m => m.userId === currentUser.id)?.role ?? null;
+    }).catch(() => { /* ignore */ });
+  });
+
+  const isOwner = $derived(myRole === 'OWNER');
 
   const dueDateOptions = [
     { value: 'all', label: 'Any due date' },
@@ -57,8 +78,29 @@
   const sorted = $derived(applySort(filtered, sortField, sortDirection));
   const grouped = $derived(groupByCategory(sorted, categories));
 
-  function handleAddItem(item: TodoItem) {
-    saveItem(item);
+  async function handleAddItem(item: TodoItem) {
+    await createItem(data.id, {
+      title: item.title,
+      notes: item.notes,
+      categoryId: item.categoryId,
+      dueDate: item.dueDate,
+      starred: item.starred,
+      recurrenceRule: item.recurrenceRule,
+      assignedUserIds: item.assignedUserIds,
+      sortOrder: item.sortOrder,
+    });
+  }
+
+  async function handleDelete() {
+    if (!confirm('Delete this list? This cannot be undone.')) return;
+    deleting = true;
+    try {
+      await deleteList(data.id);
+      goto('/lists');
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to delete list');
+      deleting = false;
+    }
   }
 </script>
 
@@ -72,12 +114,12 @@
       <div class="flex-1">
         <ListForm
           {list}
-          onsubmit={(updated) => { saveList(updated); showEditForm = false; }}
+          onsubmit={async ({ name, emoji }) => { await updateList(data.id, { name, emoji }); showEditForm = false; }}
           oncancel={() => { showEditForm = false; }}
         />
       </div>
     {:else}
-      <h1 class="text-xl font-bold text-gray-900">{list.emoji} {list.name}</h1>
+      <h1 class="text-xl font-bold text-gray-900">{list.emoji ?? '📋'} {list.name}</h1>
       <div class="relative ml-auto">
         <button
           onclick={() => { menuOpen = !menuOpen; sortSubmenuOpen = false; filterSubmenuOpen = false; }}
@@ -112,6 +154,12 @@
               class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               Configure categories
+            </button>
+            <button
+              onclick={() => { showMembersDialog = true; menuOpen = false; }}
+              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              Members
             </button>
             <div class="border-t border-gray-100 mt-1 pt-1">
               <button
@@ -186,6 +234,17 @@
                 {#if isHideDone(data.id)}<span>✓</span>{/if}
               </button>
             </div>
+            {#if isOwner}
+              <div class="border-t border-gray-100 mt-1 pt-1">
+                <button
+                  onclick={() => { menuOpen = false; handleDelete(); }}
+                  disabled={deleting}
+                  class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  Delete list
+                </button>
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
@@ -232,6 +291,10 @@
 
   {#if showCategoryDialog}
     <CategoryConfigDialog {categories} listId={data.id} onclose={() => { showCategoryDialog = false; }} />
+  {/if}
+
+  {#if showMembersDialog}
+    <MembersDialog listId={data.id} onclose={() => { showMembersDialog = false; }} />
   {/if}
 </div>
 {/if}

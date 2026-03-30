@@ -46,21 +46,21 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [x] Create Flyway migration `V1__create_users.sql`: `users`, `webauthn_credentials`, `oauth_identities` tables
 
 ### Backend
-- [ ] Create `User` JPA entity and `UserRepository`
-- [ ] Create `WebAuthnCredential` JPA entity and repository
+- [x] Create `User` JPA entity and `UserRepository`
+- [x] Create `WebAuthnCredential` JPA entity and repository
 - [ ] Create `OAuthIdentity` JPA entity and repository
-- [ ] Configure Spring Security `SecurityFilterChain`: permit `/api/auth/**`, `/actuator/health`; require JWT for all other `/api/**`
-- [ ] Implement JWT `TokenService`: issue access token + refresh token (HS256, configurable secret + expiry)
-- [ ] Implement `JwtAuthenticationFilter`: validates JWT, sets `SecurityContext`
-- [ ] Implement `POST /api/auth/webauthn/register-options`: returns `PublicKeyCredentialCreationOptions` for given email; creates user if not exists
-- [ ] Implement `POST /api/auth/webauthn/register`: verifies attestation, stores `WebAuthnCredential`, returns JWT pair
-- [ ] Implement `POST /api/auth/webauthn/login-options`: looks up user by email, returns `PublicKeyCredentialRequestOptions`
-- [ ] Implement `POST /api/auth/webauthn/login`: verifies assertion, returns JWT pair
+- [x] Configure Spring Security `SecurityFilterChain`: permit `/api/auth/**`, `/actuator/health`; require JWT for all other `/api/**`
+- [x] Implement JWT `TokenService`: issue access token + refresh token (HS256, configurable secret + expiry)
+- [x] Implement `JwtAuthenticationFilter`: validates JWT, sets `SecurityContext`
+- [x] Implement `POST /api/auth/webauthn/register-options`: returns `PublicKeyCredentialCreationOptions` for given email; creates user if not exists
+- [x] Implement `POST /api/auth/webauthn/register`: verifies attestation, stores `WebAuthnCredential`, returns JWT pair
+- [x] Implement `POST /api/auth/webauthn/login-options`: looks up user by email, returns `PublicKeyCredentialRequestOptions`
+- [x] Implement `POST /api/auth/webauthn/login`: verifies assertion, returns JWT pair
 - [ ] Implement Google OAuth2 login (`GET /api/auth/oauth2/google` redirect + `GET /api/auth/oauth2/callback`): links or creates account by email, returns JWT pair
-- [ ] Implement `POST /api/auth/refresh`: validates refresh token, issues new access token
-- [ ] Implement `POST /api/auth/logout`: invalidates refresh token (server-side blocklist or short expiry)
-- [ ] Write unit tests for `TokenService` (issue, validate, expired, tampered)
-- [ ] Write integration tests for WebAuthn register + login flows (using a test FIDO2 authenticator/stub)
+- [x] Implement `POST /api/auth/refresh`: validates refresh token, issues new access token
+- [x] Implement `POST /api/auth/logout`: invalidates refresh token (server-side blocklist or short expiry)
+- [x] Write unit tests for `TokenService` (issue, validate, expired, tampered)
+- [x] Write integration tests for WebAuthn register + login flows (using a test FIDO2 authenticator/stub)
 
 ### Frontend
 - [x] Create `auth/login/+page.svelte`: email input field, "Continue with passkey" button, "Sign in with Google" button
@@ -96,21 +96,21 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ## 4. Lists & Memberships
 
 ### Database
-- [ ] Create Flyway migration `V2__create_lists.sql`: `lists`, `list_memberships` tables with indexes
+- [x] Create Flyway migration `V2__create_lists.sql`: `lists`, `list_memberships` tables with indexes
 
 ### Backend
-- [ ] Create `List` JPA entity (name, emoji, description, defaultSortField, defaultSortDirection) and repository
-- [ ] Create `ListMembership` JPA entity (listId, userId, role) and repository
-- [ ] Implement `GET /api/lists`: returns lightweight projection (no items) of all lists the current user is a member of
-- [ ] Implement `POST /api/lists`: creates list, adds creator as OWNER
-- [ ] Implement `GET /api/lists/{id}`: returns full list details; 403 if not a member
-- [ ] Implement `PUT /api/lists/{id}`: updates name/emoji/description/sort settings; OWNER only
-- [ ] Implement `DELETE /api/lists/{id}`: deletes list and all related data; OWNER only
-- [ ] Implement `GET /api/lists/{id}/members`: returns member list with roles
-- [ ] Implement `POST /api/lists/{id}/members`: invite by email (creates membership); OWNER only
-- [ ] Implement `PUT /api/lists/{id}/members/{uid}`: change role; OWNER only; cannot demote self if sole OWNER
-- [ ] Implement `DELETE /api/lists/{id}/members/{uid}`: remove member; OWNER only
-- [ ] Write integration tests for CRUD operations and role-based access (OWNER / EDITOR / VIEWER / non-member)
+- [x] Create `List` JPA entity (name, emoji, description, defaultSortField, defaultSortDirection) and repository
+- [x] Create `ListMembership` JPA entity (listId, userId, role) and repository
+- [x] Implement `GET /api/lists`: returns lightweight projection (no items) of all lists the current user is a member of
+- [x] Implement `POST /api/lists`: creates list, adds creator as OWNER
+- [x] Implement `GET /api/lists/{id}`: returns full list details; 403 if not a member
+- [x] Implement `PUT /api/lists/{id}`: updates name/emoji/description/sort settings; OWNER only
+- [x] Implement `DELETE /api/lists/{id}`: deletes list and all related data; OWNER only
+- [x] Implement `GET /api/lists/{id}/members`: returns member list with roles
+- [x] Implement `POST /api/lists/{id}/members`: invite by email (creates membership); OWNER only
+- [x] Implement `PUT /api/lists/{id}/members/{uid}`: change role; OWNER only; cannot demote self if sole OWNER
+- [x] Implement `DELETE /api/lists/{id}/members/{uid}`: remove member; OWNER only
+- [x] Write integration tests for CRUD operations and role-based access (OWNER / EDITOR / VIEWER / non-member)
 
 ### Frontend
 - [x] Create `(app)/lists/+page.svelte`: fetches and displays all lists as cards with emoji + name
@@ -154,19 +154,19 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ## 6. Categories
 
 ### Database
-- [ ] Create Flyway migration `V3__create_categories.sql`: `categories` table
+- [x] Create Flyway migration `V3__create_categories.sql`: `categories` table
 
 ### Backend
-- [ ] Create `Category` JPA entity (listId, name, color, sortOrder) and repository
-- [ ] Implement `GET /api/lists/{id}/categories`: returns categories for the list
-- [ ] Implement `POST /api/lists/{id}/categories`: creates category; EDITOR+
-- [ ] Implement `PUT /api/lists/{id}/categories/{cid}`: updates name/color/sortOrder; EDITOR+
-- [ ] Implement `DELETE /api/lists/{id}/categories/{cid}`: deletes category (items become uncategorised); EDITOR+
-- [ ] Write integration tests for category CRUD and permission enforcement
+- [x] Create `Category` JPA entity (listId, name, color, sortOrder) and repository
+- [x] Implement `GET /api/lists/{id}/categories`: returns categories for the list
+- [x] Implement `POST /api/lists/{id}/categories`: creates category; EDITOR+
+- [x] Implement `PUT /api/lists/{id}/categories/{cid}`: updates name/color/sortOrder; EDITOR+
+- [x] Implement `DELETE /api/lists/{id}/categories/{cid}`: deletes category (items become uncategorised); EDITOR+
+- [x] Write integration tests for category CRUD and permission enforcement
 
 ### Frontend
 - [x] Implement category group component (`CategoryGroup.svelte`): collapsible, shows category color and name, contains item cards
-- [ ] Implement "no category" group rendered alongside named categories
+- [x] Implement "no category" group rendered alongside named categories
 - [ ] Write Vitest component test: items are grouped correctly by category from mock data
 
 ---
@@ -174,35 +174,33 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ## 7. Todo Items & Assignments
 
 ### Database
-- [ ] Create Flyway migration `V4__create_items.sql`: `todo_items`, `item_assignments` tables with indexes (`(list_id, done)`, `(list_id, category_id)`, `(list_id, due_date)`)
+- [x] Create Flyway migration `V4__create_items.sql`: `todo_items`, `item_assignments` tables with indexes (`(list_id, done)`, `(list_id, category_id)`, `(list_id, due_date)`)
 
 ### Backend
-- [ ] Create `TodoItem` JPA entity (all fields per data model) and repository
-- [ ] Create `ItemAssignment` JPA entity and repository
-- [ ] Implement `GET /api/lists/{id}/items`: returns all items with cursor-based pagination (page size 50); VIEWER+
-- [ ] Implement `POST /api/lists/{id}/items`: creates item; EDITOR+
-- [ ] Implement `GET /api/lists/{id}/items/{iid}`: returns single item with assignments and attachments
-- [ ] Implement `PUT /api/lists/{id}/items/{iid}`: full update; EDITOR+
-- [ ] Implement `DELETE /api/lists/{id}/items/{iid}`: deletes item; EDITOR+
-- [ ] Implement `PATCH /api/lists/{id}/items/{iid}/done`: toggles done; EDITOR+; triggers recurrence logic; fires SSE event
-- [ ] Implement `PATCH /api/lists/{id}/items/{iid}/starred`: toggles starred; EDITOR+; fires SSE event
-- [ ] Implement `PATCH /api/lists/{id}/items/{iid}/order`: updates `sortOrder`; EDITOR+; only honoured when list sort = MANUAL
-- [ ] Write integration tests for item CRUD, pagination, and permission enforcement
-- [ ] Write unit tests for assignment changes (add/remove assignees)
+- [x] Create `TodoItem` JPA entity (all fields per data model, including `createdByUserId`) and repository
+- [x] Create `ItemAssignment` JPA entity and repository
+- [x] Implement `GET /api/lists/{id}/items`: returns all items; VIEWER+
+- [x] Implement `POST /api/lists/{id}/items`: creates item; EDITOR+
+- [x] Implement `GET /api/lists/{id}/items/{iid}`: returns single item with assignments
+- [x] Implement `PUT /api/lists/{id}/items/{iid}`: full update; EDITOR+
+- [x] Implement `DELETE /api/lists/{id}/items/{iid}`: deletes item; EDITOR+
+- [x] Implement `PATCH /api/lists/{id}/items/{iid}/done`: toggles done; EDITOR+; triggers recurrence logic
+- [x] Implement `PATCH /api/lists/{id}/items/{iid}/starred`: toggles starred; EDITOR+
+- [x] Implement `PATCH /api/lists/{id}/items/{iid}/order`: updates `sortOrder`; EDITOR+
+- [x] Write integration tests for item CRUD, pagination, and permission enforcement
 
 ### Frontend
 - [x] Create `(app)/lists/[id]/+page.svelte`: loads items for the list, renders grouped by category
-- [x] Implement `ItemCard.svelte`: shows title, due date, priority badge, starred icon, recurrence indicator, assignee avatars, attachment thumbnail count; tap opens detail drawer
+- [x] Implement `ItemCard.svelte`: shows title, due date, starred icon, recurrence indicator, assignee avatars, attachment thumbnail count; tap opens detail drawer
 - [x] Implement item detail drawer/modal: all fields (title, notes, due date, priority, category, assigned users, recurrence, attachments); edit mode
 - [x] Implement "Create item" inline form or FAB: title input with saved-item autocomplete, optional fields
-- [x] Implement `PriorityBadge.svelte`: color-coded chip for URGENT / HIGH / NORMAL / LOW
 - [x] Implement done toggle: optimistic UI update, calls `PATCH /done`
 - [x] Implement starred toggle: optimistic UI update, calls `PATCH /starred`
 - [ ] Implement delete item: confirmation prompt, calls `DELETE`
 - [ ] Implement drag-and-drop reorder (only shown/active when list sort = MANUAL): calls `PATCH /order`
 - [x] Implement client-side filtering controls: hide future items toggle, hide undated items toggle, starred-only toggle, filter by category dropdown, filter by assignee dropdown
 - [x] Implement client-side sorting: apply current list sort setting within each category group
-- [ ] Write Vitest component tests for `ItemCard` (renders all field combinations) and `PriorityBadge`
+- [ ] Write Vitest component tests for `ItemCard` (renders all field combinations)
 
 ### E2E
 - [ ] E2E: add items to a list, verify they appear in the list detail view
@@ -216,7 +214,7 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [ ] Implement recurrence service: given a completed item with a recurrence rule, compute `nextDueDate`:
   - If item has `dueDate`: `nextDueDate = dueDate + interval`
   - If item has no `dueDate`: `nextDueDate = today + interval`
-- [ ] On mark-done of a recurring item: create new `TodoItem` with `parentItemId` pointing to the just-completed item; inherit title, notes, category, priority, recurrence rule, and assignments
+- [ ] On mark-done of a recurring item: create new `TodoItem` with `parentItemId` pointing to the just-completed item; inherit title, notes, category, recurrence rule, and assignments
 - [ ] Write unit tests for `nextDueDate` computation (every N days/weeks/months/years, with and without due date, late completion does not shift future dates)
 - [ ] Write integration test: mark recurring item done → new item created with correct due date and `parentItemId`
 - [ ] Write integration test: mark recurring item done (no due date) → new item due `today + interval`
@@ -246,7 +244,7 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [ ] Create Flyway migration `V5__create_saved_items.sql`: `saved_items` table
 
 ### Backend
-- [ ] Create `SavedItem` JPA entity (listId, title, notes, categoryId, priority) and repository
+- [ ] Create `SavedItem` JPA entity (listId, title, notes, categoryId) and repository
 - [ ] Implement `GET /api/lists/{id}/saved-items`: returns all saved items; supports `?q=` prefix search for autocomplete; VIEWER+
 - [ ] Implement `POST /api/lists/{id}/saved-items`: creates saved item; EDITOR+
 - [ ] Implement `PUT /api/lists/{id}/saved-items/{sid}`: updates saved item; EDITOR+
@@ -256,7 +254,7 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ### Frontend
 - [ ] Create saved items management screen (accessible from list settings): list, create, edit, delete saved items
 - [ ] Implement autocomplete in "Create item" title input: on each keystroke, call `GET /saved-items?q={prefix}`, show dropdown of matching titles
-- [ ] On suggestion select: pre-fill notes, category, priority from the saved item; title input keeps the selected title
+- [ ] On suggestion select: pre-fill notes, category from the saved item; title input keeps the selected title
 - [ ] Write Vitest component test: autocomplete shows suggestions and pre-fills fields on selection
 
 ---

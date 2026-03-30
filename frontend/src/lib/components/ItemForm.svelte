@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
-  import type { TodoItem, Category, User, Priority, RecurrenceRule } from '$lib/mock-data';
+  import { untrack, onMount } from 'svelte';
+  import type { TodoItem, Category, User, RecurrenceRule } from '$lib/mock-data';
 
   let {
     item,
@@ -22,12 +22,13 @@
 
   let title = $state(untrack(() => item?.title ?? ''));
   let notes = $state(untrack(() => item?.notes ?? ''));
-  let priority = $state<Priority | ''>(untrack(() => item?.priority ?? ''));
   let dueDate = $state(untrack(() => item?.dueDate ?? ''));
   let categoryId = $state<string>(untrack(() => item?.categoryId ?? ''));
-  let assignedUserId = $state<string>(untrack(() => item?.assignedUserId ?? ''));
+  let assignedUserId = $state<string>(untrack(() => item?.assignedUserIds[0] ?? ''));
   let recurrencePreset = $state<string>(untrack(() => getInitialRecurrencePreset(item?.recurrenceRule ?? null)));
   let titleInput = $state<HTMLInputElement | null>(null);
+
+  onMount(() => titleInput?.focus());
 
   function getInitialRecurrencePreset(rule: RecurrenceRule | null): string {
     if (!rule) return '';
@@ -53,11 +54,11 @@
       notes: notes || null,
       done: item?.done ?? false,
       starred: item?.starred ?? false,
-      priority: (priority as Priority) || null,
       dueDate: dueDate || null,
-      assignedUserId: assignedUserId || null,
+      assignedUserIds: assignedUserId ? [assignedUserId] : [],
       recurrenceRule: parseRecurrencePreset(recurrencePreset),
       parentItemId: item?.parentItemId ?? null,
+      createdByUserId: item?.createdByUserId ?? null,
       sortOrder: item?.sortOrder ?? 999,
       createdAt: item?.createdAt ?? now
     };
@@ -65,7 +66,6 @@
     if (isNew) {
       title = '';
       notes = '';
-      priority = '';
       dueDate = '';
       categoryId = '';
       assignedUserId = '';
@@ -88,28 +88,18 @@
     />
   </div>
 
-  <div>
-    <textarea
-      bind:value={notes}
-      placeholder="Notes (optional)"
-      rows="2"
-      class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-    ></textarea>
-  </div>
-
   <div class="grid grid-cols-2 gap-2">
     <div>
-      <label for="priority" class="text-xs text-gray-500 mb-1 block">Priority</label>
+      <label for="categoryId" class="text-xs text-gray-500 mb-1 block">Category</label>
       <select
-        id="priority"
-        bind:value={priority}
+        id="categoryId"
+        bind:value={categoryId}
         class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <option value="">None</option>
-        <option value="URGENT">Urgent</option>
-        <option value="HIGH">High</option>
-        <option value="NORMAL">Normal</option>
-        <option value="LOW">Low</option>
+        <option value="">Uncategorized</option>
+        {#each categories as cat}
+          <option value={cat.id}>{cat.name}</option>
+        {/each}
       </select>
     </div>
 
@@ -124,16 +114,19 @@
     </div>
 
     <div>
-      <label for="categoryId" class="text-xs text-gray-500 mb-1 block">Category</label>
+      <label for="recurrencePreset" class="text-xs text-gray-500 mb-1 block">Recurrence</label>
       <select
-        id="categoryId"
-        bind:value={categoryId}
+        id="recurrencePreset"
+        bind:value={recurrencePreset}
         class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <option value="">Uncategorized</option>
-        {#each categories as cat}
-          <option value={cat.id}>{cat.name}</option>
-        {/each}
+        <option value="">No recurrence</option>
+        <option value="1_DAYS">Every day</option>
+        <option value="1_WEEKS">Every week</option>
+        <option value="2_WEEKS">Every 2 weeks</option>
+        <option value="1_MONTHS">Every month</option>
+        <option value="3_MONTHS">Every 3 months</option>
+        <option value="1_YEARS">Every year</option>
       </select>
     </div>
 
@@ -153,20 +146,12 @@
   </div>
 
   <div>
-    <label for="recurrencePreset" class="text-xs text-gray-500 mb-1 block">Recurrence</label>
-    <select
-      id="recurrencePreset"
-      bind:value={recurrencePreset}
-      class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-    >
-      <option value="">No recurrence</option>
-      <option value="1_DAYS">Every day</option>
-      <option value="1_WEEKS">Every week</option>
-      <option value="2_WEEKS">Every 2 weeks</option>
-      <option value="1_MONTHS">Every month</option>
-      <option value="3_MONTHS">Every 3 months</option>
-      <option value="1_YEARS">Every year</option>
-    </select>
+    <textarea
+      bind:value={notes}
+      placeholder="Notes (optional)"
+      rows="2"
+      class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+    ></textarea>
   </div>
 
   <div class="flex justify-end gap-2 pt-1">

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { getItems, saveItem } from '$lib/stores/items.svelte';
+  import { getItems, updateItem } from '$lib/stores/items.svelte';
   import { getList, getCategoriesForList } from '$lib/stores/lists.svelte';
   import type { TodoItem } from '$lib/mock-data';
   import ItemForm from '$lib/components/ItemForm.svelte';
@@ -12,8 +12,17 @@
   const item = $derived(getItems().find(i => i.id === data.iid && i.listId === data.id));
   const categories = $derived(getCategoriesForList(data.id));
 
-  function handleSave(updated: TodoItem) {
-    saveItem(updated);
+  async function handleSave(updated: TodoItem) {
+    await updateItem(data.id, data.iid, {
+      title: updated.title,
+      notes: updated.notes,
+      categoryId: updated.categoryId,
+      dueDate: updated.dueDate,
+      starred: updated.starred,
+      recurrenceRule: updated.recurrenceRule,
+      assignedUserIds: updated.assignedUserIds,
+      sortOrder: updated.sortOrder,
+    });
     goto(`/lists/${data.id}`);
   }
 
