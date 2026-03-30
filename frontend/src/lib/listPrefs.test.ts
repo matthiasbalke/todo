@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { loadListPrefs, saveListPrefs } from './listPrefs';
+import { loadListPrefs, saveListPrefs, deleteListPrefs } from './listPrefs';
 import type { ListPrefs } from './listPrefs';
 
 const defaultPrefs: ListPrefs = {

@@ -28,3 +28,11 @@ export function saveListPrefs(listId: string, prefs: ListPrefs): void {
     // ignore (e.g. private browsing quota exceeded)
   }
 }
+
+export function deleteListPrefs(listId: string): void {
+  try {
+    localStorage.removeItem(key(listId));
+  } catch {
+    // ignore
+  }
+}

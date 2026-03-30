@@ -7,8 +7,8 @@
   import type { Filters } from '$lib/utils';
   import { untrack } from 'svelte';
   import type { SortField, SortDirection, TodoItem } from '$lib/mock-data';
-  import { loadListPrefs, saveListPrefs } from '$lib/listPrefs';
-  import { loadListCategoryState, saveListCategoryState } from '$lib/listCategoryState';
+  import { loadListPrefs, saveListPrefs, deleteListPrefs } from '$lib/listPrefs';
+  import { loadListCategoryState, saveListCategoryState, deleteListCategoryState } from '$lib/listCategoryState';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
   import ItemForm from '$lib/components/ItemForm.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
@@ -39,10 +39,17 @@
   let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => list?.defaultSortDirection ?? 'ASC'));
 
   $effect(() => {
-    saveListPrefs(data.id, { sortField, sortDirection, ...filters, hideDone: isHideDone(data.id) });
+    const prefs = { sortField, sortDirection, ...filters, hideDone: isHideDone(data.id) };
+    const isDefault =
+      prefs.sortField === (list?.defaultSortField ?? 'MANUAL') &&
+      prefs.sortDirection === (list?.defaultSortDirection ?? 'ASC') &&
+      !prefs.starredOnly && !prefs.hideFuture && !prefs.hideUndated && !prefs.hideDone;
+    if (isDefault) deleteListPrefs(data.id); else saveListPrefs(data.id, prefs);
   });
   $effect(() => {
-    saveListCategoryState(data.id, { collapsed: collapsedMap, doneCollapsed: doneCollapsedMap });
+    const isEmpty = Object.keys(collapsedMap).length === 0 && Object.keys(doneCollapsedMap).length === 0;
+    if (isEmpty) deleteListCategoryState(data.id);
+    else saveListCategoryState(data.id, { collapsed: collapsedMap, doneCollapsed: doneCollapsedMap });
   });
   let showAddForm = $state(false);
   let showEditForm = $state(false);
@@ -281,8 +288,16 @@
           hideDone={isHideDone(data.id)}
           collapsed={collapsedMap[key ?? '__null__'] ?? false}
           doneCollapsed={doneCollapsedMap[key ?? '__null__'] ?? true}
-          oncollapsedchange={(v) => { collapsedMap = { ...collapsedMap, [key ?? '__null__']: v }; }}
-          ondonecollapsedchange={(v) => { doneCollapsedMap = { ...doneCollapsedMap, [key ?? '__null__']: v }; }}
+          oncollapsedchange={(v) => {
+            const next = { ...collapsedMap };
+            if (v) next[key ?? '__null__'] = true; else delete next[key ?? '__null__'];
+            collapsedMap = next;
+          }}
+          ondonecollapsedchange={(v) => {
+            const next = { ...doneCollapsedMap };
+            if (!v) next[key ?? '__null__'] = false; else delete next[key ?? '__null__'];
+            doneCollapsedMap = next;
+          }}
         />
       {/each}
     </div>

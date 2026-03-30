@@ -6,8 +6,8 @@
   import type { Filters } from '$lib/utils';
   import { untrack } from 'svelte';
   import type { SortField, SortDirection } from '$lib/mock-data';
-  import { loadListPrefs, saveListPrefs } from '$lib/listPrefs';
-  import { loadListCategoryState, saveListCategoryState } from '$lib/listCategoryState';
+  import { loadListPrefs, saveListPrefs, deleteListPrefs } from '$lib/listPrefs';
+  import { loadListCategoryState, saveListCategoryState, deleteListCategoryState } from '$lib/listCategoryState';
   import GroceryCategorySection from '$lib/components/GroceryCategorySection.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
@@ -41,14 +41,21 @@
   let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => data.list.defaultSortDirection ?? 'ASC'));
 
   $effect(() => {
-    saveListPrefs(data.list.id, { sortField, sortDirection, ...filters, hideDone: isHideDone(data.list.id) });
+    const prefs = { sortField, sortDirection, ...filters, hideDone: isHideDone(data.list.id) };
+    const isDefault =
+      prefs.sortField === (data.list.defaultSortField ?? 'MANUAL') &&
+      prefs.sortDirection === (data.list.defaultSortDirection ?? 'ASC') &&
+      !prefs.starredOnly && !prefs.hideFuture && !prefs.hideUndated && !prefs.hideDone;
+    if (isDefault) deleteListPrefs(data.list.id); else saveListPrefs(data.list.id, prefs);
   });
   $effect(() => {
-    const collapsed: Record<string, boolean> = {};
-    for (const k of collapsedSections) {
-      collapsed[k ?? '__null__'] = true;
+    if (collapsedSections.size === 0) {
+      deleteListCategoryState(data.list.id);
+    } else {
+      const collapsed: Record<string, boolean> = {};
+      for (const k of collapsedSections) collapsed[k ?? '__null__'] = true;
+      saveListCategoryState(data.list.id, { collapsed, doneCollapsed: {} });
     }
-    saveListCategoryState(data.list.id, { collapsed, doneCollapsed: {} });
   });
 
   const dueDateOptions = [

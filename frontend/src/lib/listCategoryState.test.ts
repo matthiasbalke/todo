@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { loadListCategoryState, saveListCategoryState } from './listCategoryState';
+import { loadListCategoryState, saveListCategoryState, deleteListCategoryState } from './listCategoryState';
 import type { ListCategoryState } from './listCategoryState';
 
 const sampleState: ListCategoryState = {
@@ -58,5 +58,21 @@ describe('saveListCategoryState', () => {
     ls.setItem.mockImplementation(() => { throw new Error('quota exceeded'); });
     vi.stubGlobal('localStorage', ls);
     expect(() => saveListCategoryState('list-1', sampleState)).not.toThrow();
+  });
+});
+
+describe('deleteListCategoryState', () => {
+  it('removes the entry so load returns null', () => {
+    vi.stubGlobal('localStorage', makeLocalStorage());
+    saveListCategoryState('list-1', sampleState);
+    deleteListCategoryState('list-1');
+    expect(loadListCategoryState('list-1')).toBeNull();
+  });
+
+  it('does not throw when removeItem throws', () => {
+    const ls = makeLocalStorage();
+    ls.removeItem.mockImplementation(() => { throw new Error('blocked'); });
+    vi.stubGlobal('localStorage', ls);
+    expect(() => deleteListCategoryState('list-1')).not.toThrow();
   });
 });

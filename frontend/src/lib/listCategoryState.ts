@@ -22,3 +22,11 @@ export function saveListCategoryState(listId: string, state: ListCategoryState):
     // ignore (e.g. private browsing quota exceeded)
   }
 }
+
+export function deleteListCategoryState(listId: string): void {
+  try {
+    localStorage.removeItem(key(listId));
+  } catch {
+    // ignore
+  }
+}
