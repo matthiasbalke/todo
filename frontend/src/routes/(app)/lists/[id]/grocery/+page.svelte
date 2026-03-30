@@ -31,6 +31,7 @@
   $effect(() => { loadItemsForList(data.list.id); });
 
   const _savedPrefs = untrack(() => loadListPrefs(data.list.id));
+  untrack(() => setHideDone(data.list.id, _savedPrefs?.hideDone ?? false));
   let filters = $state<Filters>({
     starredOnly: _savedPrefs?.starredOnly ?? false,
     hideFuture: _savedPrefs?.hideFuture ?? false,
@@ -40,7 +41,7 @@
   let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => data.list.defaultSortDirection ?? 'ASC'));
 
   $effect(() => {
-    saveListPrefs(data.list.id, { sortField, sortDirection, ...filters });
+    saveListPrefs(data.list.id, { sortField, sortDirection, ...filters, hideDone: isHideDone(data.list.id) });
   });
   $effect(() => {
     const collapsed: Record<string, boolean> = {};

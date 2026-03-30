@@ -26,6 +26,7 @@
   $effect(() => { loadItemsForList(data.id); });
 
   const _savedPrefs = untrack(() => loadListPrefs(data.id));
+  untrack(() => setHideDone(data.id, _savedPrefs?.hideDone ?? false));
   const _savedCategoryState = untrack(() => loadListCategoryState(data.id));
   let collapsedMap = $state<Record<string, boolean>>(_savedCategoryState?.collapsed ?? {});
   let doneCollapsedMap = $state<Record<string, boolean>>(_savedCategoryState?.doneCollapsed ?? {});
@@ -38,7 +39,7 @@
   let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => list?.defaultSortDirection ?? 'ASC'));
 
   $effect(() => {
-    saveListPrefs(data.id, { sortField, sortDirection, ...filters });
+    saveListPrefs(data.id, { sortField, sortDirection, ...filters, hideDone: isHideDone(data.id) });
   });
   $effect(() => {
     saveListCategoryState(data.id, { collapsed: collapsedMap, doneCollapsed: doneCollapsedMap });

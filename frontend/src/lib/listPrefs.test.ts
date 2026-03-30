@@ -42,6 +42,21 @@ describe('loadListPrefs', () => {
   });
 });
 
+describe('hideDone field', () => {
+  it('round-trips hideDone: true', () => {
+    vi.stubGlobal('localStorage', makeLocalStorage());
+    const prefs: ListPrefs = { ...defaultPrefs, hideDone: true };
+    saveListPrefs('list-1', prefs);
+    expect(loadListPrefs('list-1')?.hideDone).toBe(true);
+  });
+
+  it('hideDone is undefined when not saved (backward compat)', () => {
+    vi.stubGlobal('localStorage', makeLocalStorage());
+    saveListPrefs('list-1', defaultPrefs); // no hideDone field
+    expect(loadListPrefs('list-1')?.hideDone).toBeUndefined();
+  });
+});
+
 describe('saveListPrefs', () => {
   beforeEach(() => {
     vi.stubGlobal('localStorage', makeLocalStorage());

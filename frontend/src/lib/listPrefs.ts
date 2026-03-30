@@ -6,6 +6,7 @@ export type ListPrefs = {
   starredOnly: boolean;
   hideFuture: boolean;
   hideUndated: boolean;
+  hideDone?: boolean;
 };
 
 const key = (listId: string) => `todo_list_prefs_${listId}`;
