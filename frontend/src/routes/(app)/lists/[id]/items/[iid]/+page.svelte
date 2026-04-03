@@ -13,17 +13,21 @@
   const categories = $derived(getCategoriesForList(data.id));
 
   async function handleSave(updated: TodoItem) {
-    await updateItem(data.id, data.iid, {
-      title: updated.title,
-      notes: updated.notes,
-      categoryId: updated.categoryId,
-      dueDate: updated.dueDate,
-      starred: updated.starred,
-      recurrenceRule: updated.recurrenceRule,
-      assignedUserIds: updated.assignedUserIds,
-      sortOrder: updated.sortOrder,
-    });
-    goto(`/lists/${data.id}`);
+    try {
+      await updateItem(data.id, data.iid, {
+        title: updated.title,
+        notes: updated.notes,
+        categoryId: updated.categoryId,
+        dueDate: updated.dueDate,
+        starred: updated.starred,
+        recurrenceRule: updated.recurrenceRule,
+        assignedUserIds: updated.assignedUserIds,
+        sortOrder: updated.sortOrder,
+      });
+      goto(`/lists/${data.id}`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to save item');
+    }
   }
 
   function handleCancel() {
