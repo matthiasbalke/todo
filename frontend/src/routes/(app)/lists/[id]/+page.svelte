@@ -117,6 +117,15 @@
     }
   }
 
+  async function handleEditList({ name, emoji }: { name: string; emoji: string }) {
+    try {
+      await updateList(data.id, { name, emoji });
+      showEditForm = false;
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to update list');
+    }
+  }
+
   async function handleDelete() {
     if (!confirm('Delete this list? This cannot be undone.')) return;
     deleting = true;
@@ -140,7 +149,7 @@
       <div class="flex-1">
         <ListForm
           {list}
-          onsubmit={async ({ name, emoji }) => { await updateList(data.id, { name, emoji }); showEditForm = false; }}
+          onsubmit={handleEditList}
           oncancel={() => { showEditForm = false; }}
         />
       </div>

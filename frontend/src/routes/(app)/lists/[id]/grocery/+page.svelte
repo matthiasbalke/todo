@@ -89,6 +89,15 @@
   const sorted = $derived(applySort(filtered, sortField, sortDirection));
   const grouped = $derived(groupByCategory(sorted, categories));
 
+  async function handleEditList({ name, emoji }: { name: string; emoji: string }) {
+    try {
+      await updateList(data.list.id, { name, emoji });
+      showEditForm = false;
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to update list');
+    }
+  }
+
   function toggleSection(key: string | null) {
     const next = new Set(collapsedSections);
     const strKey = key ?? '__null__';
@@ -108,7 +117,7 @@
       <div class="flex-1">
         <ListForm
           {list}
-          onsubmit={async ({ name, emoji }) => { await updateList(data.list.id, { name, emoji }); showEditForm = false; }}
+          onsubmit={handleEditList}
           oncancel={() => { showEditForm = false; }}
         />
       </div>

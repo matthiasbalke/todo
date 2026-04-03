@@ -7,7 +7,7 @@
     oncancel
   }: {
     list?: { name: string; emoji: string | null } | null;
-    onsubmit: (data: { name: string; emoji: string }) => void;
+    onsubmit: (data: { name: string; emoji: string }) => Promise<void> | void;
     oncancel: () => void;
   } = $props();
 
@@ -23,12 +23,12 @@
     return match ? match[0] : '';
   }
 
-  function handleSubmit(e: Event) {
+  async function handleSubmit(e: Event) {
     e.preventDefault();
     const trimmed = name.trim();
     const emoji = extractEmoji(trimmed);
     const displayName = emoji ? trimmed.slice(emoji.length).trimStart() : trimmed;
-    onsubmit({ name: displayName || trimmed, emoji: emoji || '📋' });
+    await onsubmit({ name: displayName || trimmed, emoji: emoji || '📋' });
   }
 </script>
 
