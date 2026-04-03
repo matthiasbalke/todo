@@ -1,8 +1,13 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import '../app.css';
   import { appVersion } from '$lib/version';
 
   let { children, data } = $props();
+
+  onMount(() => {
+    document.body.setAttribute('data-hydrated', 'true');
+  });
 </script>
 
 <div class="min-h-screen bg-gray-50 flex flex-col">
