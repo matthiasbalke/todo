@@ -7,14 +7,22 @@
   let { item, categories, users }: { item: TodoItem; categories: Category[]; users: User[] } = $props();
   const assignedUsers = $derived(users.filter(u => item.assignedUserIds.includes(u.id)));
 
-  function handleDone(e: Event) {
+  async function handleDone(e: Event) {
     e.preventDefault();
-    toggleDone(item.listId, item.id);
+    try {
+      await toggleDone(item.listId, item.id);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to update item');
+    }
   }
 
-  function handleStar(e: Event) {
+  async function handleStar(e: Event) {
     e.preventDefault();
-    toggleStarred(item.listId, item.id);
+    try {
+      await toggleStarred(item.listId, item.id);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to update item');
+    }
   }
 </script>
 

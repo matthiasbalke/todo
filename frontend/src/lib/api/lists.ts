@@ -1,5 +1,4 @@
-import { fetchJson } from './client';
-import { getAccessToken } from '$lib/stores/auth.svelte';
+import { authedFetch } from './authedClient';
 
 export type ListRole = 'OWNER' | 'EDITOR' | 'VIEWER';
 
@@ -53,16 +52,6 @@ export interface ChangeMemberRoleRequest {
 	role: ListRole;
 }
 
-function authedFetch<T>(url: string, init?: RequestInit): Promise<T> {
-	const token = getAccessToken();
-	return fetchJson<T>(url, {
-		...init,
-		headers: {
-			...(token ? { Authorization: `Bearer ${token}` } : {}),
-			...init?.headers,
-		},
-	});
-}
 
 export function getLists(): Promise<ListSummaryDto[]> {
 	return authedFetch('/api/lists');

@@ -100,16 +100,30 @@
   const grouped = $derived(groupByCategory(sorted, categories));
 
   async function handleAddItem(item: TodoItem) {
-    await createItem(data.id, {
-      title: item.title,
-      notes: item.notes,
-      categoryId: item.categoryId,
-      dueDate: item.dueDate,
-      starred: item.starred,
-      recurrenceRule: item.recurrenceRule,
-      assignedUserIds: item.assignedUserIds,
-      sortOrder: item.sortOrder,
-    });
+    try {
+      await createItem(data.id, {
+        title: item.title,
+        notes: item.notes,
+        categoryId: item.categoryId,
+        dueDate: item.dueDate,
+        starred: item.starred,
+        recurrenceRule: item.recurrenceRule,
+        assignedUserIds: item.assignedUserIds,
+        sortOrder: item.sortOrder,
+      });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to add item');
+      throw e;
+    }
+  }
+
+  async function handleEditList({ name, emoji }: { name: string; emoji: string }) {
+    try {
+      await updateList(data.id, { name, emoji });
+      showEditForm = false;
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to update list');
+    }
   }
 
   async function handleDelete() {
@@ -135,7 +149,7 @@
       <div class="flex-1">
         <ListForm
           {list}
-          onsubmit={async ({ name, emoji }) => { await updateList(data.id, { name, emoji }); showEditForm = false; }}
+          onsubmit={handleEditList}
           oncancel={() => { showEditForm = false; }}
         />
       </div>

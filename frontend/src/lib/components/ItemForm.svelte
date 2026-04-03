@@ -14,7 +14,7 @@
     listId: string;
     categories: Category[];
     users: User[];
-    onsubmit: (item: TodoItem) => void;
+    onsubmit: (item: TodoItem) => Promise<void> | void;
     oncancel: () => void;
   } = $props();
 
@@ -43,7 +43,7 @@
     return { intervalValue: parseInt(val), intervalUnit: unit as RecurrenceRule['intervalUnit'] };
   }
 
-  function handleSubmit(e: Event) {
+  async function handleSubmit(e: Event) {
     e.preventDefault();
     const now = new Date().toISOString().split('T')[0];
     const submitted: TodoItem = {
@@ -62,7 +62,7 @@
       sortOrder: item?.sortOrder ?? 999,
       createdAt: item?.createdAt ?? now
     };
-    onsubmit(submitted);
+    await onsubmit(submitted);
     if (isNew) {
       title = '';
       notes = '';
