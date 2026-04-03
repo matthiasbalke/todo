@@ -100,16 +100,21 @@
   const grouped = $derived(groupByCategory(sorted, categories));
 
   async function handleAddItem(item: TodoItem) {
-    await createItem(data.id, {
-      title: item.title,
-      notes: item.notes,
-      categoryId: item.categoryId,
-      dueDate: item.dueDate,
-      starred: item.starred,
-      recurrenceRule: item.recurrenceRule,
-      assignedUserIds: item.assignedUserIds,
-      sortOrder: item.sortOrder,
-    });
+    try {
+      await createItem(data.id, {
+        title: item.title,
+        notes: item.notes,
+        categoryId: item.categoryId,
+        dueDate: item.dueDate,
+        starred: item.starred,
+        recurrenceRule: item.recurrenceRule,
+        assignedUserIds: item.assignedUserIds,
+        sortOrder: item.sortOrder,
+      });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to add item');
+      throw e;
+    }
   }
 
   async function handleDelete() {

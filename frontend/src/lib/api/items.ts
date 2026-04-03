@@ -1,5 +1,4 @@
-import { fetchJson } from './client';
-import { getAccessToken } from '$lib/stores/auth.svelte';
+import { authedFetch } from './authedClient';
 
 export interface RecurrenceRuleDto {
 	intervalUnit: string;
@@ -46,16 +45,6 @@ export interface UpdateItemRequest {
 	sortOrder?: number;
 }
 
-function authedFetch<T>(url: string, init?: RequestInit): Promise<T> {
-	const token = getAccessToken();
-	return fetchJson<T>(url, {
-		...init,
-		headers: {
-			...(token ? { Authorization: `Bearer ${token}` } : {}),
-			...init?.headers,
-		},
-	});
-}
 
 export function getItems(listId: string): Promise<ItemDto[]> {
 	return authedFetch(`/api/lists/${listId}/items`);

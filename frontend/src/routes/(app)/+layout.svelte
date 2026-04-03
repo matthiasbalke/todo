@@ -1,10 +1,22 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { logout } from '$lib/api/auth';
-  import { clearSession, getAccessToken, getCurrentUser } from '$lib/stores/auth.svelte';
+  import { clearSession, getAccessToken, getCurrentUser, refreshIfExpired } from '$lib/stores/auth.svelte';
   let { children } = $props();
   const user = getCurrentUser();
   let userMenuOpen = $state(false);
+
+  onMount(() => {
+    async function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        const valid = await refreshIfExpired();
+        if (!valid) await goto('/auth');
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  });
 
   async function handleLogout() {
     userMenuOpen = false;
