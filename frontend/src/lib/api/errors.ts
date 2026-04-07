@@ -10,6 +10,9 @@ const STATUS_MESSAGES: Partial<Record<number, string>> = {
 
 export function friendlyError(error: unknown, fallback: string): string {
 	console.error(error);
+	if (error instanceof TypeError && !navigator.onLine) {
+		return "You're offline — please check your connection.";
+	}
 	if (error instanceof ApiError) {
 		return STATUS_MESSAGES[error.status] ?? fallback;
 	}
