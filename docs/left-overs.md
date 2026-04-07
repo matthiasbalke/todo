@@ -5,10 +5,12 @@ Checkbox-based task list for tracking incomplete feature implementation tasks. T
 
 ---
 
-## 1. Lists
+## 1. Misc
 
 ### Backend
 
 ### Frontend
+  
+ * [ ] The ItemForm keeps a single-user dropdown (picks first assignment). Multiple assignments must be possible.
+ * [ ] Cursor-based pagination params (cursor, limit) are accepted but unused in the initial implementation — the response always returns all items in one page.
 
-- [ ] Create Tests for `frontend/src/lib/listPrefs.test.ts` for `deleteListPrefs`. The Rate limit was reached, so it couldn't be finished. In the same style as `deleteListCategoryState` or `does not throw when removeItem throws` from `frontend/src/lib/listCategoryState.test.ts`.
