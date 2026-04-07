@@ -6,8 +6,15 @@
   let { children } = $props();
   const user = getCurrentUser();
   let userMenuOpen = $state(false);
+  let offline = $state(false);
 
   onMount(() => {
+    offline = !navigator.onLine;
+    const setOffline = () => { offline = true; };
+    const setOnline  = () => { offline = false; };
+    window.addEventListener('offline', setOffline);
+    window.addEventListener('online',  setOnline);
+
     async function handleVisibilityChange() {
       if (document.visibilityState === 'visible') {
         const valid = await refreshIfExpired();
@@ -15,7 +22,11 @@
       }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('offline', setOffline);
+      window.removeEventListener('online',  setOnline);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   });
 
   async function handleLogout() {
@@ -67,6 +78,11 @@
       </div>
     </div>
   </header>
+  {#if offline}
+    <div class="bg-yellow-50 border-b border-yellow-200 text-yellow-800 text-sm text-center py-2 px-4">
+      You're offline — changes won't be saved until you reconnect.
+    </div>
+  {/if}
   <main class="max-w-2xl mx-auto px-4 py-6">
     {@render children()}
   </main>

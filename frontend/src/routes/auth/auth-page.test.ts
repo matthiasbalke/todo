@@ -37,7 +37,7 @@ import { setSession } from '$lib/stores/auth.svelte';
 import AuthPage from './+page.svelte';
 
 async function waitForIdle() {
-	await vi.advanceTimersByTimeAsync(2100);
+	await vi.advanceTimersByTimeAsync(0);
 }
 
 describe('AuthPage', () => {

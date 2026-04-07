@@ -11,6 +11,7 @@
   import GroceryCategorySection from '$lib/components/GroceryCategorySection.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
+  import { friendlyError } from '$lib/api/errors';
 
   let { data }: { data: PageData } = $props();
 
@@ -94,7 +95,7 @@
       await updateList(data.list.id, { name, emoji });
       showEditForm = false;
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed to update list');
+      alert(friendlyError(e, 'Failed to update list'));
     }
   }
 

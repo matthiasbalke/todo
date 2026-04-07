@@ -28,7 +28,7 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ### Docker & CI/CD
 - [x] Create root `docker-compose.yml` with `postgres`, `backend`, `frontend` services
 - [x] Create `backend/Dockerfile` (multi-stage: Gradle build → JRE 21 runtime)
-- [ ] Create `frontend/Dockerfile` (multi-stage: bun build → Node runtime)
+- [x] Create `frontend/Dockerfile` (multi-stage: bun build → Node runtime)
 - [ ] Verify `docker compose up --build` starts all services and each reaches its health check
 - [x] Create `.github/workflows/ci.yml`: two parallel jobs — `backend` (Gradle build + test) and `frontend` (bun type-check + Vitest); triggers on push/PR to `main`
 - [ ] Create `.github/workflows/e2e.yml`: single job — `docker compose up`, wait for health checks, run Playwright (Chromium); triggers on push to `main` only
@@ -64,13 +64,13 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 
 ### Frontend
 - [x] Create `auth/login/+page.svelte`: email input field, "Continue with passkey" button, "Sign in with Google" button
-- [ ] Implement passkey registration flow: call `register-options` → `navigator.credentials.create()` → `register` → store JWT → redirect
-- [ ] Implement passkey login flow: call `login-options` → `navigator.credentials.get()` → `login` → store JWT → redirect
+- [x] Implement passkey registration flow: call `register-options` → `navigator.credentials.create()` → `register` → store JWT → redirect
+- [x] Implement passkey login flow: call `login-options` → `navigator.credentials.get()` → `login` → store JWT → redirect
 - [ ] Implement Google OAuth2 button: redirects to `/api/auth/oauth2/google`; handle callback page that stores JWT
-- [ ] Implement token refresh: intercept 401 responses in API client, call `/api/auth/refresh`, retry original request
-- [ ] Implement logout: call `POST /api/auth/logout`, clear tokens, redirect to login
-- [ ] Create typed API client in `src/lib/api/` (one file per resource: `lists.ts`, `items.ts`, `auth.ts`, etc.) wrapping `fetch` with JWT header injection and token refresh
-- [ ] Write Vitest component tests for the login page (renders correctly, form validation)
+- [x] Implement token refresh: intercept 401 responses in API client, call `/api/auth/refresh`, retry original request
+- [x] Implement logout: call `POST /api/auth/logout`, clear tokens, redirect to login
+- [x] Create typed API client in `src/lib/api/` (one file per resource: `lists.ts`, `items.ts`, `auth.ts`, etc.) wrapping `fetch` with JWT header injection and token refresh
+- [x] Write Vitest component tests for the login page (renders correctly, form validation)
 
 ### E2E
 - [ ] E2E: user registration via passkey (using Playwright's WebAuthn virtual authenticator)
@@ -116,8 +116,8 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [x] Create `(app)/lists/+page.svelte`: fetches and displays all lists as cards with emoji + name
 - [x] Implement "Create list" modal/drawer: emoji picker, name field, submit calls `POST /api/lists`
 - [x] Implement "Edit list" action: pre-filled modal for name/emoji/description/sort settings
-- [ ] Implement "Delete list" action: confirmation dialog; OWNER only
-- [ ] Implement "Members" panel: shows member list, invite by email input, role change dropdown, remove button; OWNER only
+- [x] Implement "Delete list" action: confirmation dialog; OWNER only
+- [x] Implement "Members" panel: shows member list, invite by email input, role change dropdown, remove button; OWNER only
 
 ### E2E
 - [ ] E2E: create a list, verify it appears on the list index

@@ -19,7 +19,7 @@
     let retries = 0;
     const maxRetries = 60;
 
-    pollInterval = setInterval(async () => {
+    async function tryConnect() {
       const healthy = await checkHealth();
       if (healthy) {
         clearInterval(pollInterval);
@@ -39,7 +39,12 @@
           mode = 'startup-timeout';
         }
       }
-    }, 2000);
+    }
+
+    await tryConnect();
+    if (mode === 'starting') {
+      pollInterval = setInterval(tryConnect, 2000);
+    }
   });
 
   onDestroy(() => {

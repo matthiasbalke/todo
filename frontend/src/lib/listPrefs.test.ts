@@ -81,3 +81,19 @@ describe('saveListPrefs', () => {
     expect(() => saveListPrefs('list-1', defaultPrefs)).not.toThrow();
   });
 });
+
+describe('deleteListPrefs', () => {
+  it('removes the entry so load returns null', () => {
+    vi.stubGlobal('localStorage', makeLocalStorage());
+    saveListPrefs('list-1', defaultPrefs);
+    deleteListPrefs('list-1');
+    expect(loadListPrefs('list-1')).toBeNull();
+  });
+
+  it('does not throw when removeItem throws', () => {
+    const ls = makeLocalStorage();
+    ls.removeItem.mockImplementation(() => { throw new Error('blocked'); });
+    vi.stubGlobal('localStorage', ls);
+    expect(() => deleteListPrefs('list-1')).not.toThrow();
+  });
+});
