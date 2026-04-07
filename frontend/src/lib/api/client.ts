@@ -18,7 +18,7 @@ export async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> 
 		},
 	});
 	if (!response.ok) {
-		let message = `${response.status} ${response.statusText}`;
+		let message = 'Request failed';
 		try {
 			const body = (await response.json()) as { message?: string; code?: string };
 			if (typeof body.message === 'string') message = body.message;

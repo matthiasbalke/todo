@@ -5,6 +5,7 @@
   import type { TodoItem } from '$lib/mock-data';
   import ItemForm from '$lib/components/ItemForm.svelte';
   import { goto } from '$app/navigation';
+  import { friendlyError } from '$lib/api/errors';
 
   let { data }: { data: PageData } = $props();
 
@@ -26,7 +27,7 @@
       });
       goto(`/lists/${data.id}`);
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed to save item');
+      alert(friendlyError(e, 'Failed to save item'));
     }
   }
 

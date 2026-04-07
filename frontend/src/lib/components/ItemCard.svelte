@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { TodoItem, Category, User } from '$lib/mock-data';
   import { toggleDone, toggleStarred } from '$lib/stores/items.svelte';
+  import { friendlyError } from '$lib/api/errors';
   import DueDateChip from './DueDateChip.svelte';
   import RecurrenceIndicator from './RecurrenceIndicator.svelte';
 
@@ -12,7 +13,7 @@
     try {
       await toggleDone(item.listId, item.id);
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed to update item');
+      alert(friendlyError(e, 'Failed to update item'));
     }
   }
 
@@ -21,7 +22,7 @@
     try {
       await toggleStarred(item.listId, item.id);
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed to update item');
+      alert(friendlyError(e, 'Failed to update item'));
     }
   }
 </script>

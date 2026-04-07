@@ -16,6 +16,7 @@
   import MembersDialog from '$lib/components/MembersDialog.svelte';
   import { getCurrentUser } from '$lib/stores/auth.svelte';
   import { getMembers } from '$lib/api/lists';
+  import { friendlyError } from '$lib/api/errors';
 
   let { data }: { data: PageData } = $props();
 
@@ -112,7 +113,7 @@
         sortOrder: item.sortOrder,
       });
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed to add item');
+      alert(friendlyError(e, 'Failed to add item'));
       throw e;
     }
   }
@@ -122,7 +123,7 @@
       await updateList(data.id, { name, emoji });
       showEditForm = false;
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed to update list');
+      alert(friendlyError(e, 'Failed to update list'));
     }
   }
 
@@ -133,7 +134,7 @@
       await deleteList(data.id);
       goto('/lists');
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed to delete list');
+      alert(friendlyError(e, 'Failed to delete list'));
       deleting = false;
     }
   }

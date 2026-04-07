@@ -155,7 +155,7 @@ describe('auth API client', () => {
 
 		expect(err).toBeInstanceOf(ApiError);
 		expect((err as ApiError).status).toBe(500);
-		expect((err as ApiError).message).toBe('500 Internal Server Error');
+		expect((err as ApiError).message).toBe('Request failed');
 	});
 
 	it('logout sends POST with Authorization header and credentials:include', async () => {
