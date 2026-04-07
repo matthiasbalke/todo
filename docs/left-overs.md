@@ -15,12 +15,21 @@ Checkbox-based task list for tracking incomplete feature implementation tasks. T
  * [ ] Cursor-based pagination params (cursor, limit) are accepted but unused in the initial implementation — the response always returns all items in one page.
 
 
+## 1. Lists
+
+### Backend
+
+### Frontend
+
+* [ ] clicking on the list name, opens the edit input to rename the list. loosing the focus saves the list name.
+
+
 ## 1. List Items
 
 ### Backend
 
 ### Frontend
 
-* [ ] Way to delete List Items.
 * [ ] Way to delete all checked List Items from a list.
+* [ ] Sort List items by dragging them.
 

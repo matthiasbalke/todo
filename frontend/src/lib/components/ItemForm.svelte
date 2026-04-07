@@ -75,7 +75,13 @@
   }
 </script>
 
-<form onsubmit={handleSubmit} class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+<form
+  onsubmit={handleSubmit}
+  onfocusout={(e) => {
+    if (isNew && !e.currentTarget.contains(e.relatedTarget as Node)) oncancel();
+  }}
+  class="bg-white rounded-xl border border-gray-200 p-4 space-y-3"
+>
   <div>
     <input
       type="text"
