@@ -21,8 +21,6 @@ Checkbox-based task list for tracking incomplete feature implementation tasks. T
 
 ### Frontend
 
-* [ ] clicking on the list name, opens the edit input to rename the list. loosing the focus saves the list name.
-
 
 ## 1. List Items
 

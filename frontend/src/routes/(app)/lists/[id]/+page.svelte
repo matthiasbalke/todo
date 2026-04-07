@@ -11,7 +11,6 @@
   import { loadListCategoryState, saveListCategoryState, deleteListCategoryState } from '$lib/listCategoryState';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
   import ItemForm from '$lib/components/ItemForm.svelte';
-  import ListForm from '$lib/components/ListForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
   import MembersDialog from '$lib/components/MembersDialog.svelte';
   import { getCurrentUser } from '$lib/stores/auth.svelte';
@@ -53,7 +52,8 @@
     else saveListCategoryState(data.id, { collapsed: collapsedMap, doneCollapsed: doneCollapsedMap });
   });
   let showAddForm = $state(false);
-  let showEditForm = $state(false);
+  let editingTitle = $state(false);
+  let titleEditValue = $state('');
   let showCategoryDialog = $state(false);
   let showMembersDialog = $state(false);
   let menuOpen = $state(false);
@@ -118,10 +118,15 @@
     }
   }
 
-  async function handleEditList({ name, emoji }: { name: string; emoji: string }) {
+  async function saveTitleEdit() {
+    editingTitle = false;
+    const trimmed = titleEditValue.trim();
+    const emojiMatch = trimmed.match(/^\p{Emoji_Presentation}/u);
+    const emoji = emojiMatch ? emojiMatch[0] : '';
+    const displayName = emoji ? trimmed.slice(emoji.length).trimStart() : trimmed;
+    if (!displayName) return;
     try {
-      await updateList(data.id, { name, emoji });
-      showEditForm = false;
+      await updateList(data.id, { name: displayName, emoji: emoji || '📋' });
     } catch (e) {
       alert(friendlyError(e, 'Failed to update list'));
     }
@@ -146,16 +151,32 @@
 <div>
   <div class="flex items-center gap-3 mb-4">
     <a href="/lists" class="text-gray-400 hover:text-gray-600">←</a>
-    {#if showEditForm}
-      <div class="flex-1">
-        <ListForm
-          {list}
-          onsubmit={handleEditList}
-          oncancel={() => { showEditForm = false; }}
-        />
-      </div>
+    {#if editingTitle}
+      <input
+        bind:value={titleEditValue}
+        autofocus
+        onblur={saveTitleEdit}
+        onkeydown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); saveTitleEdit(); }
+          if (e.key === 'Escape') { editingTitle = false; }
+        }}
+        class="flex-1 text-xl font-bold text-gray-900 bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500 min-w-0"
+      />
     {:else}
-      <h1 class="text-xl font-bold text-gray-900">{list.emoji ?? '📋'} {list.name}</h1>
+      <h1
+        class="text-xl font-bold text-gray-900 cursor-pointer hover:opacity-70 transition-opacity"
+        onclick={() => { titleEditValue = `${list.emoji ?? '📋'} ${list.name}`; editingTitle = true; }}
+        role="button"
+        tabindex="0"
+        onkeydown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            titleEditValue = `${list.emoji ?? '📋'} ${list.name}`; editingTitle = true;
+          }
+        }}
+      >
+        {list.emoji ?? '📋'} {list.name}
+      </h1>
+    {/if}
       <div class="relative ml-auto">
         <button
           onclick={() => { menuOpen = !menuOpen; sortSubmenuOpen = false; filterSubmenuOpen = false; }}
@@ -178,13 +199,6 @@
             >
               Grocery mode
             </a>
-            <div class="border-t border-gray-100 mt-1 pt-1"></div>
-            <button
-              onclick={() => { showEditForm = true; menuOpen = false; }}
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-            >
-              Edit list
-            </button>
             <button
               onclick={() => { showCategoryDialog = true; menuOpen = false; }}
               class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -284,57 +298,54 @@
           </div>
         {/if}
       </div>
-    {/if}
   </div>
 
-  {#if !showEditForm}
-    <div class="flex justify-end mb-4">
-      <span class="text-sm text-gray-400">{filtered.length} items</span>
-    </div>
+  <div class="flex justify-end mb-4">
+    <span class="text-sm text-gray-400">{filtered.length} items</span>
+  </div>
 
-    <div class="space-y-1">
-      {#each [...grouped] as [key, { category, items }]}
-        <CategoryGroup
-          categoryId={key}
-          {category}
-          {items}
-          allCategories={categories}
-          users={data.users}
-          hideDone={isHideDone(data.id)}
-          collapsed={collapsedMap[key ?? '__null__'] ?? false}
-          doneCollapsed={doneCollapsedMap[key ?? '__null__'] ?? true}
-          oncollapsedchange={(v) => {
-            const next = { ...collapsedMap };
-            if (v) next[key ?? '__null__'] = true; else delete next[key ?? '__null__'];
-            collapsedMap = next;
-          }}
-          ondonecollapsedchange={(v) => {
-            const next = { ...doneCollapsedMap };
-            if (!v) next[key ?? '__null__'] = false; else delete next[key ?? '__null__'];
-            doneCollapsedMap = next;
-          }}
-        />
-      {/each}
-    </div>
+  <div class="space-y-1">
+    {#each [...grouped] as [key, { category, items }]}
+      <CategoryGroup
+        categoryId={key}
+        {category}
+        {items}
+        allCategories={categories}
+        users={data.users}
+        hideDone={isHideDone(data.id)}
+        collapsed={collapsedMap[key ?? '__null__'] ?? false}
+        doneCollapsed={doneCollapsedMap[key ?? '__null__'] ?? true}
+        oncollapsedchange={(v) => {
+          const next = { ...collapsedMap };
+          if (v) next[key ?? '__null__'] = true; else delete next[key ?? '__null__'];
+          collapsedMap = next;
+        }}
+        ondonecollapsedchange={(v) => {
+          const next = { ...doneCollapsedMap };
+          if (!v) next[key ?? '__null__'] = false; else delete next[key ?? '__null__'];
+          doneCollapsedMap = next;
+        }}
+      />
+    {/each}
+  </div>
 
-    {#if showAddForm}
-      <div class="mt-4">
-        <ItemForm
-          listId={data.id}
-          {categories}
-          users={data.users}
-          onsubmit={handleAddItem}
-          oncancel={() => { showAddForm = false; }}
-        />
-      </div>
-    {:else}
-      <button
-        onclick={() => { showAddForm = true; }}
-        class="mt-4 w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors"
-      >
-        + Add item
-      </button>
-    {/if}
+  {#if showAddForm}
+    <div class="mt-4">
+      <ItemForm
+        listId={data.id}
+        {categories}
+        users={data.users}
+        onsubmit={handleAddItem}
+        oncancel={() => { showAddForm = false; }}
+      />
+    </div>
+  {:else}
+    <button
+      onclick={() => { showAddForm = true; }}
+      class="mt-4 w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors"
+    >
+      + Add item
+    </button>
   {/if}
 
   {#if showCategoryDialog}
