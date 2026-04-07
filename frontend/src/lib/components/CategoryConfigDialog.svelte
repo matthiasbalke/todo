@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Category } from '$lib/mock-data';
   import { saveCategory, deleteCategory } from '$lib/stores/lists.svelte';
+  import { friendlyError } from '$lib/api/errors';
 
   let { categories, listId, onclose }: { categories: Category[]; listId: string; onclose: () => void } = $props();
 
@@ -35,7 +36,7 @@
       newName = '';
       newColor = null;
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Failed to add category';
+      error = friendlyError(e, 'Failed to add category');
     }
   }
 
@@ -57,7 +58,7 @@
     try {
       await saveCategory({ ...cat, name: trimmed, color: editingColor });
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Failed to update category';
+      error = friendlyError(e, 'Failed to update category');
     }
     editingId = null;
   }
@@ -76,7 +77,7 @@
       await saveCategory({ ...cat, sortOrder: prev.sortOrder });
       await saveCategory({ ...prev, sortOrder: cat.sortOrder });
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Failed to reorder';
+      error = friendlyError(e, 'Failed to reorder');
     }
   }
 
@@ -89,7 +90,7 @@
       await saveCategory({ ...cat, sortOrder: next.sortOrder });
       await saveCategory({ ...next, sortOrder: cat.sortOrder });
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Failed to reorder';
+      error = friendlyError(e, 'Failed to reorder');
     }
   }
 
@@ -98,7 +99,7 @@
     try {
       await deleteCategory(cat.listId, cat.id);
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Failed to delete category';
+      error = friendlyError(e, 'Failed to delete category');
     }
   }
 </script>
