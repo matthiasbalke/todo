@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { getItems, updateItem } from '$lib/stores/items.svelte';
+  import { getItems, updateItem, deleteItem } from '$lib/stores/items.svelte';
   import { getList, getCategoriesForList } from '$lib/stores/lists.svelte';
   import type { TodoItem } from '$lib/mock-data';
   import ItemForm from '$lib/components/ItemForm.svelte';
@@ -34,6 +34,16 @@
   function handleCancel() {
     goto(`/lists/${data.id}`);
   }
+
+  async function handleDelete() {
+    if (!confirm('Delete this item?')) return;
+    try {
+      await deleteItem(data.id, data.iid);
+      goto(`/lists/${data.id}`);
+    } catch (e) {
+      alert(friendlyError(e, 'Failed to delete item'));
+    }
+  }
 </script>
 
 <div>
@@ -53,6 +63,15 @@
       onsubmit={handleSave}
       oncancel={handleCancel}
     />
+    <div class="mt-4">
+      <button
+        type="button"
+        onclick={handleDelete}
+        class="w-full py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+      >
+        Delete item
+      </button>
+    </div>
   {:else}
     <div class="text-center py-12 text-gray-400">Item not found.</div>
   {/if}
