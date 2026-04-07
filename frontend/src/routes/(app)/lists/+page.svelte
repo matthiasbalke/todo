@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { getLists, createList, isLoading } from '$lib/stores/lists.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
+  import { friendlyError } from '$lib/api/errors';
 
   const lists = $derived(getLists());
 
@@ -17,7 +18,7 @@
       showAddForm = false;
       goto(`/lists/${created.id}`);
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Failed to create list';
+      error = friendlyError(e, 'Failed to create list');
     } finally {
       saving = false;
     }

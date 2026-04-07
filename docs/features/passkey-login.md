@@ -46,50 +46,410 @@ This feature implements passwordless authentication via passkeys (WebAuthn/FIDO2
 ## Implementation Plan
 
 ### 1. Database — V2 Migration
-Add `refresh_tokens` (hashed token, userId FK, expiry) and `revoked_tokens` (jti PK, expiry for pruning) tables.
+
+**New file:** `backend/src/main/resources/db/migration/V2__add_auth_tokens.sql`
+
+```sql
+CREATE TABLE refresh_tokens (
+    id         UUID        NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id    UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT        NOT NULL UNIQUE,        -- SHA-256 of raw token value
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
+
+CREATE TABLE revoked_tokens (
+    jti        TEXT        NOT NULL PRIMARY KEY,   -- UUID claim from access token
+    expires_at TIMESTAMPTZ NOT NULL,               -- copy from token; for pruning
+    revoked_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+A scheduled job (or lazy-prune on lookup) removes `revoked_tokens` rows past `expires_at`.
+
+> Subsequent feature migrations start from V3.
+
+---
 
 ### 2. Build Dependencies
-Add `jjwt-api/impl/jackson` 0.13.0 and `bucket4j-core` 8.14.0 to `backend/build.gradle.kts`.
+
+**Edit:** `backend/build.gradle.kts`
+
+```kotlin
+// JWT
+implementation("io.jsonwebtoken:jjwt-api:0.13.0")
+runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
+runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
+
+// Rate limiting (Bucket4j — pure Java, no Redis needed for single-node)
+implementation("com.bucket4j:bucket4j-core:8.14.0")
+```
+
+---
 
 ### 3. Configuration
-Update `application.yml` with `webauthn.rp.*`, `jwt.*`, `app.cors.allowed-origins`, and actuator exposure settings. Create `JwtProperties` `@ConfigurationProperties` class.
+
+**Edit:** `backend/src/main/resources/application.yml`
+
+```yaml
+webauthn:
+  rp:
+    id: ${WEBAUTHN_RP_ID:localhost}
+    name: ${WEBAUTHN_RP_NAME:Todo}
+
+jwt:
+  secret: ${JWT_SECRET}            # Base64-encoded, min 32 bytes; no default — fails to start if absent
+  issuer: ${JWT_ISSUER:todo-app}
+  audience: ${JWT_AUDIENCE:todo-api}
+  access-token-ttl: PT15M
+  refresh-token-ttl: P30D
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+```
+
+**New file:** `backend/src/main/kotlin/com/github/matthiasbalke/todo/auth/JwtProperties.kt`
+- `@ConfigurationProperties(prefix = "jwt")` data class: `secret`, `issuer`, `audience`, `accessTokenTtl: Duration`, `refreshTokenTtl: Duration`
+
+---
 
 ### 4. JPA Entities & Repositories
-Create `User`, `WebAuthnCredential`, `RefreshToken`, `RevokedToken` entities plus their `JpaRepository` interfaces.
+
+Package: `com.github.matthiasbalke.todo.auth`
+
+**`User.kt`** — `users` table: `id: UUID`, `email: String`, `displayName: String`, `createdAt: Instant`
+
+**`WebAuthnCredential.kt`** — `webauthn_credentials`: `id: UUID`, `userId: UUID`, `credentialId: ByteArray`, `publicKey: ByteArray`, `signCount: Long`, `createdAt: Instant`
+
+**`RefreshToken.kt`** — `refresh_tokens`: `id: UUID`, `userId: UUID`, `tokenHash: String`, `expiresAt: Instant`, `createdAt: Instant`
+
+**`RevokedToken.kt`** — `revoked_tokens`: `jti: String` (PK), `expiresAt: Instant`, `revokedAt: Instant`
+
+**Repositories** (all `JpaRepository`):
+- `UserRepository` + `findByEmail(email): User?`
+- `WebAuthnCredentialRepository` + `findByCredentialId(bytes): WebAuthnCredential?` + `findAllByUserId(userId): List<WebAuthnCredential>`
+- `RefreshTokenRepository` + `findByTokenHash(hash): RefreshToken?` + `deleteAllByUserId(userId)`
+- `RevokedTokenRepository` + `existsByJti(jti): Boolean` + `deleteByExpiresAtBefore(cutoff: Instant)`
+
+---
 
 ### 5. Spring Security WebAuthn Bridges
-Implement `PublicKeyCredentialUserEntityRepositoryImpl` and `UserCredentialRepositoryImpl` to connect Spring Security's WebAuthn interfaces to the JPA layer.
+
+**`PublicKeyCredentialUserEntityRepositoryImpl.kt`**
+
+Implements `PublicKeyCredentialUserEntityRepository`. Delegates to `UserRepository`.
+- User handle = `User.id` serialized to bytes
+- `findById(bytes)`: deserialize UUID → look up user
+- `save(entity)`: no-op — user is created in the controller before the ceremony
+
+**`UserCredentialRepositoryImpl.kt`**
+
+Implements `UserCredentialRepository`. Delegates to `WebAuthnCredentialRepository`.
+- `save(record: CredentialRecord)`: upsert — check if `credentialId` exists; insert new or update `signCount`
+- Maps `CredentialRecord` ↔ `WebAuthnCredential` (credentialId, publicKey.encoded, signatureCount)
+
+---
 
 ### 6. JWT Service
-Implement `JwtTokenService`: generate/parse access tokens (HS256, jjwt), generate refresh tokens (SecureRandom 256-bit), hash tokens (SHA-256).
+
+**`JwtTokenService.kt`** (`@Service`)
+
+- `generateAccessToken(user: User): String`
+  - Claims: `sub=userId`, `email`, `displayName`, `jti=UUID.randomUUID()`, `iss`, `aud`, `iat`, `nbf=iat`, `exp=iat+15m`
+  - Signed with HMAC-SHA256 via `Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret))`
+- `generateRefreshToken(): String` — `SecureRandom` 256-bit, hex-encoded
+- `hashToken(raw: String): String` — SHA-256, hex output
+- `parseAccessToken(token: String): Claims`
+  - Validates signature, `exp`, `nbf`, `iss`, `aud`
+  - Rejects `alg:none` (jjwt's parser is explicit-algorithm only by default)
+  - Returns claims on success, throws `JwtException` on any failure
+
+---
 
 ### 7. Security Config + Filters
-- `SecurityConfig`: stateless `SecurityFilterChain`, CORS, security headers, permit `/api/auth/**` and actuator.
-- `JwtAuthenticationFilter`: parse Bearer token, check revocation, set `SecurityContext`.
-- `AuthRateLimitFilter`: Bucket4j sliding window, 10 req/IP/min on `/api/auth/**`.
+
+**`SecurityConfig.kt`** — `@Configuration @EnableWebSecurity`
+
+```kotlin
+@Bean
+fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+    http
+        .csrf { it.disable() }               // stateless JWT; CSRF via SameSite=Strict on refresh cookie
+        .sessionManagement { it.sessionCreationPolicy(STATELESS) }
+        .cors { it.configurationSource(corsConfigurationSource()) }
+        .authorizeHttpRequests {
+            it.requestMatchers("/api/auth/**", "/actuator/health", "/actuator/info").permitAll()
+            it.anyRequest().authenticated()
+        }
+        .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)
+        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
+        .headers { headers ->
+            headers.contentTypeOptions(withDefaults())
+            headers.frameOptions { it.deny() }
+            headers.referrerPolicy { it.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN) }
+        }
+    return http.build()
+}
+```
+
+**`JwtAuthenticationFilter.kt`** — `OncePerRequestFilter`
+
+1. Read `Authorization: Bearer <token>` header; skip if absent
+2. `jwtTokenService.parseAccessToken(token)` — throws on invalid/expired
+3. Check `revokedTokenRepository.existsByJti(claims.id)` — reject with 401 if revoked
+4. Set `UsernamePasswordAuthenticationToken(userId, null, emptyList())` in `SecurityContextHolder`
+
+**`AuthRateLimitFilter.kt`** — `OncePerRequestFilter`
+
+- Only applies to paths matching `/api/auth/**`
+- Uses Bucket4j: one bucket per IP (ConcurrentHashMap), 10 tokens, refill 10/minute
+- Returns `429 Too Many Requests` with `Retry-After` header when bucket empty
+
+---
 
 ### 8. Auth Controller
-Implement all six endpoints: `register-options`, `register`, `login-options`, `login`, `refresh`, `logout`. Refresh token in HttpOnly cookie; access token in JSON body only.
+
+**`AuthController.kt`** — `@RestController @RequestMapping("/api/auth")`
+
+Request/response types:
+```kotlin
+data class RegisterOptionsRequest(val email: String, val displayName: String)
+data class TokenResponse(val accessToken: String, val user: UserDto)
+// refreshToken is NOT in the JSON body — it is set as an HttpOnly cookie
+data class UserDto(val id: String, val email: String, val displayName: String)
+```
+
+Cookie helper:
+```kotlin
+fun refreshTokenCookie(value: String, maxAge: Duration): ResponseCookie =
+    ResponseCookie.from("refreshToken", value)
+        .httpOnly(true)
+        .secure(true)
+        .sameSite("Strict")
+        .path("/api/auth")          // scope to auth endpoints only
+        .maxAge(maxAge)
+        .build()
+```
+
+**`POST /webauthn/register-options`** — body: `RegisterOptionsRequest`
+1. Upsert user by email
+2. Build `PublicKeyCredentialCreationOptions` with `residentKey: required`, `userVerification: required`
+3. Store challenge via `HttpSessionChallengeRepository` (5-min TTL)
+4. Return options JSON
+
+**`POST /webauthn/register`**
+1. Load + validate challenge from session
+2. `rpOps.authenticate(registrationResponse)` → internally calls `UserCredentialRepository.save()`
+3. Issue access token + refresh token; store refresh hash in DB
+4. Set refresh token as HttpOnly cookie; destroy session
+5. Return `TokenResponse` (access token + user; **no** refreshToken in body)
+
+**`POST /webauthn/login-options`** — no request body
+1. Generate options with empty `allowCredentials` (browser's credential picker)
+2. **No user lookup** — prevents email enumeration
+3. `userVerification: required`; store challenge; return options
+
+**`POST /webauthn/login`**
+1. Load challenge; `rpOps.authenticate(authenticationResponse)`
+2. Resolve user from `userHandle` in assertion response
+3. Issue tokens; set refresh cookie; destroy session
+4. Return `TokenResponse`
+
+**`POST /refresh`** — reads cookie, no request body
+1. Read `refreshToken` from HttpOnly cookie
+2. Hash it; look up in `refresh_tokens`; verify `expiresAt > now()`
+3. Rotate: delete old row, insert new row with new hash + new expiry
+4. Issue new access token; set new refresh cookie; return `{ accessToken, user }`
+
+**`POST /logout`** — requires valid access token in header
+1. Extract `jti` from access token claims (already validated by filter)
+2. Insert `jti` into `revoked_tokens` with `expires_at` copied from the token
+3. Read `refreshToken` cookie; hash it; delete the row from `refresh_tokens`
+4. Clear the refresh cookie (set `maxAge=0`); return `204 No Content`
+
+---
 
 ### 9. Frontend Dependencies & Proxy
-Add `@simplewebauthn/browser` to `package.json`. Add `/api` dev proxy with `credentials: true` to `vite.config.ts`.
+
+```bash
+bun add @simplewebauthn/browser@13.3.0
+```
+
+**Edit:** `frontend/vite.config.ts` — add dev proxy:
+```typescript
+server: {
+  proxy: { '/api': { target: 'http://localhost:8080', credentials: true } }
+}
+```
+`credentials: true` is required to forward the HttpOnly cookie in dev.
+
+---
 
 ### 10. Frontend API Client
-Create `src/lib/api/auth.ts` with typed `fetch` wrappers for all six auth endpoints; all use `credentials: 'include'`.
+
+**New file:** `frontend/src/lib/api/auth.ts`
+
+```typescript
+export interface AuthUser { id: string; email: string; displayName: string; }
+export interface TokenResponse { accessToken: string; user: AuthUser; }
+// No refreshToken in response — it arrives as a cookie
+
+export async function getRegisterOptions(email: string, displayName: string): Promise<PublicKeyCredentialCreationOptionsJSON>
+export async function submitRegistration(response: RegistrationResponseJSON): Promise<TokenResponse>
+export async function getLoginOptions(): Promise<PublicKeyCredentialRequestOptionsJSON>  // no email param
+export async function submitLogin(response: AuthenticationResponseJSON): Promise<TokenResponse>
+export async function refreshAccessToken(): Promise<TokenResponse>  // no param — cookie sent automatically
+export async function logout(): Promise<void>                        // no param — server reads cookie + jti
+```
+
+All `fetch` calls use `{ credentials: 'include' }` so cookies are sent cross-origin in dev.
+
+---
 
 ### 11. Frontend Auth Store
-Replace mock store with real `AuthUser` state: `setSession`, `clearSession`, `restoreSession` (silent cookie refresh), `isAuthenticated`, `getAccessToken`.
+
+**Edit:** `frontend/src/lib/stores/auth.svelte.ts`
+
+```typescript
+let currentUser = $state<AuthUser | null>(null);
+let accessToken = $state<string | null>(null);
+
+// No localStorage — refresh token lives in HttpOnly cookie only
+
+export function getCurrentUser(): AuthUser | null
+export function getAccessToken(): string | null
+export function isAuthenticated(): boolean
+export function setSession(r: TokenResponse): void   // stores accessToken + user in memory
+export function clearSession(): void                 // clears memory state only
+export async function restoreSession(): Promise<void>
+  // Calls /api/auth/refresh (browser sends cookie automatically)
+  // Sets state if successful; no-op if cookie absent/expired
+  // Guards: if (typeof window === 'undefined') return  ← SSR guard
+```
+
+---
 
 ### 12. Frontend Login Page
-Replace stub with real flows: "Sign in with Passkey" (no email, browser picker) and "Create account" (email + display name). Error states for `NotAllowedError` and 429.
 
-### 13. Frontend Auth Guard
-Create `(app)/+layout.ts` with `restoreSession()` + redirect to `/auth`. Update `(app)/+layout.svelte` to use real user and call `logout()` on sign-out.
+**Edit:** `frontend/src/routes/auth/+page.svelte`
+
+State machine: `'idle' | 'register-form' | 'in-progress' | 'error'`
+
+```
+[Sign in with Passkey]      ← no email, browser credential picker
+[Create account]            ← expands to: email input + display name input + [Register] button
+```
+
+**Sign-in flow**: `getLoginOptions()` → `startAuthentication(options)` → `submitLogin(r)` → `setSession(r)` → `goto('/lists')`
+
+**Register flow**: `getRegisterOptions(email, displayName)` → `startRegistration(options)` → `submitRegistration(r)` → `setSession(r)` → `goto('/lists')`
+
+Error handling:
+- `NotAllowedError` (user cancelled): show "Cancelled — try again"
+- `ApiError` 429: show "Too many attempts — please wait"
+- Generic: show "Something went wrong — try again"
+
+---
+
+### 13. Frontend Auth Guard + Layout
+
+**New file:** `frontend/src/routes/(app)/+layout.ts`
+```typescript
+export async function load() {
+  await restoreSession();    // attempts cookie-based refresh; SSR-safe
+  if (!isAuthenticated()) redirect(307, '/auth');
+}
+```
+
+**Edit:** `frontend/src/routes/(app)/+layout.svelte`
+- Replace `mockUsers[0]` with `getCurrentUser()`
+- Logout: `await logout()` (server clears cookie + revokes token) → `clearSession()` → `goto('/auth')`
+
+---
 
 ### 14. Tests
-- Backend unit: `JwtTokenServiceTest` (no Spring context).
-- Backend integration: `WebAuthnIntegrationTest` extending `AbstractIntegrationTest`.
-- Frontend Vitest: `auth.ts` API client + `AuthPage` component.
+
+#### Backend Unit — `JwtTokenServiceTest.kt`
+No Spring context. Tests:
+- Access token contains `jti`, `iss`, `aud`, `nbf`, `sub`, `exp`
+- `parseAccessToken` succeeds on valid token
+- `parseAccessToken` throws on expired token (TTL=0)
+- `parseAccessToken` throws on tampered signature
+- `parseAccessToken` throws on wrong `iss` / `aud`
+- `hashToken` is deterministic and SHA-256 length (64 hex chars)
+- `generateRefreshToken` produces 64 hex chars
+
+#### Backend Integration — `WebAuthnIntegrationTest.kt`
+Extends `AbstractIntegrationTest`. Uses Spring Security's `WebAuthnRegistrationRequestBuilder` / `WebAuthnAuthenticationRequestBuilder`.
+
+Test cases:
+- `register-options` → 200, creates user in DB
+- `register` → 200, returns access token, sets `Set-Cookie: refreshToken`
+- `login-options` → 200, no user lookup (no email in body)
+- `login` → 200, returns tokens
+- `refresh` → 200, rotates cookie, returns new access token
+- `logout` → 204, `jti` added to `revoked_tokens`, cookie cleared
+- Revoked token: request with revoked `jti` → 401
+- Rate limit: 11th request to auth endpoint → 429
+
+#### Frontend — `auth.ts` (Vitest)
+Mock `fetch`. Verify:
+- `credentials: 'include'` on all calls
+- `getLoginOptions` takes no parameters
+- `TokenResponse` has no `refreshToken` field
+
+#### Frontend — `AuthPage.test.ts` (component)
+Mock `@simplewebauthn/browser` + `$lib/api/auth`. Test:
+- Renders two buttons
+- "Create account" reveals form
+- Sign-in calls `startAuthentication`
+- Success navigates to `/lists`
+- 429 shows rate-limit message
+- `NotAllowedError` shows cancel message
+
+---
+
+## Critical Files
+
+| File | Action |
+|---|---|
+| `backend/build.gradle.kts` | Add jjwt 0.13.0 + bucket4j |
+| `backend/src/main/resources/application.yml` | Add webauthn, jwt, cors, actuator config |
+| `backend/src/main/resources/db/migration/V2__add_auth_tokens.sql` | New — refresh_tokens + revoked_tokens |
+| `backend/src/main/kotlin/.../auth/` | New package — all auth classes |
+| `backend/src/test/kotlin/.../AbstractIntegrationTest.kt` | Reference — all integration tests extend this |
+| `frontend/package.json` | Add @simplewebauthn/browser@13.3.0 |
+| `frontend/vite.config.ts` | Add dev proxy with credentials |
+| `frontend/src/lib/api/auth.ts` | New |
+| `frontend/src/lib/stores/auth.svelte.ts` | Replace mock |
+| `frontend/src/routes/auth/+page.svelte` | Wire real flows |
+| `frontend/src/routes/(app)/+layout.ts` | New — auth guard |
+| `frontend/src/routes/(app)/+layout.svelte` | Real user + logout |
+
+---
+
+## Verification
+
+1. `./gradlew test` — all tests pass including JWT revocation and rate limit tests
+2. `docker compose up --build` — Flyway applies V1 + V2, backend starts
+3. `bun run dev` → `http://localhost:5173` → redirected to `/auth`
+4. Click "Sign in with Passkey" → browser shows credential picker → cancel (first time: empty)
+5. Click "Create account" → enter email + name → passkey prompt → success → `/lists`
+6. Reload → stays on `/lists` (cookie restored session)
+7. Logout → `/auth`, `revoked_tokens` has the `jti` row, cookie is cleared
+8. Reuse old access token after logout → 401
+9. `bun run check` — no TypeScript errors
 
 ---
 

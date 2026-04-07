@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { TodoItem, Category } from '$lib/mock-data';
   import { toggleDone } from '$lib/stores/items.svelte';
+  import { friendlyError } from '$lib/api/errors';
 
   let {
     category,
@@ -21,7 +22,7 @@
     try {
       await toggleDone(item.listId, item.id);
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed to update item');
+      alert(friendlyError(e, 'Failed to update item'));
     }
   }
 </script>
