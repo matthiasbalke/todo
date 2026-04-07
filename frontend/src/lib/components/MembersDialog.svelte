@@ -9,6 +9,7 @@
     type ListRole,
   } from '$lib/api/lists';
   import { ApiError } from '$lib/api/client';
+  import { friendlyError } from '$lib/api/errors';
 
   let { listId, onclose }: { listId: string; onclose: () => void } = $props();
 
@@ -33,7 +34,7 @@
     try {
       members = await getMembers(listId);
     } catch (e) {
-      loadError = e instanceof Error ? e.message : 'Failed to load members';
+      loadError = friendlyError(e, 'Failed to load members');
     }
   }
 
@@ -53,7 +54,7 @@
       } else if (e instanceof ApiError && e.status === 404) {
         actionError = 'No account found with that email address.';
       } else {
-        actionError = e instanceof Error ? e.message : 'Failed to invite member';
+        actionError = friendlyError(e, 'Failed to invite member');
       }
     } finally {
       inviting = false;
@@ -69,7 +70,7 @@
       if (e instanceof ApiError && e.status === 400) {
         actionError = 'Cannot change role: this is the sole owner.';
       } else {
-        actionError = e instanceof Error ? e.message : 'Failed to change role';
+        actionError = friendlyError(e, 'Failed to change role');
       }
     }
   }
@@ -83,7 +84,7 @@
       if (e instanceof ApiError && e.status === 400) {
         actionError = 'Cannot remove the sole owner.';
       } else {
-        actionError = e instanceof Error ? e.message : 'Failed to remove member';
+        actionError = friendlyError(e, 'Failed to remove member');
       }
     }
   }
