@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { WebAuthnError } from '@simplewebauthn/browser';
   import { ApiError, getAuthConfig, loginWithPasskey, registerWithPasskey } from '$lib/api/auth';
   import { checkHealth } from '$lib/api/health';
   import { setSession } from '$lib/stores/auth.svelte';
@@ -54,8 +55,8 @@
   });
 
   function passkeyErrorMessage(err: unknown): string {
-    if (err instanceof DOMException && err.name === 'NotAllowedError') return 'Cancelled — try again';
-    if (err instanceof DOMException && err.name === 'SecurityError') return 'Passkey origin not allowed — check the server configuration';
+    if (err instanceof WebAuthnError && err.code === 'ERROR_CEREMONY_ABORTED') return 'Cancelled — try again';
+    if (err instanceof WebAuthnError && (err.code === 'ERROR_INVALID_DOMAIN' || err.code === 'ERROR_INVALID_RP_ID')) return 'Passkey origin not allowed — check the server configuration';
     if (err instanceof ApiError && err.status === 403 && err.code === 'REGISTRATION_DISABLED') return 'Registration is currently disabled';
     if (err instanceof ApiError && err.status === 403) return 'Passkey origin not allowed — check the server configuration';
     if (err instanceof ApiError && err.status === 409) return err.message;

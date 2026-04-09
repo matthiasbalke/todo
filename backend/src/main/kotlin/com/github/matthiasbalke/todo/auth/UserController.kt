@@ -2,6 +2,7 @@ package com.github.matthiasbalke.todo.auth
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseCookie
@@ -14,8 +15,6 @@ import org.springframework.security.web.webauthn.management.ImmutablePublicKeyCr
 import org.springframework.security.web.webauthn.management.ImmutableRelyingPartyRegistrationRequest
 import org.springframework.security.web.webauthn.management.RelyingPartyPublicKey
 import org.springframework.security.web.webauthn.management.WebAuthnRelyingPartyOperations
-import org.springframework.security.web.webauthn.registration.HttpSessionPublicKeyCredentialCreationOptionsRepository
-import org.springframework.security.web.webauthn.registration.PublicKeyCredentialCreationOptionsRepository
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -36,10 +35,10 @@ class UserController(
     private val userRepository: UserRepository,
     private val accountService: AccountService,
     private val rpOperations: WebAuthnRelyingPartyOperations,
+    private val creationOptionsRepository: InMemoryCredentialCreationOptionsRepository,
 ) {
 
-    private val creationOptionsRepository: PublicKeyCredentialCreationOptionsRepository =
-        HttpSessionPublicKeyCredentialCreationOptionsRepository()
+    private val logger = LoggerFactory.getLogger(UserController::class.java)
 
     // ─── DTOs ────────────────────────────────────────────────────────────────
 
@@ -95,11 +94,17 @@ class UserController(
         val user = userRepository.findById(userId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND)
         }
-        val options = rpOperations.createPublicKeyCredentialCreationOptions(
-            ImmutablePublicKeyCredentialCreationOptionsRequest(
-                UsernamePasswordAuthenticationToken.authenticated(user.email, null, emptyList())
+        val options = try {
+            rpOperations.createPublicKeyCredentialCreationOptions(
+                ImmutablePublicKeyCredentialCreationOptionsRequest(
+                    UsernamePasswordAuthenticationToken.authenticated(user.email, null, emptyList())
+                )
             )
-        )
+        } catch (e: Exception) {
+            logger.warn("Failed to create passkey options for user {}: {}", userId, e.message)
+            return ResponseEntity.internalServerError()
+                .body(ErrorResponse("OPTIONS_FAILED", "Failed to create passkey options — please try again"))
+        }
         creationOptionsRepository.save(request, response, options)
         return ResponseEntity.ok(options)
     }
@@ -111,11 +116,20 @@ class UserController(
         request: HttpServletRequest,
     ): ResponseEntity<*> {
         val savedOptions = creationOptionsRepository.load(request)
-            ?: return ResponseEntity.badRequest().build<Any>()
-        val credentialRecord = rpOperations.registerCredential(
-            ImmutableRelyingPartyRegistrationRequest(savedOptions, RelyingPartyPublicKey(body.credential, "Passkey"))
-        )
-        request.getSession(false)?.invalidate()
+            ?: run {
+                logger.warn("No WebAuthn session options found for user {}", userId)
+                return ResponseEntity.badRequest()
+                    .body(ErrorResponse("SESSION_EXPIRED", "Session expired, please try again"))
+            }
+        val credentialRecord = try {
+            rpOperations.registerCredential(
+                ImmutableRelyingPartyRegistrationRequest(savedOptions, RelyingPartyPublicKey(body.credential, "Passkey"))
+            )
+        } catch (e: Exception) {
+            logger.warn("Passkey registration failed for user {}: {}", userId, e.message)
+            return ResponseEntity.badRequest()
+                .body(ErrorResponse("REGISTRATION_FAILED", "Passkey verification failed — please try again"))
+        }
         val base64CredId = Base64.getUrlEncoder().withoutPadding()
             .encodeToString(credentialRecord.credentialId.bytes)
         val passkey = accountService.savePasskeyLabel(base64CredId, body.label)

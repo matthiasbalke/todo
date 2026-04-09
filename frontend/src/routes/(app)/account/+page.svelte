@@ -2,7 +2,7 @@
   import { untrack } from 'svelte';
   import type { PageData } from './$types';
   import { goto } from '$app/navigation';
-  import { startRegistration } from '@simplewebauthn/browser';
+  import { startRegistration, WebAuthnError } from '@simplewebauthn/browser';
   import {
     updateMe,
     getPasskeys,
@@ -16,6 +16,7 @@
   } from '$lib/api/users';
   import { updateCurrentUser, clearSession } from '$lib/stores/auth.svelte';
   import { friendlyError } from '$lib/api/errors';
+  import { ApiError } from '$lib/api/client';
 
   let { data }: { data: PageData } = $props();
 
@@ -92,19 +93,47 @@
       showAddPasskey = false;
       newLabel = '';
     } catch (e) {
-      addPasskeyError = friendlyError(e, 'Failed to add passkey');
+      console.error('[addPasskey]', e);
+      if (e instanceof WebAuthnError && e.code === 'ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED') {
+        addPasskeyError = 'This passkey is already registered on this device. Try a different authenticator or device.';
+      } else if (e instanceof WebAuthnError && e.code === 'ERROR_CEREMONY_ABORTED') {
+        addPasskeyError = 'Cancelled — try again';
+      } else if (e instanceof WebAuthnError && (e.code === 'ERROR_INVALID_DOMAIN' || e.code === 'ERROR_INVALID_RP_ID')) {
+        addPasskeyError = 'Passkey origin mismatch — check server configuration';
+      } else if (e instanceof ApiError && e.code === 'SESSION_EXPIRED') {
+        addPasskeyError = 'Session expired — please try again';
+      } else if (e instanceof ApiError && e.code === 'REGISTRATION_FAILED') {
+        addPasskeyError = e.message;
+      } else {
+        addPasskeyError = friendlyError(e, 'Failed to add passkey');
+      }
     } finally {
       addingPasskey = false;
     }
   }
 
   // ─── Remove passkey ───────────────────────────────────────────────────────
-  async function handleRemovePasskey(id: string) {
+  let passkeyToRemove = $state<string | null>(null);
+  let removingPasskey = $state(false);
+  let removePasskeyError = $state('');
+
+  function startRemovePasskey(id: string) {
+    passkeyToRemove = id;
+    removePasskeyError = '';
+  }
+
+  async function confirmRemovePasskey() {
+    if (!passkeyToRemove) return;
+    removingPasskey = true;
+    removePasskeyError = '';
     try {
-      await deletePasskey(id);
-      passkeys = passkeys.filter(p => p.id !== id);
+      await deletePasskey(passkeyToRemove);
+      passkeys = passkeys.filter(p => p.id !== passkeyToRemove);
+      passkeyToRemove = null;
     } catch (e) {
-      alert(friendlyError(e, 'Failed to remove passkey'));
+      removePasskeyError = friendlyError(e, 'Failed to remove passkey');
+    } finally {
+      removingPasskey = false;
     }
   }
 
@@ -224,19 +253,46 @@
 
     <ul class="space-y-2">
       {#each passkeys as passkey (passkey.id)}
-        <li class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-          <div>
-            <p class="text-sm font-medium text-gray-800">{passkey.label ?? 'Passkey'}</p>
-            <p class="text-xs text-gray-400">Added {formatDate(passkey.createdAt)}</p>
+        <li class="py-2 border-b border-gray-100 last:border-0">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-800">{passkey.label ?? 'Passkey'}</p>
+              <p class="text-xs text-gray-400">Added {formatDate(passkey.createdAt)}</p>
+            </div>
+            {#if passkeyToRemove !== passkey.id}
+              <button
+                onclick={() => startRemovePasskey(passkey.id)}
+                disabled={passkeys.length <= 1}
+                title={passkeys.length <= 1 ? "Can't remove the last passkey" : 'Remove passkey'}
+                class="text-xs text-red-500 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Remove
+              </button>
+            {/if}
           </div>
-          <button
-            onclick={() => handleRemovePasskey(passkey.id)}
-            disabled={passkeys.length <= 1}
-            title={passkeys.length <= 1 ? "Can't remove the last passkey" : 'Remove passkey'}
-            class="text-xs text-red-500 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Remove
-          </button>
+          {#if passkeyToRemove === passkey.id}
+            <div class="mt-3 space-y-3">
+              <p class="text-sm font-medium text-gray-800">Remove <span class="font-semibold">"{passkey.label ?? 'Passkey'}"</span>? This can't be undone.</p>
+              {#if removePasskeyError}
+                <p class="text-sm text-red-600">{removePasskeyError}</p>
+              {/if}
+              <div class="flex items-center gap-3">
+                <button
+                  onclick={confirmRemovePasskey}
+                  disabled={removingPasskey}
+                  class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                >
+                  {removingPasskey ? 'Removing…' : 'Confirm removal'}
+                </button>
+                <button
+                  onclick={() => (passkeyToRemove = null)}
+                  class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          {/if}
         </li>
       {/each}
       {#if passkeys.length === 0}
