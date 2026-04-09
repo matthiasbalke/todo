@@ -4,7 +4,7 @@
   import { logout } from '$lib/api/auth';
   import { clearSession, getAccessToken, getCurrentUser, refreshIfExpired } from '$lib/stores/auth.svelte';
   let { children } = $props();
-  const user = getCurrentUser();
+  let user = $derived(getCurrentUser());
   let userMenuOpen = $state(false);
   let offline = $state(false);
 

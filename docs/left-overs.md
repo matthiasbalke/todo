@@ -15,13 +15,6 @@ Checkbox-based task list for tracking incomplete feature implementation tasks. T
  * [ ] Cursor-based pagination params (cursor, limit) are accepted but unused in the initial implementation — the response always returns all items in one page.
 
 
-## 1. Lists
-
-### Backend
-
-### Frontend
-
-
 ## 1. List Items
 
 ### Backend
@@ -31,3 +24,8 @@ Checkbox-based task list for tracking incomplete feature implementation tasks. T
 * [ ] Way to delete all checked List Items from a list.
 * [ ] Sort List items by dragging them.
 
+## Next Features
+
+* docs/account-management.md: /feature lets implement the account management. ask me anything you need to know to create a plan. Display name should be editable inline. email editing, should be possible. passkey management: list of registered keys, device names/date. ability to remove registered passkey, if its not the last login    
+method. add a new passkey for a new device. no oauth yet. after deleting the account show a your account has been deleted page. account management should be accessible via the already existing user menu (top/right), above logout.
+  * can we check if the user tries to delete the passkey he is logged in with on this device? should we even check that?

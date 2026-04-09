@@ -65,9 +65,14 @@ class AccountService(
         val listsToLeave = mutableListOf<List>()
         for (membership in memberships) {
             val list = listRepository.findById(membership.listId).orElse(null) ?: continue
-            if (membership.role == ListRole.OWNER &&
-                listMembershipRepository.countByListIdAndRole(membership.listId, ListRole.OWNER) <= 1L) {
-                listsToDelete.add(list)
+            val isSoleOwner = membership.role == ListRole.OWNER &&
+                listMembershipRepository.countByListIdAndRole(membership.listId, ListRole.OWNER) <= 1L
+            if (isSoleOwner) {
+                val hasOtherMembers = listMembershipRepository
+                    .findAllByListId(membership.listId)
+                    .any { it.userId != userId }
+                if (hasOtherMembers) listsToLeave.add(list)
+                else listsToDelete.add(list)
             } else {
                 listsToLeave.add(list)
             }
@@ -80,8 +85,18 @@ class AccountService(
         val memberships = listMembershipRepository.findAllByUserId(userId)
         for (membership in memberships) {
             if (membership.role == ListRole.OWNER &&
-                listMembershipRepository.countByListIdAndRole(membership.listId, ListRole.OWNER) <= 1L) {
-                listRepository.deleteById(membership.listId)
+                listMembershipRepository.countByListIdAndRole(membership.listId, ListRole.OWNER) <= 1L
+            ) {
+                val others = listMembershipRepository
+                    .findAllByListId(membership.listId)
+                    .filter { it.userId != userId }
+                if (others.isEmpty()) {
+                    listRepository.deleteById(membership.listId)
+                } else {
+                    val toPromote = others.firstOrNull { it.role == ListRole.EDITOR } ?: others.first()
+                    toPromote.role = ListRole.OWNER
+                    listMembershipRepository.save(toPromote)
+                }
             }
         }
         userRepository.deleteById(userId)

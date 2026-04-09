@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
 import java.util.UUID
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @AutoConfigureMockMvc
@@ -257,5 +258,45 @@ class UserControllerTest : AbstractIntegrationTest() {
 
         assertFalse(userRepository.existsById(user.id))
         assertTrue(listRepository.existsById(sharedList.id))
+    }
+
+    @Test
+    fun `DELETE me - promotes editor to owner when user is sole owner with other members`() {
+        val user = createUser()
+        val editor = createUser()
+
+        val list = listRepository.save(TodoList(name = "With Editor"))
+        listMembershipRepository.save(ListMembership(listId = list.id, userId = user.id, role = ListRole.OWNER))
+        listMembershipRepository.save(ListMembership(listId = list.id, userId = editor.id, role = ListRole.EDITOR))
+
+        mockMvc.delete("/api/users/me") {
+            header("Authorization", bearerHeader(user))
+        }.andExpect {
+            status { isNoContent() }
+        }
+
+        assertFalse(userRepository.existsById(user.id))
+        assertTrue(listRepository.existsById(list.id))
+        val promoted = listMembershipRepository.findByListIdAndUserId(list.id, editor.id)
+        assertNotNull(promoted)
+        assert(promoted.role == ListRole.OWNER)
+    }
+
+    @Test
+    fun `GET me deletion-preview - sole-owner with editors goes to listsToLeave not listsToDelete`() {
+        val user = createUser()
+        val editor = createUser()
+
+        val list = listRepository.save(TodoList(name = "Has Editor"))
+        listMembershipRepository.save(ListMembership(listId = list.id, userId = user.id, role = ListRole.OWNER))
+        listMembershipRepository.save(ListMembership(listId = list.id, userId = editor.id, role = ListRole.EDITOR))
+
+        mockMvc.get("/api/users/me/deletion-preview") {
+            header("Authorization", bearerHeader(user))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.listsToDelete") { isEmpty() }
+            jsonPath("$.listsToLeave[0].name") { value("Has Editor") }
+        }
     }
 }

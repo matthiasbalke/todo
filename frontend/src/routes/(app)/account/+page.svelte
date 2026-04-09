@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { PageData } from './$types';
   import { goto } from '$app/navigation';
   import { startRegistration } from '@simplewebauthn/browser';
@@ -18,14 +19,16 @@
 
   let { data }: { data: PageData } = $props();
 
-  let profile = $state({ ...data.profile });
-  let passkeys = $state<PasskeyDto[]>([...data.passkeys]);
+  let profile = $state(untrack(() => ({ ...data.profile })));
+  let passkeys = $state<PasskeyDto[]>(untrack(() => [...data.passkeys]));
 
   // ─── Display name ─────────────────────────────────────────────────────────
   let editingName = $state(false);
   let nameEdit = $state('');
   let nameSaving = $state(false);
   let nameError = $state('');
+  let nameInput = $state<HTMLInputElement | null>(null);
+  $effect(() => { if (editingName) nameInput?.focus(); });
 
   function startEditName() {
     nameEdit = profile.displayName;
@@ -51,7 +54,7 @@
   }
 
   // ─── Email ────────────────────────────────────────────────────────────────
-  let emailEdit = $state(profile.email);
+  let emailEdit = $state(untrack(() => profile.email));
   let emailSaving = $state(false);
   let emailError = $state('');
   let emailSuccess = $state(false);
@@ -156,12 +159,12 @@
 
     <!-- Display name -->
     <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Display name</label>
+      <p class="block text-sm font-medium text-gray-700 mb-1">Display name</p>
       {#if editingName}
         <div class="flex items-center gap-2">
           <input
+            bind:this={nameInput}
             bind:value={nameEdit}
-            autofocus
             disabled={nameSaving}
             onblur={saveDisplayName}
             onkeydown={(e) => {
