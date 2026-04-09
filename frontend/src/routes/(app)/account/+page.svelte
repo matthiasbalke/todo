@@ -1,0 +1,346 @@
+<script lang="ts">
+  import type { PageData } from './$types';
+  import { goto } from '$app/navigation';
+  import { startRegistration } from '@simplewebauthn/browser';
+  import {
+    updateMe,
+    getPasskeys,
+    getAddPasskeyOptions,
+    submitAddPasskey,
+    deletePasskey,
+    getDeletionPreview,
+    deleteAccount,
+    type PasskeyDto,
+    type DeletionPreviewDto,
+  } from '$lib/api/users';
+  import { updateCurrentUser, clearSession } from '$lib/stores/auth.svelte';
+  import { friendlyError } from '$lib/api/errors';
+
+  let { data }: { data: PageData } = $props();
+
+  let profile = $state({ ...data.profile });
+  let passkeys = $state<PasskeyDto[]>([...data.passkeys]);
+
+  // ─── Display name ─────────────────────────────────────────────────────────
+  let editingName = $state(false);
+  let nameEdit = $state('');
+  let nameSaving = $state(false);
+  let nameError = $state('');
+
+  function startEditName() {
+    nameEdit = profile.displayName;
+    nameError = '';
+    editingName = true;
+  }
+
+  async function saveDisplayName() {
+    const trimmed = nameEdit.trim();
+    if (!trimmed) { editingName = false; return; }
+    nameSaving = true;
+    nameError = '';
+    try {
+      const updated = await updateMe({ displayName: trimmed, email: profile.email });
+      profile = { ...profile, displayName: updated.displayName };
+      updateCurrentUser({ displayName: updated.displayName });
+      editingName = false;
+    } catch (e) {
+      nameError = friendlyError(e, 'Failed to save display name');
+    } finally {
+      nameSaving = false;
+    }
+  }
+
+  // ─── Email ────────────────────────────────────────────────────────────────
+  let emailEdit = $state(profile.email);
+  let emailSaving = $state(false);
+  let emailError = $state('');
+  let emailSuccess = $state(false);
+
+  async function saveEmail() {
+    emailSaving = true;
+    emailError = '';
+    emailSuccess = false;
+    try {
+      const updated = await updateMe({ displayName: profile.displayName, email: emailEdit.trim() });
+      profile = { ...profile, email: updated.email };
+      updateCurrentUser({ email: updated.email });
+      emailSuccess = true;
+    } catch (e) {
+      emailError = friendlyError(e, 'Failed to save email');
+    } finally {
+      emailSaving = false;
+    }
+  }
+
+  // ─── Add passkey ──────────────────────────────────────────────────────────
+  let showAddPasskey = $state(false);
+  let newLabel = $state('');
+  let addingPasskey = $state(false);
+  let addPasskeyError = $state('');
+
+  async function handleAddPasskey() {
+    addingPasskey = true;
+    addPasskeyError = '';
+    try {
+      const options = await getAddPasskeyOptions();
+      const credential = await startRegistration({ optionsJSON: options });
+      const passkey = await submitAddPasskey(credential, newLabel.trim() || undefined);
+      passkeys = [...passkeys, passkey];
+      showAddPasskey = false;
+      newLabel = '';
+    } catch (e) {
+      addPasskeyError = friendlyError(e, 'Failed to add passkey');
+    } finally {
+      addingPasskey = false;
+    }
+  }
+
+  // ─── Remove passkey ───────────────────────────────────────────────────────
+  async function handleRemovePasskey(id: string) {
+    try {
+      await deletePasskey(id);
+      passkeys = passkeys.filter(p => p.id !== id);
+    } catch (e) {
+      alert(friendlyError(e, 'Failed to remove passkey'));
+    }
+  }
+
+  // ─── Delete account ───────────────────────────────────────────────────────
+  let showDeleteConfirm = $state(false);
+  let deletionPreview = $state<DeletionPreviewDto | null>(null);
+  let loadingPreview = $state(false);
+  let deleting = $state(false);
+  let deleteError = $state('');
+
+  async function openDeleteConfirm() {
+    showDeleteConfirm = true;
+    loadingPreview = true;
+    deletionPreview = null;
+    deleteError = '';
+    try {
+      deletionPreview = await getDeletionPreview();
+    } catch (e) {
+      deleteError = friendlyError(e, 'Failed to load deletion preview');
+    } finally {
+      loadingPreview = false;
+    }
+  }
+
+  async function confirmDelete() {
+    deleting = true;
+    deleteError = '';
+    try {
+      await deleteAccount();
+      clearSession();
+      goto('/deleted');
+    } catch (e) {
+      deleteError = friendlyError(e, 'Failed to delete account');
+      deleting = false;
+    }
+  }
+
+  function formatDate(iso: string): string {
+    return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+</script>
+
+<div class="space-y-8">
+  <div class="flex items-center gap-3">
+    <a href="/lists" class="text-gray-400 hover:text-gray-600">←</a>
+    <h1 class="text-xl font-bold text-gray-900">Account</h1>
+  </div>
+
+  <!-- Profile section -->
+  <section class="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Profile</h2>
+
+    <!-- Display name -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Display name</label>
+      {#if editingName}
+        <div class="flex items-center gap-2">
+          <input
+            bind:value={nameEdit}
+            autofocus
+            disabled={nameSaving}
+            onblur={saveDisplayName}
+            onkeydown={(e) => {
+              if (e.key === 'Enter') { e.preventDefault(); saveDisplayName(); }
+              if (e.key === 'Escape') { editingName = false; }
+            }}
+            class="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+          />
+          {#if nameSaving}
+            <span class="text-xs text-gray-400">Saving…</span>
+          {/if}
+        </div>
+        {#if nameError}
+          <p class="mt-1 text-xs text-red-600">{nameError}</p>
+        {/if}
+      {:else}
+        <button
+          onclick={startEditName}
+          class="text-sm text-gray-900 hover:opacity-70 transition-opacity cursor-pointer"
+        >
+          {profile.displayName}
+          <span class="text-xs text-gray-400 ml-1">Edit</span>
+        </button>
+      {/if}
+    </div>
+
+    <!-- Email -->
+    <div>
+      <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+      <div class="flex items-center gap-2">
+        <input
+          id="email"
+          type="email"
+          bind:value={emailEdit}
+          class="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+        />
+        <button
+          onclick={saveEmail}
+          disabled={emailSaving || emailEdit.trim() === profile.email}
+          class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {emailSaving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+      {#if emailError}
+        <p class="mt-1 text-xs text-red-600">{emailError}</p>
+      {/if}
+      {#if emailSuccess}
+        <p class="mt-1 text-xs text-green-600">Email updated.</p>
+      {/if}
+    </div>
+  </section>
+
+  <!-- Security section -->
+  <section class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Security</h2>
+
+    <ul class="space-y-2">
+      {#each passkeys as passkey (passkey.id)}
+        <li class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+          <div>
+            <p class="text-sm font-medium text-gray-800">{passkey.label ?? 'Passkey'}</p>
+            <p class="text-xs text-gray-400">Added {formatDate(passkey.createdAt)}</p>
+          </div>
+          <button
+            onclick={() => handleRemovePasskey(passkey.id)}
+            disabled={passkeys.length <= 1}
+            title={passkeys.length <= 1 ? "Can't remove the last passkey" : 'Remove passkey'}
+            class="text-xs text-red-500 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Remove
+          </button>
+        </li>
+      {/each}
+      {#if passkeys.length === 0}
+        <li class="text-sm text-gray-400 py-2">No passkeys registered.</li>
+      {/if}
+    </ul>
+
+    {#if showAddPasskey}
+      <div class="border border-gray-200 rounded-lg p-4 space-y-3">
+        <p class="text-sm font-medium text-gray-700">Add passkey for this device</p>
+        <input
+          bind:value={newLabel}
+          placeholder="Label (optional, e.g. My Laptop)"
+          class="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+        />
+        {#if addPasskeyError}
+          <p class="text-xs text-red-600">{addPasskeyError}</p>
+        {/if}
+        <div class="flex gap-2">
+          <button
+            onclick={handleAddPasskey}
+            disabled={addingPasskey}
+            class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {addingPasskey ? 'Adding…' : 'Add passkey'}
+          </button>
+          <button
+            onclick={() => { showAddPasskey = false; newLabel = ''; addPasskeyError = ''; }}
+            class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    {:else}
+      <button
+        onclick={() => (showAddPasskey = true)}
+        class="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+      >
+        + Add passkey for this device
+      </button>
+    {/if}
+  </section>
+
+  <!-- Danger zone -->
+  <section class="bg-white rounded-xl border border-red-200 p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-red-500 uppercase tracking-wide">Danger zone</h2>
+
+    {#if !showDeleteConfirm}
+      <button
+        onclick={openDeleteConfirm}
+        class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+      >
+        Delete my account
+      </button>
+    {:else}
+      <div class="space-y-4">
+        {#if loadingPreview}
+          <p class="text-sm text-gray-500">Loading…</p>
+        {:else if deleteError}
+          <p class="text-sm text-red-600">{deleteError}</p>
+        {:else if deletionPreview}
+          <p class="text-sm font-medium text-gray-800">This will permanently delete your account.</p>
+
+          {#if deletionPreview.listsToDelete.length > 0}
+            <div>
+              <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Lists that will be deleted</p>
+              <ul class="text-sm text-gray-700 space-y-0.5">
+                {#each deletionPreview.listsToDelete as l}
+                  <li class="text-red-700">— {l.name}</li>
+                {/each}
+              </ul>
+            </div>
+          {/if}
+
+          {#if deletionPreview.listsToLeave.length > 0}
+            <div>
+              <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Lists you will be removed from</p>
+              <ul class="text-sm text-gray-700 space-y-0.5">
+                {#each deletionPreview.listsToLeave as l}
+                  <li>— {l.name}</li>
+                {/each}
+              </ul>
+            </div>
+          {/if}
+
+          {#if deleteError}
+            <p class="text-sm text-red-600">{deleteError}</p>
+          {/if}
+
+          <div class="flex items-center gap-3">
+            <button
+              onclick={confirmDelete}
+              disabled={deleting}
+              class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+            >
+              {deleting ? 'Deleting…' : 'Confirm deletion'}
+            </button>
+            <button
+              onclick={() => (showDeleteConfirm = false)}
+              class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        {/if}
+      </div>
+    {/if}
+  </section>
+</div>

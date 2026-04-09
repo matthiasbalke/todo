@@ -55,6 +55,10 @@ export async function refreshIfExpired(): Promise<boolean> {
 	}
 }
 
+export function updateCurrentUser(partial: Partial<AuthUser>): void {
+	if (currentUser) currentUser = { ...currentUser, ...partial };
+}
+
 /**
  * Attempts a silent session restore using the refresh token cookie.
  * Called on app load; SSR-safe (no-ops on the server).
