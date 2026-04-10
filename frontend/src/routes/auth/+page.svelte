@@ -57,6 +57,8 @@
   function passkeyErrorMessage(err: unknown): string {
     if (err instanceof WebAuthnError && err.code === 'ERROR_CEREMONY_ABORTED') return 'Cancelled — try again';
     if (err instanceof WebAuthnError && (err.code === 'ERROR_INVALID_DOMAIN' || err.code === 'ERROR_INVALID_RP_ID')) return 'Passkey origin not allowed — check the server configuration';
+    if (err instanceof DOMException && err.name === 'NotAllowedError') return 'Cancelled — try again';
+    if (err instanceof DOMException && err.name === 'SecurityError') return 'Passkey origin not allowed — check the server configuration';
     if (err instanceof ApiError && err.status === 403 && err.code === 'REGISTRATION_DISABLED') return 'Registration is currently disabled';
     if (err instanceof ApiError && err.status === 403) return 'Passkey origin not allowed — check the server configuration';
     if (err instanceof ApiError && err.status === 409) return err.message;

@@ -17,9 +17,9 @@ import type { BrowserContext, CDPSession, Page } from '@playwright/test';
 // Helpers (same patterns as auth.spec.ts)
 // ---------------------------------------------------------------------------
 
-async function addVirtualAuthenticator(cdp: CDPSession): Promise<void> {
+async function addVirtualAuthenticator(cdp: CDPSession): Promise<string> {
 	await cdp.send('WebAuthn.enable', { enableUI: false });
-	await cdp.send('WebAuthn.addVirtualAuthenticator', {
+	const { authenticatorId } = (await cdp.send('WebAuthn.addVirtualAuthenticator', {
 		options: {
 			protocol: 'ctap2',
 			transport: 'internal',
@@ -27,7 +27,8 @@ async function addVirtualAuthenticator(cdp: CDPSession): Promise<void> {
 			hasUserVerification: true,
 			isUserVerified: true,
 		},
-	});
+	})) as { authenticatorId: string };
+	return authenticatorId;
 }
 
 async function waitForHydration(page: Page): Promise<void> {
@@ -45,12 +46,12 @@ async function registerPasskey(
 	context: BrowserContext,
 	displayName: string,
 	email: string,
-): Promise<void> {
+): Promise<string> {
 	await page.goto('/auth');
 	await waitForHydration(page);
 
 	const cdp = await context.newCDPSession(page);
-	await addVirtualAuthenticator(cdp);
+	const authenticatorId = await addVirtualAuthenticator(cdp);
 
 	await page.getByRole('button', { name: 'Create account' }).click();
 	await page.getByPlaceholder('Your name').fill(displayName);
@@ -58,6 +59,7 @@ async function registerPasskey(
 	await page.getByRole('button', { name: /Register passkey/ }).click();
 
 	await page.waitForURL('**/lists');
+	return authenticatorId;
 }
 
 // ---------------------------------------------------------------------------
@@ -87,18 +89,20 @@ test.describe('Account management', () => {
 	});
 
 	test('add a second passkey from /account page', async ({ page, context }) => {
-		await registerPasskey(page, context, 'Passkey User', uniqueEmail());
+		const firstAuthId = await registerPasskey(page, context, 'Passkey User', uniqueEmail());
 
 		await page.goto('/account');
 		await waitForHydration(page);
 
 		// Provision a fresh virtual authenticator for the second passkey ceremony.
 		// The CDP session from registerPasskey() is bound to the previous page load;
-		// a new CDP session is required after page.goto(). The WebAuthn virtual
-		// authenticator environment is associated with the browser context so it
-		// persists, but a fresh (empty) authenticator avoids ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED.
+		// a new CDP session is required after page.goto(). Remove the authenticator
+		// created during registration first — Chrome only allows one internal
+		// authenticator per environment.
 		// Guards 665d06a: await parent() race condition fix.
 		const cdp = await context.newCDPSession(page);
+		await cdp.send('WebAuthn.enable', { enableUI: false });
+		await cdp.send('WebAuthn.removeVirtualAuthenticator', { authenticatorId: firstAuthId });
 		await addVirtualAuthenticator(cdp);
 
 		await page.getByText('+ Add passkey for this device').click();
@@ -110,13 +114,17 @@ test.describe('Account management', () => {
 	});
 
 	test('remove passkey via inline confirmation (not alert)', async ({ page, context }) => {
-		await registerPasskey(page, context, 'Remove User', uniqueEmail());
+		const firstAuthId = await registerPasskey(page, context, 'Remove User', uniqueEmail());
 
 		await page.goto('/account');
 		await waitForHydration(page);
 
-		// Add a second passkey so removing one is allowed (last-passkey guard)
+		// Add a second passkey so removing one is allowed (last-passkey guard).
+		// Remove the authenticator from registration first — Chrome only allows one
+		// internal authenticator per environment.
 		const cdp = await context.newCDPSession(page);
+		await cdp.send('WebAuthn.enable', { enableUI: false });
+		await cdp.send('WebAuthn.removeVirtualAuthenticator', { authenticatorId: firstAuthId });
 		await addVirtualAuthenticator(cdp);
 		await page.getByText('+ Add passkey for this device').click();
 		await page.getByPlaceholder('Label (optional, e.g. My Laptop)').fill('To Remove');
@@ -141,7 +149,7 @@ test.describe('Account management', () => {
 		await page.getByRole('button', { name: 'Confirm removal' }).click();
 
 		// Passkey no longer in list; still no browser dialog
-		await expect(page.getByText('To Remove')).not.toBeVisible();
+		await expect(passkeyItem).not.toBeVisible();
 		expect(dialogTriggered).toBe(false);
 	});
 });
