@@ -13,6 +13,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
 import java.util.UUID
 import kotlin.test.assertFalse
@@ -297,6 +298,81 @@ class UserControllerTest : AbstractIntegrationTest() {
             status { isOk() }
             jsonPath("$.listsToDelete") { isEmpty() }
             jsonPath("$.listsToLeave[0].name") { value("Has Editor") }
+        }
+    }
+
+    // ─── Regression: SESSION_EXPIRED on POST /passkeys without prior register-options ──
+
+    @Test
+    fun `POST me passkeys returns 400 SESSION_EXPIRED when no register-options was called`() {
+        val user = createUser()
+        // Dummy attestation credential body — deserialization proceeds but load() returns null
+        // because no register-options was called for this user beforehand.
+        val body = """
+            {
+              "credential": {
+                "id": "AAAA",
+                "rawId": "AAAA",
+                "type": "public-key",
+                "response": {
+                  "clientDataJSON": "AAAA",
+                  "attestationObject": "AAAA",
+                  "transports": []
+                }
+              },
+              "label": null
+            }
+        """.trimIndent()
+
+        mockMvc.post("/api/users/me/passkeys") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = body
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.code") { value("SESSION_EXPIRED") }
+        }
+    }
+
+    // ─── Regression: viewer-fallback promotion on DELETE /api/users/me ───────
+
+    @Test
+    fun `DELETE me - promotes viewer to owner when no editor exists`() {
+        val user = createUser()
+        val viewer = createUser()
+
+        val list = listRepository.save(TodoList(name = "With Viewer"))
+        listMembershipRepository.save(ListMembership(listId = list.id, userId = user.id, role = ListRole.OWNER))
+        listMembershipRepository.save(ListMembership(listId = list.id, userId = viewer.id, role = ListRole.VIEWER))
+
+        mockMvc.delete("/api/users/me") {
+            header("Authorization", bearerHeader(user))
+        }.andExpect {
+            status { isNoContent() }
+        }
+
+        assertFalse(userRepository.existsById(user.id))
+        assertTrue(listRepository.existsById(list.id))
+        val promoted = listMembershipRepository.findByListIdAndUserId(list.id, viewer.id)
+        assertNotNull(promoted)
+        assert(promoted.role == ListRole.OWNER)
+    }
+
+    @Test
+    fun `GET me deletion-preview - sole-owner with only viewer goes to listsToLeave`() {
+        val user = createUser()
+        val viewer = createUser()
+
+        val list = listRepository.save(TodoList(name = "Has Viewer"))
+        listMembershipRepository.save(ListMembership(listId = list.id, userId = user.id, role = ListRole.OWNER))
+        listMembershipRepository.save(ListMembership(listId = list.id, userId = viewer.id, role = ListRole.VIEWER))
+
+        mockMvc.get("/api/users/me/deletion-preview") {
+            header("Authorization", bearerHeader(user))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.listsToDelete") { isEmpty() }
+            jsonPath("$.listsToLeave[0].name") { value("Has Viewer") }
         }
     }
 }

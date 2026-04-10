@@ -11,6 +11,8 @@ Checkbox-based task list for tracking incomplete feature implementation tasks. T
 
 ### Frontend
   
+ * [ ] /bugifx skill. write unit tests / integration tests to prevent regressions in the future and verify the wanted behavior. fix the code. run all test suites avalable. tests should be green.
+ * [ ] /feature skill. when implementing features, always check for warnings and errors and fix them right away. 
  * [ ] The ItemForm keeps a single-user dropdown (picks first assignment). Multiple assignments must be possible.
  * [ ] Cursor-based pagination params (cursor, limit) are accepted but unused in the initial implementation — the response always returns all items in one page.
 
