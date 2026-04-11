@@ -12,6 +12,7 @@
   let errorMessage = $state('');
   let email = $state('');
   let displayName = $state('');
+  let passkeyLabel = $state('');
   let registrationEnabled = $state(true);
 
   let pollInterval: ReturnType<typeof setInterval> | undefined;
@@ -90,7 +91,7 @@
     mode = 'registering';
     errorMessage = '';
     try {
-      const result = await registerWithPasskey(email.trim(), displayName.trim());
+      const result = await registerWithPasskey(email.trim(), displayName.trim(), passkeyLabel.trim() || undefined);
       setSession(result);
       await goto('/lists');
     } catch (err) {
@@ -158,6 +159,19 @@
               bind:value={email}
               placeholder="you@example.com"
               required
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block" for="passkeyLabel">
+              Passkey name <span class="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              id="passkeyLabel"
+              type="text"
+              bind:value={passkeyLabel}
+              placeholder="e.g. My MacBook"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

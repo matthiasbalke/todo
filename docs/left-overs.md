@@ -9,10 +9,10 @@ Checkbox-based task list for tracking incomplete feature implementation tasks. T
 
 ### Backend
 
+ * [ ] When registration using a passkey fails, the user is created anyway in the db, but without passkey. So a new registration attempt fails, because the email address is already registered. The account cannot be recovered by the user. Thats why, the user should only be persisted to the db, when the passkey registration was successull. 
+
 ### Frontend
-  
- * [ ] /bugifx skill. write unit tests / integration tests to prevent regressions in the future and verify the wanted behavior. fix the code. run all test suites avalable. tests should be green.
- * [ ] /feature skill. when implementing features, always check for warnings and errors and fix them right away. 
+
  * [ ] The ItemForm keeps a single-user dropdown (picks first assignment). Multiple assignments must be possible.
  * [ ] Cursor-based pagination params (cursor, limit) are accepted but unused in the initial implementation — the response always returns all items in one page.
 
@@ -28,6 +28,3 @@ Checkbox-based task list for tracking incomplete feature implementation tasks. T
 
 ## Next Features
 
-* docs/account-management.md: /feature lets implement the account management. ask me anything you need to know to create a plan. Display name should be editable inline. email editing, should be possible. passkey management: list of registered keys, device names/date. ability to remove registered passkey, if its not the last login    
-method. add a new passkey for a new device. no oauth yet. after deleting the account show a your account has been deleted page. account management should be accessible via the already existing user menu (top/right), above logout.
-  * can we check if the user tries to delete the passkey he is logged in with on this device? should we even check that?

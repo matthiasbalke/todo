@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
+import java.util.Base64
 import java.util.UUID
 
 @RestController
@@ -40,6 +41,7 @@ class AuthController(
     private val rpOperations: WebAuthnRelyingPartyOperations,
     private val jwtProperties: JwtProperties,
     private val userCredentialRepository: org.springframework.security.web.webauthn.management.UserCredentialRepository,
+    private val accountService: AccountService,
     @Value("\${app.registration.enabled:true}") private val registrationEnabled: Boolean,
 ) {
 
@@ -52,6 +54,10 @@ class AuthController(
     // ─── DTOs ────────────────────────────────────────────────────────────────
 
     data class RegisterOptionsRequest(val email: String, val displayName: String)
+    data class RegisterRequest(
+        val credential: PublicKeyCredential<AuthenticatorAttestationResponse>,
+        val label: String?,
+    )
     data class UserDto(val id: String, val email: String, val displayName: String)
     data class TokenResponse(val accessToken: String, val user: UserDto)
     data class ErrorResponse(val code: String, val message: String)
@@ -92,7 +98,7 @@ class AuthController(
 
     @PostMapping("/webauthn/register")
     fun register(
-        @RequestBody credential: PublicKeyCredential<AuthenticatorAttestationResponse>,
+        @RequestBody body: RegisterRequest,
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ResponseEntity<*> {
@@ -104,8 +110,11 @@ class AuthController(
             ?: return ResponseEntity.badRequest().build<Any>()
 
         val credentialRecord = rpOperations.registerCredential(
-            ImmutableRelyingPartyRegistrationRequest(savedOptions, RelyingPartyPublicKey(credential, "Passkey"))
+            ImmutableRelyingPartyRegistrationRequest(savedOptions, RelyingPartyPublicKey(body.credential, body.label ?: "Passkey"))
         )
+        val base64CredId = Base64.getUrlEncoder().withoutPadding()
+            .encodeToString(credentialRecord.credentialId.bytes)
+        accountService.savePasskeyLabel(base64CredId, body.label)
         request.getSession(false)?.invalidate()
 
         val user = resolveUserFromUserHandle(credentialRecord.userEntityUserId.bytes)
