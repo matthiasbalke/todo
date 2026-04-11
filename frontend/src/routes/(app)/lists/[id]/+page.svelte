@@ -72,6 +72,7 @@
   });
 
   const isOwner = $derived(myRole === 'OWNER');
+  const isDraggable = $derived(sortField === 'MANUAL' && (myRole === 'EDITOR' || myRole === 'OWNER'));
 
   const dueDateOptions = [
     { value: 'all', label: 'Any due date' },
@@ -315,6 +316,8 @@
         hideDone={isHideDone(data.id)}
         collapsed={collapsedMap[key ?? '__null__'] ?? false}
         doneCollapsed={doneCollapsedMap[key ?? '__null__'] ?? true}
+        listId={data.id}
+        {isDraggable}
         oncollapsedchange={(v) => {
           const next = { ...collapsedMap };
           if (v) next[key ?? '__null__'] = true; else delete next[key ?? '__null__'];
