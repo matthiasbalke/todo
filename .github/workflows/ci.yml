@@ -111,7 +111,7 @@ jobs:
           cache-from: type=gha,scope=backend
 
       - name: Start postgres and backend
-        run: docker compose up postgres backend backend-healthcheck --wait -d
+        run: docker compose up postgres backend backend-healthcheck frontend nginx --wait -d
 
       - uses: oven-sh/setup-bun@v2
 

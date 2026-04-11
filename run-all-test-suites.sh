@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Stop only backend and frontend on exit — leave postgres running for dev
-cleanup() { docker compose -f "$SCRIPT_DIR/docker-compose.yml" stop backend frontend; }
+cleanup() { docker compose -f "$SCRIPT_DIR/docker-compose.yml" stop backend frontend nginx; }
 trap cleanup EXIT
 
 # ── 1. Backend ────────────────────────────────────────────────────────────────
@@ -13,19 +13,19 @@ echo "=== [1/3] Backend tests ==="
 
 # ── 2. Frontend ───────────────────────────────────────────────────────────────
 echo "=== [2/3] Frontend tests ==="
-(cd "$SCRIPT_DIR/frontend" && bun run test)
+(cd "$SCRIPT_DIR/frontend" && bun run test --run)
 
 # ── 3. E2E ────────────────────────────────────────────────────────────────────
 echo "=== [3/3] E2E tests ==="
 
 echo "Building docker images..."
-docker compose -f "$SCRIPT_DIR/docker-compose.yml" build backend frontend
+docker compose -f "$SCRIPT_DIR/docker-compose.yml" build backend frontend nginx
 
-echo "Starting backend and frontend..."
-docker compose -f "$SCRIPT_DIR/docker-compose.yml" up -d backend frontend
+echo "Starting backend and frontend..."#
+docker compose -f "$SCRIPT_DIR/docker-compose.yml" up -d nginx
 
 echo "Waiting for frontend to be ready..."
 timeout 120 bash -c \
-  'until curl -sf http://localhost:3000 > /dev/null; do sleep 2; done'
+  'until curl -sf http://localhost > /dev/null; do sleep 2; done'
 
-BASE_URL=http://localhost:3000 bunx playwright test --config "$SCRIPT_DIR/e2e/playwright.config.ts"
+(cd "$SCRIPT_DIR/e2e" && BASE_URL=http://localhost bunx playwright test)

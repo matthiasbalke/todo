@@ -30,7 +30,8 @@ app:
     enabled: ${REGISTRATION_ENABLED:true}
   security:
     rate-limit:
-      capacity: 50
+      capacity: ${RATE_LIMIT_CAPACITY:50}
+      window-minutes: ${RATE_LIMIT_WINDOW_MINUTES:1}
 
 management:
   info:
