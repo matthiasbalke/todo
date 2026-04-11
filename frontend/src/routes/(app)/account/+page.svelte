@@ -59,6 +59,16 @@
   let emailSaving = $state(false);
   let emailError = $state('');
   let emailSuccess = $state(false);
+  let editingEmail = $state(false);
+  let emailInput = $state<HTMLInputElement | null>(null);
+  $effect(() => { if (editingEmail && emailInput) emailInput.focus(); });
+
+  function startEditEmail() {
+    emailEdit = profile.email;
+    emailError = '';
+    emailSuccess = false;
+    editingEmail = true;
+  }
 
   async function saveEmail() {
     emailSaving = true;
@@ -69,6 +79,7 @@
       profile = { ...profile, email: updated.email };
       updateCurrentUser({ email: updated.email });
       emailSuccess = true;
+      editingEmail = false;
     } catch (e) {
       emailError = friendlyError(e, 'Failed to save email');
     } finally {
@@ -222,22 +233,43 @@
 
     <!-- Email -->
     <div>
-      <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-      <div class="flex items-center gap-2">
-        <input
-          id="email"
-          type="email"
-          bind:value={emailEdit}
-          class="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
-        />
-        <button
-          onclick={saveEmail}
-          disabled={emailSaving || emailEdit.trim() === profile.email}
-          class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      <p class="block text-sm font-medium text-gray-700 mb-1">Email</p>
+      {#if editingEmail}
+        <div
+          class="flex items-center gap-2"
+          onfocusout={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) { editingEmail = false; }
+          }}
         >
-          {emailSaving ? 'Saving…' : 'Save'}
+          <input
+            bind:this={emailInput}
+            id="email"
+            type="email"
+            bind:value={emailEdit}
+            disabled={emailSaving}
+            onkeydown={(e) => {
+              if (e.key === 'Enter') { e.preventDefault(); saveEmail(); }
+              if (e.key === 'Escape') { editingEmail = false; }
+            }}
+            class="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+          />
+          <button
+            onclick={saveEmail}
+            disabled={emailSaving}
+            class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {emailSaving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      {:else}
+        <button
+          onclick={startEditEmail}
+          class="text-sm text-gray-900 hover:opacity-70 transition-opacity cursor-pointer"
+        >
+          {profile.email}
+          <span class="text-xs text-gray-400 ml-1">Edit</span>
         </button>
-      </div>
+      {/if}
       {#if emailError}
         <p class="mt-1 text-xs text-red-600">{emailError}</p>
       {/if}
