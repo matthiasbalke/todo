@@ -18,8 +18,8 @@ export interface DeletionPreviewDto {
 	listsToLeave: { id: string; name: string }[];
 }
 
-export async function getMe(): Promise<UserProfileDto> {
-	return authedFetch('/api/users/me');
+export async function getMe(fetchFn: typeof fetch = fetch): Promise<UserProfileDto> {
+	return authedFetch('/api/users/me', undefined, fetchFn);
 }
 
 export async function updateMe(req: { displayName: string; email: string }): Promise<UserProfileDto> {
@@ -29,8 +29,8 @@ export async function updateMe(req: { displayName: string; email: string }): Pro
 	});
 }
 
-export async function getPasskeys(): Promise<PasskeyDto[]> {
-	return authedFetch('/api/users/me/passkeys');
+export async function getPasskeys(fetchFn: typeof fetch = fetch): Promise<PasskeyDto[]> {
+	return authedFetch('/api/users/me/passkeys', undefined, fetchFn);
 }
 
 export async function getAddPasskeyOptions(): Promise<PublicKeyCredentialCreationOptionsJSON> {

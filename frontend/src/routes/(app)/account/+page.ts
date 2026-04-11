@@ -5,10 +5,10 @@ import { ApiError } from '$lib/api/client';
 
 export const ssr = false;
 
-export const load: PageLoad = async ({ parent }) => {
+export const load: PageLoad = async ({ parent, fetch }) => {
 	await parent(); // wait for layout load (restoreSession) before making authed API calls
 	try {
-		const [profile, passkeys] = await Promise.all([getMe(), getPasskeys()]);
+		const [profile, passkeys] = await Promise.all([getMe(fetch), getPasskeys(fetch)]);
 		return { profile, passkeys };
 	} catch (e) {
 		if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {

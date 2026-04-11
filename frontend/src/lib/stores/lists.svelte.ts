@@ -37,10 +37,10 @@ export function getList(id: string): List | undefined {
   return lists.find(l => l.id === id);
 }
 
-export async function loadLists(): Promise<void> {
+export async function loadLists(fetchFn: typeof fetch = fetch): Promise<void> {
   loading = true;
   try {
-    const dtos = await apiGetLists();
+    const dtos = await apiGetLists(fetchFn);
     lists = dtos.map(dto => ({
       id: dto.id,
       name: dto.name,

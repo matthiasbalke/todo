@@ -63,11 +63,11 @@ export function updateCurrentUser(partial: Partial<AuthUser>): void {
  * Attempts a silent session restore using the refresh token cookie.
  * Called on app load; SSR-safe (no-ops on the server).
  */
-export async function restoreSession(): Promise<void> {
+export async function restoreSession(fetchFn: typeof fetch = fetch): Promise<void> {
 	if (typeof window === 'undefined') return;
 	if (isAuthenticated()) return;
 	try {
-		const response = await refreshAccessToken();
+		const response = await refreshAccessToken(fetchFn);
 		setSession(response);
 	} catch {
 		// No valid refresh token — user is logged out; no action needed

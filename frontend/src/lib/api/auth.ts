@@ -66,9 +66,9 @@ export async function submitLogin(
 	});
 }
 
-export async function refreshAccessToken(): Promise<TokenResponse> {
+export async function refreshAccessToken(fetchFn: typeof fetch = fetch): Promise<TokenResponse> {
 	// No body — the refresh token cookie is sent automatically by the browser
-	return fetchJson('/api/auth/refresh', { method: 'POST', body: JSON.stringify({}) });
+	return fetchJson('/api/auth/refresh', { method: 'POST', body: JSON.stringify({}) }, fetchFn);
 }
 
 export async function logout(accessToken: string): Promise<void> {
