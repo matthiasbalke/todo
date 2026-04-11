@@ -9,12 +9,11 @@ Checkbox-based task list for tracking incomplete feature implementation tasks. T
 
 ### Backend
 
- * [ ] When registration using a passkey fails, the user is created anyway in the db, but without passkey. So a new registration attempt fails, because the email address is already registered. The account cannot be recovered by the user. Thats why, the user should only be persisted to the db, when the passkey registration was successull. 
+ ### Frontend
 
-### Frontend
-
- * [ ] The ItemForm keeps a single-user dropdown (picks first assignment). Multiple assignments must be possible.
- * [ ] Cursor-based pagination params (cursor, limit) are accepted but unused in the initial implementation — the response always returns all items in one page.
+ * Add List should always be displayed fixed at the bottom.
+ * The ItemForm keeps a single-user dropdown (picks first assignment). Multiple assignments must be possible.
+ * Cursor-based pagination params (cursor, limit) are accepted but unused in the initial implementation — the response always returns all items in one page.
 
 
 ## 1. List Items
@@ -23,8 +22,9 @@ Checkbox-based task list for tracking incomplete feature implementation tasks. T
 
 ### Frontend
 
-* [ ] Way to delete all checked List Items from a list.
-* [ ] Sort List items by dragging them.
+ * Add Item should always be displayed fixed at the bottom.
+ * Stars are not vertically aligned
+ * Way to delete all checked List Items from a list.
 
 ## Next Features
 
