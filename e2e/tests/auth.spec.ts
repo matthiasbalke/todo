@@ -80,9 +80,25 @@ test.describe('Passkey registration', () => {
 		await waitForHydration(page);
 
 		const cdp = await context.newCDPSession(page);
-		// Enable the virtual WebAuthn environment but add NO authenticator.
-		// Any ceremony will fail immediately with NotAllowedError, simulating a cancel.
-		await cdp.send('WebAuthn.enable', { enableUI: false });
+		// Add a virtual authenticator so the retry ceremony can succeed.
+		await addVirtualAuthenticator(cdp);
+
+		// Override navigator.credentials.create in JS to throw NotAllowedError on the
+		// first call only (simulating the user cancelling the passkey dialog), then
+		// delegate to the real implementation so the retry ceremony succeeds.
+		// Newer Chromium no longer immediately rejects when no authenticator is present,
+		// so we simulate the cancellation at the JS layer instead.
+		await page.evaluate(() => {
+			let cancelled = false;
+			const originalCreate = navigator.credentials.create.bind(navigator.credentials);
+			navigator.credentials.create = async function (options?: CredentialCreationOptions) {
+				if (!cancelled) {
+					cancelled = true;
+					throw new DOMException('Operation not allowed', 'NotAllowedError');
+				}
+				return originalCreate(options);
+			};
+		});
 
 		await page.getByRole('button', { name: 'Create account' }).click();
 		await page.getByPlaceholder('Your name').fill('E2E Orphan User');
@@ -91,17 +107,6 @@ test.describe('Passkey registration', () => {
 
 		// Ceremony fails — error message appears; user is orphaned in the DB
 		await expect(page.getByText(/Cancelled|try again/i)).toBeVisible({ timeout: 15000 });
-
-		// Provision a virtual authenticator for the retry
-		await cdp.send('WebAuthn.addVirtualAuthenticator', {
-			options: {
-				protocol: 'ctap2',
-				transport: 'internal',
-				hasResidentKey: true,
-				hasUserVerification: true,
-				isUserVerified: true,
-			},
-		});
 
 		// Retry: same email is still in the form (mode === 'error' keeps the form visible)
 		await page.getByRole('button', { name: /Register passkey/ }).click();

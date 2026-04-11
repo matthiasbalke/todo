@@ -76,8 +76,13 @@ test.describe('Account management', () => {
 		await page.goto('/account');
 		await waitForHydration(page);
 
-		// Click the inline Edit button to enter editing mode
-		const nameField = page.locator('div').filter({ has: page.locator('p', { hasText: 'Display name' }) });
+		// Click the inline Edit button to enter editing mode.
+		// Exclude the outer wrapper div (which also contains the Email field) so the
+		// locator is unique and strict-mode does not complain about two Edit buttons.
+		const nameField = page
+			.locator('div')
+			.filter({ has: page.locator('p', { hasText: 'Display name' }) })
+			.filter({ hasNot: page.locator('p', { hasText: 'Email' }) });
 		await nameField.locator('button').filter({ hasText: 'Edit' }).click();
 
 		// Fill the name input (no type attribute) and save with Enter
