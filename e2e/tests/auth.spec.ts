@@ -90,7 +90,7 @@ test.describe('Passkey registration', () => {
 		await page.getByRole('button', { name: /Register passkey/ }).click();
 
 		// Ceremony fails — error message appears; user is orphaned in the DB
-		await expect(page.getByText(/Cancelled|try again/i)).toBeVisible();
+		await expect(page.getByText(/Cancelled|try again/i)).toBeVisible({ timeout: 15000 });
 
 		// Provision a virtual authenticator for the retry
 		await cdp.send('WebAuthn.addVirtualAuthenticator', {

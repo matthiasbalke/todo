@@ -77,7 +77,8 @@ test.describe('Account management', () => {
 		await waitForHydration(page);
 
 		// Click the inline Edit button to enter editing mode
-		await page.locator('button').filter({ hasText: 'Edit' }).click();
+		const nameField = page.locator('div').filter({ has: page.locator('p', { hasText: 'Display name' }) });
+		await nameField.locator('button').filter({ hasText: 'Edit' }).click();
 
 		// Fill the name input (no type attribute) and save with Enter
 		await page.locator('input:not([type="email"])').fill('Updated Name');
