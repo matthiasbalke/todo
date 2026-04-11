@@ -68,6 +68,24 @@ async function registerPasskey(
 // Tests
 // ---------------------------------------------------------------------------
 
+test.describe('/ redirects to /auth', () => {
+	test('root redirects to auth page', async ({ page }) => {
+		await page.goto('/');
+		await waitForHydration(page);
+		await expect(page).toHaveURL(/\/auth$/);
+	});
+});
+
+test.describe('Auth page content', () => {
+	test('shows welcome heading and sign-in options', async ({ page }) => {
+		await page.goto('/auth');
+		await waitForHydration(page);
+		await expect(page.getByRole('heading', { name: 'Welcome' })).toBeVisible();
+		await expect(page.getByRole('button', { name: /Sign in with Passkey/ })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Create account' })).toBeVisible();
+	});
+});
+
 test.describe('Passkey registration', () => {
 	test('re-registration succeeds after passkey dialog is cancelled', async ({ page, context }) => {
 		// Guards the orphan-cleanup fix: register-options saves the user row, the browser
