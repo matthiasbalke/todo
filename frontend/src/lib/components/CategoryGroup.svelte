@@ -2,6 +2,9 @@
   import { untrack } from 'svelte';
   import type { TodoItem, Category, User } from '$lib/mock-data';
   import ItemCard from './ItemCard.svelte';
+  import { dragHandleZone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
+  import { reorderItemsOptimistic } from '$lib/stores/items.svelte';
+  import { friendlyError } from '$lib/api/errors';
 
   let {
     categoryId,
@@ -12,6 +15,8 @@
     hideDone = false,
     collapsed: collapsedProp = false,
     doneCollapsed: doneCollapsedProp = true,
+    listId,
+    isDraggable = false,
     oncollapsedchange,
     ondonecollapsedchange
   }: {
@@ -23,6 +28,8 @@
     hideDone?: boolean;
     collapsed?: boolean;
     doneCollapsed?: boolean;
+    listId: string;
+    isDraggable?: boolean;
     oncollapsedchange?: (v: boolean) => void;
     ondonecollapsedchange?: (v: boolean) => void;
   } = $props();
@@ -32,6 +39,31 @@
 
   const undoneItems = $derived(items.filter(i => !i.done));
   const doneItems = $derived(items.filter(i => i.done));
+
+  let dndItems = $state<TodoItem[]>([]);
+  let isDragging = $state(false);
+
+  $effect(() => {
+    if (!isDragging) {
+      dndItems = undoneItems.slice();
+    }
+  });
+
+  function handleConsider(e: CustomEvent<{ items: TodoItem[] }>) {
+    isDragging = true;
+    dndItems = e.detail.items;
+  }
+
+  async function handleFinalize(e: CustomEvent<{ items: TodoItem[] }>) {
+    isDragging = false;
+    const newItems = e.detail.items.filter(i => !(i as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME]);
+    dndItems = newItems;
+    try {
+      await reorderItemsOptimistic(listId, newItems.map(i => i.id));
+    } catch (err) {
+      alert(friendlyError(err, 'Failed to reorder items'));
+    }
+  }
 </script>
 
 <div class="mb-6">
@@ -51,11 +83,26 @@
     </button>
   </h3>
   {#if !collapsed}
-    <div class="space-y-2">
-      {#each undoneItems as item (item.id)}
-        <ItemCard {item} categories={allCategories} {users} />
-      {/each}
-    </div>
+    {#if isDraggable}
+      <div
+        use:dragHandleZone={{ items: dndItems, dropTargetStyle: {} }}
+        onconsider={handleConsider}
+        onfinalize={handleFinalize}
+        class="space-y-2"
+      >
+        {#each dndItems as item (item.id)}
+          <div>
+            <ItemCard {item} categories={allCategories} {users} {isDraggable} />
+          </div>
+        {/each}
+      </div>
+    {:else}
+      <div class="space-y-2">
+        {#each undoneItems as item (item.id)}
+          <ItemCard {item} categories={allCategories} {users} />
+        {/each}
+      </div>
+    {/if}
 
     {#if !hideDone && doneItems.length > 0}
       <button

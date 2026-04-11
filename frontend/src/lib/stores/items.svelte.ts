@@ -90,6 +90,20 @@ export async function toggleStarred(listId: string, itemId: string): Promise<voi
 	}
 }
 
+export async function reorderItemsOptimistic(listId: string, orderedIds: string[]): Promise<void> {
+	const snapshot = items.map(i => ({ ...i }));
+	orderedIds.forEach((id, idx) => {
+		const i = items.findIndex(x => x.id === id);
+		if (i >= 0) items[i] = { ...items[i], sortOrder: idx };
+	});
+	try {
+		await itemsApi.reorderItems(listId, orderedIds.map((id, idx) => ({ id, sortOrder: idx })));
+	} catch (e) {
+		items = snapshot;
+		throw e;
+	}
+}
+
 export function saveItem(item: TodoItem) {
 	const idx = items.findIndex(i => i.id === item.id);
 	if (idx >= 0) {

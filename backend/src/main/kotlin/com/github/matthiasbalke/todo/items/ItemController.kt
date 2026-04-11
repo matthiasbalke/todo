@@ -66,6 +66,9 @@ class ItemController(private val itemService: ItemService) {
 
     data class UpdateOrderRequest(val sortOrder: Int)
 
+    data class ReorderEntry(val id: UUID, val sortOrder: Int)
+    data class ReorderRequest(val items: List<ReorderEntry>)
+
     // ─── Endpoints ───────────────────────────────────────────────────────────
 
     @GetMapping
@@ -118,6 +121,14 @@ class ItemController(private val itemService: ItemService) {
         @PathVariable id: UUID,
         @PathVariable iid: UUID,
     ): ItemDto = itemService.toggleStarred(id, iid, userId).toDto()
+
+    @PostMapping("/reorder")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun reorderItems(
+        @AuthenticationPrincipal userId: UUID,
+        @PathVariable id: UUID,
+        @RequestBody body: ReorderRequest,
+    ) = itemService.reorderItems(id, userId, body.items.map { it.id to it.sortOrder })
 
     @PatchMapping("/{iid}/order")
     fun updateOrder(
