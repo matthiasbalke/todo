@@ -331,9 +331,9 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ## 15. PWA & Offline
 
 ### Frontend
-- [ ] Configure PWA manifest: `name`, `short_name`, `icons` (192 + 512 px), `display: standalone`, `theme_color`, `background_color`
-- [ ] Configure service worker caching: cache list data responses for offline reading
-- [ ] Implement offline mutation queue: detect `navigator.onLine === false`, queue write operations, flush on reconnect
-- [ ] Add "install app" prompt in the UI (deferred `beforeinstallprompt` event)
-- [ ] Verify app is installable via Chrome DevTools "Application" → "Manifest" (no errors)
-- [ ] Verify list data is readable while offline (kill dev server, check cached data loads)
+- [x] Configure PWA manifest: `name`, `short_name`, `icons` (192 + 512 px), `display: standalone`, `theme_color`, `background_color`
+- [x] Configure service worker caching: cache list data responses for offline reading
+- [x] Implement offline mutation queue: detect `navigator.onLine === false`, queue write operations, flush on reconnect
+- [x] Add "install app" prompt in the UI (deferred `beforeinstallprompt` event)
+- [x] Verify app is installable via Chrome DevTools "Application" → "Manifest" (no errors)
+- [x] Verify list data is readable while offline (kill dev server, check cached data loads)
