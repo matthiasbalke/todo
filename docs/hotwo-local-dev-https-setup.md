@@ -59,6 +59,22 @@ cd frontend && bun run dev:https
 
 The dev server will now be reachable at `https://<MY_IP>:5173`.
 
+### HMR when accessing via a tunnel or reverse proxy
+
+If you access the dev server through a public tunnel (e.g. Cloudflare Tunnel at `https://todo.example.com`) instead of directly via the LAN IP, Vite derives the HMR WebSocket URL from the page's host. The tunnel typically doesn't forward that WebSocket back to Vite's port, so the browser logs a `WebSocket connection failed` error and falls back to `localhost:5173`. HMR still works via the fallback, but the error is noisy.
+
+Fix it by telling Vite the correct WebSocket endpoint via env vars:
+
+```bash
+VITE_HMR_HOST=todo.example.com bun run dev:https
+# or with a non-443 port:
+VITE_HMR_HOST=todo.example.com VITE_HMR_CLIENT_PORT=4443 bun run dev:https
+```
+
+`VITE_HMR_CLIENT_PORT` defaults to `443`. When these vars are unset (normal LAN or localhost workflow) Vite's auto-detection applies unchanged.
+
+A convenience wrapper that sets both vars is committed at `frontend/start-https-frontend.sh`. Edit `VITE_HMR_HOST` there to match your tunnel domain, then run it instead of `bun run dev:https` directly.
+
 ---
 
 ## 4. Configure the Backend
@@ -239,3 +255,4 @@ The iPhone profile can stay installed — it only affects connections to your de
 | CORS error in browser console | `CORS_ALLOWED_ORIGINS` doesn't match the exact origin (`https://<IP>:5173`) |
 | Certificate error on Mac too | Re-run `mkcert -install` after `brew install nss` |
 | IP changed after router reboot | Assign a static DHCP lease to your Mac, or regenerate the cert for the new IP |
+| `WebSocket connection to 'wss://…' failed` in console | Set `VITE_HMR_HOST` to the tunnel domain (see section 3) |
