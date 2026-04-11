@@ -40,7 +40,7 @@ class RegistrationDisabledIntegrationTest : AbstractIntegrationTest() {
     fun `register returns 403 REGISTRATION_DISABLED when registration is off`() {
         mockMvc.post("/api/auth/webauthn/register") {
             contentType = MediaType.APPLICATION_JSON
-            content = """{"id":"dGVzdA","rawId":"dGVzdA","response":{"clientDataJSON":"e30","attestationObject":"e30"},"type":"public-key"}"""
+            content = """{"credential":{"id":"dGVzdA","rawId":"dGVzdA","response":{"clientDataJSON":"e30","attestationObject":"e30"},"type":"public-key"},"label":null}"""
         }.andExpect {
             status { isForbidden() }
             jsonPath("$.code") { value("REGISTRATION_DISABLED") }

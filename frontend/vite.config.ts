@@ -7,6 +7,12 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '0.0.0-dev'),
   },
   server: {
+    hmr: process.env.VITE_HMR_HOST
+      ? {
+          host: process.env.VITE_HMR_HOST,
+          clientPort: Number(process.env.VITE_HMR_CLIENT_PORT ?? 443),
+        }
+      : undefined,
     proxy: {
       '/api': {
         target: 'http://localhost:8080',

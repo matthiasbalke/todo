@@ -8,8 +8,12 @@ export class ApiError extends Error {
 	}
 }
 
-export async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-	const response = await fetch(url, {
+export async function fetchJson<T>(
+	url: string,
+	init?: RequestInit,
+	fetchFn: typeof fetch = fetch,
+): Promise<T> {
+	const response = await fetchFn(url, {
 		...init,
 		credentials: 'include', // always send HttpOnly cookies
 		headers: {

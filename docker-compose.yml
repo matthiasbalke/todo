@@ -21,7 +21,11 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/todo
       SPRING_DATASOURCE_USERNAME: todo
       SPRING_DATASOURCE_PASSWORD: todo
+      # this is not secure for production, generate a unique one
       JWT_SECRET: ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50
+      # this is set for e2e tests
+      RATE_LIMIT_CAPACITY: 10000
+      RATE_LIMIT_WINDOW_MINUTES: 1
     depends_on:
       postgres:
         condition: service_healthy
@@ -38,27 +42,29 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      backend:
+        condition: service_started
 
   frontend:
     build: ./frontend
     ports:
       - "3000:3000"
     environment:
-      ORIGIN: http://localhost:3000
+      ORIGIN: http://localhost
+      BACKEND_URL: http://backend:8080
     depends_on:
       backend-healthcheck:
         condition: service_healthy
 
-  all-in-one:
-    build: ./all-in-one
+  nginx:
+    image: nginx:alpine
     ports:
       - "80:80"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/todo
-      SPRING_DATASOURCE_USERNAME: todo
-      SPRING_DATASOURCE_PASSWORD: todo
-      JWT_SECRET: ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50
-      ORIGIN: http://localhost:3000
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      postgres:
+      frontend:
+        condition: service_started
+      backend-healthcheck:
         condition: service_healthy
+

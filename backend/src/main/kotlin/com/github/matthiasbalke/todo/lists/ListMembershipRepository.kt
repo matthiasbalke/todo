@@ -9,5 +9,7 @@ interface ListMembershipRepository : JpaRepository<ListMembership, ListMembershi
 
     fun findAllByListId(listId: UUID): kotlin.collections.List<ListMembership>
 
+    fun findAllByUserId(userId: UUID): kotlin.collections.List<ListMembership>
+
     fun countByListIdAndRole(listId: UUID, role: ListRole): Long
 }

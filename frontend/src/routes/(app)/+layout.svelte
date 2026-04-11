@@ -4,7 +4,7 @@
   import { logout } from '$lib/api/auth';
   import { clearSession, getAccessToken, getCurrentUser, refreshIfExpired } from '$lib/stores/auth.svelte';
   let { children } = $props();
-  const user = getCurrentUser();
+  let user = $derived(getCurrentUser());
   let userMenuOpen = $state(false);
   let offline = $state(false);
 
@@ -67,6 +67,14 @@
 
         {#if userMenuOpen}
           <div class="absolute right-0 top-10 z-20 w-44 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+            <a
+              href="/account"
+              onclick={() => (userMenuOpen = false)}
+              class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              Account
+            </a>
+            <div class="border-t border-gray-100 my-1"></div>
             <button
               onclick={handleLogout}
               class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"

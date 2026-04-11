@@ -41,10 +41,11 @@ export async function getRegisterOptions(
 
 export async function submitRegistration(
 	registrationResponse: RegistrationResponseJSON,
+	label?: string,
 ): Promise<TokenResponse> {
 	return fetchJson('/api/auth/webauthn/register', {
 		method: 'POST',
-		body: JSON.stringify(registrationResponse),
+		body: JSON.stringify({ credential: registrationResponse, label: label || null }),
 	});
 }
 
@@ -65,9 +66,9 @@ export async function submitLogin(
 	});
 }
 
-export async function refreshAccessToken(): Promise<TokenResponse> {
+export async function refreshAccessToken(fetchFn: typeof fetch = fetch): Promise<TokenResponse> {
 	// No body — the refresh token cookie is sent automatically by the browser
-	return fetchJson('/api/auth/refresh', { method: 'POST', body: JSON.stringify({}) });
+	return fetchJson('/api/auth/refresh', { method: 'POST', body: JSON.stringify({}) }, fetchFn);
 }
 
 export async function logout(accessToken: string): Promise<void> {
@@ -85,10 +86,11 @@ export async function logout(accessToken: string): Promise<void> {
 export async function registerWithPasskey(
 	email: string,
 	displayName: string,
+	label?: string,
 ): Promise<TokenResponse> {
 	const options = await getRegisterOptions(email, displayName);
 	const registrationResponse = await startRegistration({ optionsJSON: options });
-	return submitRegistration(registrationResponse);
+	return submitRegistration(registrationResponse, label);
 }
 
 export async function loginWithPasskey(): Promise<TokenResponse> {
