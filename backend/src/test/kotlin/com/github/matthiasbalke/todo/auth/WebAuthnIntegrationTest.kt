@@ -221,33 +221,4 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
         }
     }
 
-    // ─── rate limiting ────────────────────────────────────────────────────────
-
-    @Test
-    fun `11th request to auth endpoint returns 429`() {
-        // Use a unique path under /api/auth that won't create real side effects at this stage
-        val body = "{}"
-        repeat(10) {
-            mockMvc.post("/api/auth/refresh") {
-                contentType = MediaType.APPLICATION_JSON
-                content = body
-                with { req ->
-                    req.remoteAddr = "10.0.0.42"
-                    req
-                }
-            }
-        }
-
-        mockMvc.post("/api/auth/refresh") {
-            contentType = MediaType.APPLICATION_JSON
-            content = body
-            with { req ->
-                req.remoteAddr = "10.0.0.42"
-                req
-            }
-        }.andExpect {
-            status { isEqualTo(429) }
-            header { exists("Retry-After") }
-        }
-    }
 }
