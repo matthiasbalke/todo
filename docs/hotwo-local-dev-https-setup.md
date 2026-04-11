@@ -8,8 +8,9 @@ WebAuthn (passkeys) requires a secure context. `http://localhost` works on the d
 2. Generate a TLS certificate for your machine's LAN IP
 3. Configure Vite to serve over HTTPS
 4. Configure the backend for the new origin
-5. Install the mkcert CA on the iPhone
-6. Trust the CA in iOS Certificate Trust Settings
+5. Install the mkcert CA on other machines (Windows 11 / macOS)
+6. Install the mkcert CA on the iPhone
+7. Trust the CA in iOS Certificate Trust Settings
 
 ---
 
@@ -81,7 +82,87 @@ CORS_ALLOWED_ORIGINS=https://192.168.1.42:5173 \
 
 ---
 
-## 5. Install the mkcert CA on the iPhone
+## 5. Install the mkcert CA on Windows 11 or macOS (other machines on your network)
+
+If you want to test from another computer on the same LAN (not just an iPhone), you need to install the mkcert root CA on that machine.
+
+### Find the CA file
+
+On the machine where you ran `mkcert -install`, locate the root CA:
+
+```bash
+mkcert -CAROOT
+# Typically:
+#   macOS:   /Users/<you>/Library/Application Support/mkcert/
+#   Windows: C:\Users\<you>\AppData\Local\mkcert\
+```
+
+The file you need is `rootCA.pem` inside that directory.
+
+### macOS (on the target machine)
+
+**Option A — mkcert handles it (easiest, if mkcert is installed on the target too):**
+
+```bash
+brew install mkcert
+# Copy rootCA.pem from the source machine, then:
+CAROOT=/path/to/dir/containing/rootCA mkcert -install
+```
+
+**Option B — manually via Keychain Access:**
+
+1. Transfer `rootCA.pem` to the target Mac (AirDrop, file share, USB, etc.)
+2. Double-click the file — Keychain Access opens and prompts to add the certificate
+3. Select the **System** keychain and click **Add**
+4. Open **Keychain Access → System** and find the **mkcert** certificate
+5. Double-click it → expand **Trust** → set **When using this certificate** to **Always Trust**
+6. Close the dialog and enter your password to confirm
+
+**Option C — command line (no GUI):**
+
+```bash
+# Add to System keychain
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain /path/to/rootCA.pem
+```
+
+Restart your browser after importing.
+
+---
+
+### Windows 11
+
+**Option A — mkcert handles it (easiest, if mkcert is installed on the target too):**
+
+```powershell
+# In an elevated PowerShell (Run as Administrator):
+# Copy rootCA.pem from the source machine, then set CAROOT to the folder containing it:
+$env:CAROOT = "C:\path\to\dir\containing\rootCA"
+mkcert -install
+```
+
+**Option B — manually via Certificate Manager:**
+
+1. Transfer `rootCA.pem` to the Windows machine and rename it to `rootCA.crt` (Windows needs the `.crt` extension)
+2. Double-click the file → click **Install Certificate**
+3. Select **Local Machine** → click **Next** (confirm the UAC prompt)
+4. Select **Place all certificates in the following store** → click **Browse**
+5. Choose **Trusted Root Certification Authorities** → **OK** → **Next** → **Finish**
+6. Click **Yes** on the security warning, then **OK**
+
+**Option C — command line (PowerShell, elevated):**
+
+```powershell
+# Import into the machine-wide Trusted Root store
+Import-Certificate -FilePath "C:\path\to\rootCA.crt" -CertStoreLocation Cert:\LocalMachine\Root
+```
+
+Restart your browser after importing (Chrome and Edge on Windows use the Windows certificate store; Firefox uses its own store — see note below).
+
+> **Firefox on Windows/macOS:** Firefox maintains its own certificate store and ignores the OS store by default. To trust the CA in Firefox, navigate to **Settings → Privacy & Security → Certificates → View Certificates → Authorities → Import**, select `rootCA.pem`, and check **Trust this CA to identify websites**.
+
+---
+
+## 6. Install the mkcert CA on the iPhone
 
 The iPhone must trust the same CA that signed the certificate. mkcert's CA root is a single file:
 
