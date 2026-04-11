@@ -69,6 +69,48 @@ async function registerPasskey(
 // ---------------------------------------------------------------------------
 
 test.describe('Passkey registration', () => {
+	test('re-registration succeeds after passkey dialog is cancelled', async ({ page, context }) => {
+		// Guards the orphan-cleanup fix: register-options saves the user row, the browser
+		// cancels the passkey dialog (startRegistration throws before submitRegistration is
+		// called), the user is orphaned. The next register-options call with the same email
+		// must clean up the orphan and return 200 so the retry can complete.
+
+		const email = uniqueEmail();
+		await page.goto('/auth');
+		await waitForHydration(page);
+
+		const cdp = await context.newCDPSession(page);
+		// Enable the virtual WebAuthn environment but add NO authenticator.
+		// Any ceremony will fail immediately with NotAllowedError, simulating a cancel.
+		await cdp.send('WebAuthn.enable', { enableUI: false });
+
+		await page.getByRole('button', { name: 'Create account' }).click();
+		await page.getByPlaceholder('Your name').fill('E2E Orphan User');
+		await page.getByPlaceholder('you@example.com').fill(email);
+		await page.getByRole('button', { name: /Register passkey/ }).click();
+
+		// Ceremony fails — error message appears; user is orphaned in the DB
+		await expect(page.getByText(/Cancelled|try again/i)).toBeVisible();
+
+		// Provision a virtual authenticator for the retry
+		await cdp.send('WebAuthn.addVirtualAuthenticator', {
+			options: {
+				protocol: 'ctap2',
+				transport: 'internal',
+				hasResidentKey: true,
+				hasUserVerification: true,
+				isUserVerified: true,
+			},
+		});
+
+		// Retry: same email is still in the form (mode === 'error' keeps the form visible)
+		await page.getByRole('button', { name: /Register passkey/ }).click();
+
+		// Must succeed — not show "This email address is already registered."
+		await page.waitForURL('**/lists');
+		await expect(page).toHaveURL(/\/lists$/);
+	});
+
 	test('fills form → passkey ceremony → redirects to /lists', async ({ page, context }) => {
 		await page.goto('/auth');
 		await waitForHydration(page);
