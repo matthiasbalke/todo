@@ -164,6 +164,20 @@ class ItemService(
         return item.withAssignees()
     }
 
+    @Transactional
+    fun reorderItems(listId: UUID, userId: UUID, entries: List<Pair<UUID, Int>>) {
+        listAccessService.requireMinRole(listId, userId, ListRole.EDITOR)
+        val ids = entries.map { it.first }
+        val items = itemRepository.findAllByListIdAndIdIn(listId, ids)
+        val orderMap = entries.toMap()
+        val now = Instant.now()
+        items.forEach { item ->
+            item.sortOrder = orderMap[item.id] ?: item.sortOrder
+            item.updatedAt = now
+        }
+        itemRepository.saveAll(items)
+    }
+
     private fun saveAssignments(itemId: UUID, userIds: List<UUID>) {
         userIds.forEach { uid ->
             itemAssignmentRepository.save(ItemAssignment(ItemAssignmentId(itemId, uid)))

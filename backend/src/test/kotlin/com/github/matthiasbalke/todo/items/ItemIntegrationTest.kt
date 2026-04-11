@@ -368,6 +368,76 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
         }
     }
 
+    // ─── POST /reorder ────────────────────────────────────────────────────────
+
+    @Test
+    fun `POST reorder - EDITOR reorders items and sortOrder values persist`() {
+        val owner = createUser()
+        val listId = createListAsUser(owner)
+        val item1 = createItemInList(listId, owner, "First")
+        val item2 = createItemInList(listId, owner, "Second")
+        val item3 = createItemInList(listId, owner, "Third")
+
+        mockMvc.post("/api/lists/$listId/items/reorder") {
+            header("Authorization", bearerHeader(owner))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"items":[{"id":"$item3","sortOrder":0},{"id":"$item1","sortOrder":1},{"id":"$item2","sortOrder":2}]}"""
+        }.andExpect {
+            status { isNoContent() }
+        }
+
+        val items = mapper.readTree(mockMvc.get("/api/lists/$listId/items") {
+            header("Authorization", bearerHeader(owner))
+        }.andReturn().response.contentAsString)
+
+        val orderById = items.associate { it["id"].asText() to it["sortOrder"].asInt() }
+        assert(orderById[item3.toString()] == 0) { "item3 should have sortOrder 0" }
+        assert(orderById[item1.toString()] == 1) { "item1 should have sortOrder 1" }
+        assert(orderById[item2.toString()] == 2) { "item2 should have sortOrder 2" }
+    }
+
+    @Test
+    fun `POST reorder - VIEWER gets 403`() {
+        val owner = createUser()
+        val viewer = createUser()
+        val listId = createListAsUser(owner)
+        addMemberToList(listId, owner, viewer.email, "VIEWER")
+        val item1 = createItemInList(listId, owner)
+
+        mockMvc.post("/api/lists/$listId/items/reorder") {
+            header("Authorization", bearerHeader(viewer))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"items":[{"id":"$item1","sortOrder":0}]}"""
+        }.andExpect {
+            status { isForbidden() }
+        }
+    }
+
+    @Test
+    fun `POST reorder - item IDs from another list are silently skipped`() {
+        val owner = createUser()
+        val listId = createListAsUser(owner, "List A")
+        val otherListId = createListAsUser(owner, "List B")
+        val item1 = createItemInList(listId, owner, "Own item")
+        val foreignItem = createItemInList(otherListId, owner, "Foreign item")
+
+        mockMvc.post("/api/lists/$listId/items/reorder") {
+            header("Authorization", bearerHeader(owner))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"items":[{"id":"$item1","sortOrder":0},{"id":"$foreignItem","sortOrder":1}]}"""
+        }.andExpect {
+            status { isNoContent() }
+        }
+
+        // Foreign item's sortOrder should be unchanged (still 0, the default)
+        mockMvc.get("/api/lists/$otherListId/items/$foreignItem") {
+            header("Authorization", bearerHeader(owner))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.sortOrder") { value(0) }
+        }
+    }
+
     // ─── PATCH /starred ───────────────────────────────────────────────────────
 
     @Test

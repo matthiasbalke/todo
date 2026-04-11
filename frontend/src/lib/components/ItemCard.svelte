@@ -5,8 +5,9 @@
   import DueDateChip from './DueDateChip.svelte';
   import RecurrenceIndicator from './RecurrenceIndicator.svelte';
   import { onMount } from 'svelte';
+  import { dragHandle } from 'svelte-dnd-action';
 
-  let { item, categories, users }: { item: TodoItem; categories: Category[]; users: User[] } = $props();
+  let { item, categories, users, isDraggable = false }: { item: TodoItem; categories: Category[]; users: User[]; isDraggable?: boolean } = $props();
   const assignedUsers = $derived(users.filter(u => item.assignedUserIds.includes(u.id)));
 
   const SNAP_OPEN = 80;       // px — resting position that reveals the delete button
@@ -110,10 +111,24 @@
   </div>
   <!-- Sliding card content -->
   <div
-    class="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors"
+    class="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors {isDraggable ? 'select-none' : ''}"
     style="transform: translateX({swipeX}px); transition: {snapping ? 'transform 0.2s ease' : 'none'}"
     ontransitionend={() => { snapping = false; }}
   >
+    {#if isDraggable}
+      <div
+        use:dragHandle
+        class="flex-shrink-0 flex items-center justify-center w-5 self-center cursor-grab active:cursor-grabbing touch-none text-gray-300 hover:text-gray-400"
+        aria-label="Drag to reorder"
+        tabindex="-1"
+      >
+        <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">
+          <circle cx="3" cy="3" r="1.5"/><circle cx="7" cy="3" r="1.5"/>
+          <circle cx="3" cy="8" r="1.5"/><circle cx="7" cy="8" r="1.5"/>
+          <circle cx="3" cy="13" r="1.5"/><circle cx="7" cy="13" r="1.5"/>
+        </svg>
+      </div>
+    {/if}
     <button
       onclick={handleDone}
       class="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border-2 {item.done ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'} transition-colors"

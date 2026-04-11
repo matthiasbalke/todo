@@ -86,3 +86,12 @@ export function updateItemOrder(listId: string, itemId: string, sortOrder: numbe
 		body: JSON.stringify({ sortOrder }),
 	});
 }
+
+export interface ReorderEntry { id: string; sortOrder: number; }
+
+export function reorderItems(listId: string, entries: ReorderEntry[]): Promise<void> {
+	return authedFetch(`/api/lists/${listId}/items/reorder`, {
+		method: 'POST',
+		body: JSON.stringify({ items: entries }),
+	});
+}
