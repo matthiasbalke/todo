@@ -1,13 +1,16 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { getItems, updateItem, deleteItem } from '$lib/stores/items.svelte';
-  import { getList, getCategoriesForList } from '$lib/stores/lists.svelte';
+  import { getItems, loadItemsForList, updateItem, deleteItem } from '$lib/stores/items.svelte';
+  import { getList, getCategoriesForList, loadCategoriesForList } from '$lib/stores/lists.svelte';
   import type { TodoItem } from '$lib/mock-data';
   import ItemForm from '$lib/components/ItemForm.svelte';
   import { goto } from '$app/navigation';
   import { friendlyError } from '$lib/api/errors';
 
   let { data }: { data: PageData } = $props();
+
+  $effect(() => { loadItemsForList(data.id); });
+  $effect(() => { loadCategoriesForList(data.id); });
 
   const list = $derived(getList(data.id));
   const item = $derived(getItems().find(i => i.id === data.iid && i.listId === data.id));
