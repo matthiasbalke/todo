@@ -5,7 +5,7 @@ RUN bun install --frozen-lockfile
 COPY . .
 RUN bun run build
 
-FROM dhi.io/node:24-dev AS runtime
+FROM dhi.io/node:24 AS runtime
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
