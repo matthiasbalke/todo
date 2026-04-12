@@ -1,10 +1,11 @@
-FROM gradle:8-jdk21 AS build
+FROM dhi.io/gradle:9.4.1-r1-jdk21-alpine3.23-dev AS build
 WORKDIR /app
 COPY . .
-ARG APP_VERSION=0.1.0-SNAPSHOT
-RUN ./gradlew bootJar --no-daemon -Pversion=${APP_VERSION}
+RUN gradle bootJar --no-daemon -Prelease
 
-FROM eclipse-temurin:25-jre-alpine
+FROM dhi.io/eclipse-temurin:21-alpine3.22
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
+ARG BUILD_NUMBER=0
+ENV APP_BUILD_NUMBER=${BUILD_NUMBER}
 ENTRYPOINT ["java", "-jar", "app.jar"]

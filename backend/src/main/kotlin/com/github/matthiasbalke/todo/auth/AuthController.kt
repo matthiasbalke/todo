@@ -11,6 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.web.webauthn.api.AuthenticatorAssertionResponse
 import org.springframework.security.web.webauthn.api.AuthenticatorAttestationResponse
+import org.springframework.security.web.webauthn.api.Bytes
 import org.springframework.security.web.webauthn.api.PublicKeyCredential
 import org.springframework.security.web.webauthn.api.PublicKeyCredentialCreationOptions
 import org.springframework.security.web.webauthn.api.PublicKeyCredentialRequestOptions
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
+import java.util.Base64
 import java.util.UUID
 
 @RestController
@@ -40,6 +42,7 @@ class AuthController(
     private val rpOperations: WebAuthnRelyingPartyOperations,
     private val jwtProperties: JwtProperties,
     private val userCredentialRepository: org.springframework.security.web.webauthn.management.UserCredentialRepository,
+    private val accountService: AccountService,
     @Value("\${app.registration.enabled:true}") private val registrationEnabled: Boolean,
 ) {
 
@@ -52,6 +55,10 @@ class AuthController(
     // ─── DTOs ────────────────────────────────────────────────────────────────
 
     data class RegisterOptionsRequest(val email: String, val displayName: String)
+    data class RegisterRequest(
+        val credential: PublicKeyCredential<AuthenticatorAttestationResponse>,
+        val label: String?,
+    )
     data class UserDto(val id: String, val email: String, val displayName: String)
     data class TokenResponse(val accessToken: String, val user: UserDto)
     data class ErrorResponse(val code: String, val message: String)
@@ -74,10 +81,20 @@ class AuthController(
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ErrorResponse("REGISTRATION_DISABLED", "Registration is currently disabled"))
         }
-        if (userRepository.findByEmail(body.email) != null) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ErrorResponse("EMAIL_ALREADY_REGISTERED",
-                    "This email address is already registered."))
+        val existingUser = userRepository.findByEmail(body.email)
+        if (existingUser != null) {
+            val hasCredentials = userCredentialRepository
+                .findByUserId(Bytes(uuidToBytes(existingUser.id)))
+                .isNotEmpty()
+            if (hasCredentials) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ErrorResponse("EMAIL_ALREADY_REGISTERED",
+                        "This email address is already registered."))
+            }
+            // Orphaned user: register-options was called but the passkey ceremony
+            // never completed (e.g. browser dialog cancelled). Delete the orphan
+            // so the user can retry registration with the same email.
+            userRepository.delete(existingUser)
         }
         val user = userRepository.save(User(email = body.email, displayName = body.displayName))
 
@@ -92,7 +109,7 @@ class AuthController(
 
     @PostMapping("/webauthn/register")
     fun register(
-        @RequestBody credential: PublicKeyCredential<AuthenticatorAttestationResponse>,
+        @RequestBody body: RegisterRequest,
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ResponseEntity<*> {
@@ -103,9 +120,17 @@ class AuthController(
         val savedOptions = creationOptionsRepository.load(request)
             ?: return ResponseEntity.badRequest().build<Any>()
 
-        val credentialRecord = rpOperations.registerCredential(
-            ImmutableRelyingPartyRegistrationRequest(savedOptions, RelyingPartyPublicKey(credential, "Passkey"))
-        )
+        val credentialRecord = try {
+            rpOperations.registerCredential(
+                ImmutableRelyingPartyRegistrationRequest(savedOptions, RelyingPartyPublicKey(body.credential, body.label ?: "Passkey"))
+            )
+        } catch (e: Exception) {
+            resolveUserFromUserHandle(savedOptions.user.id.bytes)?.let { userRepository.delete(it) }
+            throw e
+        }
+        val base64CredId = Base64.getUrlEncoder().withoutPadding()
+            .encodeToString(credentialRecord.credentialId.bytes)
+        accountService.savePasskeyLabel(base64CredId, body.label)
         request.getSession(false)?.invalidate()
 
         val user = resolveUserFromUserHandle(credentialRecord.userEntityUserId.bytes)

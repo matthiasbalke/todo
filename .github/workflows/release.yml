@@ -12,6 +12,7 @@ jobs:
     outputs:
       backend-version: ${{ steps.version.outputs.backend }}
       frontend-version: ${{ steps.version.outputs.frontend }}
+      build-number: ${{ steps.version.outputs.build-number }}
     steps:
       - uses: actions/checkout@v6
       - name: Extract versions
@@ -20,8 +21,9 @@ jobs:
           BACKEND_BASE=$(grep '^version = ' backend/build.gradle.kts \
             | sed 's/version = "\(.*\)-SNAPSHOT"/\1/')
           FRONTEND_BASE=$(node -p "require('./frontend/package.json').version")
-          echo "backend=${BACKEND_BASE}.${{ github.run_number }}" >> $GITHUB_OUTPUT
-          echo "frontend=${FRONTEND_BASE}.${{ github.run_number }}" >> $GITHUB_OUTPUT
+          echo "backend=${BACKEND_BASE}" >> $GITHUB_OUTPUT
+          echo "frontend=${FRONTEND_BASE}" >> $GITHUB_OUTPUT
+          echo "build-number=${{ github.run_number }}" >> $GITHUB_OUTPUT
 
   build-backend:
     needs: [compute-version]
@@ -37,7 +39,9 @@ jobs:
       platforms: linux/amd64,linux/arm64
       context: backend
       cache: true
-      build-args: APP_VERSION=${{ needs.compute-version.outputs.backend-version }}
+      build-args: |
+        APP_VERSION=${{ needs.compute-version.outputs.backend-version }}
+        BUILD_NUMBER=${{ needs.compute-version.outputs.build-number }}
       meta-images: ghcr.io/${{ github.repository }}/backend
       meta-tags: |
         type=ref,event=branch
@@ -64,7 +68,9 @@ jobs:
       platforms: linux/amd64,linux/arm64
       context: frontend
       cache: true
-      build-args: APP_VERSION=${{ needs.compute-version.outputs.frontend-version }}
+      build-args: |
+        APP_VERSION=${{ needs.compute-version.outputs.frontend-version }}
+        BUILD_NUMBER=${{ needs.compute-version.outputs.build-number }}
       meta-images: ghcr.io/${{ github.repository }}/frontend
       meta-tags: |
         type=ref,event=branch
@@ -92,7 +98,9 @@ jobs:
       context: .
       file: all-in-one/Dockerfile
       cache: true
-      build-args: APP_VERSION=${{ needs.compute-version.outputs.backend-version }}
+      build-args: |
+        APP_VERSION=${{ needs.compute-version.outputs.backend-version }}
+        BUILD_NUMBER=${{ needs.compute-version.outputs.build-number }}
       meta-images: ghcr.io/${{ github.repository }}/all-in-one
       meta-tags: |
         type=ref,event=branch
@@ -104,3 +112,30 @@ jobs:
         - registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-addon:
+    name: Notify addon-todo
+    needs: [build-all-in-one]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract tags from Docker metadata
+        id: meta
+        env:
+          META_JSON: ${{ needs.build-all-in-one.outputs.meta-json }}
+        run: |
+          TAGS=$(echo "$META_JSON" | jq -c '[.tags[] | split(":") | last]')
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+      - name: Dispatch update to addon-todo
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
+        with:
+          token: ${{ secrets.DISPATCH_TOKEN }}
+          repository: matthiasbalke/addon-todo
+          event-type: update
+          client-payload: >
+            {
+              "app": "todo",
+              "name": "Todo",
+              "repository": "${{ github.repository }}",
+              "ref": "${{ github.ref_name }}",
+              "tags": ${{ steps.meta.outputs.tags }}
+            }

@@ -1,48 +1,41 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
-  import type { List } from '$lib/mock-data';
-  import { mockUsers } from '$lib/mock-data';
+  import { untrack, onMount } from 'svelte';
 
   let {
     list,
     onsubmit,
     oncancel
   }: {
-    list?: List | null;
-    onsubmit: (list: List) => void;
+    list?: { name: string; emoji: string | null } | null;
+    onsubmit: (data: { name: string; emoji: string }) => Promise<void> | void;
     oncancel: () => void;
   } = $props();
 
   const isNew = $derived(!list);
 
-  let name = $state(untrack(() => list?.name ?? ''));
+  let name = $state(untrack(() => list ? `${list.emoji ?? ''}${list.emoji ? ' ' : ''}${list.name}` : ''));
+  let nameInput = $state<HTMLInputElement | null>(null);
+
+  onMount(() => nameInput?.focus());
 
   function extractEmoji(str: string): string {
     const match = str.match(/^\p{Emoji_Presentation}/u);
     return match ? match[0] : '';
   }
 
-  function handleSubmit(e: Event) {
+  async function handleSubmit(e: Event) {
     e.preventDefault();
     const trimmed = name.trim();
     const emoji = extractEmoji(trimmed);
     const displayName = emoji ? trimmed.slice(emoji.length).trimStart() : trimmed;
-    const slug = displayName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const submitted: List = {
-      id: list?.id ?? `${slug}-${(crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`,
-      name: displayName || trimmed,
-      emoji: emoji || '📋',
-      sortField: list?.sortField ?? 'MANUAL',
-      sortDirection: list?.sortDirection ?? 'ASC',
-      ownerId: list?.ownerId ?? mockUsers[0].id
-    };
-    onsubmit(submitted);
+    await onsubmit({ name: displayName || trimmed, emoji: emoji || '📋' });
   }
 </script>
 
 <form onsubmit={handleSubmit} class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
   <input
     type="text"
+    bind:this={nameInput}
     bind:value={name}
     onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit(e); } }}
     placeholder="List name"

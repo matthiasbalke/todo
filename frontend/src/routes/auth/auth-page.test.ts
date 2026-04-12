@@ -20,7 +20,7 @@ vi.mock('$lib/api/auth', () => ({
 	registerWithPasskey: vi.fn(),
 	getAuthConfig: vi.fn().mockResolvedValue({ registrationEnabled: true }),
 	ApiError: class ApiError extends Error {
-		constructor(public status: number, message: string) {
+		constructor(public status: number, message: string, public code?: string) {
 			super(message);
 		}
 	},
@@ -37,7 +37,7 @@ import { setSession } from '$lib/stores/auth.svelte';
 import AuthPage from './+page.svelte';
 
 async function waitForIdle() {
-	await vi.advanceTimersByTimeAsync(2100);
+	await vi.advanceTimersByTimeAsync(0);
 }
 
 describe('AuthPage', () => {
@@ -84,6 +84,47 @@ describe('AuthPage', () => {
 		await waitFor(() => {
 			expect(setSession).toHaveBeenCalledWith(mockResult);
 			expect(goto).toHaveBeenCalledWith('/lists');
+		});
+	});
+
+	it('shows origin-not-allowed message on SecurityError', async () => {
+		const error = new DOMException('Origin not allowed', 'SecurityError');
+		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
+
+		render(AuthPage);
+		await waitForIdle();
+		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText(/passkey origin not allowed/i)).toBeInTheDocument();
+		});
+	});
+
+	it('shows registration-disabled message on 403 with REGISTRATION_DISABLED code', async () => {
+		const ApiErrorClass = vi.mocked(authApi).ApiError as typeof authApi.ApiError;
+		const error = new ApiErrorClass(403, 'Registration is disabled', 'REGISTRATION_DISABLED');
+		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
+
+		render(AuthPage);
+		await waitForIdle();
+		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText(/registration is currently disabled/i)).toBeInTheDocument();
+		});
+	});
+
+	it('shows origin-not-allowed message on 403 without known code', async () => {
+		const ApiErrorClass = vi.mocked(authApi).ApiError as typeof authApi.ApiError;
+		const error = new ApiErrorClass(403, 'Forbidden');
+		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
+
+		render(AuthPage);
+		await waitForIdle();
+		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText(/passkey origin not allowed/i)).toBeInTheDocument();
 		});
 	});
 
@@ -148,7 +189,7 @@ describe('AuthPage', () => {
 		await fireEvent.submit(screen.getByRole('button', { name: /register passkey/i }).closest('form')!);
 
 		await waitFor(() => {
-			expect(authApi.registerWithPasskey).toHaveBeenCalledWith('alice@example.com', 'Alice');
+			expect(authApi.registerWithPasskey).toHaveBeenCalledWith('alice@example.com', 'Alice', undefined);
 			expect(setSession).toHaveBeenCalledWith(mockResult);
 			expect(goto).toHaveBeenCalledWith('/lists');
 		});

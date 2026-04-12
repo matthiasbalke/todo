@@ -14,7 +14,7 @@ services:
       retries: 10
 
   backend:
-    image: ghcr.io/matthiasbalke/todo/backend:main
+    image: backend
     ports:
       - "8080:8080"
     environment:
@@ -25,12 +25,19 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  backend-healthcheck:
+    image: dhi.io/curl:8.14.1-dev
+    entrypoint: ["sh", "-c", "trap exit TERM; while true; do sleep 60 & wait; done"]
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      test: ["CMD", "curl", "-sf", "http://backend:8080/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
     image: ghcr.io/matthiasbalke/todo/frontend:main
@@ -39,4 +46,19 @@ services:
     environment:
       ORIGIN: http://localhost:3000
     depends_on:
-      - backend
+      backend-healthcheck:
+        condition: service_healthy
+
+  all-in-one:
+    image: ghcr.io/matthiasbalke/todo/all-in-one:main
+    ports:
+      - "80:80"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/todo
+      SPRING_DATASOURCE_USERNAME: todo
+      SPRING_DATASOURCE_PASSWORD: todo
+      JWT_SECRET: ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50
+      ORIGIN: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy

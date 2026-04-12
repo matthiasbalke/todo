@@ -1,34 +1,63 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { getItems } from '$lib/stores/items.svelte';
-  import { getList, saveList, getCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
+  import { getItems, loadItemsForList } from '$lib/stores/items.svelte';
+  import { getList, updateList, getCategoriesForList, loadCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
   import { applyFilters, applySort, groupByCategory } from '$lib/utils';
   import type { Filters } from '$lib/utils';
   import { untrack } from 'svelte';
   import type { SortField, SortDirection } from '$lib/mock-data';
+  import { loadListPrefs, saveListPrefs, deleteListPrefs } from '$lib/listPrefs';
+  import { loadListCategoryState, saveListCategoryState, deleteListCategoryState } from '$lib/listCategoryState';
   import GroceryCategorySection from '$lib/components/GroceryCategorySection.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
+  import { friendlyError } from '$lib/api/errors';
 
   let { data }: { data: PageData } = $props();
 
-  let collapsedSections = $state<Set<string | null>>(new Set());
+  const _savedCategoryState = untrack(() => loadListCategoryState(data.id));
+  let collapsedSections = $state<Set<string | null>>(
+    new Set(Object.entries(_savedCategoryState?.collapsed ?? {}).filter(([, v]) => v).map(([k]) => k === '__null__' ? null : k))
+  );
   let menuOpen = $state(false);
   let sortSubmenuOpen = $state(false);
   let filterSubmenuOpen = $state(false);
   let showEditForm = $state(false);
   let showCategoryDialog = $state(false);
 
-  let filters = $state<Filters>({
-    starredOnly: false,
-    hideFuture: false,
-    hideUndated: false
-  });
-  const list = $derived(getList(data.list.id));
-  const categories = $derived(getCategoriesForList(data.list.id));
+  const list = $derived(getList(data.id));
+  const categories = $derived(getCategoriesForList(data.id));
 
-  let sortField = $state<SortField>(untrack(() => data.list.sortField ?? 'MANUAL'));
-  let sortDirection = $state<SortDirection>(untrack(() => data.list.sortDirection ?? 'ASC'));
+  $effect(() => { loadCategoriesForList(data.id); });
+  $effect(() => { loadItemsForList(data.id); });
+
+  const _savedPrefs = untrack(() => loadListPrefs(data.id));
+  untrack(() => setHideDone(data.id, _savedPrefs?.hideDone ?? false));
+  let filters = $state<Filters>({
+    starredOnly: _savedPrefs?.starredOnly ?? false,
+    hideFuture: _savedPrefs?.hideFuture ?? false,
+    hideUndated: _savedPrefs?.hideUndated ?? false
+  });
+  let sortField = $state<SortField>(_savedPrefs?.sortField ?? untrack(() => list?.defaultSortField ?? 'MANUAL'));
+  let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => list?.defaultSortDirection ?? 'ASC'));
+
+  $effect(() => {
+    const prefs = { sortField, sortDirection, ...filters, hideDone: isHideDone(data.id) };
+    const isDefault =
+      prefs.sortField === (list?.defaultSortField ?? 'MANUAL') &&
+      prefs.sortDirection === (list?.defaultSortDirection ?? 'ASC') &&
+      !prefs.starredOnly && !prefs.hideFuture && !prefs.hideUndated && !prefs.hideDone;
+    if (isDefault) deleteListPrefs(data.id); else saveListPrefs(data.id, prefs);
+  });
+  $effect(() => {
+    if (collapsedSections.size === 0) {
+      deleteListCategoryState(data.id);
+    } else {
+      const collapsed: Record<string, boolean> = {};
+      for (const k of collapsedSections) collapsed[k ?? '__null__'] = true;
+      saveListCategoryState(data.id, { collapsed, doneCollapsed: {} });
+    }
+  });
 
   const dueDateOptions = [
     { value: 'all', label: 'Any due date' },
@@ -54,12 +83,21 @@
 
   const allItems = $derived(
     getItems()
-      .filter(i => i.listId === data.list.id)
-      .filter(i => !isHideDone(data.list.id) || !i.done)
+      .filter(i => i.listId === data.id)
+      .filter(i => !isHideDone(data.id) || !i.done)
   );
   const filtered = $derived(applyFilters(allItems, filters));
   const sorted = $derived(applySort(filtered, sortField, sortDirection));
   const grouped = $derived(groupByCategory(sorted, categories));
+
+  async function handleEditList({ name, emoji }: { name: string; emoji: string }) {
+    try {
+      await updateList(data.id, { name, emoji });
+      showEditForm = false;
+    } catch (e) {
+      alert(friendlyError(e, 'Failed to update list'));
+    }
+  }
 
   function toggleSection(key: string | null) {
     const next = new Set(collapsedSections);
@@ -75,12 +113,12 @@
 
 <div>
   <div class="flex items-center gap-3 mb-4">
-    <a href="/lists/{data.list.id}" class="text-gray-400 hover:text-gray-600">←</a>
+    <a href="/lists/{data.id}" class="text-gray-400 hover:text-gray-600">←</a>
     {#if showEditForm}
       <div class="flex-1">
         <ListForm
           {list}
-          onsubmit={(updated) => { saveList(updated); showEditForm = false; }}
+          onsubmit={handleEditList}
           oncancel={() => { showEditForm = false; }}
         />
       </div>
@@ -103,7 +141,7 @@
           ></div>
           <div class="absolute right-0 top-8 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
             <a
-              href="/lists/{data.list.id}"
+              href="/lists/{data.id}"
               onclick={() => { menuOpen = false; }}
               class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
@@ -186,11 +224,11 @@
             </div>
             <div class="border-t border-gray-100 mt-1 pt-1">
               <button
-                onclick={() => { setHideDone(data.list.id, !isHideDone(data.list.id)); menuOpen = false; }}
+                onclick={() => { setHideDone(data.id, !isHideDone(data.id)); menuOpen = false; }}
                 class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between"
               >
                 <span>Hide checked</span>
-                {#if isHideDone(data.list.id)}<span>✓</span>{/if}
+                {#if isHideDone(data.id)}<span>✓</span>{/if}
               </button>
             </div>
           </div>
@@ -211,6 +249,6 @@
   </div>
 
   {#if showCategoryDialog}
-    <CategoryConfigDialog {categories} listId={data.list.id} onclose={() => { showCategoryDialog = false; }} />
+    <CategoryConfigDialog {categories} listId={data.id} onclose={() => { showCategoryDialog = false; }} />
   {/if}
 </div>

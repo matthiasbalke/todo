@@ -1,27 +1,20 @@
-ARG APP_VERSION=0.1.0-SNAPSHOT
-
 # Stage 1: build backend
-FROM gradle:8-jdk21 AS backend-build
-ARG APP_VERSION
+FROM dhi.io/gradle:9.4.1-r1-jdk21-alpine3.23-dev AS backend-build
 WORKDIR /app
 COPY backend/ .
-RUN ./gradlew bootJar --no-daemon -Pversion=${APP_VERSION}
+RUN gradle bootJar --no-daemon -Prelease
 
 # Stage 2: build frontend
-FROM oven/bun:1 AS frontend-build
-ARG APP_VERSION
+FROM dhi.io/bun:1.3.11-alpine3.22-dev AS frontend-build
 WORKDIR /app
 COPY frontend/package.json frontend/bun.lockb ./
 RUN bun install --frozen-lockfile
 COPY frontend/ .
-RUN apt-get update && apt-get install -y --no-install-recommends jq \
-    && jq --arg v "${APP_VERSION}" '.version = $v' package.json > /tmp/pkg.json \
-    && mv /tmp/pkg.json package.json
 RUN bun run build
 
 # Stage 3: runtime
-FROM eclipse-temurin:21-jre-alpine
-RUN apk add --no-cache nodejs nginx supervisor
+FROM dhi.io/eclipse-temurin:21-alpine3.22-dev
+RUN apk add --no-cache nodejs=22.22.2-r0 nginx=1.28.3-r0 supervisor=4.2.5-r5
 WORKDIR /app
 COPY --from=backend-build /app/build/libs/*.jar backend.jar
 COPY --from=frontend-build /app/build ./frontend/build
@@ -29,7 +22,9 @@ COPY --from=frontend-build /app/node_modules ./frontend/node_modules
 COPY all-in-one/nginx.conf /etc/nginx/nginx.conf
 COPY all-in-one/supervisord.conf /etc/supervisord.conf
 
-ENV NODE_ENV "production"
+ENV NODE_ENV="production"
+ARG BUILD_NUMBER=0
+ENV APP_BUILD_NUMBER=${BUILD_NUMBER}
 
 EXPOSE 80
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]

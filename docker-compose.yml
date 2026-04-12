@@ -14,7 +14,6 @@ services:
       retries: 10
 
   backend:
-    image: todo-backend:ci
     build: ./backend
     ports:
       - "8080:8080"
@@ -22,22 +21,50 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/todo
       SPRING_DATASOURCE_USERNAME: todo
       SPRING_DATASOURCE_PASSWORD: todo
+      # this is not secure for production, generate a unique one
       JWT_SECRET: ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50
+      # this is set for e2e tests
+      RATE_LIMIT_CAPACITY: 10000
+      RATE_LIMIT_WINDOW_MINUTES: 1
     depends_on:
       postgres:
         condition: service_healthy
+
+  backend-healthcheck:
+    image: dhi.io/curl:8.14.1-dev
+    entrypoint: ["sh", "-c", "trap exit TERM; while true; do sleep 60 & wait; done"]
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      test: ["CMD", "curl", "-sf", "http://backend:8080/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
 
   frontend:
     build: ./frontend
     ports:
       - "3000:3000"
     environment:
-      ORIGIN: http://localhost:3000
+      ORIGIN: http://localhost
+      BACKEND_URL: http://backend:8080
     depends_on:
-      - backend
+      backend-healthcheck:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      frontend:
+        condition: service_started
+      backend-healthcheck:
+        condition: service_healthy
+

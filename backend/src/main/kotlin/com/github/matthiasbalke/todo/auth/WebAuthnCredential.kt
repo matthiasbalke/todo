@@ -28,6 +28,9 @@ class WebAuthnCredential(
     @Column(name = "attestation_object", nullable = false)
     val attestationObject: ByteArray,
 
+    @Column(nullable = true)
+    var label: String? = null,
+
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now(),
 )

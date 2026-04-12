@@ -12,7 +12,10 @@ export async function getBackendVersion(): Promise<string | null> {
 		const response = await fetch('/actuator/info');
 		if (!response.ok) return null;
 		const data = await response.json();
-		return (data.build?.version as string) ?? null;
+		const version = data.build?.version as string | undefined;
+		const buildNumber = data['build-number'] as string | undefined;
+		if (!version) return null;
+		return buildNumber && buildNumber !== '0' ? `${version}.${buildNumber}` : version;
 	} catch {
 		return null;
 	}

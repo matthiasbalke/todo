@@ -1,3 +1,5 @@
+.certs
+.claude/settings.local.json
 .gradle
 **/build/
 !**/src/**/build/

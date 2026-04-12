@@ -1,13 +1,14 @@
 plugins {
-	kotlin("jvm") version "2.2.21"
-	kotlin("plugin.spring") version "2.2.21"
+	kotlin("jvm") version "2.3.20"
+	kotlin("plugin.spring") version "2.3.20"
 	id("org.springframework.boot") version "4.0.5"
 	id("io.spring.dependency-management") version "1.1.7"
-	kotlin("plugin.jpa") version "2.2.21"
+	kotlin("plugin.jpa") version "2.3.20"
 }
 
 group = "com.github.matthiasbalke"
-version = "0.1.0-SNAPSHOT"
+val versionBase = "0.1.0"
+version = if (hasProperty("release")) versionBase else "$versionBase-SNAPSHOT"
 
 springBoot {
 	buildInfo()
@@ -48,6 +49,7 @@ dependencies {
 	testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 	testImplementation("org.testcontainers:testcontainers-postgresql")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	developmentOnly("org.springframework.boot:spring-boot-devtools")
 }
 
 kotlin {

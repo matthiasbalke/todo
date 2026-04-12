@@ -6,6 +6,8 @@ import {
 	type PublicKeyCredentialRequestOptionsJSON,
 	type RegistrationResponseJSON,
 } from '@simplewebauthn/browser';
+import { fetchJson } from './client';
+export { ApiError } from './client';
 
 export interface AuthConfig {
 	registrationEnabled: boolean;
@@ -21,37 +23,6 @@ export interface TokenResponse {
 	accessToken: string;
 	user: AuthUser;
 	// refreshToken is NOT in the response — it arrives as an HttpOnly cookie
-}
-
-export class ApiError extends Error {
-	constructor(
-		public readonly status: number,
-		message: string,
-	) {
-		super(message);
-	}
-}
-
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-	const response = await fetch(url, {
-		...init,
-		credentials: 'include', // always send HttpOnly cookies
-		headers: {
-			'Content-Type': 'application/json',
-			...init?.headers,
-		},
-	});
-	if (!response.ok) {
-		let message = `${response.status} ${response.statusText}`;
-		try {
-			const body = (await response.json()) as { message?: string };
-			if (typeof body.message === 'string') message = body.message;
-		} catch {
-			// not JSON or no message — use status text fallback
-		}
-		throw new ApiError(response.status, message);
-	}
-	return response.json() as Promise<T>;
 }
 
 export async function getAuthConfig(): Promise<AuthConfig> {
@@ -70,10 +41,11 @@ export async function getRegisterOptions(
 
 export async function submitRegistration(
 	registrationResponse: RegistrationResponseJSON,
+	label?: string,
 ): Promise<TokenResponse> {
 	return fetchJson('/api/auth/webauthn/register', {
 		method: 'POST',
-		body: JSON.stringify(registrationResponse),
+		body: JSON.stringify({ credential: registrationResponse, label: label || null }),
 	});
 }
 
@@ -94,9 +66,9 @@ export async function submitLogin(
 	});
 }
 
-export async function refreshAccessToken(): Promise<TokenResponse> {
+export async function refreshAccessToken(fetchFn: typeof fetch = fetch): Promise<TokenResponse> {
 	// No body — the refresh token cookie is sent automatically by the browser
-	return fetchJson('/api/auth/refresh', { method: 'POST', body: JSON.stringify({}) });
+	return fetchJson('/api/auth/refresh', { method: 'POST', body: JSON.stringify({}) }, fetchFn);
 }
 
 export async function logout(accessToken: string): Promise<void> {
@@ -114,10 +86,11 @@ export async function logout(accessToken: string): Promise<void> {
 export async function registerWithPasskey(
 	email: string,
 	displayName: string,
+	label?: string,
 ): Promise<TokenResponse> {
 	const options = await getRegisterOptions(email, displayName);
 	const registrationResponse = await startRegistration({ optionsJSON: options });
-	return submitRegistration(registrationResponse);
+	return submitRegistration(registrationResponse, label);
 }
 
 export async function loginWithPasskey(): Promise<TokenResponse> {

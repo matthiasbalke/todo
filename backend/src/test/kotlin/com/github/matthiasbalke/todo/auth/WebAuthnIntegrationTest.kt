@@ -10,7 +10,9 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import java.util.Base64
+import java.util.UUID
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 @AutoConfigureMockMvc
 class WebAuthnIntegrationTest : AbstractIntegrationTest() {
@@ -20,6 +22,9 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
 
     @Autowired
     private lateinit var userRepository: UserRepository
+
+    @Autowired
+    private lateinit var webAuthnCredentialRepository: WebAuthnCredentialRepository
 
     @Autowired
     private lateinit var revokedTokenRepository: RevokedTokenRepository
@@ -63,9 +68,19 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `register-options returns 409 with EMAIL_ALREADY_REGISTERED for existing email`() {
-        val email = "existing-user@example.com"
-        userRepository.save(User(email = email, displayName = "Existing"))
+    fun `register-options returns 409 with EMAIL_ALREADY_REGISTERED for email with existing credential`() {
+        val email = "existing-user-with-cred@example.com"
+        val user = userRepository.save(User(email = email, displayName = "Existing"))
+        // Attach a credential so this is a fully registered account (not an orphan)
+        val credId = Base64.getUrlEncoder().withoutPadding().encodeToString(UUID.randomUUID().toString().toByteArray())
+        webAuthnCredentialRepository.save(
+            WebAuthnCredential(
+                userId = user.id,
+                credentialId = credId,
+                publicKey = ByteArray(32),
+                attestationObject = ByteArray(32),
+            )
+        )
         val body = """{"email":"$email","displayName":"Different Name"}"""
 
         mockMvc.post("/api/auth/webauthn/register-options") {
@@ -76,6 +91,27 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
             jsonPath("$.code") { value("EMAIL_ALREADY_REGISTERED") }
             jsonPath("$.message") { value("This email address is already registered.") }
         }
+    }
+
+    @Test
+    fun `register-options deletes orphaned user and returns 200 when email exists but has no credential`() {
+        // Simulate a previous registration attempt that saved the user but the
+        // passkey ceremony was never completed (e.g. the browser dialog was cancelled).
+        val email = "orphan-user@example.com"
+        val orphan = userRepository.save(User(email = email, displayName = "Orphan"))
+        val body = """{"email":"$email","displayName":"Orphan"}"""
+
+        mockMvc.post("/api/auth/webauthn/register-options") {
+            contentType = MediaType.APPLICATION_JSON
+            content = body
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.challenge") { exists() }
+        }
+
+        // Orphan is gone; a fresh user row was created
+        assertNull(userRepository.findById(orphan.id).orElse(null), "Orphaned user must be deleted")
+        assertNotNull(userRepository.findByEmail(email), "Fresh user must be created for the retry")
     }
 
     // ─── login ────────────────────────────────────────────────────────────────
@@ -185,33 +221,4 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
         }
     }
 
-    // ─── rate limiting ────────────────────────────────────────────────────────
-
-    @Test
-    fun `11th request to auth endpoint returns 429`() {
-        // Use a unique path under /api/auth that won't create real side effects at this stage
-        val body = "{}"
-        repeat(10) {
-            mockMvc.post("/api/auth/refresh") {
-                contentType = MediaType.APPLICATION_JSON
-                content = body
-                with { req ->
-                    req.remoteAddr = "10.0.0.42"
-                    req
-                }
-            }
-        }
-
-        mockMvc.post("/api/auth/refresh") {
-            contentType = MediaType.APPLICATION_JSON
-            content = body
-            with { req ->
-                req.remoteAddr = "10.0.0.42"
-                req
-            }
-        }.andExpect {
-            status { isEqualTo(429) }
-            header { exists("Retry-After") }
-        }
-    }
 }

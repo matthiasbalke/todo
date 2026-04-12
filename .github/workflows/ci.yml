@@ -7,26 +7,42 @@ on:
     branches: [main]
 
 jobs:
-  compute-version:
-    name: Compute version
+  build-backend:
+    name: Build backend image
     runs-on: ubuntu-latest
-    outputs:
-      backend-version: ${{ steps.version.outputs.backend }}
-      frontend-version: ${{ steps.version.outputs.frontend }}
     steps:
       - uses: actions/checkout@v6
-      - name: Extract versions
-        id: version
-        run: |
-          BACKEND_BASE=$(grep '^version = ' backend/build.gradle.kts \
-            | sed 's/version = "\(.*\)-SNAPSHOT"/\1/')
-          FRONTEND_BASE=$(node -p "require('./frontend/package.json').version")
-          echo "backend=${BACKEND_BASE}.${{ github.run_number }}" >> $GITHUB_OUTPUT
-          echo "frontend=${FRONTEND_BASE}.${{ github.run_number }}" >> $GITHUB_OUTPUT
 
-  backend:
-    needs: [compute-version]
-    name: Backend
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build backend image
+        uses: docker/build-push-action@v7
+        with:
+          context: backend
+          build-args: |
+            BUILD_NUMBER=${{ github.run_number }}
+          cache-from: type=gha,scope=backend
+          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max,scope=backend' || '' }}
+
+  build-frontend:
+    name: Build frontend image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v7
+        with:
+          context: frontend
+          build-args: |
+            BUILD_NUMBER=${{ github.run_number }}
+          cache-from: type=gha,scope=frontend
+          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max,scope=frontend' || '' }}
+
+  test-backend:
+    name: Test backend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -37,8 +53,13 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - name: Build and test
-        run: ./gradlew build test -Pversion=${{ needs.compute-version.outputs.backend-version }}
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: 9.4.1
+
+      - name: Run tests
+        run: gradle test --no-daemon -Prelease
         working-directory: backend
 
       - name: Upload test report
@@ -48,9 +69,8 @@ jobs:
           name: backend-test-report
           path: backend/build/reports/tests/
 
-  frontend:
-    needs: [compute-version]
-    name: Frontend
+  test-frontend:
+    name: Test frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -60,12 +80,6 @@ jobs:
       - run: bun install --frozen-lockfile
         working-directory: frontend
 
-      - name: Set version
-        run: |
-          jq --arg v "${{ needs.compute-version.outputs.frontend-version }}" '.version = $v' package.json > /tmp/pkg.json
-          mv /tmp/pkg.json package.json
-        working-directory: frontend
-
       - name: Type check
         run: bun run check
         working-directory: frontend
@@ -73,3 +87,66 @@ jobs:
       - name: Unit tests
         run: bun run test -- --run
         working-directory: frontend
+
+  e2e:
+    needs: [build-backend]
+    name: Playwright
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: docker/setup-buildx-action@v4
+
+      # otherwise we get an authentication error wenn pulling using docker-compose
+      - name: Pre-pull backend-healthcheck image
+        run: echo 'FROM dhi.io/curl:8.14.1-dev' | docker buildx build --load -t dhi.io/curl:8.14.1-dev -
+
+      - name: Build backend image
+        uses: docker/build-push-action@v7
+        with:
+          context: backend
+          load: true
+          build-args: |
+            BUILD_NUMBER=${{ github.run_number }}
+          cache-from: type=gha,scope=backend
+
+      - name: Start postgres and backend
+        run: docker compose up postgres backend backend-healthcheck frontend nginx --wait -d
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Install e2e dependencies
+        run: bun install --frozen-lockfile
+        working-directory: e2e
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('e2e/bun.lockb') }}
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+        working-directory: e2e
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      - name: Run E2E tests
+        run: bunx playwright test
+        working-directory: e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7
+
+      - name: Stop services
+        if: always()
+        run: docker compose down

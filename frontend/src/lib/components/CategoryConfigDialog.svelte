@@ -1,37 +1,65 @@
 <script lang="ts">
   import type { Category } from '$lib/mock-data';
   import { saveCategory, deleteCategory } from '$lib/stores/lists.svelte';
+  import { friendlyError } from '$lib/api/errors';
 
   let { categories, listId, onclose }: { categories: Category[]; listId: string; onclose: () => void } = $props();
 
+  const COLOR_SWATCHES = [
+    '#f87171', // red
+    '#fb923c', // orange
+    '#facc15', // yellow
+    '#4ade80', // green
+    '#2dd4bf', // teal
+    '#60a5fa', // blue
+    '#a78bfa', // purple
+    '#9ca3af', // gray
+  ];
+
   let newName = $state('');
+  let newColor = $state<string | null>(null);
   let editingId = $state<string | null>(null);
   let editingName = $state('');
+  let editingColor = $state<string | null>(null);
   let cancelling = false;
+  let error = $state<string | null>(null);
 
   const sorted = $derived([...categories].sort((a, b) => a.sortOrder - b.sortOrder));
 
-  function addCategory() {
+  async function addCategory() {
     const trimmed = newName.trim();
     if (!trimmed) return;
     const maxOrder = categories.length > 0 ? Math.max(...categories.map(c => c.sortOrder)) : 0;
-    saveCategory({ id: crypto.randomUUID(), listId, name: trimmed, sortOrder: maxOrder + 1 });
-    newName = '';
+    error = null;
+    try {
+      await saveCategory({ id: crypto.randomUUID(), listId, name: trimmed, color: newColor, sortOrder: maxOrder + 1 });
+      newName = '';
+      newColor = null;
+    } catch (e) {
+      error = friendlyError(e, 'Failed to add category');
+    }
   }
 
   function startEdit(cat: Category) {
     editingId = cat.id;
     editingName = cat.name;
+    editingColor = cat.color;
   }
 
-  function commitEdit(cat: Category) {
+  async function commitEdit(cat: Category) {
     if (cancelling) {
       cancelling = false;
       editingId = null;
       return;
     }
     const trimmed = editingName.trim();
-    if (trimmed) saveCategory({ ...cat, name: trimmed });
+    if (!trimmed) { editingId = null; return; }
+    error = null;
+    try {
+      await saveCategory({ ...cat, name: trimmed, color: editingColor });
+    } catch (e) {
+      error = friendlyError(e, 'Failed to update category');
+    }
     editingId = null;
   }
 
@@ -40,20 +68,39 @@
     editingId = null;
   }
 
-  function moveUp(cat: Category) {
+  async function moveUp(cat: Category) {
     const idx = sorted.findIndex(c => c.id === cat.id);
     if (idx <= 0) return;
     const prev = sorted[idx - 1];
-    saveCategory({ ...cat, sortOrder: prev.sortOrder });
-    saveCategory({ ...prev, sortOrder: cat.sortOrder });
+    error = null;
+    try {
+      await saveCategory({ ...cat, sortOrder: prev.sortOrder });
+      await saveCategory({ ...prev, sortOrder: cat.sortOrder });
+    } catch (e) {
+      error = friendlyError(e, 'Failed to reorder');
+    }
   }
 
-  function moveDown(cat: Category) {
+  async function moveDown(cat: Category) {
     const idx = sorted.findIndex(c => c.id === cat.id);
     if (idx < 0 || idx >= sorted.length - 1) return;
     const next = sorted[idx + 1];
-    saveCategory({ ...cat, sortOrder: next.sortOrder });
-    saveCategory({ ...next, sortOrder: cat.sortOrder });
+    error = null;
+    try {
+      await saveCategory({ ...cat, sortOrder: next.sortOrder });
+      await saveCategory({ ...next, sortOrder: cat.sortOrder });
+    } catch (e) {
+      error = friendlyError(e, 'Failed to reorder');
+    }
+  }
+
+  async function removeCat(cat: Category) {
+    error = null;
+    try {
+      await deleteCategory(cat.listId, cat.id);
+    } catch (e) {
+      error = friendlyError(e, 'Failed to delete category');
+    }
   }
 </script>
 
@@ -78,6 +125,10 @@
       <button onclick={onclose} class="p-1 text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close">✕</button>
     </div>
 
+    {#if error}
+      <p class="px-4 py-2 text-sm text-red-600 bg-red-50 border-b border-red-100">{error}</p>
+    {/if}
+
     <!-- List -->
     <div class="overflow-y-auto flex-1 px-2 py-2">
       {#if sorted.length === 0}
@@ -101,26 +152,47 @@
 
             {#if editingId === cat.id}
               <!-- Inline edit -->
-              <!-- svelte-ignore a11y_autofocus -->
-              <input
-                class="flex-1 text-sm border border-blue-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                bind:value={editingName}
-                onkeydown={(e) => { if (e.key === 'Enter') commitEdit(cat); if (e.key === 'Escape') cancelEdit(); }}
-                onblur={() => commitEdit(cat)}
-                autofocus
-              />
+              <div class="flex-1 flex flex-col gap-1">
+                <!-- svelte-ignore a11y_autofocus -->
+                <input
+                  class="text-sm border border-blue-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  bind:value={editingName}
+                  onkeydown={(e) => { if (e.key === 'Enter') commitEdit(cat); if (e.key === 'Escape') cancelEdit(); }}
+                  onblur={() => commitEdit(cat)}
+                  autofocus
+                />
+                <div class="flex gap-1">
+                  {#each COLOR_SWATCHES as swatch}
+                    <button
+                      type="button"
+                      onclick={() => { editingColor = editingColor === swatch ? null : swatch; }}
+                      class="w-4 h-4 rounded-full border-2 transition-all {editingColor === swatch ? 'border-gray-700 scale-110' : 'border-transparent'}"
+                      style="background-color: {swatch}"
+                      aria-label="Color {swatch}"
+                    ></button>
+                  {/each}
+                  {#if editingColor}
+                    <span class="w-4 h-4 rounded-full" style="background-color: {editingColor}"></span>
+                  {/if}
+                </div>
+              </div>
               <button onclick={() => commitEdit(cat)} class="p-0.5 text-green-500 hover:text-green-700 transition-colors" aria-label="Save">✓</button>
               <button onclick={cancelEdit} class="p-0.5 text-gray-400 hover:text-gray-600 transition-colors" aria-label="Cancel">✕</button>
             {:else}
-              <span
-                class="flex-1 text-sm text-gray-800 cursor-pointer"
-                role="button"
-                tabindex="0"
-                onclick={() => startEdit(cat)}
-                onkeydown={(e) => { if (e.key === 'Enter') startEdit(cat); }}
-              >{cat.name}</span>
+              <div class="flex-1 flex items-center gap-2">
+                {#if cat.color}
+                  <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: {cat.color}"></span>
+                {/if}
+                <span
+                  class="text-sm text-gray-800 cursor-pointer"
+                  role="button"
+                  tabindex="0"
+                  onclick={() => startEdit(cat)}
+                  onkeydown={(e) => { if (e.key === 'Enter') startEdit(cat); }}
+                >{cat.name}</span>
+              </div>
               <button onclick={() => startEdit(cat)} class="p-0.5 text-gray-300 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-all" aria-label="Rename">✏️</button>
-              <button onclick={() => deleteCategory(cat.id)} class="p-0.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all" aria-label="Delete">🗑</button>
+              <button onclick={() => removeCat(cat)} class="p-0.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all" aria-label="Delete">🗑</button>
             {/if}
           </div>
         {/each}
@@ -128,18 +200,34 @@
     </div>
 
     <!-- Footer: add new -->
-    <div class="flex gap-2 px-4 py-3 border-t border-gray-100">
-      <input
-        class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300"
-        placeholder="New category name"
-        bind:value={newName}
-        onkeydown={(e) => { if (e.key === 'Enter') addCategory(); }}
-      />
-      <button
-        onclick={addCategory}
-        disabled={!newName.trim()}
-        class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-      >Add</button>
+    <div class="flex flex-col gap-2 px-4 py-3 border-t border-gray-100">
+      <div class="flex gap-1">
+        {#each COLOR_SWATCHES as swatch}
+          <button
+            type="button"
+            onclick={() => { newColor = newColor === swatch ? null : swatch; }}
+            class="w-4 h-4 rounded-full border-2 transition-all {newColor === swatch ? 'border-gray-700 scale-110' : 'border-transparent'}"
+            style="background-color: {swatch}"
+            aria-label="Color {swatch}"
+          ></button>
+        {/each}
+      </div>
+      <div class="flex gap-2">
+        {#if newColor}
+          <span class="w-5 h-5 rounded-full self-center flex-shrink-0" style="background-color: {newColor}"></span>
+        {/if}
+        <input
+          class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300"
+          placeholder="New category name"
+          bind:value={newName}
+          onkeydown={(e) => { if (e.key === 'Enter') addCategory(); }}
+        />
+        <button
+          onclick={addCategory}
+          disabled={!newName.trim()}
+          class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >Add</button>
+      </div>
     </div>
   </div>
 </div>
