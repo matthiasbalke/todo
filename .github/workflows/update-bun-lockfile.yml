@@ -7,15 +7,14 @@ on:
     paths:
       - 'frontend/package.json'
 
-permissions:
-  contents: write
-
 jobs:
   update-lockfile:
     name: Update bun lockfile
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.UPDATE_BUN_LOCK_DB_TOKEN }}
 
       - uses: oven-sh/setup-bun@v2
 
