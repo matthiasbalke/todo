@@ -126,7 +126,7 @@ export async function saveCategory(updated: Category): Promise<void> {
       color: updated.color,
       sortOrder: updated.sortOrder,
     });
-    categories.push({ id: dto.id, listId: dto.listId, name: dto.name, color: dto.color, sortOrder: dto.sortOrder });
+    upsertCategoryInStore({ id: dto.id, listId: dto.listId, name: dto.name, color: dto.color, sortOrder: dto.sortOrder });
   }
 }
 

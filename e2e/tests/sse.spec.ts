@@ -27,6 +27,9 @@ test.describe('SSE real-time sync', () => {
 			await page2.getByPlaceholder('Title').fill(newItemTitle);
 			await page2.getByRole('button', { name: 'Add' }).click();
 
+			// Assert the submitting tab has exactly one copy (guards against each_key_duplicate race)
+			await expect(page2.getByText(newItemTitle)).toHaveCount(1);
+
 			// Assert the item appears in tab 1 WITHOUT reloading
 			await expect(page1.getByText(newItemTitle)).toBeVisible();
 		} finally {

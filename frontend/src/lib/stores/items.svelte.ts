@@ -40,7 +40,7 @@ export async function loadItemsForList(listId: string): Promise<void> {
 export async function createItem(listId: string, req: itemsApi.CreateItemRequest): Promise<TodoItem> {
 	const dto = await itemsApi.createItem(listId, req);
 	const item = dtoToItem(dto);
-	items = [...items, item];
+	saveItem(item);
 	return item;
 }
 

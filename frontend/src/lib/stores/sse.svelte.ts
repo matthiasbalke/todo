@@ -1,18 +1,19 @@
+import { untrack } from 'svelte';
 import { openSseConnection } from '$lib/api/sse';
 import { getAccessToken } from '$lib/stores/auth.svelte';
 import { dtoToItem, saveItem, removeItemFromStore, loadItemsForList } from '$lib/stores/items.svelte';
 import { upsertCategoryInStore, removeCategoryFromStore } from '$lib/stores/lists.svelte';
 import type { Category } from '$lib/mock-data';
 
-let connection = $state<EventSource | null>(null);
-let currentListId = $state<string | null>(null);
+let connection: EventSource | null = null;
+let currentListId: string | null = null;
 let refetchTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function connectToList(listId: string): void {
 	if (currentListId === listId && connection !== null) return;
 	disconnectFromList();
 
-	const token = getAccessToken();
+	const token = untrack(() => getAccessToken());
 	if (!token) return;
 
 	const es = openSseConnection(listId, token);
