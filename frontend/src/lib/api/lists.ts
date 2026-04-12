@@ -53,8 +53,8 @@ export interface ChangeMemberRoleRequest {
 }
 
 
-export function getLists(): Promise<ListSummaryDto[]> {
-	return authedFetch('/api/lists');
+export function getLists(fetchFn: typeof fetch = fetch): Promise<ListSummaryDto[]> {
+	return authedFetch('/api/lists', undefined, fetchFn);
 }
 
 export function createList(req: CreateListRequest): Promise<ListDto> {

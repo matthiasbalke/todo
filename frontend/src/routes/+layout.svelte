@@ -2,13 +2,19 @@
   import { onMount } from 'svelte';
   import '../app.css';
   import { appVersion } from '$lib/version';
+  import { pwaInfo } from 'virtual:pwa-info';
 
   let { children, data } = $props();
+  let webManifestLink = $derived(pwaInfo ? pwaInfo.webManifest.linkTag : '');
 
   onMount(() => {
     document.body.setAttribute('data-hydrated', 'true');
   });
 </script>
+
+<svelte:head>
+  {@html webManifestLink}
+</svelte:head>
 
 <div class="min-h-screen bg-gray-50 flex flex-col">
   <div class="flex-1 flex flex-col">

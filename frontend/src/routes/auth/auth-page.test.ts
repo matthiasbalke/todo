@@ -189,7 +189,7 @@ describe('AuthPage', () => {
 		await fireEvent.submit(screen.getByRole('button', { name: /register passkey/i }).closest('form')!);
 
 		await waitFor(() => {
-			expect(authApi.registerWithPasskey).toHaveBeenCalledWith('alice@example.com', 'Alice');
+			expect(authApi.registerWithPasskey).toHaveBeenCalledWith('alice@example.com', 'Alice', undefined);
 			expect(setSession).toHaveBeenCalledWith(mockResult);
 			expect(goto).toHaveBeenCalledWith('/lists');
 		});

@@ -14,10 +14,10 @@ class User(
     val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false, unique = true)
-    val email: String,
+    var email: String,
 
     @Column(name = "display_name", nullable = false)
-    val displayName: String,
+    var displayName: String,
 
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now(),

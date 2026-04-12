@@ -1,6 +1,7 @@
 import type { ItemDto } from '$lib/api/items';
 import * as itemsApi from '$lib/api/items';
 import type { TodoItem, IntervalUnit } from '$lib/mock-data';
+import { enqueue } from '$lib/stores/offlineQueue.svelte';
 
 let items = $state<TodoItem[]>([]);
 
@@ -68,9 +69,13 @@ export async function toggleDone(listId: string, itemId: string): Promise<void> 
 		// Ensure the toggled item reflects server state
 		items = items.map(i => i.id === itemId ? updated : i);
 	} catch (e) {
-		// Revert optimistic update
-		if (idx >= 0) items[idx] = { ...items[idx], done: !items[idx].done };
-		throw e;
+		if (isNetworkError(e)) {
+			enqueue({ type: 'toggleDone', listId, itemId });
+		} else {
+			// Revert optimistic update on non-network errors
+			if (idx >= 0) items[idx] = { ...items[idx], done: !items[idx].done };
+			throw e;
+		}
 	}
 }
 
@@ -84,9 +89,13 @@ export async function toggleStarred(listId: string, itemId: string): Promise<voi
 		const updated = dtoToItem(dto);
 		items = items.map(i => i.id === itemId ? updated : i);
 	} catch (e) {
-		// Revert optimistic update
-		if (idx >= 0) items[idx] = { ...items[idx], starred: !items[idx].starred };
-		throw e;
+		if (isNetworkError(e)) {
+			enqueue({ type: 'toggleStarred', listId, itemId });
+		} else {
+			// Revert optimistic update on non-network errors
+			if (idx >= 0) items[idx] = { ...items[idx], starred: !items[idx].starred };
+			throw e;
+		}
 	}
 }
 
@@ -99,9 +108,17 @@ export async function reorderItemsOptimistic(listId: string, orderedIds: string[
 	try {
 		await itemsApi.reorderItems(listId, orderedIds.map((id, idx) => ({ id, sortOrder: idx })));
 	} catch (e) {
-		items = snapshot;
-		throw e;
+		if (isNetworkError(e)) {
+			enqueue({ type: 'reorder', listId, orderedIds });
+		} else {
+			items = snapshot;
+			throw e;
+		}
 	}
+}
+
+function isNetworkError(e: unknown): boolean {
+	return !navigator.onLine || (e instanceof TypeError && e.message.includes('fetch'));
 }
 
 export function saveItem(item: TodoItem) {

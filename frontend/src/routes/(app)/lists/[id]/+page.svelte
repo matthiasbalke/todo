@@ -60,6 +60,10 @@
   let sortSubmenuOpen = $state(false);
   let filterSubmenuOpen = $state(false);
   let deleting = $state(false);
+  let titleInput = $state<HTMLInputElement | null>(null);
+  $effect(() => {
+    if (editingTitle && titleInput) titleInput.focus();
+  });
 
   // Determine current user's role in this list
   let myRole = $state<string | null>(null);
@@ -154,8 +158,8 @@
     <a href="/lists" class="text-gray-400 hover:text-gray-600">←</a>
     {#if editingTitle}
       <input
+        bind:this={titleInput}
         bind:value={titleEditValue}
-        autofocus
         onblur={saveTitleEdit}
         onkeydown={(e) => {
           if (e.key === 'Enter') { e.preventDefault(); saveTitleEdit(); }
@@ -164,19 +168,13 @@
         class="flex-1 text-xl font-bold text-gray-900 bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500 min-w-0"
       />
     {:else}
-      <h1
-        class="text-xl font-bold text-gray-900 cursor-pointer hover:opacity-70 transition-opacity"
+      <button
+        type="button"
+        class="text-xl font-bold text-gray-900 cursor-pointer hover:opacity-70 transition-opacity text-left"
         onclick={() => { titleEditValue = `${list.emoji ?? '📋'} ${list.name}`; editingTitle = true; }}
-        role="button"
-        tabindex="0"
-        onkeydown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            titleEditValue = `${list.emoji ?? '📋'} ${list.name}`; editingTitle = true;
-          }
-        }}
       >
         {list.emoji ?? '📋'} {list.name}
-      </h1>
+      </button>
     {/if}
       <div class="relative ml-auto">
         <button
