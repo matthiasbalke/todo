@@ -5,7 +5,7 @@ import { enqueue } from '$lib/stores/offlineQueue.svelte';
 
 let items = $state<TodoItem[]>([]);
 
-function dtoToItem(dto: ItemDto): TodoItem {
+export function dtoToItem(dto: ItemDto): TodoItem {
 	return {
 		id: dto.id,
 		listId: dto.listId,
@@ -128,4 +128,8 @@ export function saveItem(item: TodoItem) {
 	} else {
 		items = [...items, item];
 	}
+}
+
+export function removeItemFromStore(itemId: string) {
+	items = items.filter(i => i.id !== itemId);
 }

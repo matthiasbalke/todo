@@ -2,6 +2,10 @@ package com.github.matthiasbalke.todo.items
 
 import com.github.matthiasbalke.todo.lists.ListAccessService
 import com.github.matthiasbalke.todo.lists.ListRole
+import com.github.matthiasbalke.todo.sse.ItemPayload
+import com.github.matthiasbalke.todo.sse.ListEvent
+import com.github.matthiasbalke.todo.sse.RecurrenceRulePayload
+import com.github.matthiasbalke.todo.sse.SsePublisher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -42,6 +46,7 @@ class ItemService(
     private val itemRepository: ItemRepository,
     private val itemAssignmentRepository: ItemAssignmentRepository,
     private val listAccessService: ListAccessService,
+    private val ssePublisher: SsePublisher,
 ) {
 
     fun getItems(listId: UUID, userId: UUID): List<ItemWithAssignees> {
@@ -74,7 +79,7 @@ class ItemService(
             )
         )
         saveAssignments(item.id, req.assignedUserIds)
-        return item.withAssignees()
+        return item.withAssignees().also { ssePublisher.publish(ListEvent.ItemCreated(listId, it.toPayload())) }
     }
 
     @Transactional
@@ -93,7 +98,7 @@ class ItemService(
         itemRepository.save(item)
         itemAssignmentRepository.deleteAllByIdItemId(itemId)
         saveAssignments(itemId, req.assignedUserIds)
-        return item.withAssignees()
+        return item.withAssignees().also { ssePublisher.publish(ListEvent.ItemUpdated(listId, it.toPayload())) }
     }
 
     @Transactional
@@ -102,6 +107,7 @@ class ItemService(
         itemRepository.findByIdAndListId(itemId, listId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found")
         itemRepository.deleteById(itemId)
+        ssePublisher.publish(ListEvent.ItemDeleted(listId, itemId))
     }
 
     @Transactional
@@ -137,9 +143,10 @@ class ItemService(
                 )
             )
             saveAssignments(next.id, assignees)
+            ssePublisher.publish(ListEvent.ItemCreated(listId, ItemWithAssignees(next, assignees).toPayload()))
         }
 
-        return item.withAssignees()
+        return item.withAssignees().also { ssePublisher.publish(ListEvent.ItemUpdated(listId, it.toPayload())) }
     }
 
     @Transactional
@@ -150,7 +157,7 @@ class ItemService(
         item.starred = !item.starred
         item.updatedAt = Instant.now()
         itemRepository.save(item)
-        return item.withAssignees()
+        return item.withAssignees().also { ssePublisher.publish(ListEvent.ItemUpdated(listId, it.toPayload())) }
     }
 
     @Transactional
@@ -161,7 +168,7 @@ class ItemService(
         item.sortOrder = sortOrder
         item.updatedAt = Instant.now()
         itemRepository.save(item)
-        return item.withAssignees()
+        return item.withAssignees().also { ssePublisher.publish(ListEvent.ItemUpdated(listId, it.toPayload())) }
     }
 
     @Transactional
@@ -176,6 +183,10 @@ class ItemService(
             item.updatedAt = now
         }
         itemRepository.saveAll(items)
+        items.forEach { item ->
+            val assignees = itemAssignmentRepository.findAllByIdItemId(item.id).map { it.id.userId }
+            ssePublisher.publish(ListEvent.ItemUpdated(listId, ItemWithAssignees(item, assignees).toPayload()))
+        }
     }
 
     private fun saveAssignments(itemId: UUID, userIds: List<UUID>) {
@@ -188,4 +199,22 @@ class ItemService(
         val assignees = itemAssignmentRepository.findAllByIdItemId(id).map { it.id.userId }
         return ItemWithAssignees(this, assignees)
     }
+
+    private fun ItemWithAssignees.toPayload() = ItemPayload(
+        id = item.id,
+        listId = item.listId,
+        categoryId = item.categoryId,
+        title = item.title,
+        notes = item.notes,
+        done = item.done,
+        starred = item.starred,
+        dueDate = item.dueDate,
+        recurrenceRule = item.recurrenceRule?.let { RecurrenceRulePayload(it.intervalUnit.name, it.intervalValue) },
+        parentItemId = item.parentItemId,
+        createdByUserId = item.createdByUserId,
+        assignedUserIds = assignedUserIds,
+        sortOrder = item.sortOrder,
+        createdAt = item.createdAt,
+        updatedAt = item.updatedAt,
+    )
 }

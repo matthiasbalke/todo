@@ -1,6 +1,9 @@
 package com.github.matthiasbalke.todo.lists
 
 import com.github.matthiasbalke.todo.auth.UserRepository
+import com.github.matthiasbalke.todo.sse.ListEvent
+import com.github.matthiasbalke.todo.sse.MemberPayload
+import com.github.matthiasbalke.todo.sse.SsePublisher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -13,6 +16,7 @@ class ListService(
     private val listMembershipRepository: ListMembershipRepository,
     private val userRepository: UserRepository,
     private val listAccessService: ListAccessService,
+    private val ssePublisher: SsePublisher,
 ) {
 
     @Transactional
@@ -90,9 +94,11 @@ class ListService(
         if (listMembershipRepository.findByListIdAndUserId(listId, target.id) != null) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "User is already a member of this list")
         }
-        return listMembershipRepository.save(
+        val membership = listMembershipRepository.save(
             ListMembership(listId = listId, userId = target.id, role = role)
         )
+        ssePublisher.publish(ListEvent.MemberAdded(listId, membership.toPayload()))
+        return membership
     }
 
     @Transactional
@@ -115,7 +121,7 @@ class ListService(
         val membership = listMembershipRepository.findByListIdAndUserId(listId, targetUserId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Target user is not a member of this list")
         membership.role = newRole
-        return listMembershipRepository.save(membership)
+        return listMembershipRepository.save(membership).also { ssePublisher.publish(ListEvent.MemberUpdated(listId, it.toPayload())) }
     }
 
     @Transactional
@@ -133,5 +139,12 @@ class ListService(
         val membership = listMembershipRepository.findByListIdAndUserId(listId, targetUserId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Target user is not a member of this list")
         listMembershipRepository.delete(membership)
+        ssePublisher.publish(ListEvent.MemberRemoved(listId, targetUserId))
     }
+
+    private fun ListMembership.toPayload() = MemberPayload(
+        userId = userId,
+        listId = listId,
+        role = role.name,
+    )
 }
