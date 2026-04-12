@@ -61,6 +61,7 @@
   let emailSuccess = $state(false);
   let editingEmail = $state(false);
   let emailInput = $state<HTMLInputElement | null>(null);
+  let ignoreNextEmailFocusOut = false;
   $effect(() => { if (editingEmail && emailInput) emailInput.focus(); });
 
   function startEditEmail() {
@@ -235,9 +236,16 @@
     <div>
       <p class="block text-sm font-medium text-gray-700 mb-1">Email</p>
       {#if editingEmail}
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div
           class="flex items-center gap-2"
+          role="group"
+          onmousedown={() => {
+            ignoreNextEmailFocusOut = true;
+            setTimeout(() => { ignoreNextEmailFocusOut = false; }, 0);
+          }}
           onfocusout={(e) => {
+            if (ignoreNextEmailFocusOut) { ignoreNextEmailFocusOut = false; return; }
             if (!e.currentTarget.contains(e.relatedTarget as Node)) { editingEmail = false; }
           }}
         >
