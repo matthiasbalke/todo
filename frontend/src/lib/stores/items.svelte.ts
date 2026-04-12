@@ -5,7 +5,7 @@ import { enqueue } from '$lib/stores/offlineQueue.svelte';
 
 let items = $state<TodoItem[]>([]);
 
-function dtoToItem(dto: ItemDto): TodoItem {
+export function dtoToItem(dto: ItemDto): TodoItem {
 	return {
 		id: dto.id,
 		listId: dto.listId,
@@ -40,7 +40,7 @@ export async function loadItemsForList(listId: string): Promise<void> {
 export async function createItem(listId: string, req: itemsApi.CreateItemRequest): Promise<TodoItem> {
 	const dto = await itemsApi.createItem(listId, req);
 	const item = dtoToItem(dto);
-	items = [...items, item];
+	saveItem(item);
 	return item;
 }
 
@@ -128,4 +128,8 @@ export function saveItem(item: TodoItem) {
 	} else {
 		items = [...items, item];
 	}
+}
+
+export function removeItemFromStore(itemId: string) {
+	items = items.filter(i => i.id !== itemId);
 }

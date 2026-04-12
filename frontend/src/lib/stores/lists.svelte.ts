@@ -126,7 +126,7 @@ export async function saveCategory(updated: Category): Promise<void> {
       color: updated.color,
       sortOrder: updated.sortOrder,
     });
-    categories.push({ id: dto.id, listId: dto.listId, name: dto.name, color: dto.color, sortOrder: dto.sortOrder });
+    upsertCategoryInStore({ id: dto.id, listId: dto.listId, name: dto.name, color: dto.color, sortOrder: dto.sortOrder });
   }
 }
 
@@ -134,4 +134,17 @@ export async function deleteCategory(listId: string, id: string): Promise<void> 
   await apiDeleteCategory(listId, id);
   const idx = categories.findIndex(c => c.id === id);
   if (idx >= 0) categories.splice(idx, 1);
+}
+
+export function upsertCategoryInStore(category: Category): void {
+  const idx = categories.findIndex(c => c.id === category.id);
+  if (idx >= 0) {
+    categories[idx] = category;
+  } else {
+    categories = [...categories, category];
+  }
+}
+
+export function removeCategoryFromStore(categoryId: string): void {
+  categories = categories.filter(c => c.id !== categoryId);
 }

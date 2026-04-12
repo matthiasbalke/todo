@@ -27,6 +27,8 @@
   let assignedUserId = $state<string>(untrack(() => item?.assignedUserIds[0] ?? ''));
   let recurrencePreset = $state<string>(untrack(() => getInitialRecurrencePreset(item?.recurrenceRule ?? null)));
   let titleInput = $state<HTMLInputElement | null>(null);
+  let submitting = $state(false);
+  let ignoreNextFocusOut = false;
 
   onMount(() => titleInput?.focus());
 
@@ -45,39 +47,52 @@
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    const now = new Date().toISOString().split('T')[0];
-    const submitted: TodoItem = {
-      id: item?.id ?? (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)),
-      listId,
-      categoryId: categoryId || null,
-      title,
-      notes: notes || null,
-      done: item?.done ?? false,
-      starred: item?.starred ?? false,
-      dueDate: dueDate || null,
-      assignedUserIds: assignedUserId ? [assignedUserId] : [],
-      recurrenceRule: parseRecurrencePreset(recurrencePreset),
-      parentItemId: item?.parentItemId ?? null,
-      createdByUserId: item?.createdByUserId ?? null,
-      sortOrder: item?.sortOrder ?? 999,
-      createdAt: item?.createdAt ?? now
-    };
-    await onsubmit(submitted);
-    if (isNew) {
-      title = '';
-      notes = '';
-      dueDate = '';
-      categoryId = '';
-      assignedUserId = '';
-      recurrencePreset = '';
-      titleInput?.focus();
+    if (submitting) return;
+    submitting = true;
+    try {
+      const now = new Date().toISOString().split('T')[0];
+      const submitted: TodoItem = {
+        id: item?.id ?? (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)),
+        listId,
+        categoryId: categoryId || null,
+        title,
+        notes: notes || null,
+        done: item?.done ?? false,
+        starred: item?.starred ?? false,
+        dueDate: dueDate || null,
+        assignedUserIds: assignedUserId ? [assignedUserId] : [],
+        recurrenceRule: parseRecurrencePreset(recurrencePreset),
+        parentItemId: item?.parentItemId ?? null,
+        createdByUserId: item?.createdByUserId ?? null,
+        sortOrder: item?.sortOrder ?? 999,
+        createdAt: item?.createdAt ?? now
+      };
+      await onsubmit(submitted);
+      if (isNew) {
+        title = '';
+        notes = '';
+        dueDate = '';
+        categoryId = '';
+        assignedUserId = '';
+        recurrencePreset = '';
+        titleInput?.focus();
+      }
+    } finally {
+      submitting = false;
     }
   }
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form
   onsubmit={handleSubmit}
+  onmousedown={() => {
+    ignoreNextFocusOut = true;
+    setTimeout(() => { ignoreNextFocusOut = false; }, 0);
+  }}
   onfocusout={(e) => {
+    if (submitting) return;
+    if (ignoreNextFocusOut) { ignoreNextFocusOut = false; return; }
     if (isNew && !e.currentTarget.contains(e.relatedTarget as Node)) oncancel();
   }}
   class="bg-white rounded-xl border border-gray-200 p-4 space-y-3"

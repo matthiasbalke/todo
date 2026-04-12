@@ -294,14 +294,23 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ## 13. Real-time Sync (SSE)
 
 ### Backend
-- [ ] Implement `SsePublisher` service: maintains per-list `SseEmitter` registries
-- [ ] Implement `GET /api/lists/{listId}/events`: opens SSE stream for authenticated user who is a member; VIEWER+
-- [ ] Wire `SsePublisher.publish(listId, event)` calls into: item CRUD, done toggle, assignment change, category CRUD, member changes
-- [ ] Implement automatic client reconnect with `Last-Event-ID` support (re-sends missed events from in-memory buffer or DB)
-- [ ] Write integration test: connect SSE, create an item, verify event is received on the stream
+- [x] Modify `JwtAuthenticationFilter` to accept `token` query parameter (needed for EventSource which cannot set custom headers)
+- [x] Create `SsePublisher` service with per-list `SseEmitter` registry and in-memory ring buffer (last 100 events, globally sequenced)
+- [x] Create `GET /api/lists/{listId}/events` SSE endpoint; requires VIEWER+ membership; supports `Last-Event-ID` replay
+- [x] Wire `SsePublisher.publish()` into item CRUD (createItem, updateItem, deleteItem, toggleDone, toggleStarred, updateOrder, reorderItems)
+- [x] Wire `SsePublisher.publish()` into category CRUD (createCategory, updateCategory, deleteCategory)
+- [x] Wire `SsePublisher.publish()` into member changes (addMember, changeMemberRole, removeMember)
+- [x] Write SSE integration test (`SseIntegrationTest`): real HTTP server, connect stream, assert `item.created` event arrives within 1 s
 
 ### Frontend
-- [ ] Connect SSE: subscribe on mount to `GET /api/lists/{id}/events`; patch local store on incoming events; auto-reconnect
+- [x] Create `src/lib/api/sse.ts`: thin `EventSource` wrapper using `?token=` query param
+- [x] Create `src/lib/stores/sse.svelte.ts`: `connectToList` / `disconnectFromList`; patches items and categories stores on incoming events; debounce-refetches on reconnect
+- [x] Connect SSE on list detail page: `$effect` mounts `connectToList(data.id)` and cleans up with `disconnectFromList`
+- [x] Write E2E test (`sse.spec.ts`): two browser tabs on the same list; item created in tab 2 appears in tab 1 without reload
+
+### Notes
+- See `docs/features/realtime-sse.md` for full architecture details
+- Ring buffer is in-memory only; a server restart clears it (acceptable for the current scale)
 
 ---
 
@@ -337,3 +346,5 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [x] Add "install app" prompt in the UI (deferred `beforeinstallprompt` event)
 - [x] Verify app is installable via Chrome DevTools "Application" → "Manifest" (no errors)
 - [x] Verify list data is readable while offline (kill dev server, check cached data loads)
+- [ ] Implement offline support for item CRUD (create, update, delete) — queue mutations and flush on reconnect
+- [ ] Implement offline support for list CRUD (create, update, delete) — queue mutations and flush on reconnect

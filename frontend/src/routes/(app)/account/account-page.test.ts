@@ -87,4 +87,17 @@ describe('AccountPage email inline-edit', () => {
 		expect(updateMe).not.toHaveBeenCalled();
 		expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
 	});
+
+	it('should not dismiss email editor when mousedown on Save button is followed by focusout with null relatedTarget', async () => {
+		render(AccountPage, { props: { data: mockData } });
+		await fireEvent.click(screen.getByRole('button', { name: /test@example\.com/i }));
+		const input = screen.getByRole('textbox');
+		const editorDiv = input.parentElement!;
+
+		// Simulate Safari: clicking Save button triggers mousedown on the div but button gets no focus
+		await fireEvent.mouseDown(editorDiv);
+		await fireEvent.focusOut(input, { relatedTarget: null });
+
+		expect(screen.getByRole('textbox')).toBeInTheDocument();
+	});
 });

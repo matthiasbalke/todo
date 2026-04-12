@@ -14,6 +14,7 @@
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
   import MembersDialog from '$lib/components/MembersDialog.svelte';
   import { getCurrentUser } from '$lib/stores/auth.svelte';
+  import { connectToList, disconnectFromList } from '$lib/stores/sse.svelte';
   import { getMembers } from '$lib/api/lists';
   import { friendlyError } from '$lib/api/errors';
 
@@ -24,6 +25,10 @@
 
   $effect(() => { loadCategoriesForList(data.id); });
   $effect(() => { loadItemsForList(data.id); });
+  $effect(() => {
+    connectToList(data.id);
+    return () => disconnectFromList();
+  });
 
   const _savedPrefs = untrack(() => loadListPrefs(data.id));
   untrack(() => setHideDone(data.id, _savedPrefs?.hideDone ?? false));
