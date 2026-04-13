@@ -167,6 +167,8 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ### Frontend
 - [x] Implement category group component (`CategoryGroup.svelte`): collapsible, shows category color and name, contains item cards
 - [x] Implement "no category" group rendered alongside named categories
+- [x] Fix edit/delete buttons invisible on mobile (replace hover-only opacity with responsive `sm:` prefix so buttons are always visible on small screens)
+- [x] Fix color picker in edit mode: clicking a swatch closed edit mode due to input blur firing before onclick — fixed with `onmousedown` preventDefault on swatches
 - [ ] Write Vitest component test: items are grouped correctly by category from mock data
 
 ---

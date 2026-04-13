@@ -15,11 +15,6 @@ Tasks are small and independently verifiable (automated or manual). See `docs/re
  * Way to delete all checked List Items from a list.
 
 
-## 1. List Categories
- * The buttons to edit and delete categories are not visible on mobile phones, as they are only shown on hovering over the entry.
- * While editing a Category, one cannot change the color by clicking on the color picker. 
- 
-
 ## 1. Production
  * how do we monitor exceptions and errors in backend and frontend?
  * how to monitor functional metrics like, #registered users, #lists, mean(items per list), max(items per list), min(items per list)
