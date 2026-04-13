@@ -1,6 +1,7 @@
 package com.github.matthiasbalke.todo.sse
 
 import com.github.matthiasbalke.todo.lists.ListAccessService
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.MediaType
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
@@ -23,7 +24,10 @@ class SseController(
         @AuthenticationPrincipal userId: UUID,
         @PathVariable listId: UUID,
         @RequestHeader(value = "Last-Event-ID", required = false) lastEventId: String?,
+        response: HttpServletResponse,
     ): SseEmitter {
+        response.setHeader("X-Accel-Buffering", "no")
+        response.setHeader("Cache-Control", "no-cache")
         listAccessService.requireMembership(listId, userId)
         return ssePublisher.subscribe(listId, lastEventId?.toLongOrNull())
     }

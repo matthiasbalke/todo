@@ -16,6 +16,7 @@ import java.net.URI
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestcontainersConfiguration::class)
@@ -95,6 +96,67 @@ class SseIntegrationTest {
             .withFailMessage("item.created SSE event did not arrive within 1 second")
             .isTrue()
         assertThat(receivedEventType).isEqualTo("item.created")
+    }
+
+    @Test
+    fun `SSE response should include X-Accel-Buffering no header`() {
+        val user = userRepository.save(User(email = "sse-buf-${UUID.randomUUID()}@example.com", displayName = "SSE Buf Test"))
+        val token = jwtTokenService.generateAccessToken(user)
+        val listId = post("/api/lists", """{"name":"SSE Buf Test List"}""", token)
+            .let { mapper.readTree(it)["id"].asText() }
+
+        val conn = openConnection("/api/lists/$listId/events?token=$token")
+        conn.setRequestProperty("Accept", "text/event-stream")
+        conn.connectTimeout = 5_000
+        conn.readTimeout = 5_000
+        conn.connect()
+
+        assertThat(conn.getHeaderField("X-Accel-Buffering")).isEqualTo("no")
+        conn.disconnect()
+    }
+
+    @Test
+    fun `SSE should send periodic heartbeat comments after the initial connected comment`() {
+        val user = userRepository.save(User(email = "sse-hb-${UUID.randomUUID()}@example.com", displayName = "SSE HB Test"))
+        val token = jwtTokenService.generateAccessToken(user)
+        val listId = post("/api/lists", """{"name":"SSE HB Test List"}""", token)
+            .let { mapper.readTree(it)["id"].asText() }
+
+        val commentCount = AtomicInteger(0)
+        val secondComment = CountDownLatch(2)
+        var threadError: Throwable? = null
+
+        val thread = Thread {
+            try {
+                val conn = openConnection("/api/lists/$listId/events?token=$token")
+                conn.setRequestProperty("Accept", "text/event-stream")
+                conn.connectTimeout = 5_000
+                conn.readTimeout = 5_000
+                conn.connect()
+
+                conn.inputStream.bufferedReader().use { reader ->
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        if (line!!.startsWith(":")) {
+                            val count = commentCount.incrementAndGet()
+                            secondComment.countDown()
+                            if (count >= 2) return@Thread
+                        }
+                    }
+                }
+            } catch (e: Throwable) {
+                threadError = e
+                repeat(2) { secondComment.countDown() }
+            }
+        }
+        thread.isDaemon = true
+        thread.start()
+
+        assertThat(secondComment.await(3, TimeUnit.SECONDS))
+            .withFailMessage("Did not receive 2 SSE comments within 3s. Thread error: $threadError")
+            .isTrue()
+        assertThat(threadError).isNull()
+        assertThat(commentCount.get()).isGreaterThanOrEqualTo(2)
     }
 
     private fun post(path: String, body: String, token: String): String {
