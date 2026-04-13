@@ -36,7 +36,8 @@
   let filters = $state<Filters>({
     starredOnly: _savedPrefs?.starredOnly ?? false,
     hideFuture: _savedPrefs?.hideFuture ?? false,
-    hideUndated: _savedPrefs?.hideUndated ?? false
+    hideUndated: _savedPrefs?.hideUndated ?? false,
+    assigneeFilter: _savedPrefs?.assigneeFilter ?? 'all',
   });
   let sortField = $state<SortField>(_savedPrefs?.sortField ?? untrack(() => list?.defaultSortField ?? 'MANUAL'));
   let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => list?.defaultSortDirection ?? 'ASC'));

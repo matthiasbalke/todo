@@ -18,6 +18,7 @@
   import { connectToList, disconnectFromList } from '$lib/stores/sse.svelte';
   import { getMembers } from '$lib/api/lists';
   import { friendlyError } from '$lib/api/errors';
+  import type { User } from '$lib/mock-data';
 
   let { data }: { data: PageData } = $props();
 
@@ -41,7 +42,8 @@
   let filters = $state<Filters>({
     starredOnly: _savedPrefs?.starredOnly ?? false,
     hideFuture: _savedPrefs?.hideFuture ?? false,
-    hideUndated: _savedPrefs?.hideUndated ?? false
+    hideUndated: _savedPrefs?.hideUndated ?? false,
+    assigneeFilter: _savedPrefs?.assigneeFilter ?? 'all',
   });
   let sortField = $state<SortField>(_savedPrefs?.sortField ?? untrack(() => list?.defaultSortField ?? 'MANUAL'));
   let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => list?.defaultSortDirection ?? 'ASC'));
@@ -51,7 +53,8 @@
     const isDefault =
       prefs.sortField === (list?.defaultSortField ?? 'MANUAL') &&
       prefs.sortDirection === (list?.defaultSortDirection ?? 'ASC') &&
-      !prefs.starredOnly && !prefs.hideFuture && !prefs.hideUndated && !prefs.hideDone;
+      !prefs.starredOnly && !prefs.hideFuture && !prefs.hideUndated && !prefs.hideDone &&
+      (prefs.assigneeFilter ?? 'all') === 'all';
     if (isDefault) deleteListPrefs(data.id); else saveListPrefs(data.id, prefs);
   });
   $effect(() => {
@@ -73,13 +76,15 @@
     if (editingTitle && titleInput) titleInput.focus();
   });
 
-  // Determine current user's role in this list
+  // Determine current user's role in this list, and populate real members for assignment
   let myRole = $state<string | null>(null);
+  let members = $state<User[]>([]);
   $effect(() => {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
-    getMembers(data.id).then(members => {
-      myRole = members.find(m => m.userId === currentUser.id)?.role ?? null;
+    getMembers(data.id).then(ms => {
+      myRole = ms.find(m => m.userId === currentUser.id)?.role ?? null;
+      members = ms.map(m => ({ id: m.userId, name: m.displayName || m.email, email: m.email }));
     }).catch(() => { /* ignore */ });
   });
 
@@ -97,7 +102,9 @@
   );
 
   const activeFilterCount = $derived(
-    (filters.starredOnly ? 1 : 0) + (filters.hideFuture || filters.hideUndated ? 1 : 0)
+    (filters.starredOnly ? 1 : 0) +
+    (filters.hideFuture || filters.hideUndated ? 1 : 0) +
+    (filters.assigneeFilter !== 'all' ? 1 : 0)
   );
 
   const sortFields: { value: SortField; label: string }[] = [
@@ -109,7 +116,7 @@
   ];
 
   const allItems = $derived(getItems().filter(i => i.listId === data.id));
-  const filtered = $derived(applyFilters(allItems, filters));
+  const filtered = $derived(applyFilters(allItems, filters, getCurrentUser()?.id));
   const sorted = $derived(applySort(filtered, sortField, sortDirection));
   const grouped = $derived(groupByCategory(sorted, categories));
 
@@ -250,6 +257,22 @@
                       {#if dueDateValue === opt.value}<span>✓</span>{/if}
                     </button>
                   {/each}
+                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Assigned</p>
+                  {#each [
+                    { value: 'all',    label: 'All items' },
+                    { value: 'none',   label: 'Not assigned' },
+                    { value: 'me',     label: 'Assigned to me' },
+                    { value: 'others', label: 'Assigned to others' },
+                  ] as opt}
+                    <button
+                      onclick={() => { filters = { ...filters, assigneeFilter: opt.value as Filters['assigneeFilter'] }; }}
+                      class="w-full text-left px-6 py-1.5 text-sm flex items-center justify-between
+                        {filters.assigneeFilter === opt.value ? 'text-blue-600 font-medium' : 'text-gray-600 hover:bg-gray-100'}"
+                    >
+                      {opt.label}
+                      {#if filters.assigneeFilter === opt.value}<span>✓</span>{/if}
+                    </button>
+                  {/each}
                 </div>
               {/if}
             </div>
@@ -320,7 +343,7 @@
         {category}
         {items}
         allCategories={categories}
-        users={data.users}
+        users={members}
         hideDone={isHideDone(data.id)}
         collapsed={collapsedMap[key ?? '__null__'] ?? false}
         doneCollapsed={doneCollapsedMap[key ?? '__null__'] ?? true}
@@ -356,7 +379,7 @@
         <ItemForm
           listId={data.id}
           {categories}
-          users={data.users}
+          users={members}
           onsubmit={handleAddItem}
           oncancel={() => { showAddForm = false; }}
           defaultCategoryId={lastCategoryId ?? undefined}

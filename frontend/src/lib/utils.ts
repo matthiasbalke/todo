@@ -4,9 +4,10 @@ export interface Filters {
   starredOnly: boolean;
   hideFuture: boolean;
   hideUndated: boolean;
+  assigneeFilter: 'all' | 'none' | 'me' | 'others';
 }
 
-export function applyFilters(items: TodoItem[], filters: Filters): TodoItem[] {
+export function applyFilters(items: TodoItem[], filters: Filters, currentUserId?: string): TodoItem[] {
   return items.filter(item => {
     if (filters.starredOnly && !item.starred) return false;
     if (filters.hideFuture && item.dueDate) {
@@ -16,6 +17,9 @@ export function applyFilters(items: TodoItem[], filters: Filters): TodoItem[] {
       if (due > today) return false;
     }
     if (filters.hideUndated && !item.dueDate) return false;
+    if (filters.assigneeFilter === 'none' && item.assignedUserIds.length > 0) return false;
+    if (filters.assigneeFilter === 'me' && (!currentUserId || !item.assignedUserIds.includes(currentUserId))) return false;
+    if (filters.assigneeFilter === 'others' && (item.assignedUserIds.length === 0 || (!!currentUserId && item.assignedUserIds.includes(currentUserId)))) return false;
     return true;
   });
 }

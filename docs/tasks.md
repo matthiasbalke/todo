@@ -201,6 +201,7 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [ ] Implement delete item: confirmation prompt, calls `DELETE`
 - [x] Implement drag-and-drop reorder (only shown/active when list sort = MANUAL): calls `POST /reorder` (bulk)
 - [x] Implement client-side filtering controls: hide future items toggle, hide undated items toggle, starred-only toggle, filter by category dropdown, filter by assignee dropdown
+- [x] Implement multi-user assignment UI in ItemForm: toggleable user chips from real list members
 - [x] Implement client-side sorting: apply current list sort setting within each category group
 - [ ] Write Vitest component tests for `ItemCard` (renders all field combinations)
 
