@@ -11,6 +11,10 @@ webauthn:
     id: localhost
     name: Todo Test
 
+sse:
+  heartbeat:
+    interval-ms: 500
+
 app:
   cors:
     allowed-origins: http://localhost:5173

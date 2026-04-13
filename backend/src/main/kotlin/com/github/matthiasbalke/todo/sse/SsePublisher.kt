@@ -1,6 +1,7 @@
 package com.github.matthiasbalke.todo.sse
 
 import org.springframework.http.MediaType
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import java.util.UUID
@@ -48,6 +49,16 @@ class SsePublisher {
         emitter.onError { cleanup.run() }
 
         return emitter
+    }
+
+    @Scheduled(fixedDelayString = "\${sse.heartbeat.interval-ms:25000}")
+    fun sendHeartbeats() {
+        emitters.values.forEach { list ->
+            list.forEach { emitter ->
+                try { emitter.send(SseEmitter.event().comment("ping")) }
+                catch (_: Exception) { /* stale emitters cleaned up by error handler */ }
+            }
+        }
     }
 
     fun publish(event: ListEvent) {
