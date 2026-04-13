@@ -337,6 +337,19 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 
 ---
 
+## 16. Fixed Bottom Add Bar
+
+### Frontend
+- [x] Fix "+ New list" button to viewport bottom on `/lists` page
+- [x] Fix "+ Add item" button to viewport bottom on `/lists/[id]` page
+- [x] Add `pb-20` padding to scrollable content so last items are not hidden behind fixed bar
+- [x] Cap inline form height at `70vh` with internal scroll for tall forms (ItemForm)
+
+### Notes
+- See `docs/features/fixed-bottom-add-bar.md` for design decisions
+
+---
+
 ## 15. PWA & Offline
 
 ### Frontend
