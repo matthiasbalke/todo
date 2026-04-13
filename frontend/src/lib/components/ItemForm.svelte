@@ -8,7 +8,8 @@
     categories,
     users,
     onsubmit,
-    oncancel
+    oncancel,
+    defaultCategoryId = ''
   }: {
     item?: TodoItem | null;
     listId: string;
@@ -16,6 +17,7 @@
     users: User[];
     onsubmit: (item: TodoItem) => Promise<void> | void;
     oncancel: () => void;
+    defaultCategoryId?: string;
   } = $props();
 
   const isNew = $derived(!item);
@@ -23,7 +25,7 @@
   let title = $state(untrack(() => item?.title ?? ''));
   let notes = $state(untrack(() => item?.notes ?? ''));
   let dueDate = $state(untrack(() => item?.dueDate ?? ''));
-  let categoryId = $state<string>(untrack(() => item?.categoryId ?? ''));
+  let categoryId = $state<string>(untrack(() => item?.categoryId ?? defaultCategoryId ?? ''));
   let assignedUserId = $state<string>(untrack(() => item?.assignedUserIds[0] ?? ''));
   let recurrencePreset = $state<string>(untrack(() => getInitialRecurrencePreset(item?.recurrenceRule ?? null)));
   let titleInput = $state<HTMLInputElement | null>(null);
@@ -72,7 +74,7 @@
         title = '';
         notes = '';
         dueDate = '';
-        categoryId = '';
+        categoryId = defaultCategoryId ?? '';
         assignedUserId = '';
         recurrencePreset = '';
         titleInput?.focus();

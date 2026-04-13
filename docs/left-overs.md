@@ -6,7 +6,6 @@ Tasks are small and independently verifiable (automated or manual). See `docs/re
 ---
 
 ## 1. Misc
-
   * Cursor-based pagination params (cursor, limit) are accepted but unused in the initial implementation — the response always returns all items in one page.
 
 
@@ -19,8 +18,7 @@ Tasks are small and independently verifiable (automated or manual). See `docs/re
 ## 1. List Categories
  * The buttons to edit and delete categories are not visible on mobile phones, as they are only shown on hovering over the entry.
  * While editing a Category, one cannot change the color by clicking on the color picker. 
- * Remember last uses category per list and select it as default for next item.
-
+ 
 
 ## 1. Production
  * how do we monitor exceptions and errors in backend and frontend?

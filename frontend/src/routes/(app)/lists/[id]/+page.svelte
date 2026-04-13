@@ -9,6 +9,7 @@
   import type { SortField, SortDirection, TodoItem } from '$lib/mock-data';
   import { loadListPrefs, saveListPrefs, deleteListPrefs } from '$lib/listPrefs';
   import { loadListCategoryState, saveListCategoryState, deleteListCategoryState } from '$lib/listCategoryState';
+  import { loadListItemDefaults, saveListItemDefaults } from '$lib/listItemDefaults';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
   import ItemForm from '$lib/components/ItemForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
@@ -33,6 +34,8 @@
   const _savedPrefs = untrack(() => loadListPrefs(data.id));
   untrack(() => setHideDone(data.id, _savedPrefs?.hideDone ?? false));
   const _savedCategoryState = untrack(() => loadListCategoryState(data.id));
+  const _savedItemDefaults = untrack(() => loadListItemDefaults(data.id));
+  let lastCategoryId = $state<string | null>(_savedItemDefaults?.lastCategoryId ?? null);
   let collapsedMap = $state<Record<string, boolean>>(_savedCategoryState?.collapsed ?? {});
   let doneCollapsedMap = $state<Record<string, boolean>>(_savedCategoryState?.doneCollapsed ?? {});
   let filters = $state<Filters>({
@@ -111,6 +114,8 @@
   const grouped = $derived(groupByCategory(sorted, categories));
 
   async function handleAddItem(item: TodoItem) {
+    lastCategoryId = item.categoryId ?? null;
+    saveListItemDefaults(data.id, { lastCategoryId });
     try {
       await createItem(data.id, {
         title: item.title,
@@ -354,6 +359,7 @@
           users={data.users}
           onsubmit={handleAddItem}
           oncancel={() => { showAddForm = false; }}
+          defaultCategoryId={lastCategoryId ?? undefined}
         />
       </div>
     {:else}
