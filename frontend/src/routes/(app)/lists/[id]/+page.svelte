@@ -42,7 +42,8 @@
   let filters = $state<Filters>({
     starredOnly: _savedPrefs?.starredOnly ?? false,
     hideFuture: _savedPrefs?.hideFuture ?? false,
-    hideUndated: _savedPrefs?.hideUndated ?? false
+    hideUndated: _savedPrefs?.hideUndated ?? false,
+    assigneeFilter: _savedPrefs?.assigneeFilter ?? 'all',
   });
   let sortField = $state<SortField>(_savedPrefs?.sortField ?? untrack(() => list?.defaultSortField ?? 'MANUAL'));
   let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => list?.defaultSortDirection ?? 'ASC'));
@@ -52,7 +53,8 @@
     const isDefault =
       prefs.sortField === (list?.defaultSortField ?? 'MANUAL') &&
       prefs.sortDirection === (list?.defaultSortDirection ?? 'ASC') &&
-      !prefs.starredOnly && !prefs.hideFuture && !prefs.hideUndated && !prefs.hideDone;
+      !prefs.starredOnly && !prefs.hideFuture && !prefs.hideUndated && !prefs.hideDone &&
+      (prefs.assigneeFilter ?? 'all') === 'all';
     if (isDefault) deleteListPrefs(data.id); else saveListPrefs(data.id, prefs);
   });
   $effect(() => {
@@ -100,7 +102,9 @@
   );
 
   const activeFilterCount = $derived(
-    (filters.starredOnly ? 1 : 0) + (filters.hideFuture || filters.hideUndated ? 1 : 0)
+    (filters.starredOnly ? 1 : 0) +
+    (filters.hideFuture || filters.hideUndated ? 1 : 0) +
+    (filters.assigneeFilter !== 'all' ? 1 : 0)
   );
 
   const sortFields: { value: SortField; label: string }[] = [
@@ -112,7 +116,7 @@
   ];
 
   const allItems = $derived(getItems().filter(i => i.listId === data.id));
-  const filtered = $derived(applyFilters(allItems, filters));
+  const filtered = $derived(applyFilters(allItems, filters, getCurrentUser()?.id));
   const sorted = $derived(applySort(filtered, sortField, sortDirection));
   const grouped = $derived(groupByCategory(sorted, categories));
 
@@ -251,6 +255,22 @@
                     >
                       {opt.label}
                       {#if dueDateValue === opt.value}<span>✓</span>{/if}
+                    </button>
+                  {/each}
+                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Assigned</p>
+                  {#each [
+                    { value: 'all',    label: 'All items' },
+                    { value: 'none',   label: 'Not assigned' },
+                    { value: 'me',     label: 'Assigned to me' },
+                    { value: 'others', label: 'Assigned to others' },
+                  ] as opt}
+                    <button
+                      onclick={() => { filters = { ...filters, assigneeFilter: opt.value as Filters['assigneeFilter'] }; }}
+                      class="w-full text-left px-6 py-1.5 text-sm flex items-center justify-between
+                        {filters.assigneeFilter === opt.value ? 'text-blue-600 font-medium' : 'text-gray-600 hover:bg-gray-100'}"
+                    >
+                      {opt.label}
+                      {#if filters.assigneeFilter === opt.value}<span>✓</span>{/if}
                     </button>
                   {/each}
                 </div>

@@ -7,6 +7,7 @@ export type ListPrefs = {
   hideFuture: boolean;
   hideUndated: boolean;
   hideDone?: boolean;
+  assigneeFilter?: 'all' | 'none' | 'me' | 'others';
 };
 
 const key = (listId: string) => `todo_list_prefs_${listId}`;
