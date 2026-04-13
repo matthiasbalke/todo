@@ -167,7 +167,7 @@
 
     <button
       onclick={handleStar}
-      class="flex-shrink-0 text-lg leading-none {item.starred ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'} transition-colors"
+      class="flex-shrink-0 self-center text-lg leading-none {item.starred ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'} transition-colors"
       aria-label={item.starred ? 'Unstar' : 'Star'}
     >★</button>
   </div>

@@ -165,6 +165,7 @@
                   {#each COLOR_SWATCHES as swatch}
                     <button
                       type="button"
+                      onmousedown={(e) => e.preventDefault()}
                       onclick={() => { editingColor = editingColor === swatch ? null : swatch; }}
                       class="w-4 h-4 rounded-full border-2 transition-all {editingColor === swatch ? 'border-gray-700 scale-110' : 'border-transparent'}"
                       style="background-color: {swatch}"
@@ -191,8 +192,8 @@
                   onkeydown={(e) => { if (e.key === 'Enter') startEdit(cat); }}
                 >{cat.name}</span>
               </div>
-              <button onclick={() => startEdit(cat)} class="p-0.5 text-gray-300 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-all" aria-label="Rename">✏️</button>
-              <button onclick={() => removeCat(cat)} class="p-0.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all" aria-label="Delete">🗑</button>
+              <button onclick={() => startEdit(cat)} class="p-0.5 text-gray-300 hover:text-gray-600 sm:opacity-0 sm:group-hover:opacity-100 transition-all" aria-label="Rename">✏️</button>
+              <button onclick={() => removeCat(cat)} class="p-0.5 text-gray-300 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100 transition-all" aria-label="Delete">🗑</button>
             {/if}
           </div>
         {/each}

@@ -9,6 +9,7 @@
   import type { SortField, SortDirection, TodoItem } from '$lib/mock-data';
   import { loadListPrefs, saveListPrefs, deleteListPrefs } from '$lib/listPrefs';
   import { loadListCategoryState, saveListCategoryState, deleteListCategoryState } from '$lib/listCategoryState';
+  import { loadListItemDefaults, saveListItemDefaults } from '$lib/listItemDefaults';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
   import ItemForm from '$lib/components/ItemForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
@@ -33,6 +34,8 @@
   const _savedPrefs = untrack(() => loadListPrefs(data.id));
   untrack(() => setHideDone(data.id, _savedPrefs?.hideDone ?? false));
   const _savedCategoryState = untrack(() => loadListCategoryState(data.id));
+  const _savedItemDefaults = untrack(() => loadListItemDefaults(data.id));
+  let lastCategoryId = $state<string | null>(_savedItemDefaults?.lastCategoryId ?? null);
   let collapsedMap = $state<Record<string, boolean>>(_savedCategoryState?.collapsed ?? {});
   let doneCollapsedMap = $state<Record<string, boolean>>(_savedCategoryState?.doneCollapsed ?? {});
   let filters = $state<Filters>({
@@ -111,6 +114,8 @@
   const grouped = $derived(groupByCategory(sorted, categories));
 
   async function handleAddItem(item: TodoItem) {
+    lastCategoryId = item.categoryId ?? null;
+    saveListItemDefaults(data.id, { lastCategoryId });
     try {
       await createItem(data.id, {
         title: item.title,
@@ -158,7 +163,7 @@
 {#if !list}
   <div class="text-center py-12 text-gray-400">List not found.</div>
 {:else}
-<div>
+<div class="pb-20">
   <div class="flex items-center gap-3 mb-4">
     <a href="/lists" class="text-gray-400 hover:text-gray-600">←</a>
     {#if editingTitle}
@@ -335,25 +340,6 @@
     {/each}
   </div>
 
-  {#if showAddForm}
-    <div class="mt-4">
-      <ItemForm
-        listId={data.id}
-        {categories}
-        users={data.users}
-        onsubmit={handleAddItem}
-        oncancel={() => { showAddForm = false; }}
-      />
-    </div>
-  {:else}
-    <button
-      onclick={() => { showAddForm = true; }}
-      class="mt-4 w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors"
-    >
-      + Add item
-    </button>
-  {/if}
-
   {#if showCategoryDialog}
     <CategoryConfigDialog {categories} listId={data.id} onclose={() => { showCategoryDialog = false; }} />
   {/if}
@@ -361,5 +347,29 @@
   {#if showMembersDialog}
     <MembersDialog listId={data.id} onclose={() => { showMembersDialog = false; }} />
   {/if}
+</div>
+
+<div class="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gray-100 shadow-lg">
+  <div class="max-w-2xl mx-auto px-4 py-3">
+    {#if showAddForm}
+      <div class="max-h-[70vh] overflow-y-auto">
+        <ItemForm
+          listId={data.id}
+          {categories}
+          users={data.users}
+          onsubmit={handleAddItem}
+          oncancel={() => { showAddForm = false; }}
+          defaultCategoryId={lastCategoryId ?? undefined}
+        />
+      </div>
+    {:else}
+      <button
+        onclick={() => { showAddForm = true; }}
+        class="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors"
+      >
+        + Add item
+      </button>
+    {/if}
+  </div>
 </div>
 {/if}

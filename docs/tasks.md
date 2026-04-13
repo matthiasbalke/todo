@@ -167,6 +167,8 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ### Frontend
 - [x] Implement category group component (`CategoryGroup.svelte`): collapsible, shows category color and name, contains item cards
 - [x] Implement "no category" group rendered alongside named categories
+- [x] Fix edit/delete buttons invisible on mobile (replace hover-only opacity with responsive `sm:` prefix so buttons are always visible on small screens)
+- [x] Fix color picker in edit mode: clicking a swatch closed edit mode due to input blur firing before onclick — fixed with `onmousedown` preventDefault on swatches
 - [ ] Write Vitest component test: items are grouped correctly by category from mock data
 
 ---
@@ -334,6 +336,19 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [ ] Implement `PushManager` helper in frontend: checks permission, subscribes via `PushManager.subscribe`, calls `POST /api/push/subscribe`
 - [ ] Add push permission prompt in account settings (not on page load)
 - [ ] Handle notification click: `notificationclick` event opens or focuses the relevant list/item URL
+
+---
+
+## 16. Fixed Bottom Add Bar
+
+### Frontend
+- [x] Fix "+ New list" button to viewport bottom on `/lists` page
+- [x] Fix "+ Add item" button to viewport bottom on `/lists/[id]` page
+- [x] Add `pb-20` padding to scrollable content so last items are not hidden behind fixed bar
+- [x] Cap inline form height at `70vh` with internal scroll for tall forms (ItemForm)
+
+### Notes
+- See `docs/features/fixed-bottom-add-bar.md` for design decisions
 
 ---
 

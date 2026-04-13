@@ -25,7 +25,7 @@
   }
 </script>
 
-<div>
+<div class="pb-20">
   {#if isLoading()}
     <div class="space-y-3">
       {#each [1, 2, 3] as _}
@@ -47,13 +47,13 @@
         </a>
       {/each}
     </div>
+  {/if}
+</div>
 
-    {#if error}
-      <p class="mt-3 text-sm text-red-600">{error}</p>
-    {/if}
-
+<div class="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gray-100 shadow-lg">
+  <div class="max-w-2xl mx-auto px-4 py-3">
     {#if showAddForm}
-      <div class="mt-4">
+      <div class="max-h-[70vh] overflow-y-auto">
         <ListForm
           onsubmit={handleSave}
           oncancel={() => { showAddForm = false; error = null; }}
@@ -63,10 +63,13 @@
       <button
         onclick={() => { showAddForm = true; }}
         disabled={saving}
-        class="mt-4 w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors disabled:opacity-50"
+        class="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors disabled:opacity-50"
       >
         + New list
       </button>
     {/if}
-  {/if}
+    {#if error}
+      <p class="mt-2 text-sm text-red-600">{error}</p>
+    {/if}
+  </div>
 </div>
