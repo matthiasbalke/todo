@@ -2,15 +2,23 @@
   import type { PageData } from './$types';
   import { getItems, loadItemsForList, updateItem, deleteItem } from '$lib/stores/items.svelte';
   import { getList, getCategoriesForList, loadCategoriesForList } from '$lib/stores/lists.svelte';
-  import type { TodoItem } from '$lib/mock-data';
+  import type { TodoItem, User } from '$lib/mock-data';
   import ItemForm from '$lib/components/ItemForm.svelte';
   import { goto } from '$app/navigation';
   import { friendlyError } from '$lib/api/errors';
+  import { getMembers } from '$lib/api/lists';
 
   let { data }: { data: PageData } = $props();
 
   $effect(() => { loadItemsForList(data.id); });
   $effect(() => { loadCategoriesForList(data.id); });
+
+  let members = $state<User[]>([]);
+  $effect(() => {
+    getMembers(data.id).then(ms => {
+      members = ms.map(m => ({ id: m.userId, name: m.displayName || m.email, email: m.email }));
+    }).catch(() => {});
+  });
 
   const list = $derived(getList(data.id));
   const item = $derived(getItems().find(i => i.id === data.iid && i.listId === data.id));
@@ -62,7 +70,7 @@
       {item}
       listId={data.id}
       {categories}
-      users={data.users}
+      users={members}
       onsubmit={handleSave}
       oncancel={handleCancel}
     />

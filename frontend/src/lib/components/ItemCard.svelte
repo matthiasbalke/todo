@@ -158,7 +158,7 @@
 
     {#each assignedUsers as assignedUser}
       <div
-        class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold"
+        class="flex-shrink-0 self-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold"
         title={assignedUser.name}
       >
         {assignedUser.name[0].toUpperCase()}

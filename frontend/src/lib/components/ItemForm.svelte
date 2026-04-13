@@ -26,7 +26,7 @@
   let notes = $state(untrack(() => item?.notes ?? ''));
   let dueDate = $state(untrack(() => item?.dueDate ?? ''));
   let categoryId = $state<string>(untrack(() => item?.categoryId ?? defaultCategoryId ?? ''));
-  let assignedUserId = $state<string>(untrack(() => item?.assignedUserIds[0] ?? ''));
+  let assignedUserIds = $state(new Set<string>(untrack(() => item?.assignedUserIds ?? [])));
   let recurrencePreset = $state<string>(untrack(() => getInitialRecurrencePreset(item?.recurrenceRule ?? null)));
   let titleInput = $state<HTMLInputElement | null>(null);
   let submitting = $state(false);
@@ -62,7 +62,7 @@
         done: item?.done ?? false,
         starred: item?.starred ?? false,
         dueDate: dueDate || null,
-        assignedUserIds: assignedUserId ? [assignedUserId] : [],
+        assignedUserIds: [...assignedUserIds],
         recurrenceRule: parseRecurrencePreset(recurrencePreset),
         parentItemId: item?.parentItemId ?? null,
         createdByUserId: item?.createdByUserId ?? null,
@@ -75,7 +75,7 @@
         notes = '';
         dueDate = '';
         categoryId = defaultCategoryId ?? '';
-        assignedUserId = '';
+        assignedUserIds = new Set();
         recurrencePreset = '';
         titleInput?.focus();
       }
@@ -153,20 +153,36 @@
       </select>
     </div>
 
-    <div>
-      <label for="assignedUserId" class="text-xs text-gray-500 mb-1 block">Assign to</label>
-      <select
-        id="assignedUserId"
-        bind:value={assignedUserId}
-        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="">Unassigned</option>
-        {#each users as user}
-          <option value={user.id}>{user.name}</option>
-        {/each}
-      </select>
-    </div>
   </div>
+
+  <fieldset class="border-0 p-0">
+    <legend class="text-xs text-gray-500 mb-1">Assign to</legend>
+    {#if users.length === 0}
+      <p class="text-xs text-gray-400 italic">No members</p>
+    {:else}
+      <div class="flex flex-wrap gap-1">
+        {#each users as user}
+          <button
+            type="button"
+            onclick={() => {
+              const next = new Set(assignedUserIds);
+              if (next.has(user.id)) {
+                next.delete(user.id);
+              } else {
+                next.add(user.id);
+              }
+              assignedUserIds = next;
+            }}
+            class={assignedUserIds.has(user.id)
+              ? 'px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-300'
+              : 'px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200'}
+          >
+            {user.name}
+          </button>
+        {/each}
+      </div>
+    {/if}
+  </fieldset>
 
   <div>
     <textarea

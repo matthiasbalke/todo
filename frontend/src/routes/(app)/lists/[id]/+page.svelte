@@ -18,6 +18,7 @@
   import { connectToList, disconnectFromList } from '$lib/stores/sse.svelte';
   import { getMembers } from '$lib/api/lists';
   import { friendlyError } from '$lib/api/errors';
+  import type { User } from '$lib/mock-data';
 
   let { data }: { data: PageData } = $props();
 
@@ -73,13 +74,15 @@
     if (editingTitle && titleInput) titleInput.focus();
   });
 
-  // Determine current user's role in this list
+  // Determine current user's role in this list, and populate real members for assignment
   let myRole = $state<string | null>(null);
+  let members = $state<User[]>([]);
   $effect(() => {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
-    getMembers(data.id).then(members => {
-      myRole = members.find(m => m.userId === currentUser.id)?.role ?? null;
+    getMembers(data.id).then(ms => {
+      myRole = ms.find(m => m.userId === currentUser.id)?.role ?? null;
+      members = ms.map(m => ({ id: m.userId, name: m.displayName || m.email, email: m.email }));
     }).catch(() => { /* ignore */ });
   });
 
@@ -320,7 +323,7 @@
         {category}
         {items}
         allCategories={categories}
-        users={data.users}
+        users={members}
         hideDone={isHideDone(data.id)}
         collapsed={collapsedMap[key ?? '__null__'] ?? false}
         doneCollapsed={doneCollapsedMap[key ?? '__null__'] ?? true}
@@ -356,7 +359,7 @@
         <ItemForm
           listId={data.id}
           {categories}
-          users={data.users}
+          users={members}
           onsubmit={handleAddItem}
           oncancel={() => { showAddForm = false; }}
           defaultCategoryId={lastCategoryId ?? undefined}
