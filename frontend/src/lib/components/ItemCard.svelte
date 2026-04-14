@@ -111,14 +111,14 @@
   </div>
   <!-- Sliding card content -->
   <div
-    class="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors {isDraggable ? 'select-none' : ''}"
+    class="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors {isDraggable ? 'select-none' : ''}"
     style="transform: translateX({swipeX}px); transition: {snapping ? 'transform 0.2s ease' : 'none'}"
     ontransitionend={() => { snapping = false; }}
   >
     {#if isDraggable}
       <div
         use:dragHandle
-        class="flex-shrink-0 flex items-center justify-center w-5 self-center cursor-grab active:cursor-grabbing touch-none text-gray-300 hover:text-gray-400"
+        class="flex-shrink-0 flex items-center justify-center w-5 cursor-grab active:cursor-grabbing touch-none text-gray-300 hover:text-gray-400"
         aria-label="Drag to reorder"
         tabindex="-1"
       >
@@ -131,7 +131,7 @@
     {/if}
     <button
       onclick={handleDone}
-      class="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border-2 {item.done ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'} transition-colors"
+      class="flex-shrink-0 w-5 h-5 rounded-full border-2 {item.done ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'} transition-colors"
       aria-label={item.done ? 'Mark undone' : 'Mark done'}
     >
       {#if item.done}
@@ -158,7 +158,7 @@
 
     {#each assignedUsers as assignedUser}
       <div
-        class="flex-shrink-0 self-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold"
+        class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold"
         title={assignedUser.name}
       >
         {assignedUser.name[0].toUpperCase()}
@@ -167,7 +167,7 @@
 
     <button
       onclick={handleStar}
-      class="flex-shrink-0 self-center text-lg leading-none {item.starred ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'} transition-colors"
+      class="flex-shrink-0 text-lg leading-none {item.starred ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'} transition-colors"
       aria-label={item.starred ? 'Unstar' : 'Star'}
     >★</button>
   </div>

@@ -21,22 +21,21 @@ const baseItem: TodoItem = {
 };
 
 describe('ItemCard avatar alignment', () => {
-  it('avatar icons should have self-center class for vertical centering in flex-start container', () => {
+  it('avatar icons should not use self-center (parent items-center handles alignment)', () => {
     const user = { id: 'u1', name: 'Alice', email: 'alice@example.com' };
     const item = { ...baseItem, assignedUserIds: ['u1'] };
     const { container } = render(ItemCard, {
       props: { item, categories: [], users: [user] },
     });
 
-    // The avatar div is the one with rounded-full and bg-blue-100 (not a button)
     const avatar = container.querySelector('div.rounded-full.bg-blue-100');
     expect(avatar).not.toBeNull();
-    expect(avatar!.className).toContain('self-center');
+    expect(avatar!.className).not.toContain('self-center');
   });
 });
 
 describe('ItemCard star button alignment', () => {
-  it('star button should have self-center class for vertical centering in flex-start container', () => {
+  it('star button should not use self-center (parent items-center handles alignment)', () => {
     const { container } = render(ItemCard, {
       props: { item: baseItem, categories: [], users: [] },
     });
@@ -44,6 +43,27 @@ describe('ItemCard star button alignment', () => {
     const starButton = container.querySelector('button[aria-label="Star"]') ??
                        container.querySelector('button[aria-label="Unstar"]');
     expect(starButton).not.toBeNull();
-    expect(starButton!.className).toContain('self-center');
+    expect(starButton!.className).not.toContain('self-center');
+  });
+});
+
+describe('ItemCard vertical alignment', () => {
+  it('the card container should vertically center its children', () => {
+    const { container } = render(ItemCard, {
+      props: { item: baseItem, categories: [], users: [] },
+    });
+    const card = container.querySelector('div.bg-white');
+    expect(card).not.toBeNull();
+    expect(card!.className).toContain('items-center');
+  });
+
+  it('the done checkbox should not use a top-margin offset for alignment', () => {
+    const { container } = render(ItemCard, {
+      props: { item: baseItem, categories: [], users: [] },
+    });
+    const checkbox = container.querySelector('button[aria-label="Mark done"]') ??
+                     container.querySelector('button[aria-label="Mark undone"]');
+    expect(checkbox).not.toBeNull();
+    expect(checkbox!.className).not.toContain('mt-0.5');
   });
 });
