@@ -106,7 +106,7 @@
 
 <div class="relative overflow-hidden rounded-lg" bind:this={cardEl}>
   <!-- Red delete background -->
-  <div class="absolute inset-0 bg-red-500 flex items-center justify-end rounded-lg">
+  <div class="absolute inset-0 bg-red-500 flex items-center justify-end rounded-lg" class:invisible={swipeX >= 0 && !snapping}>
     <button onclick={handleDelete} class="w-20 h-full flex items-center justify-center text-white text-lg" aria-label="Delete item">🗑</button>
   </div>
   <!-- Sliding card content -->

@@ -47,6 +47,17 @@ describe('ItemCard star button alignment', () => {
   });
 });
 
+describe('ItemCard delete background visibility', () => {
+  it('the red delete background should be invisible when not swiping', () => {
+    const { container } = render(ItemCard, {
+      props: { item: baseItem, categories: [], users: [] },
+    });
+    const redBg = container.querySelector('div.bg-red-500');
+    expect(redBg).not.toBeNull();
+    expect(redBg!.className).toContain('invisible');
+  });
+});
+
 describe('ItemCard vertical alignment', () => {
   it('the card container should vertically center its children', () => {
     const { container } = render(ItemCard, {
