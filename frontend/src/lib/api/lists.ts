@@ -7,6 +7,8 @@ export interface ListSummaryDto {
 	name: string;
 	emoji: string | null;
 	createdAt: string;
+	groupId: string | null;
+	sortOrderInGroup: number;
 }
 
 export interface ListDto {
@@ -152,4 +154,77 @@ export function updateCategory(
 
 export function deleteCategory(listId: string, categoryId: string): Promise<void> {
 	return authedFetch(`/api/lists/${listId}/categories/${categoryId}`, { method: 'DELETE' });
+}
+
+// ─── List Groups ──────────────────────────────────────────────────────────────
+
+export interface ListGroupDto {
+	id: string;
+	userId: string;
+	name: string;
+	sortOrder: number;
+	createdAt: string;
+}
+
+export interface CreateGroupRequest {
+	name: string;
+}
+
+export interface RenameGroupRequest {
+	name: string;
+}
+
+export interface ReorderGroupRequest {
+	sortOrder: number;
+}
+
+export interface AssignGroupRequest {
+	groupId: string | null;
+}
+
+export interface ReorderInGroupRequest {
+	sortOrder: number;
+}
+
+export function getListGroups(): Promise<ListGroupDto[]> {
+	return authedFetch('/api/list-groups');
+}
+
+export function createListGroup(req: CreateGroupRequest): Promise<ListGroupDto> {
+	return authedFetch('/api/list-groups', {
+		method: 'POST',
+		body: JSON.stringify(req),
+	});
+}
+
+export function renameListGroup(id: string, req: RenameGroupRequest): Promise<ListGroupDto> {
+	return authedFetch(`/api/list-groups/${id}`, {
+		method: 'PUT',
+		body: JSON.stringify(req),
+	});
+}
+
+export function deleteListGroup(id: string): Promise<void> {
+	return authedFetch(`/api/list-groups/${id}`, { method: 'DELETE' });
+}
+
+export function reorderListGroup(id: string, req: ReorderGroupRequest): Promise<ListGroupDto> {
+	return authedFetch(`/api/list-groups/${id}/order`, {
+		method: 'PATCH',
+		body: JSON.stringify(req),
+	});
+}
+
+export function assignListGroup(listId: string, req: AssignGroupRequest): Promise<ListSummaryDto> {
+	return authedFetch(`/api/lists/${listId}/group`, {
+		method: 'PATCH',
+		body: JSON.stringify(req),
+	});
+}
+
+export function reorderListInGroup(listId: string, req: ReorderInGroupRequest): Promise<ListSummaryDto> {
+	return authedFetch(`/api/lists/${listId}/group-order`, {
+		method: 'PATCH',
+		body: JSON.stringify(req),
+	});
 }

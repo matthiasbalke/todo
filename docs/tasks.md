@@ -142,12 +142,12 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [ ] Write integration tests for group CRUD and assign/reorder operations
 
 ### Frontend
-- [ ] Render list index grouped into named collapsible sections; ungrouped lists shown at bottom in a distinct "Ungrouped" section
-- [ ] "Create group" action: name input, calls `POST /api/list-groups`
-- [ ] "Rename group" / "Delete group" actions (per group header menu)
+- [x] Render list index grouped into named collapsible sections; ungrouped lists shown at bottom in a distinct collapsible "Ungrouped" section
+- [x] "Create group" action: name input, calls `POST /api/list-groups`
+- [x] "Rename group" / "Delete group" actions (per group header menu)
 - [ ] Drag-and-drop to reorder groups (calls `PATCH /api/list-groups/{gid}/order`)
-- [ ] Drag-and-drop to move a list into/out of a group and reorder within group (calls `PATCH /api/lists/{id}/group` and `PATCH /api/lists/{id}/group-order`)
-- [ ] Write Vitest component test: list index renders list of lists from mock data
+- [x] Drag-and-drop to move a list into/out of a group and reorder within group (calls `PATCH /api/lists/{id}/group` and `PATCH /api/lists/{id}/group-order`); empty groups show drop zone while dragging
+- [x] Write Vitest component test: list index renders list of lists from mock data
 
 ---
 

@@ -22,6 +22,16 @@ export interface List {
   defaultSortField: SortField;
   defaultSortDirection: SortDirection;
   createdAt: string;
+  groupId: string | null;
+  sortOrderInGroup: number;
+}
+
+export interface ListGroup {
+  id: string;
+  userId: string;
+  name: string;
+  sortOrder: number;
+  createdAt: string;
 }
 
 export interface Category {
@@ -54,10 +64,15 @@ export const mockUsers: User[] = [
   { id: 'u2', name: 'Anna', email: 'anna@example.com' }
 ];
 
+export const mockListGroups: ListGroup[] = [
+  { id: 'group-home', userId: 'u1', name: 'Home', sortOrder: 0, createdAt: '2024-01-01T00:00:00Z' },
+  { id: 'group-work', userId: 'u1', name: 'Work', sortOrder: 1, createdAt: '2024-01-01T00:00:00Z' },
+];
+
 export const mockLists: List[] = [
-  { id: 'grocery', name: 'Grocery', emoji: '🛒', description: null, defaultSortField: 'MANUAL', defaultSortDirection: 'ASC', createdAt: '2024-01-01T00:00:00Z' },
-  { id: 'household', name: 'Household', emoji: '🏠', description: null, defaultSortField: 'DUE_DATE', defaultSortDirection: 'ASC', createdAt: '2024-01-01T00:00:00Z' },
-  { id: 'personal', name: 'Personal', emoji: '📋', description: null, defaultSortField: 'STARRED', defaultSortDirection: 'DESC', createdAt: '2024-01-01T00:00:00Z' }
+  { id: 'grocery', name: 'Grocery', emoji: '🛒', description: null, defaultSortField: 'MANUAL', defaultSortDirection: 'ASC', createdAt: '2024-01-01T00:00:00Z', groupId: 'group-home', sortOrderInGroup: 0 },
+  { id: 'household', name: 'Household', emoji: '🏠', description: null, defaultSortField: 'DUE_DATE', defaultSortDirection: 'ASC', createdAt: '2024-01-01T00:00:00Z', groupId: 'group-home', sortOrderInGroup: 1 },
+  { id: 'personal', name: 'Personal', emoji: '📋', description: null, defaultSortField: 'STARRED', defaultSortDirection: 'DESC', createdAt: '2024-01-01T00:00:00Z', groupId: null, sortOrderInGroup: 0 }
 ];
 
 export const mockCategories: Category[] = [
