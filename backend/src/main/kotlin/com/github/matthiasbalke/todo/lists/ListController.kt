@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -19,6 +20,7 @@ import java.util.UUID
 @RequestMapping("/api/lists")
 class ListController(
     private val listService: ListService,
+    private val listGroupService: ListGroupService,
     private val userRepository: UserRepository,
 ) {
 
@@ -39,7 +41,13 @@ class ListController(
         val name: String,
         val emoji: String?,
         val createdAt: Instant,
+        val groupId: UUID?,
+        val sortOrderInGroup: Int,
     )
+
+    data class AssignGroupRequest(val groupId: UUID?)
+
+    data class ReorderInGroupRequest(val sortOrder: Int)
 
     data class CreateListRequest(
         val name: String,
@@ -124,6 +132,20 @@ class ListController(
         @PathVariable id: UUID,
     ) = listService.deleteList(id, userId)
 
+    @PatchMapping("/{id}/group")
+    fun assignGroup(
+        @AuthenticationPrincipal userId: UUID,
+        @PathVariable id: UUID,
+        @RequestBody body: AssignGroupRequest,
+    ): ListSummaryDto = listGroupService.assignListToGroup(id, userId, body.groupId).toSummaryDto()
+
+    @PatchMapping("/{id}/group-order")
+    fun reorderInGroup(
+        @AuthenticationPrincipal userId: UUID,
+        @PathVariable id: UUID,
+        @RequestBody body: ReorderInGroupRequest,
+    ): ListSummaryDto = listGroupService.reorderListInGroup(id, userId, body.sortOrder).toSummaryDto()
+
     // ─── Member management ───────────────────────────────────────────────────
 
     @GetMapping("/{id}/members")
@@ -174,6 +196,8 @@ class ListController(
         name = name,
         emoji = emoji,
         createdAt = createdAt,
+        groupId = groupId,
+        sortOrderInGroup = sortOrderInGroup,
     )
 
     private fun ListMembership.toMemberDto(): MemberDto {

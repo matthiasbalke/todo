@@ -30,4 +30,10 @@ class List(
 
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now(),
+
+    @Column(name = "group_id")
+    var groupId: UUID? = null,
+
+    @Column(name = "sort_order_in_group", nullable = false)
+    var sortOrderInGroup: Int = 0,
 )
