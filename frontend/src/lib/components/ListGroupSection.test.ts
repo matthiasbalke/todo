@@ -15,6 +15,14 @@ vi.mock('$lib/stores/drag.svelte', () => ({
   setDraggingAny: vi.fn(),
 }));
 
+vi.mock('svelte-dnd-action', () => ({
+  dragHandleZone: (_node: HTMLElement, _options: Record<string, unknown>) => {
+    return { update: () => {}, destroy: () => {} };
+  },
+  dragHandle: () => ({ destroy: () => {} }),
+  SHADOW_ITEM_MARKER_PROPERTY_NAME: '__shadow__',
+}));
+
 const group: ListGroup = {
   id: 'group-home',
   userId: 'u1',
@@ -49,6 +57,20 @@ const lists: List[] = [
 ];
 
 describe('ListGroupSection', () => {
+  it('each list card renders a drag handle for touch-friendly dragging', () => {
+    const { container } = render(ListGroupSection, { props: { group, lists } });
+    const handles = container.querySelectorAll('[aria-label="Drag to reorder"]');
+    expect(handles.length).toBe(lists.length);
+  });
+
+  it('long-press on list card anchor does not show browser link preview (contextmenu suppressed)', () => {
+    const { container } = render(ListGroupSection, { props: { group, lists } });
+    const anchor = container.querySelector('a[href]') as HTMLAnchorElement;
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    anchor.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
   it('renders group name', () => {
     const { getAllByText } = render(ListGroupSection, { props: { group, lists } });
     expect(getAllByText('Home').length).toBeGreaterThan(0);

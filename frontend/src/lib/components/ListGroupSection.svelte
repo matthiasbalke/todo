@@ -2,7 +2,7 @@
   import type { List, ListGroup } from '$lib/mock-data';
   import { renameListGroup, deleteListGroup, assignListGroup, reorderListInGroup } from '$lib/stores/lists.svelte';
   import { isDraggingAny, setDraggingAny } from '$lib/stores/drag.svelte';
-  import { dndzone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
+  import { dragHandleZone, dragHandle, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { friendlyError } from '$lib/api/errors';
 
   let {
@@ -158,7 +158,7 @@
   {#if !collapsed}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
-      use:dndzone={{ items: dndItems, type: 'list-card', flipDurationMs: 200, dropTargetStyle: {} }}
+      use:dragHandleZone={{ items: dndItems, type: 'list-card', flipDurationMs: 200, dropTargetStyle: {} }}
       onconsider={handleConsider}
       onfinalize={handleFinalize}
       class="space-y-2 min-h-[4px]"
@@ -170,9 +170,21 @@
       {/if}
       {#each dndItems as list (list.id)}
         <div
-          class="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all cursor-grab active:cursor-grabbing {(list as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME] ? 'opacity-40' : ''}"
+          class="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all {(list as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME] ? 'opacity-40' : ''}"
         >
-          <a href="/lists/{list.id}" class="flex items-center gap-4 flex-1 min-w-0" draggable="false">
+          <div
+            use:dragHandle
+            class="flex-shrink-0 flex items-center justify-center w-5 self-center cursor-grab active:cursor-grabbing touch-none text-gray-300 hover:text-gray-400"
+            aria-label="Drag to reorder"
+            tabindex="-1"
+          >
+            <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">
+              <circle cx="3" cy="3" r="1.5"/><circle cx="7" cy="3" r="1.5"/>
+              <circle cx="3" cy="8" r="1.5"/><circle cx="7" cy="8" r="1.5"/>
+              <circle cx="3" cy="13" r="1.5"/><circle cx="7" cy="13" r="1.5"/>
+            </svg>
+          </div>
+          <a href="/lists/{list.id}" class="flex items-center gap-4 flex-1 min-w-0" draggable="false" oncontextmenu={(e) => e.preventDefault()}>
             <span class="text-3xl">{list.emoji ?? '📋'}</span>
             <div class="flex-1 min-w-0">
               <h2 class="font-semibold text-gray-900">{list.name}</h2>
