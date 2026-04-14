@@ -10,7 +10,6 @@ Tasks are small and independently verifiable (automated or manual). See `docs/re
 
 
 ## 1. List Items
- * The ItemForm keeps a single-user dropdown (picks first assignment). Multiple assignments must be possible.
   * Way to delete all checked List Items from a list.
 
 
