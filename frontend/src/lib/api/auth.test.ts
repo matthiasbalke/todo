@@ -26,8 +26,9 @@ describe('auth API client', () => {
 			ok: true,
 			status: 200,
 			statusText: 'OK',
+			headers: { get: (name: string) => (name === 'content-type' ? 'application/json' : null) },
 			json: () => Promise.resolve(body),
-		} as Response);
+		} as unknown as Response);
 	}
 
 	it('getRegisterOptions sends POST with email and displayName', async () => {

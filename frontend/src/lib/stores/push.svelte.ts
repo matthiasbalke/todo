@@ -44,10 +44,19 @@ export async function initPushState(): Promise<void> {
 export async function requestPushSubscription(): Promise<void> {
 	const registration = await navigator.serviceWorker.ready;
 	const { publicKey } = await getVapidPublicKey();
-	const subscription = await registration.pushManager.subscribe({
-		userVisibleOnly: true,
-		applicationServerKey: urlBase64ToUint8Array(publicKey),
-	});
+	let subscription: PushSubscription;
+	try {
+		subscription = await registration.pushManager.subscribe({
+			userVisibleOnly: true,
+			applicationServerKey: urlBase64ToUint8Array(publicKey),
+		});
+	} catch (e) {
+		if (e instanceof DOMException && e.name === 'NotAllowedError') {
+			pushState = 'denied';
+			return;
+		}
+		throw e;
+	}
 	const json = subscription.toJSON();
 	await subscribePush({
 		endpoint: subscription.endpoint,

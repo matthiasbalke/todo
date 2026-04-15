@@ -418,6 +418,9 @@
       <p class="text-sm text-gray-400">Push notifications are not supported in this browser.</p>
     {:else if getPushState() === 'denied'}
       <p class="text-sm text-gray-500">Notifications are blocked. Enable them in your browser settings to receive task reminders.</p>
+      {#if pushError}
+        <p class="text-xs text-red-600">{pushError}</p>
+      {/if}
     {:else if getPushState() === 'subscribed'}
       <p class="text-sm text-gray-700">Push notifications are <span class="font-medium text-green-600">enabled</span> for this device.</p>
       {#if pushError}

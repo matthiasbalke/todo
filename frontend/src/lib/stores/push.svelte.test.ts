@@ -107,6 +107,19 @@ describe('requestPushSubscription', () => {
 		});
 		expect(getPushState()).toBe('subscribed');
 	});
+
+	it('sets state to denied without throwing when permission is denied', async () => {
+		mockPushManager({});
+		mockGetVapidPublicKey.mockResolvedValue({ publicKey: 'dGVzdA==' });
+
+		const notAllowedError = new DOMException('Permission denied', 'NotAllowedError');
+		mockServiceWorker({ subscribe: vi.fn().mockRejectedValue(notAllowedError) });
+
+		const { requestPushSubscription, getPushState } = await getStore();
+
+		await expect(requestPushSubscription()).resolves.toBeUndefined();
+		expect(getPushState()).toBe('denied');
+	});
 });
 
 describe('revokePushSubscription', () => {
