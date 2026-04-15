@@ -95,8 +95,7 @@
   onfocusout={(e) => {
     if (submitting) return;
     if (ignoreNextFocusOut) { ignoreNextFocusOut = false; return; }
-    const lostTo = (e.relatedTarget ?? document.activeElement) as Node | null;
-    if (isNew && !e.currentTarget.contains(lostTo)) oncancel();
+    if (isNew && !e.currentTarget.contains(e.relatedTarget as Node)) oncancel();
   }}
   class="bg-white rounded-xl border border-gray-200 p-4 space-y-3"
 >

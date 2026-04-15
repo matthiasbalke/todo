@@ -82,21 +82,4 @@ describe('ItemForm focusout / cancel behaviour', () => {
 
 		expect(oncancel).not.toHaveBeenCalled();
 	});
-
-	it('should not call oncancel when native select picker opens (touchstart on mobile does not fire form mousedown, focusout has null relatedTarget but active element is the select inside the form)', () => {
-		const oncancel = vi.fn();
-		const { container } = render(ItemForm, { props: { ...defaultProps, oncancel } });
-
-		const titleInput = container.querySelector('input[placeholder="Item title"]')!;
-		const categorySelect = container.querySelector('select#categoryId')!;
-
-		// On mobile, touching a <select> opens the native OS picker without
-		// triggering mousedown on the form, so ignoreNextFocusOut stays false.
-		// The select receives focus (document.activeElement = categorySelect),
-		// but focusout fires with relatedTarget=null because the picker is OS-level.
-		categorySelect.focus();
-		fireEvent.focusOut(titleInput, { relatedTarget: null });
-
-		expect(oncancel).not.toHaveBeenCalled();
-	});
 });
