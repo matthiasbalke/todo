@@ -92,12 +92,6 @@
     ignoreNextFocusOut = true;
     setTimeout(() => { ignoreNextFocusOut = false; }, 0);
   }}
-  ontouchstart={() => {
-    ignoreNextFocusOut = true;
-  }}
-  ontouchend={() => {
-    setTimeout(() => { ignoreNextFocusOut = false; }, 0);
-  }}
   onfocusout={(e) => {
     if (submitting) return;
     if (ignoreNextFocusOut) { ignoreNextFocusOut = false; return; }

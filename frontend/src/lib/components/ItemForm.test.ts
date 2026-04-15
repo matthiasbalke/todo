@@ -83,43 +83,20 @@ describe('ItemForm focusout / cancel behaviour', () => {
 		expect(oncancel).not.toHaveBeenCalled();
 	});
 
-	it('should not call oncancel when native select picker opens via touch (activeElement is select inside form)', () => {
+	it('should not call oncancel when native select picker opens (touchstart on mobile does not fire form mousedown, focusout has null relatedTarget but active element is the select inside the form)', () => {
 		const oncancel = vi.fn();
 		const { container } = render(ItemForm, { props: { ...defaultProps, oncancel } });
 
 		const titleInput = container.querySelector('input[placeholder="Item title"]')!;
-		const categorySelect = container.querySelector<HTMLSelectElement>('select#categoryId')!;
+		const categorySelect = container.querySelector('select#categoryId')!;
 
-		// Some browsers set document.activeElement to the select before focusout fires.
+		// On mobile, touching a <select> opens the native OS picker without
+		// triggering mousedown on the form, so ignoreNextFocusOut stays false.
+		// The select receives focus (document.activeElement = categorySelect),
+		// but focusout fires with relatedTarget=null because the picker is OS-level.
 		categorySelect.focus();
 		fireEvent.focusOut(titleInput, { relatedTarget: null });
 
 		expect(oncancel).not.toHaveBeenCalled();
-	});
-
-	it('should not call oncancel when select is touched on mobile (touchstart fires instead of mousedown, focusout has null relatedTarget and activeElement is body)', () => {
-		const oncancel = vi.fn();
-		const { container } = render(ItemForm, { props: { ...defaultProps, oncancel } });
-
-		const form = container.querySelector('form')!;
-		const titleInput = container.querySelector('input[placeholder="Item title"]')!;
-
-		// On mobile, touching a <select> fires touchstart (not mousedown) on the form.
-		// ignoreNextFocusOut is never set. The native OS picker opens and
-		// document.activeElement becomes body (select did not get DOM focus).
-		// focusout fires on the previously focused input with relatedTarget=null.
-		//
-		// Mock activeElement to body to simulate the OS-picker-open state without
-		// triggering additional blur/focusout events from element.blur().
-		const originalDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'activeElement')!;
-		Object.defineProperty(document, 'activeElement', { get: () => document.body, configurable: true });
-
-		try {
-			fireEvent.touchStart(form);
-			fireEvent.focusOut(titleInput, { relatedTarget: null });
-			expect(oncancel).not.toHaveBeenCalled();
-		} finally {
-			Object.defineProperty(document, 'activeElement', originalDescriptor);
-		}
 	});
 });
