@@ -1,7 +1,8 @@
 FROM dhi.io/bun:1.3.11-alpine3.22-dev AS build
 WORKDIR /app
 COPY package.json bun.lockb ./
-RUN bun install --frozen-lockfile
+RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
 COPY . .
 RUN bun run build
 
