@@ -14,6 +14,7 @@ services:
       retries: 10
 
   backend:
+    image: todo/backend:ci
     build: ./backend
     ports:
       - "8080:8080"
@@ -46,6 +47,7 @@ services:
         condition: service_started
 
   frontend:
+    image: todo/frontend:ci
     build: ./frontend
     ports:
       - "3000:3000"
