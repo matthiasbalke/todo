@@ -6,12 +6,20 @@ Tasks are small and independently verifiable (automated or manual). See `docs/re
 ---
 
 ## 1. Misc
-  * Cursor-based pagination params (cursor, limit) are accepted but unused in the initial implementation — the response always returns all items in one page.
+ * Cursor-based pagination params (cursor, limit) are accepted but unused in the initial implementation — the response always returns all items in one page.
 
 
 ## 1. List Items
-  * Way to delete all checked List Items from a list.
+ * List Items are not checkable via touch anymore. Works with mouse click on desktop, but not on mobile.
+ * Way to delete all checked List Items from a list.
 
+
+## 1. Account Settings
+ ### Notifications
+  * Users should be able to configure on which events they want push notifications to be send
+    * Item was assigned to me
+    * Assigned Item is due today
+    * Assigned Item is overdue
 
 ## 1. Production
  * how do we monitor exceptions and errors in backend and frontend?

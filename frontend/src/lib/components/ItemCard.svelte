@@ -131,6 +131,7 @@
     {/if}
     <button
       onclick={handleDone}
+      ontouchend={(e) => { e.stopPropagation(); e.preventDefault(); handleDone(e); }}
       class="flex-shrink-0 w-5 h-5 rounded-full border-2 {item.done ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'} transition-colors"
       aria-label={item.done ? 'Mark undone' : 'Mark done'}
     >
@@ -167,6 +168,7 @@
 
     <button
       onclick={handleStar}
+      ontouchend={(e) => { e.stopPropagation(); e.preventDefault(); handleStar(e); }}
       class="flex-shrink-0 text-lg leading-none {item.starred ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'} transition-colors"
       aria-label={item.starred ? 'Unstar' : 'Star'}
     >★</button>
