@@ -3,6 +3,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
+vi.mock('$lib/stores/push.svelte', () => ({
+	getPushState: vi.fn(() => 'prompt'),
+	initPushState: vi.fn(),
+	requestPushSubscription: vi.fn(),
+	revokePushSubscription: vi.fn(),
+}));
+
 vi.mock('$lib/stores/auth.svelte', () => ({
 	getCurrentUser: vi.fn(() => null),
 	updateCurrentUser: vi.fn(),
@@ -58,6 +65,23 @@ const mockData = {
 	passkeys: [],
 	buildNumber: '0',
 };
+
+describe('AccountPage notifications section', () => {
+	afterEach(() => {
+		cleanup();
+		vi.clearAllMocks();
+	});
+
+	it('renders the Notifications section heading', () => {
+		render(AccountPage, { props: { data: mockData } });
+		expect(screen.getByText('Notifications')).toBeInTheDocument();
+	});
+
+	it('shows Enable notifications button when push state is prompt', () => {
+		render(AccountPage, { props: { data: mockData } });
+		expect(screen.getByRole('button', { name: /enable notifications/i })).toBeInTheDocument();
+	});
+});
 
 describe('AccountPage email inline-edit', () => {
 	afterEach(() => {

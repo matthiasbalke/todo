@@ -33,6 +33,9 @@ export default defineConfig({
     tailwindcss(),
     sveltekit(),
     SvelteKitPWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'service-worker.ts',
       registerType: 'autoUpdate',
       manifest: {
         name: 'Todo',
@@ -46,32 +49,7 @@ export default defineConfig({
           { src: '/icons/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }
         ]
       },
-      workbox: {
-        globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^\/api\/lists(\/.*)?$/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-lists',
-              networkTimeoutSeconds: 3,
-              expiration: { maxEntries: 100, maxAgeSeconds: 86400 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /^\/api\/users\/me$/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-user',
-              networkTimeoutSeconds: 3,
-              expiration: { maxEntries: 1, maxAgeSeconds: 86400 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
-      },
-      devOptions: { enabled: true }
+      devOptions: { enabled: true, type: 'module' },
     })
   ]
 });

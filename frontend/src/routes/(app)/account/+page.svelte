@@ -17,6 +17,7 @@
   import { updateCurrentUser, clearSession } from '$lib/stores/auth.svelte';
   import { friendlyError } from '$lib/api/errors';
   import { ApiError } from '$lib/api/client';
+  import { getPushState, initPushState, requestPushSubscription, revokePushSubscription } from '$lib/stores/push.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -185,6 +186,38 @@
 
   function formatDate(iso: string): string {
     return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  // ─── Notifications ────────────────────────────────────────────────────────
+  let pushBusy = $state(false);
+  let pushError = $state('');
+
+  $effect(() => {
+    initPushState();
+  });
+
+  async function handleSubscribe() {
+    pushBusy = true;
+    pushError = '';
+    try {
+      await requestPushSubscription();
+    } catch (e) {
+      pushError = friendlyError(e, 'Failed to enable notifications');
+    } finally {
+      pushBusy = false;
+    }
+  }
+
+  async function handleRevoke() {
+    pushBusy = true;
+    pushError = '';
+    try {
+      await revokePushSubscription();
+    } catch (e) {
+      pushError = friendlyError(e, 'Failed to disable notifications');
+    } finally {
+      pushBusy = false;
+    }
   }
 </script>
 
@@ -373,6 +406,41 @@
         class="text-sm text-blue-600 hover:text-blue-800 transition-colors"
       >
         + Add passkey for this device
+      </button>
+    {/if}
+  </section>
+
+  <!-- Notifications section -->
+  <section class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Notifications</h2>
+
+    {#if getPushState() === 'unsupported'}
+      <p class="text-sm text-gray-400">Push notifications are not supported in this browser.</p>
+    {:else if getPushState() === 'denied'}
+      <p class="text-sm text-gray-500">Notifications are blocked. Enable them in your browser settings to receive task reminders.</p>
+    {:else if getPushState() === 'subscribed'}
+      <p class="text-sm text-gray-700">Push notifications are <span class="font-medium text-green-600">enabled</span> for this device.</p>
+      {#if pushError}
+        <p class="text-xs text-red-600">{pushError}</p>
+      {/if}
+      <button
+        onclick={handleRevoke}
+        disabled={pushBusy}
+        class="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 transition-colors"
+      >
+        {pushBusy ? 'Disabling…' : 'Disable notifications for this device'}
+      </button>
+    {:else}
+      <p class="text-sm text-gray-700">Get notified when tasks are assigned to you or are due.</p>
+      {#if pushError}
+        <p class="text-xs text-red-600">{pushError}</p>
+      {/if}
+      <button
+        onclick={handleSubscribe}
+        disabled={pushBusy}
+        class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+      >
+        {pushBusy ? 'Enabling…' : 'Enable notifications'}
       </button>
     {/if}
   </section>
