@@ -4,6 +4,7 @@
   import { getItems, loadItemsForList, createItem } from '$lib/stores/items.svelte';
   import { getList, updateList, deleteList, getCategoriesForList, loadCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
   import { applyFilters, applySort, groupByCategory } from '$lib/utils';
+  import { extractEmoji } from '$lib/utils/emoji';
   import type { Filters } from '$lib/utils';
   import { untrack } from 'svelte';
   import type { SortField, SortDirection, TodoItem } from '$lib/mock-data';
@@ -143,8 +144,7 @@
   async function saveTitleEdit() {
     editingTitle = false;
     const trimmed = titleEditValue.trim();
-    const emojiMatch = trimmed.match(/^\p{Emoji_Presentation}/u);
-    const emoji = emojiMatch ? emojiMatch[0] : '';
+    const emoji = extractEmoji(trimmed);
     const displayName = emoji ? trimmed.slice(emoji.length).trimStart() : trimmed;
     if (!displayName) return;
     try {

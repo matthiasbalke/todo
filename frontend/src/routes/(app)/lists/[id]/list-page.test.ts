@@ -60,6 +60,25 @@ import ListPage from './+page.svelte';
 
 const mockData = { id: 'list-1', users: [], buildNumber: '0' };
 
+describe('ListPage title emoji extraction', () => {
+	afterEach(() => {
+		cleanup();
+		vi.clearAllMocks();
+	});
+
+	it('saves correct emoji and name when title has emoji-with-variation-selector not followed by a space (🏞️SSE Test)', async () => {
+		const { updateList } = await import('$lib/stores/lists.svelte');
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: /Groceries/i }));
+		const input = screen.getByRole('textbox');
+		await fireEvent.input(input, { target: { value: '🏞️SSE Test' } });
+		await fireEvent.keyDown(input, { key: 'Enter' });
+
+		expect(updateList).toHaveBeenCalledWith('list-1', { name: 'SSE Test', emoji: '🏞️' });
+	});
+});
+
 describe('ListPage accessibility', () => {
 	afterEach(() => {
 		cleanup();
