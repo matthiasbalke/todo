@@ -24,7 +24,7 @@ jobs:
           build-args: |
             BUILD_NUMBER=${{ github.run_number }}
           cache-from: type=gha,scope=backend
-          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max,scope=backend' || '' }}
+          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=min,scope=backend' || '' }}
 
       - name: Upload backend image artifact
         uses: actions/upload-artifact@v7
@@ -50,7 +50,7 @@ jobs:
           build-args: |
             BUILD_NUMBER=${{ github.run_number }}
           cache-from: type=gha,scope=frontend
-          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max,scope=frontend' || '' }}
+          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=min,scope=frontend' || '' }}
 
       - name: Upload frontend image artifact
         uses: actions/upload-artifact@v7
