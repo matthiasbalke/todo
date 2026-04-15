@@ -19,10 +19,19 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: backend
+          tags: todo/backend:ci
+          outputs: type=docker,dest=/tmp/backend.tar
           build-args: |
             BUILD_NUMBER=${{ github.run_number }}
           cache-from: type=gha,scope=backend
           cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max,scope=backend' || '' }}
+
+      - name: Upload backend image artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-image
+          path: /tmp/backend.tar
+          retention-days: 1
 
   build-frontend:
     name: Build frontend image
@@ -36,10 +45,19 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: frontend
+          tags: todo/frontend:ci
+          outputs: type=docker,dest=/tmp/frontend.tar
           build-args: |
             BUILD_NUMBER=${{ github.run_number }}
           cache-from: type=gha,scope=frontend
           cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max,scope=frontend' || '' }}
+
+      - name: Upload frontend image artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-image
+          path: /tmp/frontend.tar
+          retention-days: 1
 
   test-backend:
     name: Test backend
@@ -89,29 +107,35 @@ jobs:
         working-directory: frontend
 
   e2e:
-    needs: [build-backend]
+    needs: [build-backend, build-frontend]
     name: Playwright
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
-      - uses: docker/setup-buildx-action@v4
-
-      # otherwise we get an authentication error wenn pulling using docker-compose
+      # otherwise we get an authentication error when pulling using docker-compose
       - name: Pre-pull backend-healthcheck image
-        run: echo 'FROM dhi.io/curl:8.14.1-dev' | docker buildx build --load -t dhi.io/curl:8.14.1-dev -
+        run: echo 'FROM dhi.io/curl:8.14.1-dev' | docker build -t dhi.io/curl:8.14.1-dev -
 
-      - name: Build backend image
-        uses: docker/build-push-action@v7
+      - name: Download backend image
+        uses: actions/download-artifact@v4
         with:
-          context: backend
-          load: true
-          build-args: |
-            BUILD_NUMBER=${{ github.run_number }}
-          cache-from: type=gha,scope=backend
+          name: backend-image
+          path: /tmp
 
-      - name: Start postgres and backend
-        run: docker compose up postgres backend backend-healthcheck frontend nginx --wait -d
+      - name: Download frontend image
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-image
+          path: /tmp
+
+      - name: Load Docker images
+        run: |
+          docker load < /tmp/backend.tar
+          docker load < /tmp/frontend.tar
+
+      - name: Start services
+        run: docker compose up postgres backend backend-healthcheck frontend nginx --no-build --wait -d
 
       - uses: oven-sh/setup-bun@v2
 
