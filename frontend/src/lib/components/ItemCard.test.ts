@@ -1,5 +1,16 @@
-import { render } from '@testing-library/svelte';
-import { describe, it, expect } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+
+vi.mock('$lib/stores/items.svelte', () => ({
+  toggleDone:    vi.fn().mockResolvedValue(undefined),
+  toggleStarred: vi.fn().mockResolvedValue(undefined),
+  deleteItem:    vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('$lib/api/errors', () => ({
+  friendlyError: vi.fn((e: unknown) => String(e)),
+}));
+
+import { render, fireEvent } from '@testing-library/svelte';
+import * as itemsStore from '$lib/stores/items.svelte';
 import ItemCard from './ItemCard.svelte';
 import type { TodoItem } from '$lib/mock-data';
 
@@ -76,5 +87,31 @@ describe('ItemCard vertical alignment', () => {
                      container.querySelector('button[aria-label="Mark undone"]');
     expect(checkbox).not.toBeNull();
     expect(checkbox!.className).not.toContain('mt-0.5');
+  });
+});
+
+describe('ItemCard checkbox interaction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('fires toggleDone when touchend fires on the checkbox (mobile tap)', async () => {
+    const { container } = render(ItemCard, {
+      props: { item: baseItem, categories: [], users: [] },
+    });
+    const checkbox = container.querySelector('button[aria-label="Mark done"]')!;
+    await fireEvent.touchEnd(checkbox);
+    expect(itemsStore.toggleDone).toHaveBeenCalledOnce();
+    expect(itemsStore.toggleDone).toHaveBeenCalledWith('list-1', 'item-1');
+  });
+
+  it('fires toggleDone when click fires on the checkbox (desktop mouse)', async () => {
+    const { container } = render(ItemCard, {
+      props: { item: baseItem, categories: [], users: [] },
+    });
+    const checkbox = container.querySelector('button[aria-label="Mark done"]')!;
+    await fireEvent.click(checkbox);
+    expect(itemsStore.toggleDone).toHaveBeenCalledOnce();
+    expect(itemsStore.toggleDone).toHaveBeenCalledWith('list-1', 'item-1');
   });
 });
