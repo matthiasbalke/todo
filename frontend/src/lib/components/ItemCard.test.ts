@@ -90,6 +90,27 @@ describe('ItemCard vertical alignment', () => {
   });
 });
 
+describe('ItemCard link navigation on mobile tap', () => {
+  it('does not apply snapping transition after a plain tap (so the link click is not suppressed)', async () => {
+    const { container } = render(ItemCard, {
+      props: { item: baseItem, categories: [], users: [] },
+    });
+
+    const card = container.firstElementChild as HTMLElement;
+    const slidingCard = container.querySelector<HTMLElement>('div.bg-white.rounded-lg');
+    expect(slidingCard).not.toBeNull();
+
+    await fireEvent.touchStart(card, {
+      touches: [{ clientX: 100, clientY: 200 }],
+    });
+    await fireEvent.touchEnd(card, {
+      changedTouches: [{ clientX: 100, clientY: 200 }],
+    });
+
+    expect(slidingCard!.style.transition).toBe('none');
+  });
+});
+
 describe('ItemCard checkbox interaction', () => {
   beforeEach(() => {
     vi.clearAllMocks();

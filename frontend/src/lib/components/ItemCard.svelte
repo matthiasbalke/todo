@@ -55,7 +55,7 @@
       snapping = true;
       swipeX = -SNAP_OPEN;
       opened = true;
-    } else {
+    } else if (swipeX !== 0 || opened) {
       snapping = true;
       swipeX = 0;
       opened = false;
