@@ -83,30 +83,33 @@
         />
       </div>
     {:else if addingGroup}
-      <div class="flex gap-2">
+      <div class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
         <input
           type="text"
           bind:value={newGroupName}
           placeholder="Group name"
-          class="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           onkeydown={(e) => { if (e.key === 'Enter') handleAddGroup(); if (e.key === 'Escape') { addingGroup = false; newGroupName = ''; } }}
         />
-        <button
-          onclick={handleAddGroup}
-          class="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
-        >
-          Add
-        </button>
-        <button
-          onclick={() => { addingGroup = false; newGroupName = ''; groupError = null; }}
-          class="px-4 py-2 text-sm text-gray-400 hover:text-gray-500 transition-colors"
-        >
-          Cancel
-        </button>
+        <div class="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onclick={() => { addingGroup = false; newGroupName = ''; groupError = null; }}
+            class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onclick={handleAddGroup}
+            class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Add
+          </button>
+        </div>
+        {#if groupError}
+          <p class="text-sm text-red-600">{groupError}</p>
+        {/if}
       </div>
-      {#if groupError}
-        <p class="mt-2 text-sm text-red-600">{groupError}</p>
-      {/if}
     {:else}
       <div class="flex gap-2">
         <button
