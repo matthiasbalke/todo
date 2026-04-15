@@ -28,7 +28,7 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 	});
 
 	async function openAddGroupForm() {
-		const { container } = render(ListsPage, { props: { data: {} } });
+		const { container } = render(ListsPage, { props: { } });
 		const newGroupBtn = Array.from(container.querySelectorAll('button')).find(
 			(b) => b.textContent?.trim() === '+ New group',
 		)!;
