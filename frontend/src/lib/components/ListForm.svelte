@@ -1,5 +1,6 @@
 <script lang="ts">
   import { untrack, onMount } from 'svelte';
+  import { extractEmoji } from '$lib/utils/emoji';
 
   let {
     list,
@@ -17,11 +18,6 @@
   let nameInput = $state<HTMLInputElement | null>(null);
 
   onMount(() => nameInput?.focus());
-
-  function extractEmoji(str: string): string {
-    const match = str.match(/^\p{Emoji_Presentation}/u);
-    return match ? match[0] : '';
-  }
 
   async function handleSubmit(e: Event) {
     e.preventDefault();

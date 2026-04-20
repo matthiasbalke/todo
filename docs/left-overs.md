@@ -11,7 +11,6 @@ Tasks are small and independently verifiable (automated or manual). See `docs/re
 
 
 ## 1. List Items
- * List Items are not checkable via touch anymore. Works with mouse click on desktop, but not on mobile.
  * Way to delete all checked List Items from a list.
 
 
