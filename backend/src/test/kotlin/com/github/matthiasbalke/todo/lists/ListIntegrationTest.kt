@@ -11,11 +11,13 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
 import java.util.UUID
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @AutoConfigureMockMvc
 class ListIntegrationTest : AbstractIntegrationTest() {
@@ -97,6 +99,67 @@ class ListIntegrationTest : AbstractIntegrationTest() {
 
         assert(aliceLists.contains("Alice's List"))
         assert(!aliceLists.contains("Bob's List"))
+    }
+
+    @Test
+    fun `GET lists - returns shared lists that appear in member's view`() {
+        val owner = createUser()
+        val sharedUser = createUser()
+
+        // Owner creates a list
+        val listId = createListAsUser(owner, "Shared List")
+
+        // Owner shares list with sharedUser
+        addMemberToList(listId, owner, sharedUser.email, "VIEWER")
+
+        // sharedUser should see the shared list in their GET /api/lists
+        val sharedUserLists = mockMvc.get("/api/lists") {
+            header("Authorization", bearerHeader(sharedUser))
+        }.andExpect {
+            status { isOk() }
+        }.andReturn().response.contentAsString
+
+        assertTrue(sharedUserLists.contains("Shared List"), "Shared list should appear in shared user's GET /api/lists")
+    }
+
+    @Test
+    fun `GET lists - returns shared lists with groupId assigned`() {
+        val owner = createUser()
+        val sharedUser = createUser()
+
+        // Owner creates a list group
+        val groupId = createGroupAsUser(owner, "Shopping")
+
+        // Owner creates a list
+        val listId = createListAsUser(owner, "Groceries")
+
+        // Owner assigns list to group
+        mockMvc.patch("/api/lists/$listId/group") {
+            header("Authorization", bearerHeader(owner))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"groupId":"$groupId"}"""
+        }.andExpect { status { isOk() } }
+
+        // Owner shares list with sharedUser
+        addMemberToList(listId, owner, sharedUser.email, "VIEWER")
+
+        // Verify owner sees the list with groupId
+        val ownerLists = mockMvc.get("/api/lists") {
+            header("Authorization", bearerHeader(owner))
+        }.andExpect {
+            status { isOk() }
+        }.andReturn().response.contentAsString
+
+        assertTrue(ownerLists.contains("Groceries"), "Owner should see their list with groupId")
+
+        // sharedUser should see the shared list without groupId (since they don't own the group)
+        val sharedUserLists = mockMvc.get("/api/lists") {
+            header("Authorization", bearerHeader(sharedUser))
+        }.andExpect {
+            status { isOk() }
+        }.andReturn().response.contentAsString
+
+        assertTrue(sharedUserLists.contains("Groceries"), "Shared list with groupId should appear in shared user's GET /api/lists even if they don't own the group")
     }
 
     // ─── GET /api/lists/{id} ──────────────────────────────────────────────────
@@ -337,6 +400,18 @@ class ListIntegrationTest : AbstractIntegrationTest() {
 
     private fun createListAsUser(user: User, name: String): UUID {
         val result = mockMvc.post("/api/lists") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"name":"$name"}"""
+        }.andExpect { status { isCreated() } }.andReturn()
+
+        val idStr = com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(result.response.contentAsString)["id"].asText()
+        return UUID.fromString(idStr)
+    }
+
+    private fun createGroupAsUser(user: User, name: String): UUID {
+        val result = mockMvc.post("/api/list-groups") {
             header("Authorization", bearerHeader(user))
             contentType = MediaType.APPLICATION_JSON
             content = """{"name":"$name"}"""
