@@ -19,6 +19,13 @@
   let addingGroup = $state(false);
   let newGroupName = $state('');
   let groupError = $state<string | null>(null);
+  let groupInput = $state<HTMLInputElement | null>(null);
+
+  $effect(() => {
+    if (addingGroup) {
+      groupInput?.focus();
+    }
+  });
 
   async function handleSave({ name, emoji }: { name: string; emoji: string }) {
     saving = true;
@@ -86,6 +93,7 @@
       <div class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
         <input
           type="text"
+          bind:this={groupInput}
           bind:value={newGroupName}
           placeholder="Group name"
           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"

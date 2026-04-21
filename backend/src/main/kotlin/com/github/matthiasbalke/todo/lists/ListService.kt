@@ -16,6 +16,7 @@ class ListService(
     private val listMembershipRepository: ListMembershipRepository,
     private val userRepository: UserRepository,
     private val listAccessService: ListAccessService,
+    private val listGroupRepository: ListGroupRepository,
     private val ssePublisher: SsePublisher,
 ) {
 
@@ -43,8 +44,18 @@ class ListService(
         return list
     }
 
-    fun getListsForUser(userId: UUID): kotlin.collections.List<List> =
-        listRepository.findAllByMemberUserId(userId)
+    fun getListsForUser(userId: UUID): kotlin.collections.List<List> {
+        val lists = listRepository.findAllByMemberUserId(userId)
+        val userGroupIds = listGroupRepository.findAllByUserIdOrderBySortOrder(userId).map { it.id }.toSet()
+        
+        return lists.map { list ->
+            // If the list has a groupId but the user doesn't own that group, clear it
+            if (list.groupId != null && !userGroupIds.contains(list.groupId)) {
+                list.groupId = null
+            }
+            list
+        }
+    }
 
     fun getListById(listId: UUID, userId: UUID): List {
         listAccessService.requireMembership(listId, userId)
