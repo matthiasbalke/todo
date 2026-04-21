@@ -59,4 +59,11 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		expect(addIdx).toBeGreaterThan(-1);
 		expect(cancelIdx).toBeLessThan(addIdx);
 	});
+
+	it('add-group form input should receive focus when form is shown', async () => {
+		const container = await openAddGroupForm();
+		const input = container.querySelector('input[placeholder="Group name"]') as HTMLInputElement;
+		expect(input).not.toBeNull();
+		expect(document.activeElement).toBe(input);
+	});
 });
