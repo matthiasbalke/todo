@@ -8,25 +8,22 @@ import java.time.Instant
 import java.util.UUID
 
 @Entity
-@Table(name = "lists")
-class List(
+@Table(name = "list_group_assignments")
+class ListGroupAssignment(
     @Id
     val id: UUID = UUID.randomUUID(),
 
-    @Column(nullable = false)
-    var name: String,
+    @Column(name = "list_id", nullable = false)
+    val listId: UUID,
 
-    @Column
-    var emoji: String? = null,
+    @Column(name = "user_id", nullable = false)
+    val userId: UUID,
 
-    @Column
-    var description: String? = null,
+    @Column(name = "group_id")
+    var groupId: UUID? = null,
 
-    @Column(name = "default_sort_field", nullable = false)
-    var defaultSortField: String = "CREATED",
-
-    @Column(name = "default_sort_direction", nullable = false)
-    var defaultSortDirection: String = "ASC",
+    @Column(name = "sort_order", nullable = false)
+    var sortOrder: Int = 0,
 
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now(),

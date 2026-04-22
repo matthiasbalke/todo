@@ -14,6 +14,7 @@ import java.util.UUID
 class ListService(
     private val listRepository: ListRepository,
     private val listMembershipRepository: ListMembershipRepository,
+    private val listGroupAssignmentRepository: ListGroupAssignmentRepository,
     private val userRepository: UserRepository,
     private val listAccessService: ListAccessService,
     private val listGroupRepository: ListGroupRepository,
@@ -41,21 +42,14 @@ class ListService(
         listMembershipRepository.save(
             ListMembership(listId = list.id, userId = userId, role = ListRole.OWNER)
         )
+        listGroupAssignmentRepository.save(
+            ListGroupAssignment(listId = list.id, userId = userId)
+        )
         return list
     }
 
-    fun getListsForUser(userId: UUID): kotlin.collections.List<List> {
-        val lists = listRepository.findAllByMemberUserId(userId)
-        val userGroupIds = listGroupRepository.findAllByUserIdOrderBySortOrder(userId).map { it.id }.toSet()
-        
-        return lists.map { list ->
-            // If the list has a groupId but the user doesn't own that group, clear it
-            if (list.groupId != null && !userGroupIds.contains(list.groupId)) {
-                list.groupId = null
-            }
-            list
-        }
-    }
+    fun getListsForUser(userId: UUID): kotlin.collections.List<List> =
+        listRepository.findAllByMemberUserId(userId)
 
     fun getListById(listId: UUID, userId: UUID): List {
         listAccessService.requireMembership(listId, userId)
@@ -107,6 +101,9 @@ class ListService(
         }
         val membership = listMembershipRepository.save(
             ListMembership(listId = listId, userId = target.id, role = role)
+        )
+        listGroupAssignmentRepository.save(
+            ListGroupAssignment(listId = listId, userId = target.id)
         )
         ssePublisher.publish(ListEvent.MemberAdded(listId, membership.toPayload()))
         return membership

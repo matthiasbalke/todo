@@ -86,7 +86,7 @@ class ListController(
 
     @GetMapping
     fun getLists(@AuthenticationPrincipal userId: UUID): kotlin.collections.List<ListSummaryDto> =
-        listService.getListsForUser(userId).map { it.toSummaryDto() }
+        listService.getListsForUser(userId).map { it.toSummaryDto(userId, listGroupService) }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -137,14 +137,14 @@ class ListController(
         @AuthenticationPrincipal userId: UUID,
         @PathVariable id: UUID,
         @RequestBody body: AssignGroupRequest,
-    ): ListSummaryDto = listGroupService.assignListToGroup(id, userId, body.groupId).toSummaryDto()
+    ): ListSummaryDto = listGroupService.assignListToGroup(id, userId, body.groupId).toSummaryDto(userId, listGroupService)
 
     @PatchMapping("/{id}/group-order")
     fun reorderInGroup(
         @AuthenticationPrincipal userId: UUID,
         @PathVariable id: UUID,
         @RequestBody body: ReorderInGroupRequest,
-    ): ListSummaryDto = listGroupService.reorderListInGroup(id, userId, body.sortOrder).toSummaryDto()
+    ): ListSummaryDto = listGroupService.reorderListInGroup(id, userId, body.sortOrder).toSummaryDto(userId, listGroupService)
 
     // ─── Member management ───────────────────────────────────────────────────
 
@@ -191,14 +191,17 @@ class ListController(
         createdAt = createdAt,
     )
 
-    private fun List.toSummaryDto() = ListSummaryDto(
-        id = id,
-        name = name,
-        emoji = emoji,
-        createdAt = createdAt,
-        groupId = groupId,
-        sortOrderInGroup = sortOrderInGroup,
-    )
+    private fun List.toSummaryDto(userId: UUID, listGroupService: ListGroupService) : ListSummaryDto {
+        val assignment = listGroupService.getListAssignmentForUser(id, userId)
+        return ListSummaryDto(
+            id = id,
+            name = name,
+            emoji = emoji,
+            createdAt = createdAt,
+            groupId = assignment?.groupId,
+            sortOrderInGroup = assignment?.sortOrder ?: 0,
+        )
+    }
 
     private fun ListMembership.toMemberDto(): MemberDto {
         val user = userRepository.findById(userId).orElseThrow()
