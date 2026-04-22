@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 
-DOMAIN=todo.example.com
-PORT=
+DOMAIN=${1:-todo.example.com}
+PORT=${2:-443}
 
-export CORS_ALLOWED_ORIGINS=https://${DOMAIN}${PORT}
-export WEBAUTHN_RP_ID=${DOMAIN}
+ADDRESS=https://${DOMAIN}:${PORT}
+
+echo Starting on "${ADDRESS}"
+echo ""
+
+CORS_ALLOWED_ORIGINS="${ADDRESS}"
+export CORS_ALLOWED_ORIGINS
+
+WEBAUTHN_RP_ID="${DOMAIN}"
+export WEBAUTHN_RP_ID
 
 ./gradlew compileKotlin --continuous --parallel --build-cache --configuration-cache &
 CONTINUOUS_PID=$!

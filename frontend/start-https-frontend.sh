@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 
-VITE_HMR_HOST=todo.example.com
+DOMAIN=${1:-todo.example.com}
+PORT=${2:-443}
+
+VITE_HMR_HOST=${DOMAIN}
 export VITE_HMR_HOST
 
-VITE_HMR_CLIENT_PORT=443
+VITE_HMR_CLIENT_PORT=${PORT}
 export VITE_HMR_CLIENT_PORT
 
-bun run dev:https
+echo Starting on https://${VITE_HMR_HOST}:${VITE_HMR_CLIENT_PORT}
+echo ""
+
+~/.bun/bin/bun run dev:https
