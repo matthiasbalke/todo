@@ -12,4 +12,4 @@ export VITE_HMR_CLIENT_PORT
 echo Starting on https://${VITE_HMR_HOST}:${VITE_HMR_CLIENT_PORT}
 echo ""
 
-~/.bun/bin/bun run dev:https
+$(which bun) run dev:https
