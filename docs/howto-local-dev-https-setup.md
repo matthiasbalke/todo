@@ -51,6 +51,74 @@ The `.certs/` directory is already in `.gitignore` (Java/Kotlin/Node preset cove
 
 ## 3. Start the HTTPS Dev Server
 
+### Using the convenience scripts (recommended)
+
+Two wrapper scripts are provided to simplify starting both the backend and frontend with HTTPS and the correct environment variables:
+
+#### `frontend/start-https-frontend.sh`
+
+Starts the Vite dev server with HTTPS and configures HMR (Hot Module Reloading) for access via a domain or tunnel.
+
+**Usage:**
+
+```bash
+./frontend/start-https-frontend.sh [DOMAIN] [PORT]
+```
+
+**Parameters:**
+- `DOMAIN` (optional, default: `todo.example.com`) — the hostname/domain used to access the app (e.g., your LAN IP `192.168.1.42`, a tunnel domain like `todo.example.com`, or `localhost`)
+- `PORT` (optional, default: `443`) — the HTTPS port
+
+**Examples:**
+
+```bash
+# Direct LAN IP access (no HMR adjustment needed)
+./frontend/start-https-frontend.sh 192.168.1.42 5173
+
+# Tunnel/reverse proxy access (adjusts HMR to use the tunnel domain)
+./frontend/start-https-frontend.sh todo.example.com 443
+
+# localhost (uses defaults, but forwards HMR correctly if needed)
+./frontend/start-https-frontend.sh
+```
+
+The script sets `VITE_HMR_HOST` and `VITE_HMR_CLIENT_PORT` so Vite's Hot Module Reloading WebSocket connects to the correct endpoint instead of falling back to localhost.
+
+#### `backend/start-https-backend.sh`
+
+Starts the Spring Boot backend with HTTPS configuration and WebAuthn settings.
+
+**Usage:**
+
+```bash
+./backend/start-https-backend.sh [DOMAIN] [PORT]
+```
+
+**Parameters:**
+- `DOMAIN` (optional, default: `todo.example.com`) — the hostname/domain matching the frontend access (must match `WEBAUTHN_RP_ID`)
+- `PORT` (optional, default: `443`) — the HTTPS port
+
+**What it does:**
+1. Exports `WEBAUTHN_RP_ID` — the domain the browser sees when authenticating (must match exactly)
+2. Exports `CORS_ALLOWED_ORIGINS` — allows the frontend origin to make API requests
+3. Starts a continuous Gradle compilation watcher for hot reloading
+4. Runs the Spring Boot application with `./gradlew bootRun`
+
+**Examples:**
+
+```bash
+# Direct LAN IP access
+./backend/start-https-backend.sh 192.168.1.42 5173
+
+# Tunnel/reverse proxy access
+./backend/start-https-backend.sh todo.example.com 443
+
+# localhost
+./backend/start-https-backend.sh
+```
+
+### Manual approach
+
 A dedicated Vite config (`frontend/vite.config.https.ts`) is already committed. It extends the base config with HTTPS and `host: '0.0.0.0'` and reads the certs from `.certs/`.
 
 ```bash
@@ -59,7 +127,7 @@ cd frontend && bun run dev:https
 
 The dev server will now be reachable at `https://<MY_IP>:5173`.
 
-### HMR when accessing via a tunnel or reverse proxy
+#### HMR when accessing via a tunnel or reverse proxy
 
 If you access the dev server through a public tunnel (e.g. Cloudflare Tunnel at `https://todo.example.com`) instead of directly via the LAN IP, Vite derives the HMR WebSocket URL from the page's host. The tunnel typically doesn't forward that WebSocket back to Vite's port, so the browser logs a `WebSocket connection failed` error and falls back to `localhost:5173`. HMR still works via the fallback, but the error is noisy.
 
@@ -73,17 +141,15 @@ VITE_HMR_HOST=todo.example.com VITE_HMR_CLIENT_PORT=4443 bun run dev:https
 
 `VITE_HMR_CLIENT_PORT` defaults to `443`. When these vars are unset (normal LAN or localhost workflow) Vite's auto-detection applies unchanged.
 
-A convenience wrapper that sets both vars is committed at `frontend/start-https-frontend.sh`. Edit `VITE_HMR_HOST` there to match your tunnel domain, then run it instead of `bun run dev:https` directly.
-
 ---
 
 ## 4. Configure the Backend
 
-Set these environment variables when starting the backend (or add to a local `.env` / run config):
+When using the `start-https-backend.sh` script, environment variables are set automatically. If starting the backend manually, set these:
 
 ```bash
-WEBAUTHN_RP_ID=<MY_IP>
-CORS_ALLOWED_ORIGINS=https://<MY_IP>:5173
+WEBAUTHN_RP_ID=<MY_IP_OR_DOMAIN>
+CORS_ALLOWED_ORIGINS=https://<MY_IP_OR_DOMAIN>:5173
 ```
 
 Example for a shell session:
@@ -94,7 +160,7 @@ CORS_ALLOWED_ORIGINS=https://192.168.1.42:5173 \
 ./gradlew bootRun
 ```
 
-> **Note:** `WEBAUTHN_RP_ID` must exactly match the host part of the origin the browser sees. The browser will reject credentials if these don't match (you'll see the "Passkey origin not allowed" error added in the last fix).
+> **Note:** `WEBAUTHN_RP_ID` must exactly match the host part of the origin the browser sees. The browser will reject credentials if these don't match (you'll see the "Passkey origin not allowed" error).
 
 ---
 
@@ -207,7 +273,7 @@ Tap **Allow**.
 
 ---
 
-## 6. Install the Profile
+## 7. Install the Profile
 
 1. Open **Settings → General → VPN & Device Management**
 2. Under **Downloaded Profile**, tap the **mkcert** entry
@@ -216,7 +282,7 @@ Tap **Allow**.
 
 ---
 
-## 7. Enable Full Trust (Critical — easy to miss)
+## 8. Enable Full Trust (Critical — easy to miss)
 
 Installing the profile is not enough. You must also explicitly enable trust for TLS:
 
@@ -228,19 +294,43 @@ Without this step, Safari will show an "untrusted certificate" error and WebAuth
 
 ---
 
-## 8. Test
+## 9. Test
 
-1. Start the backend with the env vars from step 4
-2. Start the frontend dev server: `cd frontend && bun run dev`
+**Using the convenience scripts (recommended):**
+
+```bash
+# In one terminal, start the backend
+./backend/start-https-backend.sh 192.168.1.42 5173
+
+# In another terminal, start the frontend
+./frontend/start-https-frontend.sh 192.168.1.42 5173
+
+# On the iPhone, open Safari and navigate to https://192.168.1.42:5173
+```
+
+**Manual approach:**
+
+1. Start the backend with the env vars from section 4
+2. Start the frontend dev server: `cd frontend && bun run dev:https`
 3. On the iPhone, open Safari and navigate to `https://<MY_IP>:5173`
-4. The padlock should be green — if Safari shows a certificate warning, step 6 or 7 was missed
+4. The padlock should be green — if Safari shows a certificate warning, section 8 was missed
 5. Attempt passkey registration or login
 
 ---
 
 ## Reverting to Normal Dev
 
-Remove the `https` and `host` keys from `vite.config.ts` and restart without the env vars (defaults are `WEBAUTHN_RP_ID=localhost`, `CORS_ALLOWED_ORIGINS=http://localhost:5173`).
+Stop the scripts and revert to normal development:
+
+```bash
+# Frontend (in frontend/ directory)
+bun run dev
+
+# Backend
+./gradlew bootRun
+```
+
+This uses `WEBAUTHN_RP_ID=localhost` and `CORS_ALLOWED_ORIGINS=http://localhost:5173` by default.
 
 The iPhone profile can stay installed — it only affects connections to your dev machine's CA-signed certs and does not interfere with normal HTTPS browsing.
 
@@ -250,9 +340,10 @@ The iPhone profile can stay installed — it only affects connections to your de
 
 | Symptom | Likely cause |
 |---|---|
-| Safari shows "This Connection Is Not Private" | Step 7 (Certificate Trust Settings toggle) was skipped |
-| "Passkey origin not allowed — check the server configuration" | `WEBAUTHN_RP_ID` doesn't match the IP in the browser URL |
+| Safari shows "This Connection Is Not Private" | Section 8 (Certificate Trust Settings toggle) was skipped |
+| "Passkey origin not allowed — check the server configuration" | `WEBAUTHN_RP_ID` doesn't match the domain/IP in the browser URL |
 | CORS error in browser console | `CORS_ALLOWED_ORIGINS` doesn't match the exact origin (`https://<IP>:5173`) |
 | Certificate error on Mac too | Re-run `mkcert -install` after `brew install nss` |
 | IP changed after router reboot | Assign a static DHCP lease to your Mac, or regenerate the cert for the new IP |
-| `WebSocket connection to 'wss://…' failed` in console | Set `VITE_HMR_HOST` to the tunnel domain (see section 3) |
+| `WebSocket connection to 'wss://…' failed` in console | Set `VITE_HMR_HOST` to the correct domain/IP using `start-https-frontend.sh` |
+| Backend not starting | Make sure `WEBAUTHN_RP_ID` and `CORS_ALLOWED_ORIGINS` match exactly |
