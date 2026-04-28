@@ -116,7 +116,6 @@
     />
   </div>
 
-  <div class="grid grid-cols-2 gap-2">
     <div>
       <label for="categoryId" class="text-xs text-gray-500 mb-1 block">Category</label>
       <select
@@ -139,7 +138,7 @@
         type="date"
         bind:value={dueDate}
         onblur={handlePickerBlur}
-        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </div>
 
@@ -160,8 +159,6 @@
         <option value="1_YEARS">Every year</option>
       </select>
     </div>
-
-  </div>
 
   <fieldset class="border-0 p-0">
     <legend class="text-xs text-gray-500 mb-1">Assign to</legend>
