@@ -43,7 +43,6 @@
 
   function handlePickerBlur() {
     ignoreNextFocusOut = true;
-    setTimeout(() => { ignoreNextFocusOut = false; }, 0);
     titleInput?.focus();
   }
 
