@@ -44,7 +44,6 @@
   function handlePickerBlur() {
     ignoreNextFocusOut = true;
     setTimeout(() => { ignoreNextFocusOut = false; }, 0);
-    titleInput?.focus();
   }
 
   function parseRecurrencePreset(preset: string): RecurrenceRule | null {
