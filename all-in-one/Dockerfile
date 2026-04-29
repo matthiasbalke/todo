@@ -1,8 +1,11 @@
 # Stage 1: build backend
 FROM dhi.io/gradle:9.4.1-r1-jdk21-alpine3.23-dev AS backend-build
+
 WORKDIR /app
 COPY backend/ .
-RUN gradle bootJar --no-daemon -Prelease
+
+RUN --mount=type=cache,id=gradle,target=/root/.gradle \
+    gradle bootJar --no-daemon -Prelease
 RUN mkdir -p build/dependency && (cd build/dependency; jar -xf ../libs/*.jar)
 
 
