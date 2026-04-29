@@ -82,4 +82,57 @@ describe('ItemForm focusout / cancel behaviour', () => {
 
 		expect(oncancel).not.toHaveBeenCalled();
 	});
+
+	it('should redirect focus to title input when category picker blurs', () => {
+		const { container } = render(ItemForm, { props: { ...defaultProps } });
+		const categorySelect = container.querySelector('select#categoryId')!;
+		const titleInput = container.querySelector('input[placeholder="Item title"]') as HTMLInputElement;
+
+		// Simulate picker closing and losing focus
+		fireEvent.blur(categorySelect);
+
+		// Focus should be redirected to title input
+		expect(document.activeElement).toBe(titleInput);
+	});
+
+	it('should redirect focus to title input when date picker blurs', () => {
+		const { container } = render(ItemForm, { props: { ...defaultProps } });
+		const dueDateInput = container.querySelector('input[id="dueDate"]')!;
+		const titleInput = container.querySelector('input[placeholder="Item title"]') as HTMLInputElement;
+
+		// Simulate picker closing and losing focus
+		fireEvent.blur(dueDateInput);
+
+		// Focus should be redirected to title input
+		expect(document.activeElement).toBe(titleInput);
+	});
+
+	it('should redirect focus to title input when recurrence picker blurs', () => {
+		const { container } = render(ItemForm, { props: { ...defaultProps } });
+		const recurrenceSelect = container.querySelector('select#recurrencePreset')!;
+		const titleInput = container.querySelector('input[placeholder="Item title"]') as HTMLInputElement;
+
+		// Simulate picker closing and losing focus
+		fireEvent.blur(recurrenceSelect);
+
+		// Focus should be redirected to title input
+		expect(document.activeElement).toBe(titleInput);
+	});
+
+	it('should not call oncancel when picker loses focus and focus is redirected to title input', () => {
+		const oncancel = vi.fn();
+		const { container } = render(ItemForm, { props: { ...defaultProps, oncancel } });
+
+		const categorySelect = container.querySelector('select#categoryId')!;
+		const titleInput = container.querySelector('input[placeholder="Item title"]')!;
+
+		// Focus title input first
+		fireEvent.focus(titleInput);
+
+		// Simulate picker losing focus (onblur redirects focus to title)
+		fireEvent.blur(categorySelect);
+
+		// No focusout should be triggered on the form because focus stays within it
+		expect(oncancel).not.toHaveBeenCalled();
+	});
 });
