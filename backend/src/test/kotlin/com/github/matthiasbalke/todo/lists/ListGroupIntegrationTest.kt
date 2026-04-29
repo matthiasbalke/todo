@@ -292,4 +292,59 @@ class ListGroupIntegrationTest : AbstractIntegrationTest() {
             status { isForbidden() }
         }
     }
+
+    // ─── Shared lists with per-user group assignments ─────────────────────────
+
+    @Test
+    fun `shared list - each user should be able to assign it to different groups`() {
+        // Setup: Two users, a shared list
+        val userA = createUser()
+        val userB = createUser()
+        val listId = createListAsUser(userA, "Shared List")
+
+        // User A adds User B as an editor
+        mockMvc.post("/api/lists/$listId/members") {
+            header("Authorization", bearerHeader(userA))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"email":"${userB.email}","role":"EDITOR"}"""
+        }.andExpect { status { isCreated() } }
+
+        // User A creates group A1 and assigns the list to it
+        val groupA1 = createGroupAsUser(userA, "Group A1")
+        mockMvc.patch("/api/lists/$listId/group") {
+            header("Authorization", bearerHeader(userA))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"groupId":"$groupA1"}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.groupId") { value(groupA1.toString()) }
+        }
+
+        // User B creates group B1 and assigns the same list to it
+        val groupB1 = createGroupAsUser(userB, "Group B1")
+        mockMvc.patch("/api/lists/$listId/group") {
+            header("Authorization", bearerHeader(userB))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"groupId":"$groupB1"}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.groupId") { value(groupB1.toString()) }
+        }
+
+        // Verify User A sees the list in group A1
+        mockMvc.get("/api/lists") {
+            header("Authorization", bearerHeader(userA))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$[?(@.id == '$listId')].groupId") { value(groupA1.toString()) }
+        }
+
+        // Verify User B sees the list in group B1
+        mockMvc.get("/api/lists") {
+            header("Authorization", bearerHeader(userB))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$[?(@.id == '$listId')].groupId") { value(groupB1.toString()) }
+        }
+    }
 }

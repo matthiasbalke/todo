@@ -10,6 +10,7 @@ import java.util.UUID
 class ListGroupService(
     private val listGroupRepository: ListGroupRepository,
     private val listRepository: ListRepository,
+    private val listGroupAssignmentRepository: ListGroupAssignmentRepository,
     private val listAccessService: ListAccessService,
 ) {
 
@@ -34,8 +35,7 @@ class ListGroupService(
     @Transactional
     fun deleteGroup(groupId: UUID, userId: UUID) {
         requireOwnership(groupId, userId)
-        // Set groupId to null on all lists in this group (DB ON DELETE SET NULL handles it,
-        // but we clear in-memory state by deleting directly)
+        listGroupAssignmentRepository.deleteByGroupId(groupId)
         listGroupRepository.deleteById(groupId)
     }
 
@@ -57,21 +57,25 @@ class ListGroupService(
                 throw ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this group")
             }
         }
-        val list = listRepository.findById(listId).orElseThrow {
+        val assignment = listGroupAssignmentRepository.findByListIdAndUserId(listId, userId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Assignment not found")
+        assignment.groupId = groupId
+        listGroupAssignmentRepository.save(assignment)
+        return listRepository.findById(listId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "List not found")
         }
-        list.groupId = groupId
-        return listRepository.save(list)
     }
 
     @Transactional
     fun reorderListInGroup(listId: UUID, userId: UUID, newSortOrder: Int): com.github.matthiasbalke.todo.lists.List {
         listAccessService.requireMembership(listId, userId)
-        val list = listRepository.findById(listId).orElseThrow {
+        val assignment = listGroupAssignmentRepository.findByListIdAndUserId(listId, userId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Assignment not found")
+        assignment.sortOrder = newSortOrder
+        listGroupAssignmentRepository.save(assignment)
+        return listRepository.findById(listId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "List not found")
         }
-        list.sortOrderInGroup = newSortOrder
-        return listRepository.save(list)
     }
 
     private fun requireOwnership(groupId: UUID, userId: UUID): ListGroup {
@@ -83,4 +87,7 @@ class ListGroupService(
         }
         return group
     }
+
+    fun getListAssignmentForUser(listId: UUID, userId: UUID): ListGroupAssignment? =
+        listGroupAssignmentRepository.findByListIdAndUserId(listId, userId)
 }
