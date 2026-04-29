@@ -1,5 +1,6 @@
 package com.github.matthiasbalke.todo.auth
 
+import jakarta.servlet.DispatcherType
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -29,6 +30,7 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .cors { it.configurationSource(corsConfigurationSource()) }
             .authorizeHttpRequests { auth ->
+                auth.dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                 auth.requestMatchers("/api/auth/**").permitAll()
                 auth.requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 auth.anyRequest().authenticated()
@@ -46,7 +48,19 @@ class SecurityConfig(
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val config = CorsConfiguration()
-        config.allowedOrigins = allowedOrigins.split(",").map { it.trim() }
+        val normalizedOrigins = mutableListOf<String>()
+        allowedOrigins.split(",").forEach { origin ->
+            val trimmed = origin.trim()
+            normalizedOrigins.add(trimmed)
+            // For default ports (443 for https, 80 for http), also accept the origin without port
+            // since browsers omit the port from the Origin header for default ports
+            if (trimmed.endsWith(":443") && trimmed.startsWith("https://")) {
+                normalizedOrigins.add(trimmed.substringBeforeLast(":443"))
+            } else if (trimmed.endsWith(":80") && trimmed.startsWith("http://")) {
+                normalizedOrigins.add(trimmed.substringBeforeLast(":80"))
+            }
+        }
+        config.allowedOrigins = normalizedOrigins
         config.allowedMethods = listOf(
             HttpMethod.GET.name(),
             HttpMethod.POST.name(),

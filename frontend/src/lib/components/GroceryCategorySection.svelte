@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { TodoItem, Category } from '$lib/mock-data';
   import { toggleDone } from '$lib/stores/items.svelte';
+  import { friendlyError } from '$lib/api/errors';
 
   let {
     category,
@@ -16,6 +17,14 @@
 
   const unchecked = $derived(items.filter(i => !i.done));
   const checked = $derived(items.filter(i => i.done));
+
+  async function handleToggle(item: TodoItem) {
+    try {
+      await toggleDone(item.listId, item.id);
+    } catch (e) {
+      alert(friendlyError(e, 'Failed to update item'));
+    }
+  }
 </script>
 
 <div class="mb-4">
@@ -34,7 +43,7 @@
     <div class="mt-1 space-y-1">
       {#each unchecked as item (item.id)}
         <button
-          onclick={() => toggleDone(item.id)}
+          onclick={() => handleToggle(item)}
           class="w-full flex items-center gap-4 px-4 py-3 bg-white rounded-lg border border-gray-100 text-left"
         >
           <span class="w-6 h-6 rounded-full border-2 border-gray-300 flex-shrink-0"></span>
@@ -43,7 +52,7 @@
       {/each}
       {#each checked as item (item.id)}
         <button
-          onclick={() => toggleDone(item.id)}
+          onclick={() => handleToggle(item)}
           class="w-full flex items-center gap-4 px-4 py-3 bg-white rounded-lg border border-gray-100 text-left opacity-50"
         >
           <span class="w-6 h-6 rounded-full bg-green-500 border-2 border-green-500 flex-shrink-0 flex items-center justify-center">

@@ -1,11 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const baseURL = process.env.BASE_URL ?? 'http://localhost:5173';
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: false,
-  reporter: 'list',
+  timeout: 30000,
+  reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL,
     headless: true,
   },
   projects: [
@@ -14,10 +17,12 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: {
-    command: 'bun run dev',
-    cwd: '../frontend',
-    url: 'http://localhost:5173',
-    reuseExistingServer: true,
-  },
+  webServer: process.env.BASE_URL
+    ? undefined
+    : {
+        command: 'bun run dev',
+        cwd: '../frontend',
+        url: 'http://localhost:5173',
+        reuseExistingServer: true,
+      },
 });

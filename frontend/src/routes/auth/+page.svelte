@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { WebAuthnError } from '@simplewebauthn/browser';
   import { ApiError, getAuthConfig, loginWithPasskey, registerWithPasskey } from '$lib/api/auth';
   import { checkHealth } from '$lib/api/health';
   import { setSession } from '$lib/stores/auth.svelte';
@@ -11,6 +12,7 @@
   let errorMessage = $state('');
   let email = $state('');
   let displayName = $state('');
+  let passkeyLabel = $state('');
   let registrationEnabled = $state(true);
 
   let pollInterval: ReturnType<typeof setInterval> | undefined;
@@ -19,7 +21,7 @@
     let retries = 0;
     const maxRetries = 60;
 
-    pollInterval = setInterval(async () => {
+    async function tryConnect() {
       const healthy = await checkHealth();
       if (healthy) {
         clearInterval(pollInterval);
@@ -39,7 +41,12 @@
           mode = 'startup-timeout';
         }
       }
-    }, 2000);
+    }
+
+    await tryConnect();
+    if (mode === 'starting') {
+      pollInterval = setInterval(tryConnect, 2000);
+    }
   });
 
   onDestroy(() => {
@@ -49,6 +56,8 @@
   });
 
   function passkeyErrorMessage(err: unknown): string {
+    if (err instanceof WebAuthnError && err.code === 'ERROR_CEREMONY_ABORTED') return 'Cancelled — try again';
+    if (err instanceof WebAuthnError && (err.code === 'ERROR_INVALID_DOMAIN' || err.code === 'ERROR_INVALID_RP_ID')) return 'Passkey origin not allowed — check the server configuration';
     if (err instanceof DOMException && err.name === 'NotAllowedError') return 'Cancelled — try again';
     if (err instanceof DOMException && err.name === 'SecurityError') return 'Passkey origin not allowed — check the server configuration';
     if (err instanceof ApiError && err.status === 403 && err.code === 'REGISTRATION_DISABLED') return 'Registration is currently disabled';
@@ -82,7 +91,7 @@
     mode = 'registering';
     errorMessage = '';
     try {
-      const result = await registerWithPasskey(email.trim(), displayName.trim());
+      const result = await registerWithPasskey(email.trim(), displayName.trim(), passkeyLabel.trim() || undefined);
       setSession(result);
       await goto('/lists');
     } catch (err) {
@@ -150,6 +159,19 @@
               bind:value={email}
               placeholder="you@example.com"
               required
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block" for="passkeyLabel">
+              Passkey name <span class="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              id="passkeyLabel"
+              type="text"
+              bind:value={passkeyLabel}
+              placeholder="e.g. My MacBook"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

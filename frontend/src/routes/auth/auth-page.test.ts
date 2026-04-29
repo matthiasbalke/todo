@@ -37,7 +37,7 @@ import { setSession } from '$lib/stores/auth.svelte';
 import AuthPage from './+page.svelte';
 
 async function waitForIdle() {
-	await vi.advanceTimersByTimeAsync(2100);
+	await vi.advanceTimersByTimeAsync(0);
 }
 
 describe('AuthPage', () => {
@@ -189,7 +189,7 @@ describe('AuthPage', () => {
 		await fireEvent.submit(screen.getByRole('button', { name: /register passkey/i }).closest('form')!);
 
 		await waitFor(() => {
-			expect(authApi.registerWithPasskey).toHaveBeenCalledWith('alice@example.com', 'Alice');
+			expect(authApi.registerWithPasskey).toHaveBeenCalledWith('alice@example.com', 'Alice', undefined);
 			expect(setSession).toHaveBeenCalledWith(mockResult);
 			expect(goto).toHaveBeenCalledWith('/lists');
 		});

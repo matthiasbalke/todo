@@ -42,8 +42,11 @@ class JwtAuthenticationFilter(
     }
 
     private fun extractBearerToken(request: HttpServletRequest): String? {
-        val header = request.getHeader("Authorization") ?: return null
-        if (!header.startsWith("Bearer ")) return null
-        return header.removePrefix("Bearer ")
+        val header = request.getHeader("Authorization")
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.removePrefix("Bearer ")
+        }
+        // Fallback for EventSource, which cannot set custom headers
+        return request.getParameter("token")
     }
 }

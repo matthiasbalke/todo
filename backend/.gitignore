@@ -38,3 +38,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+# private test users go here
+src/main/resources/db/migration/V*insert_seed*.sql

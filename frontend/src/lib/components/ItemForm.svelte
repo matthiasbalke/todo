@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
-  import type { TodoItem, Category, User, Priority, RecurrenceRule } from '$lib/mock-data';
+  import { untrack, onMount } from 'svelte';
+  import type { TodoItem, Category, User, RecurrenceRule } from '$lib/mock-data';
 
   let {
     item,
@@ -8,26 +8,31 @@
     categories,
     users,
     onsubmit,
-    oncancel
+    oncancel,
+    defaultCategoryId = ''
   }: {
     item?: TodoItem | null;
     listId: string;
     categories: Category[];
     users: User[];
-    onsubmit: (item: TodoItem) => void;
+    onsubmit: (item: TodoItem) => Promise<void> | void;
     oncancel: () => void;
+    defaultCategoryId?: string;
   } = $props();
 
   const isNew = $derived(!item);
 
   let title = $state(untrack(() => item?.title ?? ''));
   let notes = $state(untrack(() => item?.notes ?? ''));
-  let priority = $state<Priority | ''>(untrack(() => item?.priority ?? ''));
   let dueDate = $state(untrack(() => item?.dueDate ?? ''));
-  let categoryId = $state<string>(untrack(() => item?.categoryId ?? ''));
-  let assignedUserId = $state<string>(untrack(() => item?.assignedUserId ?? ''));
+  let categoryId = $state<string>(untrack(() => item?.categoryId ?? defaultCategoryId ?? ''));
+  let assignedUserIds = $state(new Set<string>(untrack(() => item?.assignedUserIds ?? [])));
   let recurrencePreset = $state<string>(untrack(() => getInitialRecurrencePreset(item?.recurrenceRule ?? null)));
   let titleInput = $state<HTMLInputElement | null>(null);
+  let submitting = $state(false);
+  let ignoreNextFocusOut = false;
+
+  onMount(() => titleInput?.focus());
 
   function getInitialRecurrencePreset(rule: RecurrenceRule | null): string {
     if (!rule) return '';
@@ -36,46 +41,69 @@
     return valid.includes(key) ? key : '';
   }
 
+  function handlePickerBlur() {
+    ignoreNextFocusOut = true;
+    setTimeout(() => { ignoreNextFocusOut = false; }, 0);
+  }
+
   function parseRecurrencePreset(preset: string): RecurrenceRule | null {
     if (!preset) return null;
     const [val, unit] = preset.split('_');
     return { intervalValue: parseInt(val), intervalUnit: unit as RecurrenceRule['intervalUnit'] };
   }
 
-  function handleSubmit(e: Event) {
+  async function handleSubmit(e: Event) {
     e.preventDefault();
-    const now = new Date().toISOString().split('T')[0];
-    const submitted: TodoItem = {
-      id: item?.id ?? (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)),
-      listId,
-      categoryId: categoryId || null,
-      title,
-      notes: notes || null,
-      done: item?.done ?? false,
-      starred: item?.starred ?? false,
-      priority: (priority as Priority) || null,
-      dueDate: dueDate || null,
-      assignedUserId: assignedUserId || null,
-      recurrenceRule: parseRecurrencePreset(recurrencePreset),
-      parentItemId: item?.parentItemId ?? null,
-      sortOrder: item?.sortOrder ?? 999,
-      createdAt: item?.createdAt ?? now
-    };
-    onsubmit(submitted);
-    if (isNew) {
-      title = '';
-      notes = '';
-      priority = '';
-      dueDate = '';
-      categoryId = '';
-      assignedUserId = '';
-      recurrencePreset = '';
-      titleInput?.focus();
+    if (submitting) return;
+    submitting = true;
+    try {
+      const now = new Date().toISOString().split('T')[0];
+      const submitted: TodoItem = {
+        id: item?.id ?? (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)),
+        listId,
+        categoryId: categoryId || null,
+        title,
+        notes: notes || null,
+        done: item?.done ?? false,
+        starred: item?.starred ?? false,
+        dueDate: dueDate || null,
+        assignedUserIds: [...assignedUserIds],
+        recurrenceRule: parseRecurrencePreset(recurrencePreset),
+        parentItemId: item?.parentItemId ?? null,
+        createdByUserId: item?.createdByUserId ?? null,
+        sortOrder: item?.sortOrder ?? 999,
+        createdAt: item?.createdAt ?? now
+      };
+      await onsubmit(submitted);
+      if (isNew) {
+        title = '';
+        notes = '';
+        dueDate = '';
+        categoryId = defaultCategoryId ?? '';
+        assignedUserIds = new Set();
+        recurrencePreset = '';
+        titleInput?.focus();
+      }
+    } finally {
+      submitting = false;
     }
   }
 </script>
 
-<form onsubmit={handleSubmit} class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<form
+  onsubmit={handleSubmit}
+  onmousedown={() => {
+    ignoreNextFocusOut = true;
+    setTimeout(() => { ignoreNextFocusOut = false; }, 0);
+  }}
+  onfocusout={(e) => {
+    if (submitting) return;
+    if (ignoreNextFocusOut) { ignoreNextFocusOut = false; return; }
+    if (isNew && !e.currentTarget.contains(e.relatedTarget as Node)) oncancel();
+  }}
+  class="bg-white rounded-xl border border-gray-200 p-4 space-y-3"
+>
   <div>
     <input
       type="text"
@@ -88,46 +116,12 @@
     />
   </div>
 
-  <div>
-    <textarea
-      bind:value={notes}
-      placeholder="Notes (optional)"
-      rows="2"
-      class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-    ></textarea>
-  </div>
-
-  <div class="grid grid-cols-2 gap-2">
-    <div>
-      <label for="priority" class="text-xs text-gray-500 mb-1 block">Priority</label>
-      <select
-        id="priority"
-        bind:value={priority}
-        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="">None</option>
-        <option value="URGENT">Urgent</option>
-        <option value="HIGH">High</option>
-        <option value="NORMAL">Normal</option>
-        <option value="LOW">Low</option>
-      </select>
-    </div>
-
-    <div>
-      <label for="dueDate" class="text-xs text-gray-500 mb-1 block">Due Date</label>
-      <input
-        id="dueDate"
-        type="date"
-        bind:value={dueDate}
-        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-    </div>
-
     <div>
       <label for="categoryId" class="text-xs text-gray-500 mb-1 block">Category</label>
       <select
         id="categoryId"
         bind:value={categoryId}
+        onblur={handlePickerBlur}
         class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <option value="">Uncategorized</option>
@@ -138,35 +132,70 @@
     </div>
 
     <div>
-      <label for="assignedUserId" class="text-xs text-gray-500 mb-1 block">Assign to</label>
+      <label for="dueDate" class="text-xs text-gray-500 mb-1 block">Due Date</label>
+      <input
+        id="dueDate"
+        type="date"
+        bind:value={dueDate}
+        onblur={handlePickerBlur}
+        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    <div>
+      <label for="recurrencePreset" class="text-xs text-gray-500 mb-1 block">Recurrence</label>
       <select
-        id="assignedUserId"
-        bind:value={assignedUserId}
+        id="recurrencePreset"
+        bind:value={recurrencePreset}
+        onblur={handlePickerBlur}
         class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <option value="">Unassigned</option>
-        {#each users as user}
-          <option value={user.id}>{user.name}</option>
-        {/each}
+        <option value="">No recurrence</option>
+        <option value="1_DAYS">Every day</option>
+        <option value="1_WEEKS">Every week</option>
+        <option value="2_WEEKS">Every 2 weeks</option>
+        <option value="1_MONTHS">Every month</option>
+        <option value="3_MONTHS">Every 3 months</option>
+        <option value="1_YEARS">Every year</option>
       </select>
     </div>
-  </div>
+
+  <fieldset class="border-0 p-0">
+    <legend class="text-xs text-gray-500 mb-1">Assign to</legend>
+    {#if users.length === 0}
+      <p class="text-xs text-gray-400 italic">No members</p>
+    {:else}
+      <div class="flex flex-wrap gap-1">
+        {#each users as user}
+          <button
+            type="button"
+            onclick={() => {
+              const next = new Set(assignedUserIds);
+              if (next.has(user.id)) {
+                next.delete(user.id);
+              } else {
+                next.add(user.id);
+              }
+              assignedUserIds = next;
+            }}
+            class={assignedUserIds.has(user.id)
+              ? 'px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-300'
+              : 'px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200'}
+          >
+            {user.name}
+          </button>
+        {/each}
+      </div>
+    {/if}
+  </fieldset>
 
   <div>
-    <label for="recurrencePreset" class="text-xs text-gray-500 mb-1 block">Recurrence</label>
-    <select
-      id="recurrencePreset"
-      bind:value={recurrencePreset}
-      class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-    >
-      <option value="">No recurrence</option>
-      <option value="1_DAYS">Every day</option>
-      <option value="1_WEEKS">Every week</option>
-      <option value="2_WEEKS">Every 2 weeks</option>
-      <option value="1_MONTHS">Every month</option>
-      <option value="3_MONTHS">Every 3 months</option>
-      <option value="1_YEARS">Every year</option>
-    </select>
+    <textarea
+      bind:value={notes}
+      placeholder="Notes (optional)"
+      rows="2"
+      class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+    ></textarea>
   </div>
 
   <div class="flex justify-end gap-2 pt-1">

@@ -1,10 +1,4 @@
 @import "tailwindcss";
-@theme {
-  --color-priority-urgent: #ef4444;
-  --color-priority-high:   #f97316;
-  --color-priority-normal: #3b82f6;
-  --color-priority-low:    #6b7280;
-}
 
 /* Prevent iOS Safari from zooming the viewport on input focus (triggers when font-size < 16px) */
 input,
