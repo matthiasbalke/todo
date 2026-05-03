@@ -1,4 +1,4 @@
-FROM dhi.io/gradle:9.4.1-r1-jdk21-alpine3.23-dev AS build
+FROM dhi.io/gradle:9.5.0-jdk21-alpine3.22-dev AS build
 WORKDIR /app
 COPY . .
 RUN --mount=type=cache,id=gradle,target=/root/.gradle \
