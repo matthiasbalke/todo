@@ -1,4 +1,4 @@
-FROM dhi.io/gradle:9.4.1-r1-jdk21-alpine3.23-dev AS backend-build
+FROM dhi.io/gradle:9.5.0-jdk21-alpine3.22-dev AS backend-build
 
 WORKDIR /app
 COPY . .
