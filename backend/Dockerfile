@@ -5,7 +5,7 @@ COPY . .
 RUN --mount=type=cache,id=gradle,target=/root/.gradle \
     gradle bootJar --no-daemon -Prelease
 
-FROM dhi.io/eclipse-temurin:21-alpine3.22
+FROM dhi.io/eclipse-temurin:21-alpine3.23
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 ARG BUILD_NUMBER=0
