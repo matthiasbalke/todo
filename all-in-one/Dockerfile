@@ -15,7 +15,7 @@ RUN bun run build
 
 # Stage 3: runtime
 FROM dhi.io/eclipse-temurin:21-alpine3.23-dev
-RUN apk add --no-cache nodejs=24.14.1-r0 nginx=1.29.8-r0 supervisor=4.2.5-r5
+RUN apk add --no-cache nodejs=24.14.1-r0 nginx=1.29.8-r0 supervisor=4.3.0-r0
 WORKDIR /app
 COPY --from=backend-build /app/build/libs/*.jar backend.jar
 COPY --from=frontend-build /app/build ./frontend/build
