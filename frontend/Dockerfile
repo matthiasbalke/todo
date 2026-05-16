@@ -1,4 +1,4 @@
-FROM dhi.io/bun:1.3.11-alpine3.22-dev AS build
+FROM dhi.io/bun:1.3-alpine3.22-dev AS build
 WORKDIR /app
 COPY package.json bun.lockb ./
 RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
@@ -6,7 +6,7 @@ RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
 COPY . .
 RUN bun run build
 
-FROM dhi.io/node:24 AS runtime
+FROM dhi.io/node:24-alpine3.23 AS runtime
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
