@@ -6,7 +6,7 @@ COPY backend/ .
 RUN gradle bootJar --no-daemon -Prelease
 
 # Stage 2: build frontend
-FROM dhi.io/bun:1.3.11-alpine3.22-dev AS frontend-build
+FROM dhi.io/bun:1.3-alpine3.22-dev AS frontend-build
 WORKDIR /app
 COPY frontend/package.json frontend/bun.lockb ./
 RUN bun install --frozen-lockfile
