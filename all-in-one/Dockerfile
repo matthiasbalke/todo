@@ -1,6 +1,6 @@
 # Stage 1: build backend
-FROM dhi.io/gradle:9.5.0-jdk21-alpine3.22-dev AS backend-build
-
+# https://hub.docker.com/hardened-images/catalog/dhi/gradle/images
+FROM dhi.io/gradle:9.5.1-r3-jdk21-alpine3.23-dev AS backend-build
 WORKDIR /app
 COPY backend/ .
 
@@ -10,7 +10,7 @@ RUN mkdir -p build/dependency && (cd build/dependency; jar -xf ../libs/*.jar)
 
 
 # Stage 2: build frontend
-FROM dhi.io/bun:1.3.11-alpine3.22-dev AS frontend-build
+FROM dhi.io/bun:1.3-alpine3.22-dev AS frontend-build
 WORKDIR /app
 COPY frontend/package.json frontend/bun.lockb ./
 RUN bun install --frozen-lockfile
@@ -18,8 +18,8 @@ COPY frontend/ .
 RUN bun run build
 
 # Stage 3: runtime
-FROM dhi.io/eclipse-temurin:21-alpine3.22-dev
-RUN apk add --no-cache nodejs=22.22.2-r0 nginx=1.28.3-r0 supervisor=4.2.5-r5
+FROM dhi.io/eclipse-temurin:21-alpine3.23-dev
+RUN apk add --no-cache nodejs=24.14.1-r0 nginx=1.29.8-r0 supervisor=4.3.0-r0
 
 # user: nonroot 65532
 # user: nobody  65534

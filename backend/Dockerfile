@@ -1,4 +1,5 @@
-FROM dhi.io/gradle:9.5.0-jdk21-alpine3.22-dev AS backend-build
+# https://hub.docker.com/hardened-images/catalog/dhi/gradle/images
+FROM dhi.io/gradle:9.5.1-r3-jdk21-alpine3.23-dev AS build
 
 WORKDIR /app
 COPY . .
@@ -8,7 +9,7 @@ RUN --mount=type=cache,id=gradle,target=/root/.gradle \
 RUN mkdir -p build/dependency && (cd build/dependency; jar -xf ../libs/*.jar)
 
 
-FROM dhi.io/eclipse-temurin:21-alpine3.22
+FROM dhi.io/eclipse-temurin:21-alpine3.23
 
 # user: nonroot 65532
 # user: nobody  65534
