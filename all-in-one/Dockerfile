@@ -1,5 +1,6 @@
 # Stage 1: build backend
-FROM dhi.io/gradle:9.5.0-jdk21-alpine3.22-dev AS backend-build
+# https://hub.docker.com/hardened-images/catalog/dhi/gradle/images
+FROM dhi.io/gradle:9.5.1-r3-jdk21-alpine3.23-dev AS backend-build
 WORKDIR /app
 COPY backend/ .
 RUN gradle bootJar --no-daemon -Prelease
