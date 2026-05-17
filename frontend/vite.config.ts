@@ -41,7 +41,7 @@ export default defineConfig({
         name: 'Todo',
         short_name: 'Todo',
         display: 'standalone',
-        start_url: '/',
+        start_url: '/lists',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         icons: [
