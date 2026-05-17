@@ -1,12 +1,6 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
-	import { goto } from '$app/navigation';
 	import TextInput from '$lib/components/TextInput.svelte';
-
-	// Redirect to home if not in development
-	if (!dev) {
-		goto('/');
-	}
 
 	let email = '';
 	let password = '';
