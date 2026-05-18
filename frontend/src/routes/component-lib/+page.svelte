@@ -1,11 +1,20 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
 	import TextInput from '$lib/components/TextInput.svelte';
+	import Select from '$lib/components/Select.svelte';
 
 	let email = '';
 	let password = '';
 	let username = '';
 	let searchQuery = '';
+
+	let selectedFruit: string | null = null;
+	let selectedPriority: string | null = null;
+	let selectedCategory: string | null = null;
+
+	const fruits = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig'];
+	const priorities = ['Low', 'Medium', 'High', 'Urgent'];
+	const categories = ['Work', 'Personal', 'Shopping', 'Health', 'Finance'];
 
 	function validateEmail(value: string): string | null {
 		if (!value) return 'Email is required';
@@ -27,6 +36,11 @@
 		return null;
 	}
 
+	function validateSelection(value: string | null): string | null {
+		if (value === 'High' || value === 'Urgent' ) return null;
+		return 'select a high or urgent value';;
+	}
+
 	const basicInputCode = `<TextInput
   bind:value={myValue}
   label="Name"
@@ -43,6 +57,38 @@
   type="email"
   validate={validateEmail}
   required
+/>`;
+
+	const basicSelectCode = `let selected = null;
+const options = ['Option 1', 'Option 2', 'Option 3'];
+
+<Select
+  {options}
+  bind:selected
+  label="Choose an option"
+  placeholder="Select one..."
+/>`;
+
+	const selectWithValidationCode = `function validateSelection(value) {
+  if (!value) return 'Please select an option';
+  return null;
+}
+
+<Select
+  options={['Low', 'Medium', 'High', 'Urgent']}
+  bind:selected={priority}
+  label="Priority"
+  validate={validateSelection}
+/>`;
+
+	const selectWithCallbackCode = `<Select
+  options={['Work', 'Personal', 'Shopping']}
+  selected={category}
+  label="Category"
+  onSelect={(value) => {
+    console.log('Selected:', value);
+    // Handle selection
+  }}
 />`;
 </script>
 
@@ -210,11 +256,203 @@
 			</div>
 		</section>
 
+		<!-- Select Section -->
+		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+			<h2 class="text-2xl font-bold text-gray-900 mb-8">Select Component</h2>
+			<p class="text-gray-600 mb-8">
+				A reusable single-select dropdown component with keyboard navigation, custom validation, and accessibility support (ARIA attributes, keyboard shortcuts).
+			</p>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+				<!-- Basic Example -->
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Basic Select</h3>
+					<Select
+						options={fruits}
+						bind:selected={selectedFruit}
+						label="Choose a Fruit"
+						placeholder="Pick one..."
+					/>
+					<p class="text-xs text-gray-500 mt-2">Selected: <code>{selectedFruit || '(none)'}</code></p>
+				</div>
+
+				<!-- Priority Example -->
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">With Validation</h3>
+					<Select
+						options={priorities}
+						bind:selected={selectedPriority}
+						label="Priority Level"
+						placeholder="Select priority..."
+						validate={validateSelection}
+					/>
+					<p class="text-xs text-gray-500 mt-2">Selected: <code>{selectedPriority || '(none)'}</code></p>
+				</div>
+
+				<!-- Category Example with Callback -->
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">With Callback</h3>
+					<Select
+						options={categories}
+						selected={selectedCategory}
+						label="Category"
+						placeholder="Choose a category..."
+						onSelect={(value) => {
+							selectedCategory = value;
+							console.log('Category selected:', value);
+						}}
+					/>
+					<p class="text-xs text-gray-500 mt-2">Selected: <code>{selectedCategory || '(none)'}</code></p>
+				</div>
+
+				<!-- Disabled Example -->
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Disabled State</h3>
+					<Select
+						options={fruits}
+						selected="Apple"
+						label="Read-only Select"
+						disabled
+					/>
+				</div>
+
+				<!-- Empty State Example -->
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Empty Options</h3>
+					<Select
+						options={[]}
+						label="No Options"
+						placeholder="Select an option..."
+					/>
+				</div>
+
+				<!-- Minimal Example -->
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Minimal (No Label)</h3>
+					<Select
+						options={['Red', 'Green', 'Blue']}
+						placeholder="Pick a color..."
+					/>
+				</div>
+			</div>
+
+			<!-- Code Examples -->
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Examples</h3>
+				<div class="space-y-4">
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">Basic select:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{basicSelectCode}</code></pre>
+					</div>
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">With validation:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{selectWithValidationCode}</code></pre>
+					</div>
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">With callback:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{selectWithCallbackCode}</code></pre>
+					</div>
+				</div>
+			</div>
+
+			<!-- Props Reference -->
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Props Reference</h3>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Prop</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Type</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Default</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Description</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">options</td>
+								<td class="px-4 py-2 text-gray-600">T[]</td>
+								<td class="px-4 py-2 text-gray-600">[]</td>
+								<td class="px-4 py-2 text-gray-600">Array of options to display</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">selected</td>
+								<td class="px-4 py-2 text-gray-600">T | null</td>
+								<td class="px-4 py-2 text-gray-600">null</td>
+								<td class="px-4 py-2 text-gray-600">The currently selected option</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">label</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">''</td>
+								<td class="px-4 py-2 text-gray-600">Label displayed above the dropdown</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">placeholder</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">'Select an option'</td>
+								<td class="px-4 py-2 text-gray-600">Placeholder text when no option is selected</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">validate</td>
+								<td class="px-4 py-2 text-gray-600">function | null</td>
+								<td class="px-4 py-2 text-gray-600">null</td>
+								<td class="px-4 py-2 text-gray-600">Optional validator: (value) => error | null</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">onSelect</td>
+								<td class="px-4 py-2 text-gray-600">function | null</td>
+								<td class="px-4 py-2 text-gray-600">null</td>
+								<td class="px-4 py-2 text-gray-600">Callback fired when an option is selected: (value) => void</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">disabled</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Disable the dropdown</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<!-- Keyboard Shortcuts -->
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Keyboard Shortcuts</h3>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Enter, Space, ↓</p>
+						<p class="text-sm text-gray-600">Open dropdown (when closed)</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">↑ ↓</p>
+						<p class="text-sm text-gray-600">Navigate between options</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Home, End</p>
+						<p class="text-sm text-gray-600">Jump to first/last option</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Enter</p>
+						<p class="text-sm text-gray-600">Select focused option</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Escape</p>
+						<p class="text-sm text-gray-600">Close dropdown</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Click outside</p>
+						<p class="text-sm text-gray-600">Close dropdown</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
 		<!-- Future Components Notice -->
 		<div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
 			<h3 class="font-semibold text-blue-900 mb-2">Coming Soon</h3>
 			<p class="text-blue-800 text-sm">
-				Button, Select, DatePicker, ItemCard, and other components will be added to this showcase as they are implemented.
+				Button, DatePicker, ItemCard, and other components will be added to this showcase as they are implemented.
 			</p>
 		</div>
 	</div>
