@@ -269,9 +269,12 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					<h3 class="text-lg font-semibold text-gray-800 mb-4">Basic Select</h3>
 					<Select
 						options={fruits}
-						bind:selected={selectedFruit}
+						selected={selectedFruit}
 						label="Choose a Fruit"
 						placeholder="Pick one..."
+						onSelect={(value) => {
+							selectedFruit = value;
+						}}
 					/>
 					<p class="text-xs text-gray-500 mt-2">Selected: <code>{selectedFruit || '(none)'}</code></p>
 				</div>
@@ -281,10 +284,13 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					<h3 class="text-lg font-semibold text-gray-800 mb-4">With Validation</h3>
 					<Select
 						options={priorities}
-						bind:selected={selectedPriority}
+						selected={selectedPriority}
 						label="Priority Level"
 						placeholder="Select priority..."
 						validate={validateSelection}
+						onSelect={(value) => {
+							selectedPriority = value;
+						}}
 					/>
 					<p class="text-xs text-gray-500 mt-2">Selected: <code>{selectedPriority || '(none)'}</code></p>
 				</div>

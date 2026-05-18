@@ -16,7 +16,7 @@
 
 	const {
 		options = [],
-		selected,
+		selected = $bindable(null),
 		disabled = false,
 		label = '',
 		placeholder = 'Select an option',
