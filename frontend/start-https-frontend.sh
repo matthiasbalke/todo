@@ -12,4 +12,4 @@ export VITE_HMR_CLIENT_PORT
 echo Starting on https://${VITE_HMR_HOST}:${VITE_HMR_CLIENT_PORT}
 echo ""
 
-$(which bun) run dev:https
+sudo $(which bun) run dev:https

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
 	import TextInput from '$lib/components/TextInput.svelte';
+	import EmailInput from '$lib/components/EmailInput.svelte';
 	import Select from '$lib/components/Select.svelte';
 
 	let email = '';
@@ -125,20 +126,6 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					<p class="text-xs text-gray-500 mt-2">Value: <code>{searchQuery || '(empty)'}</code></p>
 				</div>
 
-				<!-- Email Example -->
-				<div>
-					<h3 class="text-lg font-semibold text-gray-800 mb-4">Email with Validation</h3>
-					<TextInput
-						bind:value={email}
-						label="Email Address"
-						type="email"
-						placeholder="you@example.com"
-						validate={validateEmail}
-						required
-					/>
-					<p class="text-xs text-gray-500 mt-2">Value: <code>{email || '(empty)'}</code></p>
-				</div>
-
 				<!-- Password Example -->
 				<div>
 					<h3 class="text-lg font-semibold text-gray-800 mb-4">Password with Validation</h3>
@@ -253,6 +240,188 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 						</tbody>
 					</table>
 				</div>
+			</div>
+		</section>
+
+		<!-- EmailInput Section -->
+		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+			<h2 class="text-2xl font-bold text-gray-900 mb-8">EmailInput Component</h2>
+			<p class="text-gray-600 mb-8">
+				A specialized text input that extends TextInput with built-in email validation. Validates email format including @ symbol and domain.
+			</p>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+				<!-- Basic Email Example -->
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Basic Email Input</h3>
+					<EmailInput
+						bind:value={email}
+						label="Email Address"
+						placeholder="your@email.com"
+					/>
+					<p class="text-xs text-gray-500 mt-2">Value: <code>{email || '(empty)'}</code></p>
+				</div>
+
+				<!-- Required Email Example -->
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Required Email</h3>
+					<EmailInput
+						value=""
+						label="Email (Required)"
+						placeholder="user@example.com"
+						required
+					/>
+					<p class="text-xs text-gray-500 mt-2">Shows error when left empty</p>
+				</div>
+
+				<!-- Disabled Email Example -->
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Disabled State</h3>
+					<EmailInput
+						value="user@example.com"
+						label="Read-only Email"
+						disabled
+					/>
+				</div>
+
+				<!-- Optional Email Example -->
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Optional Email</h3>
+					<EmailInput
+						value=""
+						label="Email (Optional)"
+						placeholder="leave empty or enter valid email"
+						required={false}
+					/>
+					<p class="text-xs text-gray-500 mt-2">Valid when empty or contains valid email</p>
+				</div>
+			</div>
+
+			<!-- Code Examples -->
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Examples</h3>
+				<div class="space-y-4">
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">Basic usage:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`<EmailInput
+  bind:value={email}
+  label="Email Address"
+  placeholder="your@email.com"
+/>`}</code></pre>
+					</div>
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">Required email:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`<EmailInput
+  bind:value={email}
+  label="Email"
+  required
+/>`}</code></pre>
+					</div>
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">With custom validation:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`function validateEmailDomain(email: string) {
+  if (!email.endsWith('@company.com')) {
+    return 'Only company emails allowed';
+  }
+  return null;
+}
+
+<EmailInput
+  bind:value={email}
+  label="Work Email"
+  required
+  customValidate={validateEmailDomain}
+/>`}</code></pre>
+					</div>
+				</div>
+			</div>
+
+			<!-- Props Reference -->
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Props Reference</h3>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Prop</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Type</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Default</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Description</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">value</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">''</td>
+								<td class="px-4 py-2 text-gray-600">The email input value</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">label</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">'Email'</td>
+								<td class="px-4 py-2 text-gray-600">Label displayed above input</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">placeholder</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">'your@email.com'</td>
+								<td class="px-4 py-2 text-gray-600">Placeholder text</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">required</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">true</td>
+								<td class="px-4 py-2 text-gray-600">Whether email is required</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">disabled</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Disable the input</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">customValidate</td>
+								<td class="px-4 py-2 text-gray-600">function | null</td>
+								<td class="px-4 py-2 text-gray-600">null</td>
+								<td class="px-4 py-2 text-gray-600">Additional validator: (email) => error | null</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">ariaLabel</td>
+								<td class="px-4 py-2 text-gray-600">string | undefined</td>
+								<td class="px-4 py-2 text-gray-600">undefined</td>
+								<td class="px-4 py-2 text-gray-600">ARIA label for accessibility</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<!-- Validation Rules -->
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Built-in Validation Rules</h3>
+				<ul class="space-y-2 text-sm text-gray-700">
+					<li class="flex items-start gap-3">
+						<span class="text-blue-500 font-bold mt-0.5">•</span>
+						<span><strong>Required validation:</strong> Shows "Email is required" if required and empty</span>
+					</li>
+					<li class="flex items-start gap-3">
+						<span class="text-blue-500 font-bold mt-0.5">•</span>
+						<span><strong>@ symbol check:</strong> Email must include @ symbol</span>
+					</li>
+					<li class="flex items-start gap-3">
+						<span class="text-blue-500 font-bold mt-0.5">•</span>
+						<span><strong>Local and domain parts:</strong> Both local (before @) and domain (after @) must be present and non-empty</span>
+					</li>
+					<li class="flex items-start gap-3">
+						<span class="text-blue-500 font-bold mt-0.5">•</span>
+						<span><strong>Domain extension:</strong> Domain must contain a . (period)</span>
+					</li>
+					<li class="flex items-start gap-3">
+						<span class="text-blue-500 font-bold mt-0.5">•</span>
+						<span><strong>Custom validation:</strong> Optional customValidate prop for domain-specific rules</span>
+					</li>
+				</ul>
 			</div>
 		</section>
 
