@@ -77,6 +77,88 @@ A text input field with custom validation support, error display, and accessibil
 - Normal state: gray border, white background, blue ring on focus
 - Disabled state: gray background, gray text, gray border
 
+### EditableLabel
+
+An inline editable field that displays as read-only text (label) and transforms into a text input when clicked. Ideal for user profile fields like display name or email where users need to edit values without navigating to a separate form.
+
+#### Props
+
+- `value` (string): the current value
+- `label` (string): label text displayed above the input in edit mode
+- `placeholder` (string): placeholder text for empty display or input
+- `type` (string, default: 'text'): HTML input type (text, email, password, etc.)
+- `disabled` (boolean, default: false): disable editing
+- `required` (boolean, default: false): mark the input as required
+- `validate` (function, optional): custom validator function that takes a string and returns an error message (string) or null
+- `isSaving` (boolean, default: false): disable input during save operations (e.g., API calls)
+- `ariaLabel` (string, optional): accessible label for screen readers
+- `saveMode` (`'automatic' | 'explicit'`, default: `'automatic'`): save on Enter/blur or require the Save button
+
+#### Events
+
+- `on:change`: fired when the value is saved; emits `{ detail: { value: string } }`
+
+#### Interaction Modes
+
+- **Automatic**: Enter and blur save; Escape cancels.
+- **Explicit**: only the Save button commits; Enter leaves the editor open, blur discards the draft, and Escape cancels.
+- **Display state**: click, Enter, or Space enters edit mode.
+
+#### Usage
+
+```svelte
+<script>
+  import EditableLabel from '$lib/components/EditableLabel.svelte';
+  import { updateCurrentUser } from '$lib/stores/auth.svelte';
+
+  let displayName = 'John Doe';
+  let isSaving = false;
+
+  function validateDisplayName(value) {
+    if (!value.trim()) return 'Display name is required';
+    if (value.length < 2) return 'Display name must be at least 2 characters';
+    return null;
+  }
+
+  async function handleChange(e) {
+    const { value } = e.detail;
+    isSaving = true;
+    try {
+      await updateMe({ displayName: value });
+      updateCurrentUser({ displayName: value });
+    } catch (err) {
+      displayName = displayName; // revert on error
+    } finally {
+      isSaving = false;
+    }
+  }
+</script>
+
+<!-- Display mode (reads as a label) -->
+<EditableLabel
+  bind:value={displayName}
+  label="Display Name"
+  placeholder="Click to edit"
+  validate={validateDisplayName}
+  {isSaving}
+  on:change={handleChange}
+/>
+
+<!-- Require explicit confirmation -->
+<EditableLabel
+  bind:value={displayName}
+  label="Display Name"
+  saveMode="explicit"
+  on:change={handleChange}
+/>
+```
+
+#### Styling
+
+- Display mode: gray text on white background with border; hover shows light gray background and darker border; disabled state shows opacity
+- Edit mode: inherits TextInput styling (blue border, blue ring on focus, red border + error text on validation failure)
+- Error state: red border, light red background, red ring on focus with error message below
+
 ## Component Extension Pattern
 
 To create a specialized component based on a base component:

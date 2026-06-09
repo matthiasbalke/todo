@@ -3,11 +3,19 @@
 	import TextInput from '$lib/components/TextInput.svelte';
 	import EmailInput from '$lib/components/EmailInput.svelte';
 	import Select from '$lib/components/Select.svelte';
+	import EditableLabel from '$lib/components/EditableLabel.svelte';
 
 	let email = '';
 	let password = '';
 	let username = '';
 	let searchQuery = '';
+	let editableName = 'Alex Morgan';
+	let latestEditableName = editableName;
+	let explicitEditableName = 'Morgan Reed';
+	let latestExplicitEditableName = explicitEditableName;
+	let validatedEditableName = 'Taylor';
+	let disabledEditableName = 'Editing disabled';
+	let savingEditableName = 'Saving in progress';
 
 	let selectedFruit: string | null = null;
 	let selectedPriority: string | null = null;
@@ -37,9 +45,23 @@
 		return null;
 	}
 
+	function validateEditableName(value: string): string | null {
+		if (!value.trim()) return 'Display name is required';
+		if (value.trim().length < 3) return 'Display name must be at least 3 characters';
+		return null;
+	}
+
+	function handleEditableNameChange(event: CustomEvent<{ value: string }>) {
+		latestEditableName = event.detail.value;
+	}
+
+	function handleExplicitEditableNameChange(event: CustomEvent<{ value: string }>) {
+		latestExplicitEditableName = event.detail.value;
+	}
+
 	function validateSelection(value: string | null): string | null {
 		if (value === 'High' || value === 'Urgent' ) return null;
-		return 'select a high or urgent value';;
+		return 'select a high or urgent value';
 	}
 
 	const basicInputCode = `<TextInput
@@ -58,6 +80,41 @@
   type="email"
   validate={validateEmail}
   required
+/>`;
+
+	const editableLabelCode = `<script lang="ts">
+  import EditableLabel from '$lib/components/EditableLabel.svelte';
+
+  let displayName = 'Alex Morgan';
+  let isSaving = false;
+
+  function validateDisplayName(value: string) {
+    if (!value.trim()) return 'Display name is required';
+    return null;
+  }
+
+  function handleChange(event: CustomEvent<{ value: string }>) {
+    console.log('Saved value:', event.detail.value);
+  }
+<\/script>
+
+<EditableLabel
+  bind:value={displayName}
+  label="Display name"
+  placeholder="Click to add a display name"
+  validate={validateDisplayName}
+  {isSaving}
+  required
+  on:change={handleChange}
+/>`;
+
+	const explicitEditableLabelCode = `<EditableLabel
+  bind:value={displayName}
+  label="Email"
+  type="email"
+  saveMode="explicit"
+  {isSaving}
+  on:change={handleChange}
 />`;
 
 	const basicSelectCode = `let selected = null;
@@ -236,6 +293,230 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 								<td class="px-4 py-2 text-gray-600">boolean</td>
 								<td class="px-4 py-2 text-gray-600">false</td>
 								<td class="px-4 py-2 text-gray-600">Mark as required (shows * in label)</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</section>
+
+		<!-- EditableLabel Section -->
+		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+			<h2 class="text-2xl font-bold text-gray-900 mb-8">EditableLabel Component</h2>
+			<p class="text-gray-600 mb-8">
+				An inline editable field that switches from a read-only label to an input. It supports
+				validation, keyboard controls, and disabled or saving states without making persistence
+				decisions for the consumer.
+			</p>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Basic Editing</h3>
+					<EditableLabel
+						bind:value={editableName}
+						label="Display name"
+						placeholder="Click to add a display name"
+						ariaLabel="Edit basic display name"
+						on:change={handleEditableNameChange}
+					/>
+					<p class="text-xs text-gray-500 mt-2">
+						Latest emitted value: <code>{latestEditableName}</code>
+					</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">With Validation</h3>
+					<EditableLabel
+						bind:value={validatedEditableName}
+						label="Validated display name"
+						placeholder="Enter at least 3 characters"
+						validate={validateEditableName}
+						ariaLabel="Edit validated display name"
+						required
+					/>
+					<p class="text-xs text-gray-500 mt-2">Try an empty value or fewer than 3 characters.</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Explicit Save</h3>
+					<EditableLabel
+						bind:value={explicitEditableName}
+						label="Confirmed display name"
+						placeholder="Click to edit"
+						ariaLabel="Edit explicit display name"
+						saveMode="explicit"
+						on:change={handleExplicitEditableNameChange}
+					/>
+					<p class="text-xs text-gray-500 mt-2">
+						Latest explicitly saved value: <code>{latestExplicitEditableName}</code>
+					</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Disabled State</h3>
+					<EditableLabel
+						bind:value={disabledEditableName}
+						label="Disabled display name"
+						ariaLabel="Disabled display name"
+						disabled
+					/>
+					<p class="text-xs text-gray-500 mt-2">Editing is unavailable while disabled.</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Saving State</h3>
+					<EditableLabel
+						bind:value={savingEditableName}
+						label="Saving display name"
+						ariaLabel="Saving display name"
+						isSaving
+					/>
+					<p class="text-xs text-gray-500 mt-2">Editing is unavailable while a save is in progress.</p>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Examples</h3>
+				<div class="space-y-4">
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">Automatic save (default):</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{editableLabelCode}</code></pre>
+					</div>
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">Explicit Save button:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{explicitEditableLabelCode}</code></pre>
+					</div>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Keyboard and Pointer Controls</h3>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Click, Enter, Space</p>
+						<p class="text-sm text-gray-600">Enter edit mode from the display label.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Automatic: Enter</p>
+						<p class="text-sm text-gray-600">Validate and save the current edit.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Escape</p>
+						<p class="text-sm text-gray-600">Cancel either mode and restore the previous value.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Automatic: Blur</p>
+						<p class="text-sm text-gray-600">Validate and save when focus leaves the input.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Explicit: Save button</p>
+						<p class="text-sm text-gray-600">The only action that validates and commits the draft.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Explicit: Enter</p>
+						<p class="text-sm text-gray-600">Does not save; the editor remains open.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Explicit: Blur</p>
+						<p class="text-sm text-gray-600">Discards the draft when focus leaves the editor.</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Props Reference</h3>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Prop</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Type</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Default</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Description</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">value</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">''</td>
+								<td class="px-4 py-2 text-gray-600">Displayed and edited value.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">label</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">''</td>
+								<td class="px-4 py-2 text-gray-600">Label shown above the input in edit mode.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">placeholder</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">''</td>
+								<td class="px-4 py-2 text-gray-600">Fallback display text and input placeholder.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">type</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">'text'</td>
+								<td class="px-4 py-2 text-gray-600">HTML input type.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">disabled</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Prevents entering edit mode.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">required</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Marks the edit input as required.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">validate</td>
+								<td class="px-4 py-2 text-gray-600">(value: string) =&gt; string | null</td>
+								<td class="px-4 py-2 text-gray-600">null</td>
+								<td class="px-4 py-2 text-gray-600">Returns an error message or null.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">isSaving</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Prevents editing while persistence is active.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">ariaLabel</td>
+								<td class="px-4 py-2 text-gray-600">string | undefined</td>
+								<td class="px-4 py-2 text-gray-600">undefined</td>
+								<td class="px-4 py-2 text-gray-600">Accessible name override.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">saveMode</td>
+								<td class="px-4 py-2 text-gray-600">'automatic' | 'explicit'</td>
+								<td class="px-4 py-2 text-gray-600">'automatic'</td>
+								<td class="px-4 py-2 text-gray-600">Chooses automatic Enter/blur saving or button-confirmed saving.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Events Reference</h3>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Event</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Payload</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">change</td>
+								<td class="px-4 py-2 text-gray-600">{'{ value: string }'}</td>
+								<td class="px-4 py-2 text-gray-600">Emitted after a changed value passes validation and is saved.</td>
 							</tr>
 						</tbody>
 					</table>
