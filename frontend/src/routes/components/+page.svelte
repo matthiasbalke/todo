@@ -5,8 +5,12 @@
 	import Select from '$lib/components/Select.svelte';
 	import EditableLabel from '$lib/components/EditableLabel.svelte';
 	import Button from '$lib/components/Button.svelte';
+	import DatePicker from '$lib/components/DatePicker.svelte';
 
 	let lastButtonAction = 'None';
+	let emptyDate: string | null = null;
+	let selectedDate: string | null = '2026-06-09';
+	let constrainedDate: string | null = '2026-06-15';
 	let email = '';
 	let password = '';
 	let username = '';
@@ -106,6 +110,27 @@
 <Button type="submit" class="w-full">
   Submit form
 </Button>`;
+
+	const basicDatePickerCode = `<script lang="ts">
+  import DatePicker from '$lib/components/DatePicker.svelte';
+
+  let dueDate: string | null = null;
+<\/script>
+
+<DatePicker
+  bind:value={dueDate}
+  label="Due date"
+  placeholder="No due date"
+/>`;
+
+	const constrainedDatePickerCode = `<DatePicker
+  bind:value={appointmentDate}
+  label="Appointment"
+  min="2026-06-10"
+  max="2026-06-20"
+  locale="en-US"
+  required
+/>`;
 
 	const editableLabelCode = `<script lang="ts">
   import EditableLabel from '$lib/components/EditableLabel.svelte';
@@ -314,6 +339,175 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					Standard native button attributes and handlers such as <code>title</code>,
 					<code>aria-label</code>, <code>data-*</code>, and <code>onclick</code> are forwarded.
 				</p>
+			</div>
+		</section>
+
+		<!-- DatePicker Section -->
+		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+			<h2 class="text-2xl font-bold text-gray-900 mb-8">DatePicker Component</h2>
+			<p class="text-gray-600 mb-8">
+				A custom, accessible calendar popover for selecting one nullable ISO date without
+				timezone conversion.
+			</p>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Empty Value</h3>
+					<DatePicker
+						bind:value={emptyDate}
+						label="Optional due date"
+						placeholder="No due date"
+						locale="en-US"
+					/>
+					<p class="text-xs text-gray-500 mt-2">
+						ISO value: <code>{emptyDate ?? 'null'}</code>
+					</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Preselected Value</h3>
+					<DatePicker bind:value={selectedDate} label="Release date" locale="en-US" />
+					<p class="text-xs text-gray-500 mt-2">
+						ISO value: <code>{selectedDate ?? 'null'}</code>
+					</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Constrained Range</h3>
+					<DatePicker
+						bind:value={constrainedDate}
+						label="Appointment date"
+						min="2026-06-10"
+						max="2026-06-20"
+						locale="en-US"
+						required
+					/>
+					<p class="text-xs text-gray-500 mt-2">
+						Allowed: <code>2026-06-10</code> through <code>2026-06-20</code>. Value:
+						<code>{constrainedDate ?? 'null'}</code>
+					</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Disabled State</h3>
+					<DatePicker value="2026-06-09" label="Locked date" locale="en-US" disabled />
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Examples</h3>
+				<div class="space-y-4">
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">Nullable ISO date:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{basicDatePickerCode}</code></pre>
+					</div>
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">Localized constrained date:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{constrainedDatePickerCode}</code></pre>
+					</div>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Keyboard Controls</h3>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">← →</p>
+						<p class="text-sm text-gray-600">Move one day.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">↑ ↓</p>
+						<p class="text-sm text-gray-600">Move one week.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Home, End</p>
+						<p class="text-sm text-gray-600">Move to Monday or Sunday of the week.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Page Up, Page Down</p>
+						<p class="text-sm text-gray-600">Move to the previous or next month.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Enter, Space</p>
+						<p class="text-sm text-gray-600">Select the focused date.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Escape</p>
+						<p class="text-sm text-gray-600">Close without changing the value.</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Props Reference</h3>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Prop</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Type</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Default</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Description</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">value</td>
+								<td class="px-4 py-2 text-gray-600">string | null</td>
+								<td class="px-4 py-2 text-gray-600">null</td>
+								<td class="px-4 py-2 text-gray-600">Bindable YYYY-MM-DD calendar date.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">label</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">''</td>
+								<td class="px-4 py-2 text-gray-600">Visible trigger label.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">placeholder</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">'Select a date'</td>
+								<td class="px-4 py-2 text-gray-600">Text shown for a null value.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">required</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Displays the required marker.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">disabled</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Disables the trigger and calendar.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">min</td>
+								<td class="px-4 py-2 text-gray-600">string | null</td>
+								<td class="px-4 py-2 text-gray-600">null</td>
+								<td class="px-4 py-2 text-gray-600">Inclusive minimum ISO date.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">max</td>
+								<td class="px-4 py-2 text-gray-600">string | null</td>
+								<td class="px-4 py-2 text-gray-600">null</td>
+								<td class="px-4 py-2 text-gray-600">Inclusive maximum ISO date.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">locale</td>
+								<td class="px-4 py-2 text-gray-600">string | undefined</td>
+								<td class="px-4 py-2 text-gray-600">runtime locale</td>
+								<td class="px-4 py-2 text-gray-600">Intl locale for visible and accessible dates.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">ariaLabel</td>
+								<td class="px-4 py-2 text-gray-600">string | undefined</td>
+								<td class="px-4 py-2 text-gray-600">undefined</td>
+								<td class="px-4 py-2 text-gray-600">Accessible trigger label override.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</section>
 
@@ -1061,7 +1255,7 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 		<div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
 			<h3 class="font-semibold text-blue-900 mb-2">Coming Soon</h3>
 			<p class="text-blue-800 text-sm">
-				Button, DatePicker, ItemCard, and other components will be added to this showcase as they are implemented.
+				ItemCard and other components will be added to this showcase as they are implemented.
 			</p>
 		</div>
 	</div>

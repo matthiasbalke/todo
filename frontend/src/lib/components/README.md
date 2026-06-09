@@ -49,6 +49,63 @@ A native button wrapper with consistent variants, focus treatment, disabled beha
 - Danger: red background with white text
 - All variants share rounded corners, focus rings, transitions, and disabled opacity
 
+### DatePicker
+
+A custom single-date calendar popover for nullable ISO calendar dates.
+
+#### Props
+
+- `value` (`string | null`, bindable, default: `null`): selected `YYYY-MM-DD` date
+- `label` (string, default: `''`): visible trigger label
+- `placeholder` (string, default: `'Select a date'`): text shown when value is null
+- `required` (boolean, default: false): show the required marker
+- `disabled` (boolean, default: false): disable the trigger and calendar
+- `min` (`string | null`, default: `null`): inclusive minimum ISO date
+- `max` (`string | null`, default: `null`): inclusive maximum ISO date
+- `locale` (string, optional): locale used by `Intl.DateTimeFormat`
+- `ariaLabel` (string, optional): accessible trigger label override
+
+#### Usage
+
+```svelte
+<script lang="ts">
+  import DatePicker from '$lib/components/DatePicker.svelte';
+
+  let dueDate: string | null = null;
+</script>
+
+<DatePicker
+  bind:value={dueDate}
+  label="Due date"
+  placeholder="No due date"
+/>
+
+<DatePicker
+  bind:value={dueDate}
+  label="Appointment"
+  min="2026-06-01"
+  max="2026-06-30"
+  locale="en-US"
+  required
+/>
+```
+
+#### Value and Actions
+
+- Values are date-only ISO strings (`YYYY-MM-DD`) or `null`; no UTC conversion is applied.
+- **Today** selects the local calendar date when it is within min/max constraints.
+- **Clear** sets the value to `null`.
+- The calendar starts weeks on Monday and displays six stable rows.
+
+#### Keyboard Controls
+
+- **Arrow Left/Right**: previous/next day
+- **Arrow Up/Down**: previous/next week
+- **Home/End**: Monday/Sunday of the current week
+- **Page Up/Page Down**: previous/next month
+- **Enter/Space**: select focused date
+- **Escape**: close without changing the value
+
 ### TextInput
 
 A text input field with custom validation support, error display, and accessibility features.

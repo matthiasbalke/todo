@@ -154,3 +154,63 @@ describe('ComponentsPage Button showcase', () => {
 		expect(showcase.getByText('States, type, and class extension:')).toBeInTheDocument();
 	});
 });
+
+describe('ComponentsPage DatePicker showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('renders empty, selected, constrained, and disabled examples', () => {
+		render(ComponentsPage);
+
+		expect(screen.getByRole('button', { name: 'Optional due date' })).toHaveTextContent('No due date');
+		expect(screen.getByRole('button', { name: 'Release date' })).toHaveTextContent('Jun 9, 2026');
+		expect(screen.getByRole('button', { name: 'Appointment date' })).toHaveTextContent(
+			'Jun 15, 2026'
+		);
+		expect(screen.getByRole('button', { name: 'Locked date' })).toBeDisabled();
+	});
+
+	it('updates the displayed ISO value when selecting and clearing', async () => {
+		render(ComponentsPage);
+
+		const example = screen.getByRole('heading', { name: 'Preselected Value' }).parentElement!;
+		const trigger = within(example).getByRole('button', { name: 'Release date' });
+		await fireEvent.click(trigger);
+		await fireEvent.click(screen.getByRole('gridcell', { name: 'Monday, June 15, 2026' }));
+
+		expect(example).toHaveTextContent('2026-06-15');
+
+		await fireEvent.click(trigger);
+		await fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+		expect(example).toHaveTextContent('null');
+	});
+
+	it('documents keyboard controls and the complete DatePicker API', () => {
+		render(ComponentsPage);
+
+		const section = screen.getByRole('heading', { name: 'DatePicker Component' }).closest('section');
+		expect(section).not.toBeNull();
+		const showcase = within(section!);
+
+		for (const prop of [
+			'value',
+			'label',
+			'placeholder',
+			'required',
+			'disabled',
+			'min',
+			'max',
+			'locale',
+			'ariaLabel'
+		]) {
+			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
+		}
+
+		expect(showcase.getByText('Home, End')).toBeInTheDocument();
+		expect(showcase.getByText('Page Up, Page Down')).toBeInTheDocument();
+		expect(showcase.getByText('Enter, Space')).toBeInTheDocument();
+		expect(showcase.getByText('Nullable ISO date:')).toBeInTheDocument();
+		expect(showcase.getByText('Localized constrained date:')).toBeInTheDocument();
+	});
+});
