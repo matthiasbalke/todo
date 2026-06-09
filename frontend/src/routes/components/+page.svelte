@@ -4,7 +4,9 @@
 	import EmailInput from '$lib/components/EmailInput.svelte';
 	import Select from '$lib/components/Select.svelte';
 	import EditableLabel from '$lib/components/EditableLabel.svelte';
+	import Button from '$lib/components/Button.svelte';
 
+	let lastButtonAction = 'None';
 	let email = '';
 	let password = '';
 	let username = '';
@@ -24,6 +26,15 @@
 	const fruits = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig'];
 	const priorities = ['Low', 'Medium', 'High', 'Urgent'];
 	const categories = ['Work', 'Personal', 'Shopping', 'Health', 'Finance'];
+
+	function handleButtonAction(action: string) {
+		lastButtonAction = action;
+	}
+
+	function handleButtonSubmit(event: SubmitEvent) {
+		event.preventDefault();
+		lastButtonAction = 'Submit';
+	}
 
 	function validateEmail(value: string): string | null {
 		if (!value) return 'Email is required';
@@ -81,6 +92,20 @@
   validate={validateEmail}
   required
 />`;
+
+	const buttonVariantsCode = `<Button onclick={() => handleAction('Primary')}>Primary action</Button>
+<Button variant="secondary">Secondary action</Button>
+<Button variant="danger">Delete item</Button>`;
+
+	const buttonStatesCode = `<Button loading={isSaving} loadingLabel="Saving…">
+  Save changes
+</Button>
+
+<Button disabled>Unavailable</Button>
+
+<Button type="submit" class="w-full">
+  Submit form
+</Button>`;
 
 	const editableLabelCode = `<script lang="ts">
   import EditableLabel from '$lib/components/EditableLabel.svelte';
@@ -163,6 +188,134 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 				{/if}
 			</p>
 		</div>
+
+		<!-- Button Section -->
+		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+			<h2 class="text-2xl font-bold text-gray-900 mb-8">Button Component</h2>
+			<p class="text-gray-600 mb-8">
+				A native button primitive with consistent action variants, disabled and loading states,
+				focus treatment, and support for standard button attributes and events.
+			</p>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Action Variants</h3>
+					<div class="flex flex-wrap gap-3">
+						<Button onclick={() => handleButtonAction('Primary')}>Primary action</Button>
+						<Button variant="secondary" onclick={() => handleButtonAction('Secondary')}>
+							Secondary action
+						</Button>
+						<Button variant="danger" onclick={() => handleButtonAction('Danger')}>
+							Danger action
+						</Button>
+					</div>
+					<p class="text-xs text-gray-500 mt-3">
+						Last action: <code>{lastButtonAction}</code>
+					</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">States</h3>
+					<div class="flex flex-wrap gap-3">
+						<Button disabled>Disabled</Button>
+						<Button loading loadingLabel="Saving…">Save changes</Button>
+					</div>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Consumer Classes</h3>
+					<Button class="w-full" variant="secondary" onclick={() => handleButtonAction('Full width')}>
+						Full-width button
+					</Button>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Native Submit Type</h3>
+					<form onsubmit={handleButtonSubmit}>
+						<Button type="submit">Submit example</Button>
+					</form>
+					<p class="text-xs text-gray-500 mt-2">Uses native form submission semantics.</p>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Examples</h3>
+				<div class="space-y-4">
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">Variants and click handling:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{buttonVariantsCode}</code></pre>
+					</div>
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">States, type, and class extension:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{buttonStatesCode}</code></pre>
+					</div>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Props Reference</h3>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Prop</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Type</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Default</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Description</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">variant</td>
+								<td class="px-4 py-2 text-gray-600">'primary' | 'secondary' | 'danger'</td>
+								<td class="px-4 py-2 text-gray-600">'primary'</td>
+								<td class="px-4 py-2 text-gray-600">Visual intent and color treatment.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">type</td>
+								<td class="px-4 py-2 text-gray-600">'button' | 'submit' | 'reset'</td>
+								<td class="px-4 py-2 text-gray-600">'button'</td>
+								<td class="px-4 py-2 text-gray-600">Native button type.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">disabled</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Prevents activation.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">loading</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Disables the button and exposes busy status.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">loadingLabel</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">'Loading…'</td>
+								<td class="px-4 py-2 text-gray-600">Content displayed while loading.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">class</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">''</td>
+								<td class="px-4 py-2 text-gray-600">Additional classes merged with component styles.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">children</td>
+								<td class="px-4 py-2 text-gray-600">Snippet</td>
+								<td class="px-4 py-2 text-gray-600">required</td>
+								<td class="px-4 py-2 text-gray-600">Text, icon, or combined button content.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<p class="text-sm text-gray-600 mt-4">
+					Standard native button attributes and handlers such as <code>title</code>,
+					<code>aria-label</code>, <code>data-*</code>, and <code>onclick</code> are forwarded.
+				</p>
+			</div>
+		</section>
 
 		<!-- TextInput Section -->
 		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">

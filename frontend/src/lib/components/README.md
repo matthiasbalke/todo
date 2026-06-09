@@ -10,6 +10,45 @@ A small, reusable component library for SvelteKit UI primitives. Components foll
 
 ## Base Components
 
+### Button
+
+A native button wrapper with consistent variants, focus treatment, disabled behavior, and loading feedback.
+
+#### Props
+
+- `variant` (`'primary' | 'secondary' | 'danger'`, default: `'primary'`): visual intent
+- `type` (`'button' | 'submit' | 'reset'`, default: `'button'`): native button type
+- `disabled` (boolean, default: false): disable activation
+- `loading` (boolean, default: false): disable activation, set `aria-busy`, and show loading text
+- `loadingLabel` (string, default: `'Loading…'`): text displayed while loading
+- `class` (string, optional): additional classes merged with the component styles
+- `children` (snippet): text, icons, or combined button content
+- All other standard button attributes and native event handlers are forwarded.
+
+#### Usage
+
+```svelte
+<script lang="ts">
+  import Button from '$lib/components/Button.svelte';
+
+  let saving = false;
+</script>
+
+<Button onclick={() => console.log('Saved')}>Save</Button>
+<Button variant="secondary">Cancel</Button>
+<Button variant="danger">Delete</Button>
+<Button type="submit" loading={saving} loadingLabel="Saving…" class="w-full">
+  Submit
+</Button>
+```
+
+#### Styling
+
+- Primary: blue background with white text
+- Secondary: white background with neutral border and text
+- Danger: red background with white text
+- All variants share rounded corners, focus rings, transitions, and disabled opacity
+
 ### TextInput
 
 A text input field with custom validation support, error display, and accessibility features.

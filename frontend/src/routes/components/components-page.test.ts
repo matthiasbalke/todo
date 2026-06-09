@@ -100,3 +100,57 @@ describe('ComponentsPage EditableLabel showcase', () => {
 		expect(showcase.getByText('{ value: string }')).toBeInTheDocument();
 	});
 });
+
+describe('ComponentsPage Button showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('renders variants and updates local click feedback', async () => {
+		render(ComponentsPage);
+
+		expect(screen.getByRole('button', { name: 'Primary action' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Secondary action' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Danger action' })).toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Danger action' }));
+		expect(screen.getByText('Last action:').parentElement).toHaveTextContent('Danger');
+	});
+
+	it('demonstrates disabled, loading, custom-class, and submit behavior', async () => {
+		render(ComponentsPage);
+
+		expect(screen.getByRole('button', { name: 'Disabled' })).toBeDisabled();
+		const loadingButton = screen.getByRole('button', { name: 'Saving…' });
+		expect(loadingButton).toBeDisabled();
+		expect(loadingButton).toHaveAttribute('aria-busy', 'true');
+		expect(screen.getByRole('button', { name: 'Full-width button' })).toHaveClass('w-full');
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Submit example' }));
+		expect(screen.getByText('Last action:').parentElement).toHaveTextContent('Submit');
+	});
+
+	it('documents Button props and native forwarding', () => {
+		render(ComponentsPage);
+
+		const section = screen.getByRole('heading', { name: 'Button Component' }).closest('section');
+		expect(section).not.toBeNull();
+		const showcase = within(section!);
+
+		for (const prop of [
+			'variant',
+			'type',
+			'disabled',
+			'loading',
+			'loadingLabel',
+			'class',
+			'children'
+		]) {
+			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
+		}
+
+		expect(showcase.getByText(/standard native button attributes and handlers/i)).toBeInTheDocument();
+		expect(showcase.getByText('Variants and click handling:')).toBeInTheDocument();
+		expect(showcase.getByText('States, type, and class extension:')).toBeInTheDocument();
+	});
+});
