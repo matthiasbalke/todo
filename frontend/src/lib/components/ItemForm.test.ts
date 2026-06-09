@@ -1,5 +1,6 @@
-import { render, fireEvent } from '@testing-library/svelte';
-import { vi, describe, it, expect, afterEach } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TodoItem } from '$lib/mock-data';
 import ItemForm from './ItemForm.svelte';
 
 const defaultProps = {
@@ -7,132 +8,228 @@ const defaultProps = {
 	categories: [],
 	users: [],
 	onsubmit: vi.fn(),
-	oncancel: vi.fn(),
+	oncancel: vi.fn()
 };
 
-afterEach(() => {
-	vi.clearAllMocks();
-});
+function itemWithDueDate(dueDate: string | null): TodoItem {
+	return {
+		id: 'item-1',
+		listId: 'list-1',
+		categoryId: null,
+		title: 'Existing item',
+		notes: null,
+		done: false,
+		starred: false,
+		dueDate,
+		assignedUserIds: [],
+		recurrenceRule: null,
+		parentItemId: null,
+		createdByUserId: null,
+		sortOrder: 1,
+		createdAt: '2026-06-01'
+	};
+}
 
-describe('ItemForm assignment chips', () => {
-	it('should toggle chip to selected state on click and back to unselected on second click', async () => {
-		const user = { id: 'u1', name: 'Alice', email: 'alice@example.com' };
-		const { container } = render(ItemForm, { props: { ...defaultProps, users: [user] } });
-
-		const chip = container.querySelector('button[type="button"]')!;
-		expect(chip.className).toContain('bg-gray-100'); // initially unselected
-
-		await fireEvent.click(chip);
-		expect(chip.className).toContain('bg-blue-100'); // selected after first click
-
-		await fireEvent.click(chip);
-		expect(chip.className).toContain('bg-gray-100'); // unselected after second click
+describe('ItemForm', () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date(2026, 5, 9, 12));
 	});
 
-	it('should not suppress spacing between chip fieldset and surrounding elements', () => {
-		const user = { id: 'u1', name: 'Alice', email: 'alice@example.com' };
-		const { container } = render(ItemForm, { props: { ...defaultProps, users: [user] } });
-		const fieldset = container.querySelector('fieldset')!;
-		// m-0 overrides space-y-3 gap; fieldset must not have that class
-		expect(fieldset.className).not.toContain('m-0');
-	});
-});
-
-describe('ItemForm focusout / cancel behaviour', () => {
-	it('should not call oncancel when mousedown within form is followed by focusout with null relatedTarget', () => {
-		const oncancel = vi.fn();
-		const { container } = render(ItemForm, { props: { ...defaultProps, oncancel } });
-
-		const form = container.querySelector('form')!;
-		const titleInput = container.querySelector('input[placeholder="Item title"]')!;
-
-		// Simulate user clicking on a non-focusable area within the form
-		// (e.g. whitespace between fields, or the Add button in Safari which doesn't receive focus)
-		fireEvent.mouseDown(form);
-
-		// focusout fires with no relatedTarget — the relatedTarget=null case that currently triggers oncancel
-		fireEvent.focusOut(titleInput, { relatedTarget: null });
-
-		expect(oncancel).not.toHaveBeenCalled();
+	afterEach(() => {
+		cleanup();
+		vi.clearAllMocks();
+		vi.useRealTimers();
 	});
 
-	it('should call oncancel when focus moves to an element outside the form', () => {
-		const oncancel = vi.fn();
-		const { container } = render(ItemForm, { props: { ...defaultProps, oncancel } });
+	describe('assignment chips', () => {
+		it('toggles a chip to selected state and back', async () => {
+			const user = { id: 'u1', name: 'Alice', email: 'alice@example.com' };
+			const { container } = render(ItemForm, { props: { ...defaultProps, users: [user] } });
 
-		const titleInput = container.querySelector('input[placeholder="Item title"]')!;
-		const externalEl = document.createElement('button');
-		document.body.appendChild(externalEl);
+			const chip = screen.getByRole('button', { name: 'Alice' });
+			expect(chip.className).toContain('bg-gray-100');
 
-		fireEvent.focusOut(titleInput, { relatedTarget: externalEl });
+			await fireEvent.click(chip);
+			expect(chip.className).toContain('bg-blue-100');
 
-		expect(oncancel).toHaveBeenCalledOnce();
+			await fireEvent.click(chip);
+			expect(chip.className).toContain('bg-gray-100');
 
-		document.body.removeChild(externalEl);
+			const fieldset = container.querySelector('fieldset')!;
+			expect(fieldset.className).not.toContain('m-0');
+		});
 	});
 
-	it('should not call oncancel when focus moves between elements within the form', () => {
-		const oncancel = vi.fn();
-		const { container } = render(ItemForm, { props: { ...defaultProps, oncancel } });
+	describe('due date', () => {
+		it('renders the shared DatePicker instead of a native date input', () => {
+			const { container } = render(ItemForm, { props: defaultProps });
 
-		const titleInput = container.querySelector('input[placeholder="Item title"]')!;
-		const notesTextarea = container.querySelector('textarea')!;
+			expect(screen.getByRole('button', { name: 'Due Date' })).toHaveTextContent('Select a date');
+			expect(container.querySelector('input[type="date"]')).not.toBeInTheDocument();
+		});
 
-		fireEvent.focusOut(titleInput, { relatedTarget: notesTextarea });
+		it('displays and selects an existing due date', async () => {
+			render(ItemForm, {
+				props: { ...defaultProps, item: itemWithDueDate('2026-06-09') }
+			});
 
-		expect(oncancel).not.toHaveBeenCalled();
+			const trigger = screen.getByRole('button', { name: 'Due Date' });
+			expect(trigger).toHaveTextContent('Jun 9, 2026');
+			await fireEvent.click(trigger);
+			expect(
+				screen.getByRole('gridcell', { name: 'Tuesday, June 9, 2026' })
+			).toHaveAttribute('aria-selected', 'true');
+		});
+
+		it('displays the placeholder for an existing item without a due date', () => {
+			render(ItemForm, {
+				props: { ...defaultProps, item: itemWithDueDate(null) }
+			});
+
+			expect(screen.getByRole('button', { name: 'Due Date' })).toHaveTextContent('Select a date');
+		});
+
+		it('submits a selected ISO date', async () => {
+			const onsubmit = vi.fn();
+			render(ItemForm, { props: { ...defaultProps, onsubmit } });
+
+			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+				target: { value: 'Dated item' }
+			});
+			await fireEvent.click(screen.getByRole('button', { name: 'Due Date' }));
+			await fireEvent.click(
+				screen.getByRole('gridcell', { name: 'Monday, June 15, 2026' })
+			);
+			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+			expect(onsubmit).toHaveBeenCalledOnce();
+			expect(onsubmit.mock.calls[0][0]).toMatchObject({
+				title: 'Dated item',
+				dueDate: '2026-06-15'
+			});
+		});
+
+		it('submits null after clearing an existing due date', async () => {
+			const onsubmit = vi.fn();
+			render(ItemForm, {
+				props: { ...defaultProps, item: itemWithDueDate('2026-06-09'), onsubmit }
+			});
+
+			await fireEvent.click(screen.getByRole('button', { name: 'Due Date' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+			expect(onsubmit).toHaveBeenCalledOnce();
+			expect(onsubmit.mock.calls[0][0].dueDate).toBeNull();
+		});
+
+		it('resets the due date after successfully creating an item', async () => {
+			const onsubmit = vi.fn().mockResolvedValue(undefined);
+			render(ItemForm, { props: { ...defaultProps, onsubmit } });
+
+			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+				target: { value: 'Dated item' }
+			});
+			const trigger = screen.getByRole('button', { name: 'Due Date' });
+			await fireEvent.click(trigger);
+			await fireEvent.click(
+				screen.getByRole('gridcell', { name: 'Monday, June 15, 2026' })
+			);
+			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+			expect(trigger).toHaveTextContent('Select a date');
+		});
 	});
 
-	it('should redirect focus to title input when category picker blurs', () => {
-		const { container } = render(ItemForm, { props: { ...defaultProps } });
-		const categorySelect = container.querySelector('select#categoryId')!;
-		const titleInput = container.querySelector('input[placeholder="Item title"]') as HTMLInputElement;
+	describe('focusout and cancellation', () => {
+		it('does not cancel when mousedown within the form is followed by a null focus target', () => {
+			const oncancel = vi.fn();
+			const { container } = render(ItemForm, { props: { ...defaultProps, oncancel } });
+			const form = container.querySelector('form')!;
+			const titleInput = screen.getByPlaceholderText('Item title');
 
-		// Simulate picker closing and losing focus
-		fireEvent.blur(categorySelect);
+			fireEvent.mouseDown(form);
+			fireEvent.focusOut(titleInput, { relatedTarget: null });
 
-		// Focus should be redirected to title input
-		expect(document.activeElement).toBe(titleInput);
-	});
+			expect(oncancel).not.toHaveBeenCalled();
+		});
 
-	it('should redirect focus to title input when date picker blurs', () => {
-		const { container } = render(ItemForm, { props: { ...defaultProps } });
-		const dueDateInput = container.querySelector('input[id="dueDate"]')!;
-		const titleInput = container.querySelector('input[placeholder="Item title"]') as HTMLInputElement;
+		it('cancels when focus moves outside the form', () => {
+			const oncancel = vi.fn();
+			render(ItemForm, { props: { ...defaultProps, oncancel } });
+			const externalElement = document.createElement('button');
+			document.body.appendChild(externalElement);
 
-		// Simulate picker closing and losing focus
-		fireEvent.blur(dueDateInput);
+			fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
+				relatedTarget: externalElement
+			});
 
-		// Focus should be redirected to title input
-		expect(document.activeElement).toBe(titleInput);
-	});
+			expect(oncancel).toHaveBeenCalledOnce();
+			externalElement.remove();
+		});
 
-	it('should redirect focus to title input when recurrence picker blurs', () => {
-		const { container } = render(ItemForm, { props: { ...defaultProps } });
-		const recurrenceSelect = container.querySelector('select#recurrencePreset')!;
-		const titleInput = container.querySelector('input[placeholder="Item title"]') as HTMLInputElement;
+		it('does not cancel when focus moves between form controls', () => {
+			const oncancel = vi.fn();
+			render(ItemForm, { props: { ...defaultProps, oncancel } });
 
-		// Simulate picker closing and losing focus
-		fireEvent.blur(recurrenceSelect);
+			fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
+				relatedTarget: screen.getByPlaceholderText('Notes (optional)')
+			});
 
-		// Focus should be redirected to title input
-		expect(document.activeElement).toBe(titleInput);
-	});
+			expect(oncancel).not.toHaveBeenCalled();
+		});
 
-	it('should not call oncancel when picker loses focus and focus is redirected to title input', () => {
-		const oncancel = vi.fn();
-		const { container } = render(ItemForm, { props: { ...defaultProps, oncancel } });
+		it.each([
+			['category', '#categoryId'],
+			['recurrence', '#recurrencePreset']
+		])('preserves the %s picker blur workaround', (_name, selector) => {
+			const { container } = render(ItemForm, { props: defaultProps });
+			const select = container.querySelector(selector)!;
+			const titleInput = screen.getByPlaceholderText('Item title');
 
-		const categorySelect = container.querySelector('select#categoryId')!;
-		const titleInput = container.querySelector('input[placeholder="Item title"]')!;
+			fireEvent.blur(select);
 
-		// Focus title input first
-		fireEvent.focus(titleInput);
+			expect(document.activeElement).toBe(titleInput);
+		});
 
-		// Simulate picker losing focus (onblur redirects focus to title)
-		fireEvent.blur(categorySelect);
+		it('keeps the form open while navigating the calendar and dismissing it with Escape', async () => {
+			const oncancel = vi.fn();
+			render(ItemForm, { props: { ...defaultProps, oncancel } });
+			const trigger = screen.getByRole('button', { name: 'Due Date' });
 
-		// No focusout should be triggered on the form because focus stays within it
-		expect(oncancel).not.toHaveBeenCalled();
+			await fireEvent.click(trigger);
+			await fireEvent.click(screen.getByRole('button', { name: 'Next month' }));
+			expect(screen.getByRole('heading', { name: 'July 2026' })).toBeInTheDocument();
+			expect(oncancel).not.toHaveBeenCalled();
+
+			const focusedDate = document.activeElement as HTMLElement;
+			await fireEvent.keyDown(focusedDate, { key: 'Escape' });
+			await vi.runAllTimersAsync();
+
+			expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+			expect(document.activeElement).toBe(trigger);
+			expect(oncancel).not.toHaveBeenCalled();
+		});
+
+		it('keeps the form open and returns focus after selecting and clearing', async () => {
+			const oncancel = vi.fn();
+			render(ItemForm, { props: { ...defaultProps, oncancel } });
+			const trigger = screen.getByRole('button', { name: 'Due Date' });
+
+			await fireEvent.click(trigger);
+			await fireEvent.click(
+				screen.getByRole('gridcell', { name: 'Monday, June 15, 2026' })
+			);
+			await vi.runAllTimersAsync();
+			expect(document.activeElement).toBe(trigger);
+			expect(oncancel).not.toHaveBeenCalled();
+
+			await fireEvent.click(trigger);
+			await fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+			await vi.runAllTimersAsync();
+			expect(document.activeElement).toBe(trigger);
+			expect(oncancel).not.toHaveBeenCalled();
+		});
 	});
 });

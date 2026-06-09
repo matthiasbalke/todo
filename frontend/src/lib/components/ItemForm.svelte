@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack, onMount } from 'svelte';
   import type { TodoItem, Category, User, RecurrenceRule } from '$lib/mock-data';
+  import DatePicker from './DatePicker.svelte';
 
   let {
     item,
@@ -24,7 +25,7 @@
 
   let title = $state(untrack(() => item?.title ?? ''));
   let notes = $state(untrack(() => item?.notes ?? ''));
-  let dueDate = $state(untrack(() => item?.dueDate ?? ''));
+  let dueDate = $state<string | null>(untrack(() => item?.dueDate ?? null));
   let categoryId = $state<string>(untrack(() => item?.categoryId ?? defaultCategoryId ?? ''));
   let assignedUserIds = $state(new Set<string>(untrack(() => item?.assignedUserIds ?? [])));
   let recurrencePreset = $state<string>(untrack(() => getInitialRecurrencePreset(item?.recurrenceRule ?? null)));
@@ -66,7 +67,7 @@
         notes: notes || null,
         done: item?.done ?? false,
         starred: item?.starred ?? false,
-        dueDate: dueDate || null,
+        dueDate,
         assignedUserIds: [...assignedUserIds],
         recurrenceRule: parseRecurrencePreset(recurrencePreset),
         parentItemId: item?.parentItemId ?? null,
@@ -78,7 +79,7 @@
       if (isNew) {
         title = '';
         notes = '';
-        dueDate = '';
+        dueDate = null;
         categoryId = defaultCategoryId ?? '';
         assignedUserIds = new Set();
         recurrencePreset = '';
@@ -131,16 +132,7 @@
       </select>
     </div>
 
-    <div>
-      <label for="dueDate" class="text-xs text-gray-500 mb-1 block">Due Date</label>
-      <input
-        id="dueDate"
-        type="date"
-        bind:value={dueDate}
-        onblur={handlePickerBlur}
-        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-    </div>
+    <DatePicker bind:value={dueDate} label="Due Date" />
 
     <div>
       <label for="recurrencePreset" class="text-xs text-gray-500 mb-1 block">Recurrence</label>
