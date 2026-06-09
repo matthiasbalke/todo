@@ -11,6 +11,8 @@
 	let searchQuery = '';
 	let editableName = 'Alex Morgan';
 	let latestEditableName = editableName;
+	let explicitEditableName = 'Morgan Reed';
+	let latestExplicitEditableName = explicitEditableName;
 	let validatedEditableName = 'Taylor';
 	let disabledEditableName = 'Editing disabled';
 	let savingEditableName = 'Saving in progress';
@@ -53,9 +55,13 @@
 		latestEditableName = event.detail.value;
 	}
 
+	function handleExplicitEditableNameChange(event: CustomEvent<{ value: string }>) {
+		latestExplicitEditableName = event.detail.value;
+	}
+
 	function validateSelection(value: string | null): string | null {
 		if (value === 'High' || value === 'Urgent' ) return null;
-		return 'select a high or urgent value';;
+		return 'select a high or urgent value';
 	}
 
 	const basicInputCode = `<TextInput
@@ -99,6 +105,15 @@
   validate={validateDisplayName}
   {isSaving}
   required
+  on:change={handleChange}
+/>`;
+
+	const explicitEditableLabelCode = `<EditableLabel
+  bind:value={displayName}
+  label="Email"
+  type="email"
+  saveMode="explicit"
+  {isSaving}
   on:change={handleChange}
 />`;
 
@@ -323,6 +338,21 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 				</div>
 
 				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Explicit Save</h3>
+					<EditableLabel
+						bind:value={explicitEditableName}
+						label="Confirmed display name"
+						placeholder="Click to edit"
+						ariaLabel="Edit explicit display name"
+						saveMode="explicit"
+						on:change={handleExplicitEditableNameChange}
+					/>
+					<p class="text-xs text-gray-500 mt-2">
+						Latest explicitly saved value: <code>{latestExplicitEditableName}</code>
+					</p>
+				</div>
+
+				<div>
 					<h3 class="text-lg font-semibold text-gray-800 mb-4">Disabled State</h3>
 					<EditableLabel
 						bind:value={disabledEditableName}
@@ -346,8 +376,17 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 			</div>
 
 			<div class="mt-12 pt-8 border-t border-gray-200">
-				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Example</h3>
-				<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{editableLabelCode}</code></pre>
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Examples</h3>
+				<div class="space-y-4">
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">Automatic save (default):</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{editableLabelCode}</code></pre>
+					</div>
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">Explicit Save button:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{explicitEditableLabelCode}</code></pre>
+					</div>
+				</div>
 			</div>
 
 			<div class="mt-12 pt-8 border-t border-gray-200">
@@ -358,16 +397,28 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 						<p class="text-sm text-gray-600">Enter edit mode from the display label.</p>
 					</div>
 					<div>
-						<p class="font-mono text-sm text-blue-600 mb-1">Enter</p>
+						<p class="font-mono text-sm text-blue-600 mb-1">Automatic: Enter</p>
 						<p class="text-sm text-gray-600">Validate and save the current edit.</p>
 					</div>
 					<div>
 						<p class="font-mono text-sm text-blue-600 mb-1">Escape</p>
-						<p class="text-sm text-gray-600">Cancel editing and restore the previous value.</p>
+						<p class="text-sm text-gray-600">Cancel either mode and restore the previous value.</p>
 					</div>
 					<div>
-						<p class="font-mono text-sm text-blue-600 mb-1">Blur</p>
+						<p class="font-mono text-sm text-blue-600 mb-1">Automatic: Blur</p>
 						<p class="text-sm text-gray-600">Validate and save when focus leaves the input.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Explicit: Save button</p>
+						<p class="text-sm text-gray-600">The only action that validates and commits the draft.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Explicit: Enter</p>
+						<p class="text-sm text-gray-600">Does not save; the editor remains open.</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Explicit: Blur</p>
+						<p class="text-sm text-gray-600">Discards the draft when focus leaves the editor.</p>
 					</div>
 				</div>
 			</div>
@@ -438,6 +489,12 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 								<td class="px-4 py-2 text-gray-600">string | undefined</td>
 								<td class="px-4 py-2 text-gray-600">undefined</td>
 								<td class="px-4 py-2 text-gray-600">Accessible name override.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">saveMode</td>
+								<td class="px-4 py-2 text-gray-600">'automatic' | 'explicit'</td>
+								<td class="px-4 py-2 text-gray-600">'automatic'</td>
+								<td class="px-4 py-2 text-gray-600">Chooses automatic Enter/blur saving or button-confirmed saving.</td>
 							</tr>
 						</tbody>
 					</table>

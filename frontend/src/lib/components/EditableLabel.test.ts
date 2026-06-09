@@ -142,6 +142,100 @@ describe('EditableLabel', () => {
 		});
 	});
 
+	describe('explicit save mode', () => {
+		it('saves only when the Save button is clicked', async () => {
+			const { container } = render(EditableLabel, {
+				props: { value: 'Hello', saveMode: 'explicit' }
+			});
+			await fireEvent.click(container.querySelector('[role="button"]')!);
+
+			const input = container.querySelector('input') as HTMLInputElement;
+			await fireEvent.input(input, { target: { value: 'World' } });
+			await fireEvent.keyDown(input, { key: 'Enter' });
+
+			expect(container.querySelector('input')).toBeInTheDocument();
+			expect(container.querySelector('[role="button"]')).not.toBeInTheDocument();
+
+			await fireEvent.click(container.querySelector('button')!);
+
+			expect(container.querySelector('[role="button"]')).toHaveTextContent('World');
+		});
+
+		it('discards the draft when focus leaves the editor', async () => {
+			const { container } = render(EditableLabel, {
+				props: { value: 'Hello', saveMode: 'explicit' }
+			});
+			await fireEvent.click(container.querySelector('[role="button"]')!);
+
+			const input = container.querySelector('input') as HTMLInputElement;
+			await fireEvent.input(input, { target: { value: 'World' } });
+			await fireEvent.focusOut(input, { relatedTarget: null });
+
+			expect(container.querySelector('[role="button"]')).toHaveTextContent('Hello');
+		});
+
+		it('cancels the draft on Escape', async () => {
+			const { container } = render(EditableLabel, {
+				props: { value: 'Hello', saveMode: 'explicit' }
+			});
+			await fireEvent.click(container.querySelector('[role="button"]')!);
+
+			const input = container.querySelector('input') as HTMLInputElement;
+			await fireEvent.input(input, { target: { value: 'World' } });
+			await fireEvent.keyDown(input, { key: 'Escape' });
+
+			expect(container.querySelector('[role="button"]')).toHaveTextContent('Hello');
+		});
+
+		it('keeps the editor open when Save validation fails', async () => {
+			const { container } = render(EditableLabel, {
+				props: {
+					value: 'Hello',
+					saveMode: 'explicit',
+					validate: (val: string) => (val.length < 5 ? 'Too short' : null)
+				}
+			});
+			await fireEvent.click(container.querySelector('[role="button"]')!);
+
+			const input = container.querySelector('input') as HTMLInputElement;
+			await fireEvent.input(input, { target: { value: 'Hi' } });
+			await fireEvent.click(container.querySelector('button')!);
+
+			expect(container.querySelector('input')).toHaveValue('Hi');
+			expect(container.querySelector('#editable-label-error')).toHaveTextContent('Too short');
+		});
+
+		it('disables the input and Save button while saving', async () => {
+			const { container, rerender } = render(EditableLabel, {
+				props: { value: 'Hello', saveMode: 'explicit' }
+			});
+			await fireEvent.click(container.querySelector('[role="button"]')!);
+			await rerender({ value: 'Hello', saveMode: 'explicit', isSaving: true });
+
+			expect(container.querySelector('input')).toBeDisabled();
+			expect(container.querySelector('button')).toBeDisabled();
+			expect(container.querySelector('button')).toHaveTextContent('Saving…');
+		});
+
+		it('does not dismiss before a Save click when focusout has no related target', async () => {
+			const { container } = render(EditableLabel, {
+				props: { value: 'Hello', saveMode: 'explicit' }
+			});
+			await fireEvent.click(container.querySelector('[role="button"]')!);
+
+			const input = container.querySelector('input') as HTMLInputElement;
+			const saveButton = container.querySelector('button')!;
+			await fireEvent.input(input, { target: { value: 'World' } });
+			await fireEvent.mouseDown(saveButton);
+			await fireEvent.focusOut(input, { relatedTarget: null });
+
+			expect(container.querySelector('input')).toBeInTheDocument();
+
+			await fireEvent.click(saveButton);
+			expect(container.querySelector('[role="button"]')).toHaveTextContent('World');
+		});
+	});
+
 	describe('canceling edits', () => {
 		it('exits edit mode on Escape key', async () => {
 			const { container } = render(EditableLabel, {

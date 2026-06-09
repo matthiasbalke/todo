@@ -46,6 +46,26 @@ describe('ComponentsPage EditableLabel showcase', () => {
 		);
 	});
 
+	it('requires the Save button to commit the explicit example', async () => {
+		render(ComponentsPage);
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Edit explicit display name' }));
+		const input = screen.getByRole('textbox', { name: 'Edit explicit display name' });
+		await fireEvent.input(input, { target: { value: 'Casey Stone' } });
+		await fireEvent.keyDown(input, { key: 'Enter' });
+
+		expect(screen.getByText('Latest explicitly saved value:').parentElement).toHaveTextContent(
+			'Morgan Reed'
+		);
+		expect(input).toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+		expect(screen.getByText('Latest explicitly saved value:').parentElement).toHaveTextContent(
+			'Casey Stone'
+		);
+	});
+
 	it('documents the component controls, props, and change event', () => {
 		render(ComponentsPage);
 
@@ -55,7 +75,11 @@ describe('ComponentsPage EditableLabel showcase', () => {
 		const showcase = within(section!);
 		expect(showcase.getByText('Click, Enter, Space')).toBeInTheDocument();
 		expect(showcase.getByText('Escape')).toBeInTheDocument();
-		expect(showcase.getByText('Blur')).toBeInTheDocument();
+		expect(showcase.getByText('Automatic: Enter')).toBeInTheDocument();
+		expect(showcase.getByText('Automatic: Blur')).toBeInTheDocument();
+		expect(showcase.getByText('Explicit: Save button')).toBeInTheDocument();
+		expect(showcase.getByText('Explicit: Enter')).toBeInTheDocument();
+		expect(showcase.getByText('Explicit: Blur')).toBeInTheDocument();
 
 		for (const prop of [
 			'value',
@@ -66,7 +90,8 @@ describe('ComponentsPage EditableLabel showcase', () => {
 			'required',
 			'validate',
 			'isSaving',
-			'ariaLabel'
+			'ariaLabel',
+			'saveMode'
 		]) {
 			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
 		}

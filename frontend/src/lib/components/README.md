@@ -92,17 +92,17 @@ An inline editable field that displays as read-only text (label) and transforms 
 - `validate` (function, optional): custom validator function that takes a string and returns an error message (string) or null
 - `isSaving` (boolean, default: false): disable input during save operations (e.g., API calls)
 - `ariaLabel` (string, optional): accessible label for screen readers
+- `saveMode` (`'automatic' | 'explicit'`, default: `'automatic'`): save on Enter/blur or require the Save button
 
 #### Events
 
 - `on:change`: fired when the value is saved; emits `{ detail: { value: string } }`
 
-#### Keyboard Shortcuts
+#### Interaction Modes
 
-- **Enter**: save the value in edit mode
-- **Escape**: cancel editing and revert to original value
-- **Blur**: save the value (if no validation errors)
-- **Click or Space**: enter edit mode from display state
+- **Automatic**: Enter and blur save; Escape cancels.
+- **Explicit**: only the Save button commits; Enter leaves the editor open, blur discards the draft, and Escape cancels.
+- **Display state**: click, Enter, or Space enters edit mode.
 
 #### Usage
 
@@ -141,6 +141,14 @@ An inline editable field that displays as read-only text (label) and transforms 
   placeholder="Click to edit"
   validate={validateDisplayName}
   {isSaving}
+  on:change={handleChange}
+/>
+
+<!-- Require explicit confirmation -->
+<EditableLabel
+  bind:value={displayName}
+  label="Display Name"
+  saveMode="explicit"
   on:change={handleChange}
 />
 ```

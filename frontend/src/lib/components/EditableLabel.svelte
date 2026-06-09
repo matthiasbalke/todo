@@ -10,6 +10,7 @@
 	export let validate: ((value: string) => string | null) | null = null;
 	export let isSaving: boolean = false;
 	export let ariaLabel: string | undefined = undefined;
+	export let saveMode: 'automatic' | 'explicit' = 'automatic';
 
 	const dispatch = createEventDispatcher<{ change: { value: string } }>();
 
@@ -17,6 +18,7 @@
 	let editValue = value;
 	let errorMessage: string | null = null;
 	let inputElement: HTMLInputElement;
+	let ignoreNextFocusOut = false;
 
 	function startEdit() {
 		if (disabled || isSaving) return;
@@ -67,7 +69,9 @@
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter') {
 			e.preventDefault();
-			saveEdit();
+			if (saveMode === 'automatic') {
+				saveEdit();
+			}
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			cancelEdit();
@@ -75,8 +79,27 @@
 	}
 
 	function handleBlur() {
-		if (isEditing) {
+		if (isEditing && saveMode === 'automatic') {
 			saveEdit();
+		}
+	}
+
+	function handleExplicitMouseDown() {
+		ignoreNextFocusOut = true;
+		setTimeout(() => {
+			ignoreNextFocusOut = false;
+		}, 0);
+	}
+
+	function handleExplicitFocusOut(e: FocusEvent) {
+		if (ignoreNextFocusOut) {
+			ignoreNextFocusOut = false;
+			return;
+		}
+
+		const editor = e.currentTarget as HTMLElement;
+		if (!editor.contains(e.relatedTarget as Node | null)) {
+			cancelEdit();
 		}
 	}
 
@@ -100,26 +123,45 @@
 			</label>
 		{/if}
 
-		<input
-			bind:this={inputElement}
-			id="editable-label-input"
-			{type}
-			bind:value={editValue}
-			{placeholder}
-			disabled={isSaving}
-			{required}
-			aria-label={ariaLabel || label}
-			aria-invalid={isError}
-			aria-describedby={isError ? 'editable-label-error' : undefined}
-			on:input={handleInput}
-			on:blur={handleBlur}
-			on:keydown={handleKeydown}
-			class="px-3 py-2 rounded border transition-colors {isError
-				? 'border-red-500 bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500'
-				: 'border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500'} {isSaving
-				? 'opacity-50 cursor-not-allowed'
-				: ''} disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300"
-		/>
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+		<div
+			class="flex items-center gap-2"
+			role={saveMode === 'explicit' ? 'group' : undefined}
+			on:mousedown={saveMode === 'explicit' ? handleExplicitMouseDown : undefined}
+			on:focusout={saveMode === 'explicit' ? handleExplicitFocusOut : undefined}
+		>
+			<input
+				bind:this={inputElement}
+				id="editable-label-input"
+				{type}
+				bind:value={editValue}
+				{placeholder}
+				disabled={isSaving}
+				{required}
+				aria-label={ariaLabel || label}
+				aria-invalid={isError}
+				aria-describedby={isError ? 'editable-label-error' : undefined}
+				on:input={handleInput}
+				on:blur={handleBlur}
+				on:keydown={handleKeydown}
+				class="min-w-0 flex-1 px-3 py-2 rounded border transition-colors {isError
+					? 'border-red-500 bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500'
+					: 'border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500'} {isSaving
+					? 'opacity-50 cursor-not-allowed'
+					: ''} disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300"
+			/>
+
+			{#if saveMode === 'explicit'}
+				<button
+					type="button"
+					on:click={saveEdit}
+					disabled={isSaving}
+					class="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+				>
+					{isSaving ? 'Saving…' : 'Save'}
+				</button>
+			{/if}
+		</div>
 
 		{#if errorMessage}
 			<p id="editable-label-error" class="text-sm text-red-600">

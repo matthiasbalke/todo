@@ -1,11 +1,16 @@
 ## ADDED Requirements
 
 ### Requirement: Interactive EditableLabel examples
-The development component showcase SHALL render the actual `EditableLabel` component in examples that demonstrate basic editing, validation, disabled state, and saving state.
+The development component showcase SHALL render the actual `EditableLabel` component in examples that demonstrate automatic saving, explicit saving, validation, disabled state, and saving state.
 
 #### Scenario: Basic value is edited
 - **WHEN** a developer activates the basic EditableLabel example, changes its value, and saves it
 - **THEN** the showcase displays the saved value and identifies it as the latest value emitted by the component
+
+#### Scenario: Explicit value is edited
+- **WHEN** a developer changes the explicit-save example and presses Enter or moves focus outside the editor
+- **THEN** the showcase does not report a newly emitted value
+- **AND** only clicking the example's Save button commits the draft
 
 #### Scenario: Invalid value is entered
 - **WHEN** a developer enters a value rejected by the validation example
@@ -20,15 +25,15 @@ The development component showcase SHALL document how to import and configure `E
 
 #### Scenario: Developer reviews usage documentation
 - **WHEN** a developer opens the EditableLabel showcase section
-- **THEN** the page shows a usage example with representative props and a `change` event handler
-- **AND** the page explains Enter, Escape, blur, click, and keyboard activation behavior
+- **THEN** the page shows automatic and explicit usage examples with representative props and a `change` event handler
+- **AND** the page explains the different Enter, Escape, blur, Save button, click, and keyboard activation behavior for each mode
 
 ### Requirement: EditableLabel API reference
 The development component showcase SHALL list the public `EditableLabel` props and `change` event with their types, defaults where applicable, and purposes.
 
 #### Scenario: Developer reviews the API reference
 - **WHEN** a developer inspects the EditableLabel props and events reference
-- **THEN** the reference includes `value`, `label`, `placeholder`, `type`, `disabled`, `required`, `validate`, `isSaving`, and `ariaLabel`
+- **THEN** the reference includes `value`, `label`, `placeholder`, `type`, `disabled`, `required`, `validate`, `isSaving`, `ariaLabel`, and `saveMode`
 - **AND** the reference describes the `change` event value payload
 
 ### Requirement: Development-only availability

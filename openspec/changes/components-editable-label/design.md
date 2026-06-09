@@ -1,55 +1,56 @@
 ## Context
 
-The development-only `/components` route is the repository's interactive catalog for shared Svelte components. It currently documents other form primitives, while `EditableLabel` is implemented, tested, and documented only in Markdown. The showcase page is a single Svelte component with local example state, validators, rendered examples, code snippets, and prop tables.
+`EditableLabel` currently has one commit policy: Enter and blur validate and save, while Escape cancels. Some fields require a more deliberate confirmation step. The account email editor demonstrates that pattern with an input and Save button contained in one focus group, including pointer handling so a blur caused by clicking Save does not dismiss the editor before the click runs.
+
+The `/components` route now documents the existing component and provides a suitable place to demonstrate both policies.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
 - Make `EditableLabel` discoverable and manually testable from `/components`.
-- Demonstrate its primary interaction states and public contract using the real component.
+- Add an explicit-save mode that commits only through its Save button.
+- Preserve the existing automatic-save behavior as the default.
+- Demonstrate both save modes and their interaction contracts using the real component.
 - Match the organization and styling of the existing showcase sections.
 - Keep examples deterministic and independent of backend services.
 
 **Non-Goals:**
 
-- Change the `EditableLabel` implementation or public API.
 - Connect showcase examples to authentication or persistence APIs.
+- Refactor the account page to use `EditableLabel`.
 - Expose `/components` in production.
 - Redesign or split up the full component showcase page.
 
 ## Decisions
 
-### Add one self-contained showcase section
+### Represent commit behavior with a mode prop
 
-The route will import `EditableLabel` and add a section alongside the existing input component sections. The section will contain rendered examples, explanatory copy, code snippets, keyboard guidance, and API reference material.
+`EditableLabel` will expose `saveMode: 'automatic' | 'explicit'` with a default of `'automatic'`. A string union makes the behavior clear at call sites and allows additional policies later without combining ambiguous booleans.
 
-Keeping the change in the existing route follows the established catalog structure. Creating a separate route or generic documentation framework would add navigation and abstraction work that is not justified by one missing component.
+A boolean such as `showSaveButton` was considered, but it describes presentation rather than the commit contract and does not clearly communicate the changed Enter and blur behavior.
 
-### Use local state and synchronous handlers
+### Keep automatic mode unchanged
 
-Examples will use route-local values, validators, disabled/saving flags, and a `change` event handler that records the latest saved value. This demonstrates the actual component contract without introducing network timing, authentication requirements, or failure modes unrelated to the component.
+In automatic mode, Enter and blur will continue to validate and save, and Escape will cancel. Existing consumers that omit `saveMode` therefore retain their current behavior.
 
-A simulated asynchronous save was considered, but a static saving-state example is more predictable and sufficient to show the disabled presentation.
+### Require a Save button click in explicit mode
 
-### Cover distinct behavior through focused examples
+Explicit mode will render the input and Save button inside one editor group. Clicking Save will validate, update the bound value, emit `change`, and exit edit mode. Enter will not save. Escape will cancel. Focus leaving the editor group will cancel the draft without dispatching `change`.
 
-The rendered examples will cover:
+The component will use group-level focus handling and pointer-down protection based on the account email implementation so a Save button click is not mistaken for an outside blur in browsers where focus transition details are inconsistent.
 
-- basic inline editing and saved-value feedback;
-- custom validation;
-- disabled display behavior;
-- saving-state display behavior.
+### Reuse existing validation and event semantics
 
-This set covers the component's meaningful visual and behavioral states without duplicating every prop combination.
+Both modes will use the existing validator and emit the existing `{ value: string }` `change` payload only after successful validation. `isSaving` will disable both the input and Save button, with the button text reflecting the saving state.
 
-### Document behavior next to the live examples
+### Extend the existing showcase
 
-The section will include usage code, Enter/Escape/blur interaction guidance, the `change` event payload, and all public props. Keeping this material beside the examples makes the showcase useful for both manual verification and implementation reference.
+The `/components` page will add an explicit-save example, mode-specific interaction guidance, and the new prop to its API table. Route-local state will expose the latest committed value without backend calls.
 
 ## Risks / Trade-offs
 
-- [The route component becomes longer] → Keep the new section self-contained and follow the current page structure; broader showcase refactoring remains out of scope.
-- [Showcase documentation can drift from the component API] → Derive the prop and event reference directly from the current `EditableLabel.svelte` exports and tests during implementation.
-- [Interactive examples may interfere through shared state] → Give each behavioral example independent local state and flags.
-- [Route-level automated testing may be disproportionate for static documentation] → Run existing component tests and frontend checks; add focused route tests only if the existing test setup supports them without substantial harness work.
+- [A Save click can trigger blur before click handling] → Treat input and button as one focus group and guard pointer-initiated focus-out, following the account email editor pattern.
+- [Mode-specific keyboard behavior can surprise existing users] → Keep automatic mode as the default and document explicit mode's stricter contract.
+- [A parent save can fail after the component emits `change`] → Keep persistence parent-controlled as today; `isSaving` covers in-flight UI, while API error and rollback policy remain consumer responsibilities.
+- [Showcase documentation can drift from the component API] → Update component tests and showcase tests together with the prop addition.
