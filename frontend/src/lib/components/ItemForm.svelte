@@ -23,6 +23,17 @@
     defaultCategoryId?: string;
   } = $props();
 
+  const recurrenceOptions = [
+    { value: '', label: 'No recurrence' },
+    { value: '1_DAYS', label: 'Every day' },
+    { value: '1_WEEKS', label: 'Every week' },
+    { value: '2_WEEKS', label: 'Every 2 weeks' },
+    { value: '1_MONTHS', label: 'Every month' },
+    { value: '3_MONTHS', label: 'Every 3 months' },
+    { value: '1_YEARS', label: 'Every year' }
+  ];
+  const recurrencePresetOptions = recurrenceOptions.map((option) => option.value);
+
   const isNew = $derived(!item);
 
   let title = $state(untrack(() => item?.title ?? ''));
@@ -44,16 +55,14 @@
     return categories.find((category) => category.id === id)?.name ?? id;
   }
 
+  function getRecurrenceLabel(preset: string): string {
+    return recurrenceOptions.find((option) => option.value === preset)?.label ?? preset;
+  }
+
   function getInitialRecurrencePreset(rule: RecurrenceRule | null): string {
     if (!rule) return '';
     const key = `${rule.intervalValue}_${rule.intervalUnit}`;
-    const valid = ['1_DAYS','1_WEEKS','2_WEEKS','1_MONTHS','3_MONTHS','1_YEARS'];
-    return valid.includes(key) ? key : '';
-  }
-
-  function handlePickerBlur() {
-    ignoreNextFocusOut = true;
-    setTimeout(() => { ignoreNextFocusOut = false; }, 0);
+    return recurrencePresetOptions.includes(key) ? key : '';
   }
 
   function parseRecurrencePreset(preset: string): RecurrenceRule | null {
@@ -137,23 +146,14 @@
 
     <DatePicker bind:value={dueDate} label="Due Date" />
 
-    <div>
-      <label for="recurrencePreset" class="text-xs text-gray-500 mb-1 block">Recurrence</label>
-      <select
-        id="recurrencePreset"
-        bind:value={recurrencePreset}
-        onblur={handlePickerBlur}
-        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="">No recurrence</option>
-        <option value="1_DAYS">Every day</option>
-        <option value="1_WEEKS">Every week</option>
-        <option value="2_WEEKS">Every 2 weeks</option>
-        <option value="1_MONTHS">Every month</option>
-        <option value="3_MONTHS">Every 3 months</option>
-        <option value="1_YEARS">Every year</option>
-      </select>
-    </div>
+    <Select
+      options={recurrencePresetOptions}
+      selected={recurrencePreset}
+      label="Recurrence"
+      labelId="recurrencePreset"
+      getOptionLabel={getRecurrenceLabel}
+      onSelect={(value) => { recurrencePreset = value; }}
+    />
 
   <fieldset class="border-0 p-0">
     <legend class="text-xs text-gray-500 mb-1">Assign to</legend>

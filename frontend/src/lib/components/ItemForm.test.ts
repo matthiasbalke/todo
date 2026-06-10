@@ -34,6 +34,16 @@ function itemWithCategory(categoryId: string | null): TodoItem {
 	return { ...itemWithDueDate(null), categoryId };
 }
 
+function itemWithRecurrence(
+	intervalValue: number,
+	intervalUnit: NonNullable<TodoItem['recurrenceRule']>['intervalUnit']
+): TodoItem {
+	return {
+		...itemWithDueDate(null),
+		recurrenceRule: { intervalValue, intervalUnit }
+	};
+}
+
 const categories: Category[] = [
 	{ id: 'category-1', listId: 'list-1', name: 'Groceries', color: null, sortOrder: 1 },
 	{ id: 'category-2', listId: 'list-1', name: 'Household', color: null, sortOrder: 2 }
@@ -175,6 +185,127 @@ describe('ItemForm', () => {
 			await fireEvent.keyDown(trigger, { key: 'Escape' });
 			expect(screen.queryByRole('listbox', { name: 'Category' })).not.toBeInTheDocument();
 			expect(trigger).toHaveTextContent('Groceries');
+			expect(document.activeElement).toBe(trigger);
+			expect(oncancel).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('recurrence', () => {
+		it('renders the shared Select with every recurrence label instead of a native select', async () => {
+			const { container } = render(ItemForm, { props: defaultProps });
+			const trigger = screen.getByRole('button', { name: 'Recurrence' });
+
+			expect(trigger).toHaveTextContent('No recurrence');
+			expect(container.querySelector('select#recurrencePreset')).not.toBeInTheDocument();
+
+			await fireEvent.click(trigger);
+			expect(screen.getAllByRole('option').map((option) => option.textContent?.trim())).toEqual([
+				'No recurrence',
+				'Every day',
+				'Every week',
+				'Every 2 weeks',
+				'Every month',
+				'Every 3 months',
+				'Every year'
+			]);
+		});
+
+		it.each([
+			['daily', itemWithRecurrence(1, 'DAYS'), 'Every day'],
+			['weekly', itemWithRecurrence(1, 'WEEKS'), 'Every week'],
+			['biweekly', itemWithRecurrence(2, 'WEEKS'), 'Every 2 weeks'],
+			['monthly', itemWithRecurrence(1, 'MONTHS'), 'Every month'],
+			['quarterly', itemWithRecurrence(3, 'MONTHS'), 'Every 3 months'],
+			['yearly', itemWithRecurrence(1, 'YEARS'), 'Every year'],
+			['no recurrence', itemWithDueDate(null), 'No recurrence'],
+			['unsupported recurrence', itemWithRecurrence(4, 'WEEKS'), 'No recurrence']
+		])('initializes the %s recurrence state', (_name, item, label) => {
+			render(ItemForm, { props: { ...defaultProps, item } });
+
+			expect(screen.getByRole('button', { name: 'Recurrence' })).toHaveTextContent(label);
+		});
+
+		it.each([
+			['Every day', 1, 'DAYS'],
+			['Every week', 1, 'WEEKS'],
+			['Every 2 weeks', 2, 'WEEKS'],
+			['Every month', 1, 'MONTHS'],
+			['Every 3 months', 3, 'MONTHS'],
+			['Every year', 1, 'YEARS']
+		])('submits %s as its recurrence rule', async (label, intervalValue, intervalUnit) => {
+			const onsubmit = vi.fn();
+			render(ItemForm, { props: { ...defaultProps, onsubmit } });
+
+			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+				target: { value: 'Recurring item' }
+			});
+			await fireEvent.click(screen.getByRole('button', { name: 'Recurrence' }));
+			await fireEvent.click(screen.getByRole('option', { name: label }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+			expect(onsubmit.mock.calls[0][0].recurrenceRule).toEqual({
+				intervalValue,
+				intervalUnit
+			});
+		});
+
+		it('submits No recurrence as null', async () => {
+			const onsubmit = vi.fn();
+			render(ItemForm, {
+				props: {
+					...defaultProps,
+					item: itemWithRecurrence(1, 'DAYS'),
+					onsubmit
+				}
+			});
+
+			await fireEvent.click(screen.getByRole('button', { name: 'Recurrence' }));
+			await fireEvent.click(screen.getByRole('option', { name: 'No recurrence' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+			expect(onsubmit.mock.calls[0][0].recurrenceRule).toBeNull();
+		});
+
+		it('selects with a pointer without cancelling and resets after creation', async () => {
+			const onsubmit = vi.fn().mockResolvedValue(undefined);
+			const oncancel = vi.fn();
+			render(ItemForm, { props: { ...defaultProps, onsubmit, oncancel } });
+
+			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+				target: { value: 'Reset recurrence item' }
+			});
+			const trigger = screen.getByRole('button', { name: 'Recurrence' });
+			await fireEvent.click(trigger);
+			await fireEvent.click(screen.getByRole('option', { name: 'Every month' }));
+			expect(trigger).toHaveTextContent('Every month');
+			expect(oncancel).not.toHaveBeenCalled();
+
+			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+			expect(onsubmit.mock.calls[0][0].recurrenceRule).toEqual({
+				intervalValue: 1,
+				intervalUnit: 'MONTHS'
+			});
+			expect(trigger).toHaveTextContent('No recurrence');
+			expect(oncancel).not.toHaveBeenCalled();
+		});
+
+		it('supports keyboard selection and Escape dismissal without cancelling', async () => {
+			const oncancel = vi.fn();
+			render(ItemForm, { props: { ...defaultProps, oncancel } });
+			const trigger = screen.getByRole('button', { name: 'Recurrence' });
+
+			await fireEvent.keyDown(trigger, { key: 'Enter' });
+			await fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+			await fireEvent.keyDown(trigger, { key: 'Enter' });
+			expect(trigger).toHaveTextContent('Every day');
+			expect(oncancel).not.toHaveBeenCalled();
+
+			await fireEvent.keyDown(trigger, { key: 'Enter' });
+			await fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+			await fireEvent.keyDown(trigger, { key: 'Escape' });
+			expect(screen.queryByRole('listbox', { name: 'Recurrence' })).not.toBeInTheDocument();
+			expect(trigger).toHaveTextContent('Every day');
 			expect(document.activeElement).toBe(trigger);
 			expect(oncancel).not.toHaveBeenCalled();
 		});
@@ -356,16 +487,6 @@ describe('ItemForm', () => {
 			});
 
 			expect(oncancel).not.toHaveBeenCalled();
-		});
-
-		it('preserves the recurrence picker blur workaround', () => {
-			const { container } = render(ItemForm, { props: defaultProps });
-			const select = container.querySelector('#recurrencePreset')!;
-			const titleInput = screen.getByPlaceholderText('Item title');
-
-			fireEvent.blur(select);
-
-			expect(document.activeElement).toBe(titleInput);
 		});
 
 		it('keeps the form open while navigating the calendar and dismissing it with Escape', async () => {

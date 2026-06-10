@@ -1,7 +1,7 @@
 ## ItemForm due-date picker
 
 - `ItemForm.svelte` uses the shared `DatePicker` with nullable `string | null` state throughout initialization, submission, and new-item reset.
-- The native picker blur workaround is intentionally retained only for the recurrence select.
+- ItemForm no longer needs native picker blur workarounds; date, category, and recurrence use shared components with form-internal interaction coverage.
 - Integration coverage lives in `ItemForm.test.ts` and verifies existing values, selection, clearing, submission/reset, and new-form focus/cancel behavior.
 
 ## ItemForm category select
@@ -9,6 +9,12 @@
 - `ItemForm.svelte` uses the shared `Select` with category IDs as option values and category names as display labels; the empty string displays as `Uncategorized` and submits as `null`.
 - `Select.svelte` supports an optional `getOptionLabel` resolver while preserving primitive option rendering and original option values in `onSelect`.
 - Category integration coverage verifies defaults, stale IDs, duplicate names, submission/reset, keyboard interaction, and new-form focus/cancel behavior.
+
+## ItemForm recurrence select
+
+- `ItemForm.svelte` uses the shared `Select` with encoded recurrence presets as option values and the existing recurrence text as display labels.
+- Existing rule initialization, unsupported-rule fallback to no recurrence, nullable submission, and new-item reset behavior remain unchanged.
+- Recurrence integration coverage verifies all presets, pointer and keyboard selection, Escape dismissal, and new-form focus/cancel behavior.
 
 ## Textarea component
 
