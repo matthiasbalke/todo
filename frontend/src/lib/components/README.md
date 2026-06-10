@@ -173,6 +173,58 @@ A text input field with custom validation support, error display, and accessibil
 - Normal state: gray border, white background, blue ring on focus
 - Disabled state: gray background, gray text, gray border
 
+### Textarea
+
+A native multiline text field with bindable values, accessible supporting text, validation, and configurable sizing.
+
+#### Props
+
+- `value` (string, bindable, default: `''`): textarea value
+- `label` (string, default: `''`): visible label associated with the textarea
+- `description` (string, default: `''`): supporting text associated through `aria-describedby`
+- `placeholder` (string, default: `''`): placeholder text
+- `required` (boolean, default: false): set native required state and show the required marker
+- `disabled` (boolean, default: false): disable editing
+- `rows` (number, default: `3`): native textarea row count
+- `resize` (`'none' | 'vertical' | 'horizontal' | 'both'`, default: `'vertical'`): resize behavior
+- `validate` (function, optional): synchronous validator returning an error message or `null`
+- `ariaLabel` (string, optional): accessible name for label-less usage
+- `class` (string, optional): additional classes merged with component styles
+- Standard textarea attributes and native event handlers are forwarded.
+
+#### Usage
+
+```svelte
+<script lang="ts">
+  import Textarea from '$lib/components/Textarea.svelte';
+
+  let notes = '';
+
+  function validateNotes(value: string) {
+    if (value.length > 500) return 'Notes must be 500 characters or fewer';
+    return null;
+  }
+</script>
+
+<Textarea
+  bind:value={notes}
+  label="Notes"
+  description="Add context that will help complete the item."
+  placeholder="Enter notes"
+  rows={4}
+  resize="vertical"
+  maxlength={500}
+  validate={validateNotes}
+/>
+```
+
+#### Validation and Accessibility
+
+- Validation runs on input and blur.
+- Errors set `aria-invalid`, use error styling, and are included in `aria-describedby`.
+- Description, error, and consumer-provided description IDs are combined.
+- Every component instance generates unique textarea and supporting-content IDs.
+
 ### EditableLabel
 
 An inline editable field that displays as read-only text (label) and transforms into a text input when clicked. Ideal for user profile fields like display name or email where users need to edit values without navigating to a separate form.

@@ -6,11 +6,15 @@
 	import EditableLabel from '$lib/components/EditableLabel.svelte';
 	import Button from '$lib/components/Button.svelte';
 	import DatePicker from '$lib/components/DatePicker.svelte';
+	import Textarea from '$lib/components/Textarea.svelte';
 
 	let lastButtonAction = 'None';
 	let emptyDate: string | null = null;
 	let selectedDate: string | null = '2026-06-09';
 	let constrainedDate: string | null = '2026-06-15';
+	let textareaValue = 'Plan the first milestone.';
+	let validatedTextareaValue = '';
+	let requiredTextareaValue = '';
 	let email = '';
 	let password = '';
 	let username = '';
@@ -57,6 +61,11 @@
 		if (!value) return 'Username is required';
 		if (value.length < 3) return 'Username must be at least 3 characters';
 		if (!/^[a-zA-Z0-9_-]+$/.test(value)) return 'Username can only contain letters, numbers, - and _';
+		return null;
+	}
+
+	function validateTextarea(value: string): string | null {
+		if (value.trim().length < 10) return 'Use at least 10 characters';
 		return null;
 	}
 
@@ -129,6 +138,33 @@
   min="2026-06-10"
   max="2026-06-20"
   locale="en-US"
+  required
+/>`;
+
+	const basicTextareaCode = `<script lang="ts">
+  import Textarea from '$lib/components/Textarea.svelte';
+
+  let notes = '';
+<\/script>
+
+<Textarea
+  bind:value={notes}
+  label="Notes"
+  description="Add context for the next person."
+  rows={4}
+  maxlength={500}
+/>`;
+
+	const validatedTextareaCode = `function validateSummary(value: string) {
+  if (value.trim().length < 10) return 'Use at least 10 characters';
+  return null;
+}
+
+<Textarea
+  bind:value={summary}
+  label="Summary"
+  validate={validateSummary}
+  resize="none"
   required
 />`;
 
@@ -504,6 +540,185 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 								<td class="px-4 py-2 text-gray-600">string | undefined</td>
 								<td class="px-4 py-2 text-gray-600">undefined</td>
 								<td class="px-4 py-2 text-gray-600">Accessible trigger label override.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</section>
+
+		<!-- Textarea Section -->
+		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+			<h2 class="text-2xl font-bold text-gray-900 mb-8">Textarea Component</h2>
+			<p class="text-gray-600 mb-8">
+				A native multiline text field with bindable values, validation, accessible descriptions,
+				configurable rows and resize behavior, and standard textarea attribute forwarding.
+			</p>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Basic Binding</h3>
+					<Textarea
+						bind:value={textareaValue}
+						label="Project notes"
+						description="Add context for the next person."
+						placeholder="Enter project notes"
+					/>
+					<p class="text-xs text-gray-500 mt-2 whitespace-pre-wrap">
+						Bound value: <code>{textareaValue || '(empty)'}</code>
+					</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">With Validation</h3>
+					<Textarea
+						bind:value={validatedTextareaValue}
+						label="Short summary"
+						placeholder="Use at least 10 characters"
+						validate={validateTextarea}
+						resize="none"
+					/>
+					<p class="text-xs text-gray-500 mt-2">Validation runs on input and blur.</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Required State</h3>
+					<Textarea
+						bind:value={requiredTextareaValue}
+						label="Required context"
+						description="This example uses the native required attribute."
+						required
+					/>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Disabled State</h3>
+					<Textarea
+						value="This content cannot be edited."
+						label="Locked notes"
+						disabled
+					/>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Row Configuration</h3>
+					<Textarea
+						label="Six-row notes"
+						ariaLabel="Six-row notes"
+						rows={6}
+						maxlength={500}
+						placeholder="Up to 500 characters"
+					/>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Resize Configuration</h3>
+					<Textarea
+						label="Horizontal resize notes"
+						resize="horizontal"
+						class="min-w-48"
+						placeholder="Resize horizontally"
+					/>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Examples</h3>
+				<div class="space-y-4">
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">Binding and native attributes:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{basicTextareaCode}</code></pre>
+					</div>
+					<div>
+						<p class="text-sm font-mono text-gray-600 mb-2">Validation and resize behavior:</p>
+						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{validatedTextareaCode}</code></pre>
+					</div>
+				</div>
+				<p class="text-sm text-gray-600 mt-4">
+					Standard native textarea attributes and handlers such as <code>name</code>,
+					<code>maxlength</code>, <code>autocomplete</code>, <code>data-*</code>,
+					<code>oninput</code>, and <code>onblur</code> are forwarded.
+				</p>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Props Reference</h3>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Prop</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Type</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Default</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Description</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">value</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">''</td>
+								<td class="px-4 py-2 text-gray-600">Bindable multiline value.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">label</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">''</td>
+								<td class="px-4 py-2 text-gray-600">Visible associated label.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">description</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">''</td>
+								<td class="px-4 py-2 text-gray-600">Accessible supporting text.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">placeholder</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">''</td>
+								<td class="px-4 py-2 text-gray-600">Empty-value hint.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">required</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Native required state and marker.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">disabled</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Disables text entry.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">rows</td>
+								<td class="px-4 py-2 text-gray-600">number</td>
+								<td class="px-4 py-2 text-gray-600">3</td>
+								<td class="px-4 py-2 text-gray-600">Native visible row count.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">resize</td>
+								<td class="px-4 py-2 text-gray-600">'none' | 'vertical' | 'horizontal' | 'both'</td>
+								<td class="px-4 py-2 text-gray-600">'vertical'</td>
+								<td class="px-4 py-2 text-gray-600">Allowed resize direction.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">validate</td>
+								<td class="px-4 py-2 text-gray-600">(value: string) =&gt; string | null</td>
+								<td class="px-4 py-2 text-gray-600">null</td>
+								<td class="px-4 py-2 text-gray-600">Synchronous input and blur validator.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">ariaLabel</td>
+								<td class="px-4 py-2 text-gray-600">string | undefined</td>
+								<td class="px-4 py-2 text-gray-600">undefined</td>
+								<td class="px-4 py-2 text-gray-600">Accessible name for label-less usage.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">class</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">''</td>
+								<td class="px-4 py-2 text-gray-600">Additional classes merged with component styles.</td>
 							</tr>
 						</tbody>
 					</table>

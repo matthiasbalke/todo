@@ -10,6 +10,72 @@ vi.mock('$app/environment', () => ({
 
 import ComponentsPage from './+page.svelte';
 
+describe('ComponentsPage Textarea showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('updates bound multiline value feedback', async () => {
+		render(ComponentsPage);
+		const section = screen.getByRole('heading', { name: 'Textarea Component' }).closest('section')!;
+		const showcase = within(section);
+		const textarea = showcase.getByRole('textbox', { name: 'Project notes' });
+
+		await fireEvent.input(textarea, { target: { value: 'First line\nSecond line' } });
+
+		expect(showcase.getByText('Bound value:').parentElement).toHaveTextContent(
+			'First line Second line'
+		);
+	});
+
+	it('demonstrates validation, required, disabled, rows, and resize states', async () => {
+		render(ComponentsPage);
+		const section = screen.getByRole('heading', { name: 'Textarea Component' }).closest('section')!;
+		const showcase = within(section);
+		const validated = showcase.getByRole('textbox', { name: 'Short summary' });
+
+		await fireEvent.input(validated, { target: { value: 'short' } });
+
+		expect(showcase.getByText('Use at least 10 characters')).toBeInTheDocument();
+		expect(validated).toHaveAttribute('aria-invalid', 'true');
+		expect(showcase.getByRole('textbox', { name: 'Required context' })).toBeRequired();
+		expect(showcase.getByRole('textbox', { name: 'Locked notes' })).toBeDisabled();
+		expect(showcase.getByRole('textbox', { name: 'Six-row notes' })).toHaveAttribute('rows', '6');
+		expect(showcase.getByRole('textbox', { name: 'Horizontal resize notes' })).toHaveClass(
+			'resize-x'
+		);
+	});
+
+	it('documents Textarea usage, props, and native forwarding', () => {
+		render(ComponentsPage);
+		const section = screen.getByRole('heading', { name: 'Textarea Component' }).closest('section');
+		expect(section).not.toBeNull();
+		const showcase = within(section!);
+
+		for (const prop of [
+			'value',
+			'label',
+			'description',
+			'placeholder',
+			'required',
+			'disabled',
+			'rows',
+			'resize',
+			'validate',
+			'ariaLabel',
+			'class'
+		]) {
+			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
+		}
+
+		expect(showcase.getByText('Binding and native attributes:')).toBeInTheDocument();
+		expect(showcase.getByText('Validation and resize behavior:')).toBeInTheDocument();
+		expect(
+			showcase.getByText(/standard native textarea attributes and handlers/i)
+		).toBeInTheDocument();
+	});
+});
+
 describe('ComponentsPage EditableLabel showcase', () => {
 	afterEach(() => {
 		cleanup();
