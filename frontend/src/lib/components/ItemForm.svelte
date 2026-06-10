@@ -2,6 +2,7 @@
   import { untrack, onMount } from 'svelte';
   import type { TodoItem, Category, User, RecurrenceRule } from '$lib/mock-data';
   import DatePicker from './DatePicker.svelte';
+  import Select from './Select.svelte';
   import Textarea from './Textarea.svelte';
 
   let {
@@ -34,7 +35,14 @@
   let submitting = $state(false);
   let ignoreNextFocusOut = false;
 
+  const categoryOptions = $derived(['', ...categories.map((category) => category.id)]);
+
   onMount(() => titleInput?.focus());
+
+  function getCategoryLabel(id: string): string {
+    if (!id) return 'Uncategorized';
+    return categories.find((category) => category.id === id)?.name ?? id;
+  }
 
   function getInitialRecurrencePreset(rule: RecurrenceRule | null): string {
     if (!rule) return '';
@@ -118,20 +126,14 @@
     />
   </div>
 
-    <div>
-      <label for="categoryId" class="text-xs text-gray-500 mb-1 block">Category</label>
-      <select
-        id="categoryId"
-        bind:value={categoryId}
-        onblur={handlePickerBlur}
-        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="">Uncategorized</option>
-        {#each categories as cat}
-          <option value={cat.id}>{cat.name}</option>
-        {/each}
-      </select>
-    </div>
+    <Select
+      options={categoryOptions}
+      selected={categoryId}
+      label="Category"
+      labelId="categoryId"
+      getOptionLabel={getCategoryLabel}
+      onSelect={(value) => { categoryId = value; }}
+    />
 
     <DatePicker bind:value={dueDate} label="Due Date" />
 

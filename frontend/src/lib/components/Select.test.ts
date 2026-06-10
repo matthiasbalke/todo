@@ -46,6 +46,42 @@ const button = screen.getByRole('button');
 expect(button).toHaveTextContent('Option 2');
 });
 
+it('renders primitive options without a label resolver', async () => {
+render(Select, {
+props: {
+options: testOptions,
+selected: 'Option 2'
+}
+});
+
+expect(screen.getByRole('button')).toHaveTextContent('Option 2');
+await fireEvent.click(screen.getByRole('button'));
+expect(screen.getAllByRole('option').map((option) => option.textContent?.trim())).toEqual(testOptions);
+});
+
+it('renders resolved labels while selecting the original option value', async () => {
+const onSelect = vi.fn();
+const options = ['category-1', 'category-2'];
+render(Select, {
+props: {
+options,
+selected: 'category-1',
+getOptionLabel: (option: string) => option === 'category-1' ? 'Groceries' : 'Household',
+onSelect
+}
+});
+
+const trigger = screen.getByRole('button');
+expect(trigger).toHaveTextContent('Groceries');
+
+await fireEvent.click(trigger);
+expect(screen.getByRole('option', { name: 'Groceries' })).toBeInTheDocument();
+await fireEvent.click(screen.getByRole('option', { name: 'Household' }));
+
+expect(trigger).toHaveTextContent('Household');
+expect(onSelect).toHaveBeenCalledWith('category-2');
+});
+
 it('is disabled when disabled prop is true', () => {
 render(Select, {
 props: {

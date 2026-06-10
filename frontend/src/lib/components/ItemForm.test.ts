@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { TodoItem } from '$lib/mock-data';
+import type { Category, TodoItem } from '$lib/mock-data';
 import ItemForm from './ItemForm.svelte';
 
 const defaultProps = {
@@ -30,6 +30,15 @@ function itemWithDueDate(dueDate: string | null): TodoItem {
 	};
 }
 
+function itemWithCategory(categoryId: string | null): TodoItem {
+	return { ...itemWithDueDate(null), categoryId };
+}
+
+const categories: Category[] = [
+	{ id: 'category-1', listId: 'list-1', name: 'Groceries', color: null, sortOrder: 1 },
+	{ id: 'category-2', listId: 'list-1', name: 'Household', color: null, sortOrder: 2 }
+];
+
 describe('ItemForm', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
@@ -40,6 +49,135 @@ describe('ItemForm', () => {
 		cleanup();
 		vi.clearAllMocks();
 		vi.useRealTimers();
+	});
+
+	describe('category', () => {
+		it('renders the shared Select with category labels instead of a native category select', async () => {
+			const { container } = render(ItemForm, {
+				props: { ...defaultProps, categories }
+			});
+
+			const trigger = screen.getByRole('button', { name: 'Category' });
+			expect(trigger).toHaveTextContent('Uncategorized');
+			expect(container.querySelector('select#categoryId')).not.toBeInTheDocument();
+
+			await fireEvent.click(trigger);
+			expect(screen.getByRole('option', { name: 'Uncategorized' })).toBeInTheDocument();
+			expect(screen.getByRole('option', { name: 'Groceries' })).toBeInTheDocument();
+			expect(screen.getByRole('option', { name: 'Household' })).toBeInTheDocument();
+		});
+
+		it.each([
+			['existing category', itemWithCategory('category-2'), undefined, 'Household'],
+			['uncategorized item', itemWithCategory(null), undefined, 'Uncategorized'],
+			['new-item default', undefined, 'category-1', 'Groceries'],
+			['stale category', itemWithCategory('missing-category'), undefined, 'missing-category']
+		])('initializes from the %s', (_name, item, defaultCategoryId, label) => {
+			render(ItemForm, {
+				props: { ...defaultProps, categories, item, defaultCategoryId }
+			});
+
+			expect(screen.getByRole('button', { name: 'Category' })).toHaveTextContent(label);
+		});
+
+		it('selects a category with a pointer and submits its ID without cancelling', async () => {
+			const onsubmit = vi.fn();
+			const oncancel = vi.fn();
+			render(ItemForm, {
+				props: { ...defaultProps, categories, onsubmit, oncancel }
+			});
+
+			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+				target: { value: 'Categorized item' }
+			});
+			const trigger = screen.getByRole('button', { name: 'Category' });
+			await fireEvent.click(trigger);
+			await fireEvent.click(screen.getByRole('option', { name: 'Household' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+			expect(onsubmit.mock.calls[0][0].categoryId).toBe('category-2');
+			expect(oncancel).not.toHaveBeenCalled();
+		});
+
+		it('keeps duplicate category names distinct by submitted ID', async () => {
+			const onsubmit = vi.fn();
+			const duplicateCategories: Category[] = [
+				{ id: 'first-id', listId: 'list-1', name: 'Duplicate', color: null, sortOrder: 1 },
+				{ id: 'second-id', listId: 'list-1', name: 'Duplicate', color: null, sortOrder: 2 }
+			];
+			render(ItemForm, {
+				props: { ...defaultProps, categories: duplicateCategories, onsubmit }
+			});
+
+			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+				target: { value: 'Duplicate category item' }
+			});
+			await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
+			await fireEvent.click(screen.getAllByRole('option', { name: 'Duplicate' })[1]);
+			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+			expect(onsubmit.mock.calls[0][0].categoryId).toBe('second-id');
+		});
+
+		it('submits Uncategorized as null', async () => {
+			const onsubmit = vi.fn();
+			render(ItemForm, {
+				props: {
+					...defaultProps,
+					categories,
+					item: itemWithCategory('category-1'),
+					onsubmit
+				}
+			});
+
+			await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
+			await fireEvent.click(screen.getByRole('option', { name: 'Uncategorized' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+			expect(onsubmit.mock.calls[0][0].categoryId).toBeNull();
+		});
+
+		it.each([
+			['configured default', 'category-1', 'Groceries'],
+			['Uncategorized', undefined, 'Uncategorized']
+		])('resets to %s after creating an item', async (_name, defaultCategoryId, label) => {
+			const onsubmit = vi.fn().mockResolvedValue(undefined);
+			render(ItemForm, {
+				props: { ...defaultProps, categories, defaultCategoryId, onsubmit }
+			});
+
+			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+				target: { value: 'Reset category item' }
+			});
+			const trigger = screen.getByRole('button', { name: 'Category' });
+			await fireEvent.click(trigger);
+			await fireEvent.click(screen.getByRole('option', { name: 'Household' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+			expect(trigger).toHaveTextContent(label);
+		});
+
+		it('supports keyboard selection and Escape dismissal without cancelling', async () => {
+			const oncancel = vi.fn();
+			render(ItemForm, {
+				props: { ...defaultProps, categories, oncancel }
+			});
+			const trigger = screen.getByRole('button', { name: 'Category' });
+
+			await fireEvent.keyDown(trigger, { key: 'Enter' });
+			await fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+			await fireEvent.keyDown(trigger, { key: 'Enter' });
+			expect(trigger).toHaveTextContent('Groceries');
+			expect(oncancel).not.toHaveBeenCalled();
+
+			await fireEvent.keyDown(trigger, { key: 'Enter' });
+			await fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+			await fireEvent.keyDown(trigger, { key: 'Escape' });
+			expect(screen.queryByRole('listbox', { name: 'Category' })).not.toBeInTheDocument();
+			expect(trigger).toHaveTextContent('Groceries');
+			expect(document.activeElement).toBe(trigger);
+			expect(oncancel).not.toHaveBeenCalled();
+		});
 	});
 
 	describe('assignment chips', () => {
@@ -220,12 +358,9 @@ describe('ItemForm', () => {
 			expect(oncancel).not.toHaveBeenCalled();
 		});
 
-		it.each([
-			['category', '#categoryId'],
-			['recurrence', '#recurrencePreset']
-		])('preserves the %s picker blur workaround', (_name, selector) => {
+		it('preserves the recurrence picker blur workaround', () => {
 			const { container } = render(ItemForm, { props: defaultProps });
-			const select = container.querySelector(selector)!;
+			const select = container.querySelector('#recurrencePreset')!;
 			const titleInput = screen.getByPlaceholderText('Item title');
 
 			fireEvent.blur(select);

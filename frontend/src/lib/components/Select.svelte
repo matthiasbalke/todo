@@ -8,6 +8,7 @@
 		label?: string;
 		placeholder?: string;
 		labelId?: string;
+		getOptionLabel?: (option: T) => string;
 		validate?: ((value: T | null) => string | null) | null;
 		onSelect?: (value: T) => void;
 		triggerSlot?: any;
@@ -21,6 +22,7 @@
 		label = '',
 		placeholder = 'Select an option',
 		labelId = '',
+		getOptionLabel = (option: any) => String(option),
 		validate = null,
 		onSelect,
 		triggerSlot,
@@ -196,7 +198,7 @@
 	>
 		<span class="text-left {internalSelected === null ? 'text-gray-500' : ''}">
 			{#if internalSelected !== null}
-				{internalSelected}
+				{getOptionLabel(internalSelected)}
 			{:else}
 				<span class="italic">{placeholder}</span>
 			{/if}
@@ -238,7 +240,7 @@
 					? 'bg-blue-100'
 					: ''} {selectedIndex === index ? 'bg-blue-50 font-medium' : 'hover:bg-gray-100'}"
 			>
-				{option}
+				{getOptionLabel(option)}
 			</button>
 		{/each}
 
