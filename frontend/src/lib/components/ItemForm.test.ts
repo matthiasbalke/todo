@@ -142,6 +142,46 @@ describe('ItemForm', () => {
 		});
 	});
 
+	describe('notes', () => {
+		it('submits multiline notes from the shared Textarea', async () => {
+			const onsubmit = vi.fn();
+			render(ItemForm, { props: { ...defaultProps, onsubmit } });
+
+			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+				target: { value: 'Document item' }
+			});
+			const notes = screen.getByRole('textbox', { name: 'Notes' });
+			await fireEvent.input(notes, { target: { value: 'First line\nSecond line' } });
+			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+			expect(notes).toHaveAttribute('rows', '2');
+			expect(notes).toHaveClass('resize-none');
+			expect(onsubmit.mock.calls[0][0].notes).toBe('First line\nSecond line');
+		});
+
+		it('submits null for empty notes', async () => {
+			const onsubmit = vi.fn();
+			render(ItemForm, {
+				props: { ...defaultProps, item: itemWithDueDate(null), onsubmit }
+			});
+
+			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+			expect(onsubmit.mock.calls[0][0].notes).toBeNull();
+		});
+
+		it('does not cancel when focus moves between notes and another form control', () => {
+			const oncancel = vi.fn();
+			render(ItemForm, { props: { ...defaultProps, oncancel } });
+			const notes = screen.getByRole('textbox', { name: 'Notes' });
+			const title = screen.getByPlaceholderText('Item title');
+
+			fireEvent.focusOut(notes, { relatedTarget: title });
+
+			expect(oncancel).not.toHaveBeenCalled();
+		});
+	});
+
 	describe('focusout and cancellation', () => {
 		it('does not cancel when mousedown within the form is followed by a null focus target', () => {
 			const oncancel = vi.fn();
@@ -174,7 +214,7 @@ describe('ItemForm', () => {
 			render(ItemForm, { props: { ...defaultProps, oncancel } });
 
 			fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
-				relatedTarget: screen.getByPlaceholderText('Notes (optional)')
+				relatedTarget: screen.getByRole('textbox', { name: 'Notes' })
 			});
 
 			expect(oncancel).not.toHaveBeenCalled();

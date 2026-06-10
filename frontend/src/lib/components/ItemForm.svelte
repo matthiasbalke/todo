@@ -2,6 +2,7 @@
   import { untrack, onMount } from 'svelte';
   import type { TodoItem, Category, User, RecurrenceRule } from '$lib/mock-data';
   import DatePicker from './DatePicker.svelte';
+  import Textarea from './Textarea.svelte';
 
   let {
     item,
@@ -181,14 +182,13 @@
     {/if}
   </fieldset>
 
-  <div>
-    <textarea
-      bind:value={notes}
-      placeholder="Notes (optional)"
-      rows="2"
-      class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-    ></textarea>
-  </div>
+  <Textarea
+    bind:value={notes}
+    ariaLabel="Notes"
+    placeholder="Notes (optional)"
+    rows={2}
+    resize="none"
+  />
 
   <div class="flex justify-end gap-2 pt-1">
     <button
