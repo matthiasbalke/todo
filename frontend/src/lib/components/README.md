@@ -16,7 +16,10 @@ A native button wrapper with consistent variants, focus treatment, disabled beha
 
 #### Props
 
-- `variant` (`'primary' | 'secondary' | 'danger'`, default: `'primary'`): visual intent
+- `variant` (`'primary' | 'secondary' | 'danger' | 'ghost' | 'bare'`, default: `'primary'`): visual intent
+- `size` (`'default' | 'small' | 'compact' | 'icon' | 'menu' | 'chip' | 'backdrop'`, default: `'default'`): control geometry
+- `align` (`'center' | 'start' | 'between'`, default: `'center'`): horizontal flex alignment for button content
+- `weight` (`'normal' | 'medium'`, default: `'medium'`): button font weight
 - `type` (`'button' | 'submit' | 'reset'`, default: `'button'`): native button type
 - `disabled` (boolean, default: false): disable activation
 - `loading` (boolean, default: false): disable activation, set `aria-busy`, and show loading text
@@ -37,6 +40,11 @@ A native button wrapper with consistent variants, focus treatment, disabled beha
 <Button onclick={() => console.log('Saved')}>Save</Button>
 <Button variant="secondary">Cancel</Button>
 <Button variant="danger">Delete</Button>
+<Button variant="ghost" size="icon" aria-label="Open menu">⋮</Button>
+<Button variant="bare" align="start" weight="normal" class="w-full">Menu item</Button>
+<Button variant="bare" align="between" weight="normal" class="w-full text-blue-600">
+  <span>Filter</span><span>Off</span>
+</Button>
 <Button type="submit" loading={saving} loadingLabel="Saving…" class="w-full">
   Submit
 </Button>
@@ -48,6 +56,8 @@ A native button wrapper with consistent variants, focus treatment, disabled beha
 - Secondary: white background with neutral border and text
 - Danger: red background with white text
 - All variants share rounded corners, focus rings, transitions, and disabled opacity
+- Use `align="start"` for full-width rows with one leading label and `align="between"` when trailing status or disclosure content must remain at the opposite edge.
+- Use `weight="normal"` for menu actions and options. Selected options remain regular weight and use blue text plus their selection indicator; unselected options use neutral text.
 
 ### DatePicker
 
@@ -112,7 +122,7 @@ A text input field with custom validation support, error display, and accessibil
 
 #### Props
 
-- `value` (string): the input value
+- `value` (string, bindable): the input value
 - `label` (string): label text displayed above the input
 - `placeholder` (string): placeholder text
 - `type` (string, default: 'text'): HTML input type (text, email, password, search, etc.)
@@ -120,12 +130,13 @@ A text input field with custom validation support, error display, and accessibil
 - `required` (boolean, default: false): mark the input as required
 - `validate` (function, optional): custom validator function that takes a string and returns an error message (string) or null
 - `ariaLabel` (string, optional): accessible label for screen readers
+- `id` (string, optional): explicit input ID; otherwise a unique ID is generated
+- `description` (string, optional): supporting text included in `aria-describedby`
+- `element` (`HTMLInputElement | null`, bindable): native input access for focus management
+- `class`, `containerClass`, `labelClass` (string, optional): styling hooks
+- Standard text-input attributes and native event handlers are forwarded.
 
-#### Events
-
-- `on:input`: fired when the input value changes
-- `on:blur`: fired when the input loses focus
-- `on:focus`: fired when the input receives focus
+Use `oninput`, `onblur`, and `onfocus` native handler props. `EmailInput` forwards the same surface and adds email validation through `customValidate`.
 
 #### Usage
 
@@ -241,6 +252,9 @@ An inline editable field that displays as read-only text (label) and transforms 
 - `isSaving` (boolean, default: false): disable input during save operations (e.g., API calls)
 - `ariaLabel` (string, optional): accessible label for screen readers
 - `saveMode` (`'automatic' | 'explicit'`, default: `'automatic'`): save on Enter/blur or require the Save button
+- `showCancel` (boolean, default: false): show an explicit Cancel button in explicit mode
+- `oncancel` (function, optional): notified when an edit is discarded
+- `id`, `displayClass`, `inputClass`, `containerClass`, and `element`: ID, styling, and focus hooks
 
 #### Events
 
@@ -354,3 +368,7 @@ Test coverage includes:
 3. **Keep validators simple**: move complex validation to the parent form if needed.
 4. **Use Tailwind for styling**: prefer utility classes over inline styles.
 5. **Test as you build**: write tests for any new component or specialized variant.
+
+## Native Control Migration
+
+Production consumers must use `Button`, `TextInput`, `EmailInput`, `Select`, `Textarea`, `DatePicker`, or `EditableLabel` when a matching primitive exists. Native implementations remain allowed inside those primitives and in the development showcase. Run `bun run test --run src/lib/components/nativeControlInventory.test.ts` to check the boundary; any exception must include a source path, line, element, and reason.

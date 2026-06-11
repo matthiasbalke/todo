@@ -17,6 +17,9 @@
   import { updateCurrentUser, clearSession } from '$lib/stores/auth.svelte';
   import { friendlyError } from '$lib/api/errors';
   import { ApiError } from '$lib/api/client';
+  import Button from '$lib/components/Button.svelte';
+  import EditableLabel from '$lib/components/EditableLabel.svelte';
+  import TextInput from '$lib/components/TextInput.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -201,83 +204,41 @@
     <!-- Display name -->
     <div>
       <p class="block text-sm font-medium text-gray-700 mb-1">Display name</p>
-      {#if editingName}
-        <div class="flex items-center gap-2">
-          <input
-            bind:this={nameInput}
-            bind:value={nameEdit}
-            disabled={nameSaving}
-            onblur={saveDisplayName}
-            onkeydown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); saveDisplayName(); }
-              if (e.key === 'Escape') { editingName = false; }
-            }}
-            class="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
-          />
-          {#if nameSaving}
-            <span class="text-xs text-gray-400">Saving…</span>
-          {/if}
-        </div>
-        {#if nameError}
-          <p class="mt-1 text-xs text-red-600">{nameError}</p>
-        {/if}
-      {:else}
-        <button
-          onclick={startEditName}
-          class="text-sm text-gray-900 hover:opacity-70 transition-opacity cursor-pointer"
-        >
-          {profile.displayName}
-          <span class="text-xs text-gray-400 ml-1">Edit</span>
-        </button>
+      <EditableLabel
+        value={profile.displayName}
+        ariaLabel={profile.displayName}
+        isSaving={nameSaving}
+        inputClass="py-1.5 text-sm"
+        displayClass="px-0 py-0 text-sm text-gray-900 hover:opacity-70"
+        on:change={(event) => {
+          nameEdit = event.detail.value;
+          saveDisplayName();
+        }}
+      />
+      {#if nameError}
+        <p class="mt-1 text-xs text-red-600">{nameError}</p>
       {/if}
     </div>
 
     <!-- Email -->
     <div>
       <p class="block text-sm font-medium text-gray-700 mb-1">Email</p>
-      {#if editingEmail}
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <div
-          class="flex items-center gap-2"
-          role="group"
-          onmousedown={() => {
-            ignoreNextEmailFocusOut = true;
-            setTimeout(() => { ignoreNextEmailFocusOut = false; }, 0);
-          }}
-          onfocusout={(e) => {
-            if (ignoreNextEmailFocusOut) { ignoreNextEmailFocusOut = false; return; }
-            if (!e.currentTarget.contains(e.relatedTarget as Node)) { editingEmail = false; }
-          }}
-        >
-          <input
-            bind:this={emailInput}
-            id="email"
-            type="email"
-            bind:value={emailEdit}
-            disabled={emailSaving}
-            onkeydown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); saveEmail(); }
-              if (e.key === 'Escape') { editingEmail = false; }
-            }}
-            class="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
-          />
-          <button
-            onclick={saveEmail}
-            disabled={emailSaving}
-            class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {emailSaving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-      {:else}
-        <button
-          onclick={startEditEmail}
-          class="text-sm text-gray-900 hover:opacity-70 transition-opacity cursor-pointer"
-        >
-          {profile.email}
-          <span class="text-xs text-gray-400 ml-1">Edit</span>
-        </button>
-      {/if}
+      <EditableLabel
+        id="email"
+        type="email"
+        value={profile.email}
+        ariaLabel={profile.email}
+        saveMode="explicit"
+        showCancel
+        isSaving={emailSaving}
+        inputClass="py-1.5 text-sm"
+        displayClass="px-0 py-0 text-sm text-gray-900 hover:opacity-70"
+        oncancel={() => { emailEdit = profile.email; }}
+        on:change={(event) => {
+          emailEdit = event.detail.value;
+          saveEmail();
+        }}
+      />
       {#if emailError}
         <p class="mt-1 text-xs text-red-600">{emailError}</p>
       {/if}
@@ -300,14 +261,14 @@
               <p class="text-xs text-gray-400">Added {formatDate(passkey.createdAt)}</p>
             </div>
             {#if passkeyToRemove !== passkey.id}
-              <button
+              <Button variant="bare"
                 onclick={() => startRemovePasskey(passkey.id)}
                 disabled={passkeys.length <= 1}
                 title={passkeys.length <= 1 ? "Can't remove the last passkey" : 'Remove passkey'}
                 class="text-xs text-red-500 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Remove
-              </button>
+              </Button>
             {/if}
           </div>
           {#if passkeyToRemove === passkey.id}
@@ -317,19 +278,19 @@
                 <p class="text-sm text-red-600">{removePasskeyError}</p>
               {/if}
               <div class="flex items-center gap-3">
-                <button
+                <Button variant="bare"
                   onclick={confirmRemovePasskey}
                   disabled={removingPasskey}
                   class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
                 >
                   {removingPasskey ? 'Removing…' : 'Confirm removal'}
-                </button>
-                <button
+                </Button>
+                <Button variant="bare"
                   onclick={() => (passkeyToRemove = null)}
                   class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           {/if}
@@ -343,37 +304,37 @@
     {#if showAddPasskey}
       <div class="border border-gray-200 rounded-lg p-4 space-y-3">
         <p class="text-sm font-medium text-gray-700">Add passkey for this device</p>
-        <input
+        <TextInput
           bind:value={newLabel}
           placeholder="Label (optional, e.g. My Laptop)"
-          class="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+          class="w-full border-gray-300 py-1.5 text-sm focus:border-blue-500"
         />
         {#if addPasskeyError}
           <p class="text-xs text-red-600">{addPasskeyError}</p>
         {/if}
         <div class="flex gap-2">
-          <button
+          <Button variant="bare"
             onclick={handleAddPasskey}
             disabled={addingPasskey}
             class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
             {addingPasskey ? 'Adding…' : 'Add passkey'}
-          </button>
-          <button
+          </Button>
+          <Button variant="bare"
             onclick={() => { showAddPasskey = false; newLabel = ''; addPasskeyError = ''; }}
             class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
     {:else}
-      <button
+      <Button variant="bare"
         onclick={() => (showAddPasskey = true)}
         class="text-sm text-blue-600 hover:text-blue-800 transition-colors"
       >
         + Add passkey for this device
-      </button>
+      </Button>
     {/if}
   </section>
 
@@ -382,12 +343,12 @@
     <h2 class="text-sm font-semibold text-red-500 uppercase tracking-wide">Danger zone</h2>
 
     {#if !showDeleteConfirm}
-      <button
+      <Button variant="bare"
         onclick={openDeleteConfirm}
         class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
       >
         Delete my account
-      </button>
+      </Button>
     {:else}
       <div class="space-y-4">
         {#if loadingPreview}
@@ -424,19 +385,19 @@
           {/if}
 
           <div class="flex items-center gap-3">
-            <button
+            <Button variant="bare"
               onclick={confirmDelete}
               disabled={deleting}
               class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {deleting ? 'Deleting…' : 'Confirm deletion'}
-            </button>
-            <button
+            </Button>
+            <Button variant="bare"
               onclick={() => (showDeleteConfirm = false)}
               class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         {/if}
       </div>

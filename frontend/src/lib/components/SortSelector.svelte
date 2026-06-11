@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { SortField, SortDirection } from '$lib/mock-data';
+  import Button from './Button.svelte';
+  import Select from './Select.svelte';
 
   let {
     value,
@@ -21,20 +23,21 @@
 </script>
 
 <div class="flex items-center gap-2">
-  <select
-    value={value}
-    onchange={(e) => onchange((e.target as HTMLSelectElement).value as SortField, direction)}
-    class="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-  >
-    {#each fields as f}
-      <option value={f.value}>{f.label}</option>
-    {/each}
-  </select>
-  <button
+  <Select
+    options={fields}
+    selected={fields.find((field) => field.value === value)}
+    getOptionLabel={(field) => field.label}
+    onSelect={(field) => onchange(field.value, direction)}
+    compact
+    triggerClass="border-gray-200 text-gray-700"
+  />
+  <Button
+    variant="secondary"
+    size="compact"
     onclick={() => onchange(value, direction === 'ASC' ? 'DESC' : 'ASC')}
-    class="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 hover:bg-gray-50"
+    class="border-gray-200 text-sm text-gray-700"
     title="Toggle direction"
   >
     {direction === 'ASC' ? '↑' : '↓'}
-  </button>
+  </Button>
 </div>

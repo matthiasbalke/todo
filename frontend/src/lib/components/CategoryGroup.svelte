@@ -5,6 +5,7 @@
   import { dragHandleZone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { reorderItemsOptimistic } from '$lib/stores/items.svelte';
   import { friendlyError } from '$lib/api/errors';
+  import Button from './Button.svelte';
 
   let {
     categoryId,
@@ -68,7 +69,10 @@
 
 <div class="mb-6">
   <h3 class="px-1 mb-2">
-    <button
+    <Button
+      variant="bare"
+      size="compact"
+      align="between"
       class="flex items-center justify-between w-full text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-500 transition-colors"
       onclick={() => { collapsed = !collapsed; oncollapsedchange?.(collapsed); }}
       aria-expanded={!collapsed}
@@ -80,7 +84,7 @@
         {category?.name ?? 'Uncategorized'}
       </span>
       <span class="font-normal normal-case tracking-normal" aria-hidden="true">{collapsed ? '▶' : '▼'}</span>
-    </button>
+    </Button>
   </h3>
   {#if !collapsed}
     {#if isDraggable}
@@ -105,13 +109,15 @@
     {/if}
 
     {#if !hideDone && doneItems.length > 0}
-      <button
+      <Button
+        variant="bare"
+        size="compact"
         onclick={() => { doneCollapsed = !doneCollapsed; ondonecollapsedchange?.(doneCollapsed); }}
         class="mt-2 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-500 transition-colors px-1"
       >
         <span>{doneCollapsed ? '▶' : '▼'}</span>
         <span>{doneItems.length} checked</span>
-      </button>
+      </Button>
       {#if !doneCollapsed}
         <div class="space-y-2 mt-1">
           {#each doneItems as item (item.id)}

@@ -12,6 +12,7 @@
   import ListForm from '$lib/components/ListForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
   import { friendlyError } from '$lib/api/errors';
+  import Button from '$lib/components/Button.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -127,13 +128,13 @@
       <h1 class="text-xl font-bold text-gray-900">{list?.emoji} {list?.name}</h1>
       <span class="text-sm text-gray-400">Grocery mode</span>
       <div class="relative ml-auto">
-        <button
+        <Button variant="bare"
           onclick={() => { menuOpen = !menuOpen; sortSubmenuOpen = false; filterSubmenuOpen = false; }}
           class="p-1 text-gray-400 hover:text-gray-600 transition-colors"
           aria-label="List options"
         >
           ⋮
-        </button>
+        </Button>
         {#if menuOpen}
           <div
             class="fixed inset-0 z-10"
@@ -144,93 +145,111 @@
             <a
               href="/lists/{data.id}"
               onclick={() => { menuOpen = false; }}
-              class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              class="block w-full text-left px-4 py-2 text-sm font-normal text-gray-700 hover:bg-gray-50"
             >
               Standard mode
             </a>
             <div class="border-t border-gray-100 mt-1 pt-1"></div>
-            <button
+            <Button variant="bare"
+              align="start"
+              weight="normal"
               onclick={() => { showEditForm = true; menuOpen = false; }}
               class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               Edit list
-            </button>
-            <button
+            </Button>
+            <Button variant="bare"
+              align="start"
+              weight="normal"
               onclick={() => { showCategoryDialog = true; menuOpen = false; }}
               class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               Configure categories
-            </button>
+            </Button>
             <div class="border-t border-gray-100 mt-1 pt-1">
-              <button
+              <Button variant="bare"
+                align="between"
+                weight="normal"
                 onclick={() => { filterSubmenuOpen = !filterSubmenuOpen; sortSubmenuOpen = false; }}
                 class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between"
               >
                 <span>Filter</span>
                 <span class="text-gray-400 text-xs">{activeFilterCount > 0 ? `${activeFilterCount} active` : 'Off'}</span>
-              </button>
+              </Button>
               {#if filterSubmenuOpen}
                 <div class="bg-gray-50 border-t border-gray-100">
                   <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Starred</p>
                   {#each [{ value: false, label: 'All items' }, { value: true, label: 'Starred only' }] as opt}
-                    <button
+                    <Button variant="bare"
+                      align="between"
+                      weight="normal"
                       onclick={() => { filters = { ...filters, starredOnly: opt.value }; }}
-                      class="w-full text-left px-6 py-1.5 text-sm flex items-center justify-between {filters.starredOnly === opt.value ? 'text-blue-600 font-medium' : 'text-gray-600 hover:bg-gray-100'}"
+                      class="w-full text-left px-6 py-1.5 text-sm flex items-center justify-between {filters.starredOnly === opt.value ? 'text-menu-selected' : 'text-gray-600 hover:bg-gray-100'}"
                     >
                       {opt.label}
                       {#if filters.starredOnly === opt.value}<span>✓</span>{/if}
-                    </button>
+                    </Button>
                   {/each}
                   <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Due date</p>
                   {#each dueDateOptions as opt}
-                    <button
+                    <Button variant="bare"
+                      align="between"
+                      weight="normal"
                       onclick={() => { filters = { ...filters, hideFuture: opt.value === 'hideFuture', hideUndated: opt.value === 'hideUndated' }; }}
-                      class="w-full text-left px-6 py-1.5 text-sm flex items-center justify-between {dueDateValue === opt.value ? 'text-blue-600 font-medium' : 'text-gray-600 hover:bg-gray-100'}"
+                      class="w-full text-left px-6 py-1.5 text-sm flex items-center justify-between {dueDateValue === opt.value ? 'text-menu-selected' : 'text-gray-600 hover:bg-gray-100'}"
                     >
                       {opt.label}
                       {#if dueDateValue === opt.value}<span>✓</span>{/if}
-                    </button>
+                    </Button>
                   {/each}
                 </div>
               {/if}
             </div>
             <div class="border-t border-gray-100 mt-1 pt-1">
-              <button
+              <Button variant="bare"
+                align="between"
+                weight="normal"
                 onclick={() => { sortSubmenuOpen = !sortSubmenuOpen; filterSubmenuOpen = false; }}
                 class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between"
               >
                 <span>Sort</span>
                 <span class="text-gray-400 text-xs">{sortFields.find(f => f.value === sortField)?.label} {sortDirection === 'ASC' ? '↑' : '↓'}</span>
-              </button>
+              </Button>
               {#if sortSubmenuOpen}
                 <div class="bg-gray-50 border-t border-gray-100">
                   {#each sortFields as f}
-                    <button
+                    <Button variant="bare"
+                      align="between"
+                      weight="normal"
                       onclick={() => { sortField = f.value; }}
-                      class="w-full text-left px-6 py-1.5 text-sm flex items-center justify-between {sortField === f.value ? 'text-blue-600 font-medium' : 'text-gray-600 hover:bg-gray-100'}"
+                      class="w-full text-left px-6 py-1.5 text-sm flex items-center justify-between {sortField === f.value ? 'text-menu-selected' : 'text-gray-600 hover:bg-gray-100'}"
                     >
                       {f.label}
                       {#if sortField === f.value}<span>✓</span>{/if}
-                    </button>
+                    </Button>
                   {/each}
                   <div class="border-t border-gray-200 mx-4 my-1"></div>
-                  <button
+                  <Button variant="bare"
+                    align="start"
+                    weight="normal"
                     onclick={() => { sortDirection = sortDirection === 'ASC' ? 'DESC' : 'ASC'; }}
                     class="w-full text-left px-6 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
                   >
                     {sortDirection === 'ASC' ? '↑ Ascending' : '↓ Descending'}
-                  </button>
+                  </Button>
                 </div>
               {/if}
             </div>
             <div class="border-t border-gray-100 mt-1 pt-1">
-              <button
+              <Button variant="bare"
+                align="between"
+                weight="normal"
                 onclick={() => { setHideDone(data.id, !isHideDone(data.id)); menuOpen = false; }}
-                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between"
+                class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center justify-between {isHideDone(data.id) ? 'text-menu-selected' : 'text-gray-700'}"
               >
                 <span>Hide checked</span>
                 {#if isHideDone(data.id)}<span>✓</span>{/if}
-              </button>
+              </Button>
             </div>
           </div>
         {/if}

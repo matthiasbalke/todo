@@ -205,6 +205,7 @@ describe('ComponentsPage Button showcase', () => {
 
 		for (const prop of [
 			'variant',
+			'weight',
 			'type',
 			'disabled',
 			'loading',
@@ -218,6 +219,7 @@ describe('ComponentsPage Button showcase', () => {
 		expect(showcase.getByText(/standard native button attributes and handlers/i)).toBeInTheDocument();
 		expect(showcase.getByText('Variants and click handling:')).toBeInTheDocument();
 		expect(showcase.getByText('States, type, and class extension:')).toBeInTheDocument();
+		expect(showcase.getByText(/selected options use blue text/i)).toBeInTheDocument();
 	});
 });
 

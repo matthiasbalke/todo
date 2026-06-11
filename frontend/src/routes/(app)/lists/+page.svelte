@@ -5,6 +5,8 @@
   import ListForm from '$lib/components/ListForm.svelte';
   import ListGroupSection from '$lib/components/ListGroupSection.svelte';
   import { friendlyError } from '$lib/api/errors';
+  import Button from '$lib/components/Button.svelte';
+  import TextInput from '$lib/components/TextInput.svelte';
 
   const lists = $derived(getLists());
   const groups = $derived(getListGroups());
@@ -91,28 +93,27 @@
       </div>
     {:else if addingGroup}
       <div class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-        <input
-          type="text"
-          bind:this={groupInput}
+        <TextInput
+          bind:element={groupInput}
           bind:value={newGroupName}
           placeholder="Group name"
-          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full text-sm border-gray-200"
           onkeydown={(e) => { if (e.key === 'Enter') handleAddGroup(); if (e.key === 'Escape') { addingGroup = false; newGroupName = ''; } }}
         />
         <div class="flex justify-end gap-2 pt-1">
-          <button
+          <Button variant="bare"
             type="button"
             onclick={() => { addingGroup = false; newGroupName = ''; groupError = null; }}
             class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button variant="bare"
             onclick={handleAddGroup}
             class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Add
-          </button>
+          </Button>
         </div>
         {#if groupError}
           <p class="text-sm text-red-600">{groupError}</p>
@@ -120,19 +121,19 @@
       </div>
     {:else}
       <div class="flex gap-2">
-        <button
+        <Button variant="bare"
           onclick={() => { showAddForm = true; }}
           disabled={saving}
           class="flex-1 py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors disabled:opacity-50"
         >
           + New list
-        </button>
-        <button
+        </Button>
+        <Button variant="bare"
           onclick={() => { addingGroup = true; }}
           class="py-3 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors"
         >
           + New group
-        </button>
+        </Button>
       </div>
     {/if}
     {#if error}

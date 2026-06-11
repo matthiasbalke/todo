@@ -202,7 +202,7 @@ describe('EditableLabel', () => {
 			await fireEvent.click(container.querySelector('button')!);
 
 			expect(container.querySelector('input')).toHaveValue('Hi');
-			expect(container.querySelector('#editable-label-error')).toHaveTextContent('Too short');
+			expect(container.querySelector('[id$="-error"]')).toHaveTextContent('Too short');
 		});
 
 		it('disables the input and Save button while saving', async () => {
@@ -270,7 +270,7 @@ describe('EditableLabel', () => {
 			await fireEvent.blur(input);
 			await tick();
 
-			const errorMessage = container.querySelector('#editable-label-error');
+			const errorMessage = container.querySelector('[id$="-error"]');
 			expect(errorMessage?.textContent).toContain('Too short');
 			expect(input).toHaveValue('Hi');
 		});
@@ -293,7 +293,7 @@ describe('EditableLabel', () => {
 			await fireEvent.blur(input);
 			await tick();
 
-			const errorMessage = container.querySelector('#editable-label-error');
+			const errorMessage = container.querySelector('[id$="-error"]');
 			expect(errorMessage?.textContent).toContain('Required');
 		});
 

@@ -21,3 +21,41 @@
 - `Textarea.svelte` is the shared multiline primitive with bindable string values, unique accessible IDs, descriptions, synchronous validation, native textarea prop/event forwarding, and configurable rows/resize behavior.
 - `ItemForm.svelte` uses Textarea for notes with two rows and resizing disabled while preserving empty-string-to-null submission.
 - The development `/components` route documents and demonstrates Textarea; its production redirect remains in `frontend/src/routes/components/+page.ts`.
+
+## Shared component adoption
+
+- Production Svelte consumers now use shared `Button`, `TextInput`, `EmailInput`, `Select`, and `EditableLabel` controls for the audited 5 selects, 14 text/email inputs, and 82 buttons.
+- `Button` supports primary, secondary, danger, ghost, and bare intents plus default, small, compact, icon, menu, chip, and backdrop sizes.
+- `TextInput` and `EmailInput` use bindable Svelte 5 props, unique IDs, native attribute/event forwarding, descriptions, styling hooks, and bindable element references.
+- `Select` and `EditableLabel` generate unique IDs; Select supports compact styling hooks, while EditableLabel supports explicit cancellation, styling hooks, and bindable focus access.
+- `nativeControlInventory.test.ts` enforces the production adoption boundary and requires documented path/line/reason metadata for any future exception.
+- Verification completed with 314 Vitest tests, clean `svelte-check`, a successful production build, and a valid OpenSpec change.
+
+## Shared Button alignment
+
+- `Button.svelte` exposes `align="center" | "start" | "between"` and keeps centered content as the default.
+- Grocery rows use start alignment, while grocery category headers use space-between alignment.
+- Standard list category headers use space-between alignment so category and uncategorized labels begin at the left edge while disclosure indicators remain at the right edge.
+- App account-menu actions and standard/grocery list menu actions explicitly use start or space-between alignment according to their content.
+- Alignment regressions are covered by Button, grocery component, category-group, app-layout, standard-list, and grocery-list tests.
+
+## Shared Button menu typography
+
+- `Button.svelte` exposes `weight="normal" | "medium"` and retains medium as the default for existing consumers.
+- Account, standard-list, and grocery-list menu rows explicitly use normal weight; non-interactive menu section headings retain medium weight.
+- Selected filter and sort options use blue text plus the existing checkmark, while unselected options remain neutral gray; both states use normal weight.
+- Typography and selection regressions are covered by Button, app-layout, standard-list, grocery-list, and component-showcase tests.
+- Verification completed with 324 Vitest tests, clean `svelte-check`, and a successful production build.
+
+## Burger menu selected colors
+
+- Bare shared Buttons no longer emit `text-inherit`, allowing consumer text-color utilities to take effect reliably.
+- Standard and grocery list menus use `text-menu-selected` for checked filter and sort-field rows and enabled `Hide checked`; check marks inherit the same blue color.
+- Verification completed with 327 Vitest tests, clean `svelte-check`, and a successful production build.
+
+## Grocery mode menu action
+
+- The standard list burger menu renders `Grocery mode` through the shared bare Button with start alignment and normal weight.
+- Activation closes the menu and uses SvelteKit `goto` to navigate to `/lists/{id}/grocery`.
+- Route coverage verifies button semantics, shared menu styling, navigation, and menu dismissal.
+- Verification completed with 328 Vitest tests, clean `svelte-check`, and a successful production build.

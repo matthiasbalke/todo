@@ -14,6 +14,49 @@ describe('Button', () => {
 		const button = screen.getByRole('button', { name: 'Continue' });
 		expect(button).toHaveAttribute('type', 'button');
 		expect(button).toHaveClass('bg-blue-600');
+		expect(button).toHaveClass('justify-center');
+		expect(button).toHaveClass('font-medium');
+	});
+
+	it.each([
+		['center', 'justify-center'],
+		['start', 'justify-start'],
+		['between', 'justify-between']
+	] as const)('renders the %s content alignment', (align, expectedClass) => {
+		render(Button, {
+			props: {
+				children: text(align),
+				align,
+				variant: 'bare',
+				size: 'menu',
+				class: 'w-full text-left'
+			}
+		});
+
+		expect(screen.getByRole('button')).toHaveClass(expectedClass, 'w-full', 'text-left');
+	});
+
+	it.each([
+		['normal', 'font-normal'],
+		['medium', 'font-medium']
+	] as const)('renders the %s font weight', (weight, expectedClass) => {
+		render(Button, {
+			props: {
+				children: text(weight),
+				weight,
+				variant: 'bare',
+				align: 'start',
+				class: 'w-full text-left'
+			}
+		});
+
+		expect(screen.getByRole('button')).toHaveClass(
+			expectedClass,
+			'bg-transparent',
+			'justify-start',
+			'w-full',
+			'text-left'
+		);
 	});
 
 	it('supports mixed child markup', () => {
@@ -64,11 +107,45 @@ describe('Button', () => {
 	it.each([
 		['primary', 'bg-blue-600'],
 		['secondary', 'border-gray-300'],
-		['danger', 'bg-red-600']
+		['danger', 'bg-red-600'],
+		['ghost', 'hover:bg-gray-100'],
+		['bare', 'bg-transparent']
 	] as const)('renders the %s variant', (variant, expectedClass) => {
 		render(Button, { props: { children: text(variant), variant } });
 
 		expect(screen.getByRole('button')).toHaveClass(expectedClass);
+	});
+
+	it('allows bare consumers to apply an explicit semantic text color', () => {
+		render(Button, {
+			props: {
+				children: text('Selected option'),
+				variant: 'bare',
+				class: 'text-menu-selected'
+			}
+		});
+
+		const button = screen.getByRole('button', { name: 'Selected option' });
+		expect(button).toHaveClass('bg-transparent', 'text-menu-selected');
+		expect(button).not.toHaveClass('text-inherit');
+	});
+
+	it.each([
+		['default', 'px-4'],
+		['small', 'px-3'],
+		['compact', 'text-xs'],
+		['icon', 'p-1'],
+		['menu', 'rounded-none'],
+		['chip', 'rounded-full'],
+		['backdrop', 'p-0']
+	] as const)('renders the %s size', (size, expectedClass) => {
+		render(Button, { props: { children: text(size), size } });
+		expect(screen.getByRole('button')).toHaveClass(expectedClass);
+	});
+
+	it('supports accessible icon-only usage', () => {
+		render(Button, { props: { children: text('★'), size: 'icon', 'aria-label': 'Star item' } });
+		expect(screen.getByRole('button', { name: 'Star item' })).toBeInTheDocument();
 	});
 
 	it('prevents clicks while disabled', async () => {
@@ -105,7 +182,7 @@ describe('Button', () => {
 
 	it('merges consumer classes with base and variant classes', () => {
 		render(Button, {
-			props: { children: text('Full width'), class: 'w-full justify-between' }
+			props: { children: text('Full width'), align: 'between', class: 'w-full' }
 		});
 
 		expect(screen.getByRole('button')).toHaveClass(

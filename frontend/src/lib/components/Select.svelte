@@ -1,6 +1,9 @@
+<script module lang="ts">
+	let nextSelectId = 0;
+</script>
+
 <script lang="ts">
 	import { onMount } from 'svelte';
-
 	interface Props<T> {
 		options: T[];
 		selected?: T | null;
@@ -8,6 +11,11 @@
 		label?: string;
 		placeholder?: string;
 		labelId?: string;
+		id?: string;
+		listboxId?: string;
+		class?: string;
+		triggerClass?: string;
+		compact?: boolean;
 		getOptionLabel?: (option: T) => string;
 		validate?: ((value: T | null) => string | null) | null;
 		onSelect?: (value: T) => void;
@@ -22,6 +30,11 @@
 		label = '',
 		placeholder = 'Select an option',
 		labelId = '',
+		id = '',
+		listboxId = '',
+		class: className = '',
+		triggerClass = '',
+		compact = false,
 		getOptionLabel = (option: any) => String(option),
 		validate = null,
 		onSelect,
@@ -37,6 +50,9 @@
 	let containerElement: HTMLElement | undefined = $state();
 	let dropdownPosition = $state({ top: 0, left: 0, width: 0 });
 	let internalSelected = $state(selected ?? null);
+	const generatedId = `select-${nextSelectId++}`;
+	const triggerId = $derived(id || labelId || `${generatedId}-trigger`);
+	const resolvedListboxId = $derived(listboxId || `${generatedId}-listbox`);
 
 	const selectedIndex = $derived(internalSelected !== null ? options.indexOf(internalSelected) : -1);
 
@@ -173,28 +189,28 @@
 	const isError = $derived(errorMessage !== null && errorMessage !== '');
 </script>
 
-<div bind:this={containerElement} class="flex flex-col gap-1">
+<div bind:this={containerElement} class="flex flex-col gap-1 {className}">
 	{#if label}
-		<label for={labelId || 'select-trigger'} class="text-sm font-medium text-gray-700">
+		<label for={triggerId} class="text-sm font-medium text-gray-700">
 			{label}
 		</label>
 	{/if}
 
 	<button
 		bind:this={triggerElement}
-		id={labelId || 'select-trigger'}
+		id={triggerId}
 		type="button"
 		{disabled}
 		aria-haspopup="listbox"
 		aria-expanded={isOpen}
-		aria-controls={isOpen ? 'select-dropdown' : undefined}
-		aria-describedby={isError ? 'select-error' : undefined}
+		aria-controls={isOpen ? resolvedListboxId : undefined}
+		aria-describedby={isError ? `${triggerId}-error` : undefined}
 		onclick={handleTriggerClick}
 		onkeydown={handleKeyDown}
 		onblur={handleBlur}
-		class="flex items-center justify-between px-3 py-2 rounded border transition-colors {isError
+		class="flex items-center justify-between rounded border transition-colors {compact ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} {isError
 			? 'border-red-500 bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500'
-			: 'border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500'} disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300"
+			: 'border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500'} disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 {triggerClass}"
 	>
 		<span class="text-left {internalSelected === null ? 'text-gray-500' : ''}">
 			{#if internalSelected !== null}
@@ -214,7 +230,7 @@
 	</button>
 
 	{#if errorMessage}
-		<p id="select-error" class="text-sm text-red-600">
+		<p id={`${triggerId}-error`} class="text-sm text-red-600">
 			{errorMessage}
 		</p>
 	{/if}
@@ -223,7 +239,7 @@
 {#if isOpen}
 	<div
 		bind:this={dropdownElement}
-		id="select-dropdown"
+		id={resolvedListboxId}
 		role="listbox"
 		aria-label={label}
 		class="fixed z-50 bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-y-auto"

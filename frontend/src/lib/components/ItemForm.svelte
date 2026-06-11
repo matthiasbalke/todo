@@ -4,6 +4,8 @@
   import DatePicker from './DatePicker.svelte';
   import Select from './Select.svelte';
   import Textarea from './Textarea.svelte';
+  import Button from './Button.svelte';
+  import TextInput from './TextInput.svelte';
 
   let {
     item,
@@ -124,14 +126,13 @@
   class="bg-white rounded-xl border border-gray-200 p-4 space-y-3"
 >
   <div>
-    <input
-      type="text"
-      bind:this={titleInput}
+    <TextInput
+      bind:element={titleInput}
       bind:value={title}
       onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit(e); } }}
       placeholder="Item title"
       required
-      class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="w-full text-sm border-gray-200"
     />
   </div>
 
@@ -162,8 +163,10 @@
     {:else}
       <div class="flex flex-wrap gap-1">
         {#each users as user}
-          <button
+          <Button
             type="button"
+            variant="bare"
+            size="chip"
             onclick={() => {
               const next = new Set(assignedUserIds);
               if (next.has(user.id)) {
@@ -178,7 +181,7 @@
               : 'px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200'}
           >
             {user.name}
-          </button>
+          </Button>
         {/each}
       </div>
     {/if}
@@ -193,18 +196,20 @@
   />
 
   <div class="flex justify-end gap-2 pt-1">
-    <button
+    <Button
       type="button"
+      variant="bare"
       onclick={oncancel}
-      class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+      class="text-gray-600 hover:text-gray-800"
     >
       Cancel
-    </button>
-    <button
+    </Button>
+    <Button
       type="submit"
-      class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+      loading={submitting}
+      loadingLabel={isNew ? 'Adding…' : 'Saving…'}
     >
       {isNew ? 'Add' : 'Save'}
-    </button>
+    </Button>
   </div>
 </form>

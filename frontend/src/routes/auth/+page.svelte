@@ -5,6 +5,9 @@
   import { ApiError, getAuthConfig, loginWithPasskey, registerWithPasskey } from '$lib/api/auth';
   import { checkHealth } from '$lib/api/health';
   import { setSession } from '$lib/stores/auth.svelte';
+  import Button from '$lib/components/Button.svelte';
+  import EmailInput from '$lib/components/EmailInput.svelte';
+  import TextInput from '$lib/components/TextInput.svelte';
 
   type Mode = 'starting' | 'idle' | 'register-form' | 'signing-in' | 'registering' | 'error' | 'startup-timeout';
 
@@ -138,45 +141,32 @@
 
       {#if mode === 'register-form' || mode === 'registering' || mode === 'error'}
         <form onsubmit={handleRegister} class="space-y-4">
-          <div>
-            <label class="text-sm font-medium text-gray-700 mb-1 block" for="displayName">
-              Display name
-            </label>
-            <input
-              id="displayName"
-              type="text"
-              bind:value={displayName}
-              placeholder="Your name"
-              required
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label class="text-sm font-medium text-gray-700 mb-1 block" for="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              bind:value={email}
-              placeholder="you@example.com"
-              required
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          <TextInput
+            id="displayName"
+            bind:value={displayName}
+            label="Display name"
+            placeholder="Your name"
+            required
+            class="w-full border-gray-200 text-sm"
+          />
+          <EmailInput
+            id="email"
+            bind:value={email}
+            label="Email"
+            placeholder="you@example.com"
+            required
+            class="w-full border-gray-200 text-sm"
+          />
 
-          <div>
-            <label class="text-sm font-medium text-gray-700 mb-1 block" for="passkeyLabel">
-              Passkey name <span class="text-gray-400 font-normal">(optional)</span>
-            </label>
-            <input
-              id="passkeyLabel"
-              type="text"
-              bind:value={passkeyLabel}
-              placeholder="e.g. My MacBook"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          <TextInput
+            id="passkeyLabel"
+            bind:value={passkeyLabel}
+            label="Passkey name (optional)"
+            placeholder="e.g. My MacBook"
+            class="w-full border-gray-200 text-sm"
+          />
 
-          <button
+          <Button variant="bare"
             type="submit"
             disabled={mode === 'registering'}
             class="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
@@ -187,19 +177,19 @@
               <span>🔑</span>
               <span>Register passkey</span>
             {/if}
-          </button>
+          </Button>
 
-          <button
+          <Button variant="bare"
             type="button"
             onclick={resetToIdle}
             class="w-full text-sm text-gray-500 hover:text-gray-700 py-1"
           >
             Back
-          </button>
+          </Button>
         </form>
       {:else}
         <div class="space-y-3">
-          <button
+          <Button variant="bare"
             type="button"
             onclick={handleSignIn}
             disabled={mode === 'signing-in'}
@@ -211,7 +201,7 @@
               <span>🔑</span>
               <span>Sign in with Passkey</span>
             {/if}
-          </button>
+          </Button>
 
           {#if registrationEnabled}
             <div class="relative my-4">
@@ -223,13 +213,13 @@
               </div>
             </div>
 
-            <button
+            <Button variant="bare"
               type="button"
               onclick={showRegisterForm}
               class="w-full border border-gray-200 text-gray-700 rounded-lg py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors"
             >
               Create account
-            </button>
+            </Button>
           {/if}
         </div>
       {/if}

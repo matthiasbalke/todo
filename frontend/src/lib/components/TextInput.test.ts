@@ -90,7 +90,7 @@ describe('TextInput', () => {
 			const input = container.querySelector('input') as HTMLInputElement;
 
 			await fireEvent.input(input, { target: { value: 'not-an-email' } });
-			const errorMessage = container.querySelector('#error-message');
+			const errorMessage = container.querySelector('[id$="-error"]');
 			expect(errorMessage?.textContent).toContain('Email is invalid');
 		});
 
@@ -102,7 +102,7 @@ describe('TextInput', () => {
 			const input = container.querySelector('input') as HTMLInputElement;
 
 			await fireEvent.input(input, { target: { value: 'valid@email.com' } });
-			const errorMessage = container.querySelector('#error-message');
+			const errorMessage = container.querySelector('[id$="-error"]');
 			expect(errorMessage).toBeFalsy();
 		});
 
@@ -129,14 +129,14 @@ describe('TextInput', () => {
 			await fireEvent.input(input, { target: { value: 'invalid' } });
 			await tick();
 			
-			let errorMessage = container.querySelector('#error-message');
+			let errorMessage = container.querySelector('[id$="-error"]');
 			expect(errorMessage?.textContent).toContain('Invalid');
 
 			// Now set to valid
 			await fireEvent.input(input, { target: { value: 'valid' } });
 			await tick();
 
-			errorMessage = container.querySelector('#error-message');
+			errorMessage = container.querySelector('[id$="-error"]');
 			expect(errorMessage).toBeFalsy();
 		});
 	});
@@ -148,8 +148,8 @@ describe('TextInput', () => {
 			});
 			const label = container.querySelector('label');
 			const input = container.querySelector('input');
-			expect(label?.getAttribute('for')).toBe('text-input');
-			expect(input?.id).toBe('text-input');
+			expect(input?.id).toMatch(/^text-input-\d+$/);
+			expect(label?.getAttribute('for')).toBe(input?.id);
 		});
 
 		it('should set aria-label when provided', () => {
@@ -181,7 +181,7 @@ describe('TextInput', () => {
 
 			await fireEvent.input(input, { target: { value: 'test' } });
 			await tick();
-			expect(input.getAttribute('aria-describedby')).toBe('error-message');
+			expect(input.getAttribute('aria-describedby')).toBe(container.querySelector('[id$="-error"]')?.id);
 		});
 
 		it('should not set aria-describedby when no error', () => {
@@ -195,6 +195,34 @@ describe('TextInput', () => {
 			const input = container.querySelector('input');
 			expect(input?.getAttribute('aria-invalid')).toBe('false');
 		});
+	});
+
+	it('generates unique IDs for multiple instances', () => {
+		const first = render(TextInput, { props: { label: 'First' } });
+		const second = render(TextInput, { props: { label: 'Second' } });
+
+		expect(first.container.querySelector('input')?.id).not.toBe(second.container.querySelector('input')?.id);
+	});
+
+	it('supports explicit IDs, descriptions, custom classes, handlers, and element binding', async () => {
+		const onfocus = vi.fn();
+		const { container } = render(TextInput, {
+			props: {
+				id: 'custom-input',
+				description: 'Helpful text',
+				class: 'custom-input-class',
+				onfocus,
+				autocomplete: 'name'
+			}
+		});
+		const input = container.querySelector('input') as HTMLInputElement;
+
+		await fireEvent.focus(input);
+		expect(input).toHaveAttribute('id', 'custom-input');
+		expect(input).toHaveAttribute('autocomplete', 'name');
+		expect(input).toHaveClass('custom-input-class');
+		expect(input.getAttribute('aria-describedby')).toContain('custom-input-description');
+		expect(onfocus).toHaveBeenCalledOnce();
 	});
 
 	describe('styling', () => {

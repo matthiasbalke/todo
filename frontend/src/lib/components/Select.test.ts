@@ -206,6 +206,19 @@ expect(listbox).not.toBeInTheDocument();
 });
 
 describe('Accessibility Attributes', () => {
+it('generates unique trigger and listbox IDs for multiple instances', async () => {
+render(Select, { props: { options: testOptions, label: 'First' } });
+render(Select, { props: { options: testOptions, label: 'Second' } });
+
+const triggers = screen.getAllByRole('button');
+expect(triggers[0].id).not.toBe(triggers[1].id);
+await fireEvent.click(triggers[0]);
+const firstListboxId = screen.getByRole('listbox').id;
+await fireEvent.click(triggers[0]);
+await fireEvent.click(triggers[1]);
+expect(screen.getByRole('listbox').id).not.toBe(firstListboxId);
+});
+
 it('has correct aria attributes when closed', () => {
 render(Select, {
 props: {

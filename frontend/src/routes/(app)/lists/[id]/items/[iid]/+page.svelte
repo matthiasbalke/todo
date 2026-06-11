@@ -7,6 +7,7 @@
   import { goto } from '$app/navigation';
   import { friendlyError } from '$lib/api/errors';
   import { getMembers } from '$lib/api/lists';
+  import Button from '$lib/components/Button.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -75,13 +76,13 @@
       oncancel={handleCancel}
     />
     <div class="mt-4">
-      <button
+      <Button variant="bare"
         type="button"
         onclick={handleDelete}
         class="w-full py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
       >
         Delete item
-      </button>
+      </Button>
     </div>
   {:else}
     <div class="text-center py-12 text-gray-400">Item not found.</div>

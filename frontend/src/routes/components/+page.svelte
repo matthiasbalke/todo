@@ -108,7 +108,9 @@
 
 	const buttonVariantsCode = `<Button onclick={() => handleAction('Primary')}>Primary action</Button>
 <Button variant="secondary">Secondary action</Button>
-<Button variant="danger">Delete item</Button>`;
+<Button variant="danger">Delete item</Button>
+<Button variant="ghost" size="icon" aria-label="Open menu">⋮</Button>
+<Button variant="bare" align="start" weight="normal" class="w-full">Menu item</Button>`;
 
 	const buttonStatesCode = `<Button loading={isSaving} loadingLabel="Saving…">
   Save changes
@@ -269,6 +271,8 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 						<Button variant="danger" onclick={() => handleButtonAction('Danger')}>
 							Danger action
 						</Button>
+						<Button variant="ghost" onclick={() => handleButtonAction('Ghost')}>Ghost action</Button>
+						<Button variant="bare" size="icon" aria-label="Icon action">⋮</Button>
 					</div>
 					<p class="text-xs text-gray-500 mt-3">
 						Last action: <code>{lastButtonAction}</code>
@@ -285,9 +289,13 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 
 				<div>
 					<h3 class="text-lg font-semibold text-gray-800 mb-4">Consumer Classes</h3>
-					<Button class="w-full" variant="secondary" onclick={() => handleButtonAction('Full width')}>
+					<Button class="w-full" variant="secondary" align="start" onclick={() => handleButtonAction('Full width')}>
 						Full-width button
 					</Button>
+					<Button class="w-full mt-2 text-blue-600" variant="bare" align="between" weight="normal">
+						<span>Selected menu option</span><span>✓</span>
+					</Button>
+					<p class="text-xs text-gray-500 mt-2">Menu rows use regular weight; selected options use blue text and a selection indicator.</p>
 				</div>
 
 				<div>
@@ -328,9 +336,27 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 						<tbody class="divide-y divide-gray-200">
 							<tr>
 								<td class="px-4 py-2 font-mono text-blue-600">variant</td>
-								<td class="px-4 py-2 text-gray-600">'primary' | 'secondary' | 'danger'</td>
+								<td class="px-4 py-2 text-gray-600">'primary' | 'secondary' | 'danger' | 'ghost' | 'bare'</td>
 								<td class="px-4 py-2 text-gray-600">'primary'</td>
 								<td class="px-4 py-2 text-gray-600">Visual intent and color treatment.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">size</td>
+								<td class="px-4 py-2 text-gray-600">'default' | 'small' | 'compact' | 'icon' | 'menu' | 'chip' | 'backdrop'</td>
+								<td class="px-4 py-2 text-gray-600">'default'</td>
+								<td class="px-4 py-2 text-gray-600">Named geometry for form, menu, chip, icon, and backdrop actions.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">align</td>
+								<td class="px-4 py-2 text-gray-600">'center' | 'start' | 'between'</td>
+								<td class="px-4 py-2 text-gray-600">'center'</td>
+								<td class="px-4 py-2 text-gray-600">Horizontal content alignment for full-width rows and menus.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">weight</td>
+								<td class="px-4 py-2 text-gray-600">'normal' | 'medium'</td>
+								<td class="px-4 py-2 text-gray-600">'medium'</td>
+								<td class="px-4 py-2 text-gray-600">Font weight, including regular typography for menu rows.</td>
 							</tr>
 							<tr>
 								<td class="px-4 py-2 font-mono text-blue-600">type</td>

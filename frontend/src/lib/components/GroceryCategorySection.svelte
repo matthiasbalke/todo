@@ -2,6 +2,7 @@
   import type { TodoItem, Category } from '$lib/mock-data';
   import { toggleDone } from '$lib/stores/items.svelte';
   import { friendlyError } from '$lib/api/errors';
+  import Button from './Button.svelte';
 
   let {
     category,
@@ -28,7 +29,9 @@
 </script>
 
 <div class="mb-4">
-  <button
+  <Button
+    variant="bare"
+    align="between"
     onclick={ontoggle}
     class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl text-left"
   >
@@ -37,21 +40,25 @@
       <span class="text-sm text-gray-500">{unchecked.length}/{items.length}</span>
       <span class="text-gray-400 transition-transform {collapsed ? '' : 'rotate-180'}">▼</span>
     </div>
-  </button>
+  </Button>
 
   {#if !collapsed}
     <div class="mt-1 space-y-1">
       {#each unchecked as item (item.id)}
-        <button
+        <Button
+          variant="bare"
+          align="start"
           onclick={() => handleToggle(item)}
           class="w-full flex items-center gap-4 px-4 py-3 bg-white rounded-lg border border-gray-100 text-left"
         >
           <span class="w-6 h-6 rounded-full border-2 border-gray-300 flex-shrink-0"></span>
           <span class="text-base text-gray-900">{item.title}</span>
-        </button>
+        </Button>
       {/each}
       {#each checked as item (item.id)}
-        <button
+        <Button
+          variant="bare"
+          align="start"
           onclick={() => handleToggle(item)}
           class="w-full flex items-center gap-4 px-4 py-3 bg-white rounded-lg border border-gray-100 text-left opacity-50"
         >
@@ -61,7 +68,7 @@
             </svg>
           </span>
           <span class="text-base text-gray-400 line-through">{item.title}</span>
-        </button>
+        </Button>
       {/each}
     </div>
   {/if}
