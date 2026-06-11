@@ -71,6 +71,14 @@ describe('AccountPage email inline-edit', () => {
 		expect(screen.getByText('test@example.com')).toBeInTheDocument();
 	});
 
+	it('uses danger styling for the account deletion action', () => {
+		render(AccountPage, { props: { data: mockData } });
+
+		const deleteButton = screen.getByRole('button', { name: 'Delete my account' });
+		expect(deleteButton).toHaveClass('bg-red-600', 'text-white', 'hover:bg-red-700');
+		expect(deleteButton).not.toHaveClass('bg-transparent');
+	});
+
 	it('clicking the email text shows the input and Save button', async () => {
 		render(AccountPage, { props: { data: mockData } });
 		await fireEvent.click(screen.getByRole('button', { name: /test@example\.com/i }));

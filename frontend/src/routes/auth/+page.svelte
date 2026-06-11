@@ -166,10 +166,10 @@
             class="w-full border-gray-200 text-sm"
           />
 
-          <Button variant="bare"
+          <Button variant="primary"
             type="submit"
             disabled={mode === 'registering'}
-            class="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            class="w-full py-2.5"
           >
             {#if mode === 'registering'}
               <span>Creating account…</span>
@@ -179,21 +179,21 @@
             {/if}
           </Button>
 
-          <Button variant="bare"
+          <Button variant="secondary"
             type="button"
             onclick={resetToIdle}
-            class="w-full text-sm text-gray-500 hover:text-gray-700 py-1"
+            class="w-full py-1"
           >
             Back
           </Button>
         </form>
       {:else}
         <div class="space-y-3">
-          <Button variant="bare"
+          <Button variant="primary"
             type="button"
             onclick={handleSignIn}
             disabled={mode === 'signing-in'}
-            class="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            class="w-full py-2.5"
           >
             {#if mode === 'signing-in'}
               <span>Waiting for passkey…</span>
@@ -213,10 +213,10 @@
               </div>
             </div>
 
-            <Button variant="bare"
+            <Button variant="secondary"
               type="button"
               onclick={showRegisterForm}
-              class="w-full border border-gray-200 text-gray-700 rounded-lg py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors"
+              class="w-full py-2.5"
             >
               Create account
             </Button>

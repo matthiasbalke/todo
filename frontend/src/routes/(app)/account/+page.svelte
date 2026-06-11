@@ -285,7 +285,7 @@
                 >
                   {removingPasskey ? 'Removing…' : 'Confirm removal'}
                 </Button>
-                <Button variant="bare"
+                <Button variant="secondary"
                   onclick={() => (passkeyToRemove = null)}
                   class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
                 >
@@ -313,14 +313,14 @@
           <p class="text-xs text-red-600">{addPasskeyError}</p>
         {/if}
         <div class="flex gap-2">
-          <Button variant="bare"
+          <Button variant="primary"
             onclick={handleAddPasskey}
             disabled={addingPasskey}
             class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
             {addingPasskey ? 'Adding…' : 'Add passkey'}
           </Button>
-          <Button variant="bare"
+          <Button variant="secondary"
             onclick={() => { showAddPasskey = false; newLabel = ''; addPasskeyError = ''; }}
             class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
           >
@@ -329,7 +329,7 @@
         </div>
       </div>
     {:else}
-      <Button variant="bare"
+      <Button variant="secondary"
         onclick={() => (showAddPasskey = true)}
         class="text-sm text-blue-600 hover:text-blue-800 transition-colors"
       >
@@ -343,9 +343,8 @@
     <h2 class="text-sm font-semibold text-red-500 uppercase tracking-wide">Danger zone</h2>
 
     {#if !showDeleteConfirm}
-      <Button variant="bare"
+      <Button variant="danger"
         onclick={openDeleteConfirm}
-        class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
       >
         Delete my account
       </Button>
