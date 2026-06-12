@@ -4,6 +4,8 @@
   import { isDraggingAny, setDraggingAny } from '$lib/stores/drag.svelte';
   import { dragHandleZone, dragHandle, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { friendlyError } from '$lib/api/errors';
+  import Button from './Button.svelte';
+  import TextInput from './TextInput.svelte';
 
   let {
     group,
@@ -90,8 +92,11 @@
 
 <div class="mb-4">
   <div class="flex items-center justify-between px-1 mb-2">
-    <button
-      class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-500 transition-colors"
+    <Button
+      tone="neutral" appearance="bare"
+      size="header"
+      align="start"
+      emphasis="muted"
       onclick={() => { collapsed = !collapsed; }}
       aria-expanded={!collapsed}
     >
@@ -101,29 +106,32 @@
       {:else if group === null}
         <span>Ungrouped</span>
       {/if}
-    </button>
+    </Button>
 
     {#if group !== null}
       {#if renaming}
         <div class="flex items-center gap-2 flex-1 ml-2">
-          <input
-            type="text"
+          <TextInput
             bind:value={newName}
-            class="flex-1 text-xs border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            containerClass="flex-1"
+            size="compact"
+            class="w-full"
             onkeydown={(e) => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') { renaming = false; newName = group?.name ?? ''; } }}
           />
-          <button onclick={handleRename} class="text-xs text-blue-600 hover:text-blue-700">Save</button>
-          <button onclick={() => { renaming = false; newName = group?.name ?? ''; }} class="text-xs text-gray-400 hover:text-gray-500">Cancel</button>
+          <Button tone="primary" appearance="bare" size="compact" onclick={handleRename}>Save</Button>
+          <Button tone="neutral" appearance="bare" size="compact" emphasis="muted" onclick={() => { renaming = false; newName = group?.name ?? ''; }}>Cancel</Button>
         </div>
       {:else}
         <div class="relative">
-          <button
+          <Button
+            tone="neutral" appearance="bare"
+            size="icon"
             onclick={(e) => { e.stopPropagation(); showMenu = !showMenu; }}
-            class="p-1 text-gray-300 hover:text-gray-500 transition-colors rounded"
+            emphasis="subtle"
             aria-label="Group options"
           >
             ⋯
-          </button>
+          </Button>
           {#if showMenu}
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
@@ -132,18 +140,24 @@
               onkeydown={() => {}}
             ></div>
             <div class="absolute right-0 mt-1 z-20 bg-white border border-gray-100 rounded-lg shadow-lg py-1 min-w-[120px]">
-              <button
+              <Button
+                tone="neutral" appearance="bare"
+                size="menu"
+                align="start"
+                weight="normal"
                 onclick={() => { renaming = true; newName = group?.name ?? ''; showMenu = false; }}
-                class="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
               >
                 Rename
-              </button>
-              <button
+              </Button>
+              <Button
+                tone="danger" appearance="ghost"
+                size="menu"
+                align="start"
+                weight="normal"
                 onclick={handleDelete}
-                class="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-gray-50"
               >
                 Delete
-              </button>
+              </Button>
             </div>
           {/if}
         </div>

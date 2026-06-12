@@ -72,8 +72,9 @@ describe('ListGroupSection', () => {
   });
 
   it('renders group name', () => {
-    const { getAllByText } = render(ListGroupSection, { props: { group, lists } });
+    const { getAllByText, getByRole } = render(ListGroupSection, { props: { group, lists } });
     expect(getAllByText('Home').length).toBeGreaterThan(0);
+    expect(getByRole('button', { name: /home/i })).toHaveClass('justify-start');
   });
 
   it('renders lists within the group', () => {
@@ -104,9 +105,10 @@ describe('ListGroupSection', () => {
         sortOrderInGroup: 0,
       },
     ];
-    const { getAllByText, getByText } = render(ListGroupSection, { props: { group: null, lists: ungrouped } });
+    const { getAllByText, getByText, getByRole } = render(ListGroupSection, { props: { group: null, lists: ungrouped } });
     expect(getAllByText('Ungrouped').length).toBeGreaterThan(0);
     expect(getByText('Personal')).toBeTruthy();
+    expect(getByRole('button', { name: /ungrouped/i })).toHaveClass('justify-start');
   });
 
   it('ungrouped section is collapsible', async () => {

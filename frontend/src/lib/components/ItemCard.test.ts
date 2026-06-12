@@ -63,9 +63,10 @@ describe('ItemCard delete background visibility', () => {
     const { container } = render(ItemCard, {
       props: { item: baseItem, categories: [], users: [] },
     });
-    const redBg = container.querySelector('div.bg-red-500');
-    expect(redBg).not.toBeNull();
-    expect(redBg!.className).toContain('invisible');
+    const deleteAction = container.querySelector('button[aria-label="Delete item"]');
+    expect(deleteAction).not.toBeNull();
+    expect(deleteAction).toHaveClass('bg-red-600');
+    expect(deleteAction!.parentElement!.className).toContain('invisible');
   });
 });
 
@@ -134,5 +135,35 @@ describe('ItemCard checkbox interaction', () => {
     await fireEvent.click(checkbox);
     expect(itemsStore.toggleDone).toHaveBeenCalledOnce();
     expect(itemsStore.toggleDone).toHaveBeenCalledWith('list-1', 'item-1');
+  });
+});
+
+describe('ItemCard specialized actions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('fires toggleStarred once for mouse and touch activation', async () => {
+    const { container } = render(ItemCard, {
+      props: { item: baseItem, categories: [], users: [] },
+    });
+    const star = container.querySelector('button[aria-label="Star"]')!;
+
+    await fireEvent.click(star);
+    expect(itemsStore.toggleStarred).toHaveBeenCalledOnce();
+
+    vi.mocked(itemsStore.toggleStarred).mockClear();
+    await fireEvent.touchEnd(star);
+    expect(itemsStore.toggleStarred).toHaveBeenCalledOnce();
+  });
+
+  it('activates the revealed delete action through the existing workflow', async () => {
+    const { container } = render(ItemCard, {
+      props: { item: baseItem, categories: [], users: [] },
+    });
+
+    await fireEvent.click(container.querySelector('button[aria-label="Delete item"]')!);
+    expect(itemsStore.deleteItem).toHaveBeenCalledOnce();
+    expect(itemsStore.deleteItem).toHaveBeenCalledWith('list-1', 'item-1');
   });
 });
