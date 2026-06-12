@@ -204,7 +204,9 @@ describe('ComponentsPage Button showcase', () => {
 		const showcase = within(section!);
 
 		for (const prop of [
-			'variant',
+			'tone',
+			'appearance',
+			'selected',
 			'weight',
 			'type',
 			'disabled',
@@ -217,8 +219,8 @@ describe('ComponentsPage Button showcase', () => {
 		}
 
 		expect(showcase.getByText(/standard native button attributes and handlers/i)).toBeInTheDocument();
-		expect(showcase.getByText('Variants and click handling:')).toBeInTheDocument();
-		expect(showcase.getByText('States, type, and class extension:')).toBeInTheDocument();
+		expect(showcase.getByText('Tone, appearance, and click handling:')).toBeInTheDocument();
+		expect(showcase.getByText('States, type, and layout classes:')).toBeInTheDocument();
 		expect(showcase.getByText(/selected options use blue text/i)).toBeInTheDocument();
 	});
 });
@@ -280,5 +282,34 @@ describe('ComponentsPage DatePicker showcase', () => {
 		expect(showcase.getByText('Enter, Space')).toBeInTheDocument();
 		expect(showcase.getByText('Nullable ISO date:')).toBeInTheDocument();
 		expect(showcase.getByText('Localized constrained date:')).toBeInTheDocument();
+	});
+});
+
+describe('ComponentsPage specialized controls showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('demonstrates domain state without consumer visual styling', async () => {
+		render(ComponentsPage);
+		const section = screen
+			.getByRole('heading', { name: 'Specialized Interaction Controls' })
+			.closest('section')!;
+		const showcase = within(section);
+
+		expect(showcase.getByRole('gridcell', { name: 'Tuesday, June 9, 2026' })).toHaveAttribute(
+			'aria-selected',
+			'true'
+		);
+		expect(showcase.getByRole('button', { name: 'Selected blue category' })).toHaveAttribute(
+			'aria-pressed',
+			'true'
+		);
+
+		await fireEvent.click(showcase.getByRole('button', { name: 'Mark done' }));
+		await fireEvent.click(showcase.getByRole('button', { name: 'Star' }));
+		expect(showcase.getByRole('button', { name: 'Mark undone' })).toBeInTheDocument();
+		expect(showcase.getByRole('button', { name: 'Unstar' })).toBeInTheDocument();
+		expect(showcase.getByRole('button', { name: 'Delete example item' })).toHaveClass('bg-red-600');
 	});
 });

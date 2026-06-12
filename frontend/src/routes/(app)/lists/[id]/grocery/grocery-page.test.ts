@@ -74,7 +74,7 @@ describe('Grocery page menu presentation', () => {
 		expect(selected.querySelector('span:last-child')).toHaveTextContent('✓');
 		expect(selected.querySelector('span:last-child')).not.toHaveAttribute('class');
 		expect(selected).not.toHaveClass('font-medium');
-		expect(unselected).toHaveClass('font-normal', 'text-gray-600');
+		expect(unselected).toHaveClass('font-normal', 'text-gray-700');
 		expect(unselected).not.toHaveClass('text-menu-selected', 'font-medium');
 		expect(screen.getByRole('button', { name: '↑ Ascending' })).toHaveClass(
 			'justify-start',
@@ -88,7 +88,7 @@ describe('Grocery page menu presentation', () => {
 		const selectedFilter = screen.getAllByRole('button', { name: 'All items ✓' })[0];
 		expect(selectedFilter).toHaveClass('text-menu-selected');
 		expect(selectedFilter.querySelector('span:last-child')).toHaveTextContent('✓');
-		expect(screen.getByRole('button', { name: 'Starred only' })).toHaveClass('text-gray-600');
+		expect(screen.getByRole('button', { name: 'Starred only' })).toHaveClass('text-gray-700');
 
 		await fireEvent.click(filterButton);
 		const inactiveHideChecked = screen.getByRole('button', { name: 'Hide checked' });

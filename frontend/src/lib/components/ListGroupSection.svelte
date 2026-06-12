@@ -93,9 +93,10 @@
 <div class="mb-4">
   <div class="flex items-center justify-between px-1 mb-2">
     <Button
-      variant="bare"
-      size="compact"
-      class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-500 transition-colors"
+      tone="neutral" appearance="bare"
+      size="header"
+      align="start"
+      emphasis="muted"
       onclick={() => { collapsed = !collapsed; }}
       aria-expanded={!collapsed}
     >
@@ -113,19 +114,20 @@
           <TextInput
             bind:value={newName}
             containerClass="flex-1"
-            class="w-full text-xs border-gray-300 px-2 py-0.5 focus:ring-1 focus:ring-blue-400"
+            size="compact"
+            class="w-full"
             onkeydown={(e) => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') { renaming = false; newName = group?.name ?? ''; } }}
           />
-          <Button variant="bare" size="compact" onclick={handleRename} class="text-xs text-blue-600 hover:text-blue-700">Save</Button>
-          <Button variant="bare" size="compact" onclick={() => { renaming = false; newName = group?.name ?? ''; }} class="text-xs text-gray-400 hover:text-gray-500">Cancel</Button>
+          <Button tone="primary" appearance="bare" size="compact" onclick={handleRename}>Save</Button>
+          <Button tone="neutral" appearance="bare" size="compact" emphasis="muted" onclick={() => { renaming = false; newName = group?.name ?? ''; }}>Cancel</Button>
         </div>
       {:else}
         <div class="relative">
           <Button
-            variant="bare"
+            tone="neutral" appearance="bare"
             size="icon"
             onclick={(e) => { e.stopPropagation(); showMenu = !showMenu; }}
-            class="p-1 text-gray-300 hover:text-gray-500 transition-colors rounded"
+            emphasis="subtle"
             aria-label="Group options"
           >
             ⋯
@@ -139,18 +141,20 @@
             ></div>
             <div class="absolute right-0 mt-1 z-20 bg-white border border-gray-100 rounded-lg shadow-lg py-1 min-w-[120px]">
               <Button
-                variant="bare"
+                tone="neutral" appearance="bare"
                 size="menu"
+                align="start"
+                weight="normal"
                 onclick={() => { renaming = true; newName = group?.name ?? ''; showMenu = false; }}
-                class="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
               >
                 Rename
               </Button>
               <Button
-                variant="bare"
+                tone="danger" appearance="ghost"
                 size="menu"
+                align="start"
+                weight="normal"
                 onclick={handleDelete}
-                class="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-gray-50"
               >
                 Delete
               </Button>

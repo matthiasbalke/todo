@@ -85,9 +85,9 @@
 
       <div class="flex items-center gap-2">
         {#if deferredPrompt}
-          <Button variant="bare"
+          <Button tone="primary" appearance="solid"
             onclick={installApp}
-            class="text-sm text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+            size="compact"
           >
             Install app
           </Button>
@@ -95,9 +95,9 @@
       </div>
 
       <div class="relative">
-        <Button variant="bare"
+        <Button tone="neutral" appearance="ghost"
+          size="small"
           onclick={() => (userMenuOpen = !userMenuOpen)}
-          class="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-gray-100 transition-colors"
           aria-label="User menu"
         >
           <span class="text-sm text-gray-500">{user?.displayName ?? ''}</span>
@@ -116,11 +116,11 @@
               Account
             </a>
             <div class="border-t border-gray-100 my-1"></div>
-            <Button variant="bare"
+            <Button tone="neutral" appearance="bare"
+              size="menu"
               align="start"
               weight="normal"
               onclick={handleLogout}
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               Log out
             </Button>

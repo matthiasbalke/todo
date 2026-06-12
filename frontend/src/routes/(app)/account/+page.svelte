@@ -5,7 +5,6 @@
   import { startRegistration, WebAuthnError } from '@simplewebauthn/browser';
   import {
     updateMe,
-    getPasskeys,
     getAddPasskeyOptions,
     submitAddPasskey,
     deletePasskey,
@@ -208,8 +207,8 @@
         value={profile.displayName}
         ariaLabel={profile.displayName}
         isSaving={nameSaving}
-        inputClass="py-1.5 text-sm"
-        displayClass="px-0 py-0 text-sm text-gray-900 hover:opacity-70"
+        inputSize="small"
+        displayAppearance="plain"
         on:change={(event) => {
           nameEdit = event.detail.value;
           saveDisplayName();
@@ -231,8 +230,8 @@
         saveMode="explicit"
         showCancel
         isSaving={emailSaving}
-        inputClass="py-1.5 text-sm"
-        displayClass="px-0 py-0 text-sm text-gray-900 hover:opacity-70"
+        inputSize="small"
+        displayAppearance="plain"
         oncancel={() => { emailEdit = profile.email; }}
         on:change={(event) => {
           emailEdit = event.detail.value;
@@ -261,11 +260,11 @@
               <p class="text-xs text-gray-400">Added {formatDate(passkey.createdAt)}</p>
             </div>
             {#if passkeyToRemove !== passkey.id}
-              <Button variant="bare"
+              <Button tone="danger" appearance="bare"
                 onclick={() => startRemovePasskey(passkey.id)}
                 disabled={passkeys.length <= 1}
                 title={passkeys.length <= 1 ? "Can't remove the last passkey" : 'Remove passkey'}
-                class="text-xs text-red-500 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                size="compact"
               >
                 Remove
               </Button>
@@ -278,16 +277,14 @@
                 <p class="text-sm text-red-600">{removePasskeyError}</p>
               {/if}
               <div class="flex items-center gap-3">
-                <Button variant="bare"
+                <Button tone="danger" appearance="solid"
                   onclick={confirmRemovePasskey}
                   disabled={removingPasskey}
-                  class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
                 >
                   {removingPasskey ? 'Removing…' : 'Confirm removal'}
                 </Button>
-                <Button variant="secondary"
+                <Button tone="neutral" appearance="outline"
                   onclick={() => (passkeyToRemove = null)}
-                  class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
                 >
                   Cancel
                 </Button>
@@ -307,31 +304,31 @@
         <TextInput
           bind:value={newLabel}
           placeholder="Label (optional, e.g. My Laptop)"
-          class="w-full border-gray-300 py-1.5 text-sm focus:border-blue-500"
+          size="small"
+          class="w-full"
         />
         {#if addPasskeyError}
           <p class="text-xs text-red-600">{addPasskeyError}</p>
         {/if}
         <div class="flex gap-2">
-          <Button variant="primary"
+          <Button tone="primary" appearance="solid"
             onclick={handleAddPasskey}
             disabled={addingPasskey}
-            class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            size="small"
           >
             {addingPasskey ? 'Adding…' : 'Add passkey'}
           </Button>
-          <Button variant="secondary"
+          <Button tone="neutral" appearance="outline"
             onclick={() => { showAddPasskey = false; newLabel = ''; addPasskeyError = ''; }}
-            class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+            size="small"
           >
             Cancel
           </Button>
         </div>
       </div>
     {:else}
-      <Button variant="secondary"
+      <Button tone="primary" appearance="bare"
         onclick={() => (showAddPasskey = true)}
-        class="text-sm text-blue-600 hover:text-blue-800 transition-colors"
       >
         + Add passkey for this device
       </Button>
@@ -343,7 +340,7 @@
     <h2 class="text-sm font-semibold text-red-500 uppercase tracking-wide">Danger zone</h2>
 
     {#if !showDeleteConfirm}
-      <Button variant="danger"
+      <Button tone="danger" appearance="solid"
         onclick={openDeleteConfirm}
       >
         Delete my account
@@ -384,16 +381,15 @@
           {/if}
 
           <div class="flex items-center gap-3">
-            <Button variant="bare"
+            <Button tone="danger" appearance="solid"
               onclick={confirmDelete}
               disabled={deleting}
-              class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {deleting ? 'Deleting…' : 'Confirm deletion'}
             </Button>
-            <Button variant="bare"
+            <Button tone="neutral" appearance="bare"
               onclick={() => (showDeleteConfirm = false)}
-              class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              emphasis="muted"
             >
               Cancel
             </Button>

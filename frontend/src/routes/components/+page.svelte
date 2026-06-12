@@ -5,10 +5,19 @@
 	import Select from '$lib/components/Select.svelte';
 	import EditableLabel from '$lib/components/EditableLabel.svelte';
 	import Button from '$lib/components/Button.svelte';
+	import CalendarDayButton from '$lib/components/CalendarDayButton.svelte';
+	import ColorSwatchButton from '$lib/components/ColorSwatchButton.svelte';
+	import CompletionToggle from '$lib/components/CompletionToggle.svelte';
 	import DatePicker from '$lib/components/DatePicker.svelte';
+	import StarToggle from '$lib/components/StarToggle.svelte';
+	import SwipeDeleteAction from '$lib/components/SwipeDeleteAction.svelte';
 	import Textarea from '$lib/components/Textarea.svelte';
 
 	let lastButtonAction = 'None';
+	let showcaseCalendarSelected = true;
+	let showcaseColor = '#60a5fa';
+	let showcaseDone = false;
+	let showcaseStarred = false;
 	let emptyDate: string | null = null;
 	let selectedDate: string | null = '2026-06-09';
 	let constrainedDate: string | null = '2026-06-15';
@@ -107,10 +116,10 @@
 />`;
 
 	const buttonVariantsCode = `<Button onclick={() => handleAction('Primary')}>Primary action</Button>
-<Button variant="secondary">Secondary action</Button>
-<Button variant="danger">Delete item</Button>
-<Button variant="ghost" size="icon" aria-label="Open menu">⋮</Button>
-<Button variant="bare" align="start" weight="normal" class="w-full">Menu item</Button>`;
+<Button tone="neutral" appearance="outline">Secondary action</Button>
+<Button tone="danger" appearance="solid">Delete item</Button>
+<Button tone="neutral" appearance="ghost" size="icon" aria-label="Open menu">⋮</Button>
+<Button tone="neutral" appearance="bare" size="menu" align="start" weight="normal">Menu item</Button>`;
 
 	const buttonStatesCode = `<Button loading={isSaving} loadingLabel="Saving…">
   Save changes
@@ -256,23 +265,23 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
 			<h2 class="text-2xl font-bold text-gray-900 mb-8">Button Component</h2>
 			<p class="text-gray-600 mb-8">
-				A native button primitive with consistent action variants, disabled and loading states,
+				A native button primitive with semantic tones, appearances, disabled and loading states,
 				focus treatment, and support for standard button attributes and events.
 			</p>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
 				<div>
-					<h3 class="text-lg font-semibold text-gray-800 mb-4">Action Variants</h3>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Tone And Appearance</h3>
 					<div class="flex flex-wrap gap-3">
 						<Button onclick={() => handleButtonAction('Primary')}>Primary action</Button>
-						<Button variant="secondary" onclick={() => handleButtonAction('Secondary')}>
+						<Button tone="neutral" appearance="outline" onclick={() => handleButtonAction('Secondary')}>
 							Secondary action
 						</Button>
-						<Button variant="danger" onclick={() => handleButtonAction('Danger')}>
+						<Button tone="danger" appearance="solid" onclick={() => handleButtonAction('Danger')}>
 							Danger action
 						</Button>
-						<Button variant="ghost" onclick={() => handleButtonAction('Ghost')}>Ghost action</Button>
-						<Button variant="bare" size="icon" aria-label="Icon action">⋮</Button>
+						<Button tone="neutral" appearance="ghost" onclick={() => handleButtonAction('Ghost')}>Ghost action</Button>
+						<Button tone="neutral" appearance="bare" size="icon" aria-label="Icon action">⋮</Button>
 					</div>
 					<p class="text-xs text-gray-500 mt-3">
 						Last action: <code>{lastButtonAction}</code>
@@ -288,11 +297,11 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 				</div>
 
 				<div>
-					<h3 class="text-lg font-semibold text-gray-800 mb-4">Consumer Classes</h3>
-					<Button class="w-full" variant="secondary" align="start" onclick={() => handleButtonAction('Full width')}>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Layout And State</h3>
+					<Button class="w-full" tone="neutral" appearance="outline" align="start" onclick={() => handleButtonAction('Full width')}>
 						Full-width button
 					</Button>
-					<Button class="w-full mt-2 text-blue-600" variant="bare" align="between" weight="normal">
+					<Button class="w-full mt-2" tone="neutral" appearance="bare" size="menu" align="between" weight="normal" selected>
 						<span>Selected menu option</span><span>✓</span>
 					</Button>
 					<p class="text-xs text-gray-500 mt-2">Menu rows use regular weight; selected options use blue text and a selection indicator.</p>
@@ -311,11 +320,11 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Examples</h3>
 				<div class="space-y-4">
 					<div>
-						<p class="text-sm font-mono text-gray-600 mb-2">Variants and click handling:</p>
+						<p class="text-sm font-mono text-gray-600 mb-2">Tone, appearance, and click handling:</p>
 						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{buttonVariantsCode}</code></pre>
 					</div>
 					<div>
-						<p class="text-sm font-mono text-gray-600 mb-2">States, type, and class extension:</p>
+						<p class="text-sm font-mono text-gray-600 mb-2">States, type, and layout classes:</p>
 						<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{buttonStatesCode}</code></pre>
 					</div>
 				</div>
@@ -335,14 +344,20 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 						</thead>
 						<tbody class="divide-y divide-gray-200">
 							<tr>
-								<td class="px-4 py-2 font-mono text-blue-600">variant</td>
-								<td class="px-4 py-2 text-gray-600">'primary' | 'secondary' | 'danger' | 'ghost' | 'bare'</td>
+								<td class="px-4 py-2 font-mono text-blue-600">tone</td>
+								<td class="px-4 py-2 text-gray-600">'primary' | 'neutral' | 'danger' | 'success'</td>
 								<td class="px-4 py-2 text-gray-600">'primary'</td>
-								<td class="px-4 py-2 text-gray-600">Visual intent and color treatment.</td>
+								<td class="px-4 py-2 text-gray-600">Semantic intent and color family.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">appearance</td>
+								<td class="px-4 py-2 text-gray-600">'solid' | 'outline' | 'soft' | 'ghost' | 'bare'</td>
+								<td class="px-4 py-2 text-gray-600">'solid'</td>
+								<td class="px-4 py-2 text-gray-600">Visual treatment independent of semantic tone.</td>
 							</tr>
 							<tr>
 								<td class="px-4 py-2 font-mono text-blue-600">size</td>
-								<td class="px-4 py-2 text-gray-600">'default' | 'small' | 'compact' | 'icon' | 'menu' | 'chip' | 'backdrop'</td>
+								<td class="px-4 py-2 text-gray-600">Named action, menu, field, row, title, chip, and backdrop geometry.</td>
 								<td class="px-4 py-2 text-gray-600">'default'</td>
 								<td class="px-4 py-2 text-gray-600">Named geometry for form, menu, chip, icon, and backdrop actions.</td>
 							</tr>
@@ -354,9 +369,15 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 							</tr>
 							<tr>
 								<td class="px-4 py-2 font-mono text-blue-600">weight</td>
-								<td class="px-4 py-2 text-gray-600">'normal' | 'medium'</td>
+								<td class="px-4 py-2 text-gray-600">'normal' | 'medium' | 'bold'</td>
 								<td class="px-4 py-2 text-gray-600">'medium'</td>
 								<td class="px-4 py-2 text-gray-600">Font weight, including regular typography for menu rows.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">selected</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Applies the shared selected-option presentation.</td>
 							</tr>
 							<tr>
 								<td class="px-4 py-2 font-mono text-blue-600">type</td>
@@ -386,7 +407,7 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 								<td class="px-4 py-2 font-mono text-blue-600">class</td>
 								<td class="px-4 py-2 text-gray-600">string</td>
 								<td class="px-4 py-2 text-gray-600">''</td>
-								<td class="px-4 py-2 text-gray-600">Additional classes merged with component styles.</td>
+								<td class="px-4 py-2 text-gray-600">Parent-layout utilities only, such as width, margin, or flex participation.</td>
 							</tr>
 							<tr>
 								<td class="px-4 py-2 font-mono text-blue-600">children</td>
@@ -402,6 +423,42 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					<code>aria-label</code>, <code>data-*</code>, and <code>onclick</code> are forwarded.
 				</p>
 			</div>
+		</section>
+
+		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+			<h2 class="text-2xl font-bold text-gray-900 mb-4">Specialized Interaction Controls</h2>
+			<p class="text-gray-600 mb-8">
+				Domain controls own state-dependent visuals and accessibility while parents keep business
+				and gesture orchestration.
+			</p>
+			<div class="flex flex-wrap items-center gap-8">
+				<div role="grid" aria-label="Calendar day example" class="w-10">
+					<CalendarDayButton
+						value="2026-06-09"
+						day={9}
+						label="Tuesday, June 9, 2026"
+						selected={showcaseCalendarSelected}
+						current
+						focused
+						onclick={() => { showcaseCalendarSelected = !showcaseCalendarSelected; }}
+					/>
+				</div>
+				<ColorSwatchButton
+					color={showcaseColor}
+					selected
+					label="Selected blue category"
+					onselect={() => { showcaseColor = showcaseColor === '#60a5fa' ? '#4ade80' : '#60a5fa'; }}
+				/>
+				<CompletionToggle done={showcaseDone} onactivate={() => { showcaseDone = !showcaseDone; }} />
+				<StarToggle starred={showcaseStarred} onactivate={() => { showcaseStarred = !showcaseStarred; }} />
+				<div class="h-12">
+					<SwipeDeleteAction label="Delete example item" />
+				</div>
+			</div>
+			<p class="text-sm text-gray-600 mt-6">
+				Consumers pass date, color, completion, star, and geometry state without visual utility
+				classes.
+			</p>
 		</section>
 
 		<!-- DatePicker Section -->

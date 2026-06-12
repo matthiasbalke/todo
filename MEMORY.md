@@ -59,3 +59,20 @@
 - Activation closes the menu and uses SvelteKit `goto` to navigate to `/lists/{id}/grocery`.
 - Route coverage verifies button semantics, shared menu styling, navigation, and menu dismissal.
 - Verification completed with 328 Vitest tests, clean `svelte-check`, and a successful production build.
+
+## Semantic shared-component styling proposals
+
+- `standardize-semantic-component-styling` proposes separate Button tone and appearance APIs, named presentation props for other shared controls, primitive composition inside composite controls, and an automated guard that permits only parent-layout classes at consumer call sites.
+- The June 12, 2026 audit found 84 production Button usages, including 66 explicit `bare` usages; `ghost` was unused outside the showcase, and multiple consumers reconstructed primary, danger, menu, icon, and selected-state styling with Tailwind utilities.
+- `extract-specialized-interaction-controls` is a dependent follow-up for calendar day cells, category color swatches, item completion and star toggles, and swipe-delete actions.
+- Specialized controls remain exact documented guard exceptions only until the follow-up is implemented; its completion criterion is an empty specialized-exception list.
+
+## Semantic shared-component styling implementation
+
+- `Button.svelte` now separates `tone` (`primary`, `neutral`, `danger`, `success`) from `appearance` (`solid`, `outline`, `soft`, `ghost`, `bare`) and owns selected, active, invalid, emphasis, alignment, weight, loading, and named geometry.
+- `Select` composes Button for its trigger/options, `EditableLabel` composes TextInput and Button, and `DatePicker` composes Button for its standard actions.
+- TextInput, Textarea, Select, and EditableLabel use named size/appearance props; legacy `variant`, `triggerClass`, `inputClass`, `displayClass`, and `labelClass` APIs are removed.
+- `sharedComponentStyling.test.ts` permits only parent-layout classes on shared controls and rejects visual/custom classes, inline styles, removed hooks, and invalid exceptions with source diagnostics.
+- The remaining exact exceptions match `extract-specialized-interaction-controls`: calendar day, two color swatches, completion toggle, star toggle, and swipe-delete action.
+- `extract-specialized-interaction-controls` now provides CalendarDayButton, ColorSwatchButton, CompletionToggle, StarToggle, and SwipeDeleteAction; DatePicker, CategoryConfigDialog, and ItemCard use them and the specialized styling exception list is empty.
+- Verification completed with 371 Vitest tests, clean `svelte-check`, successful production build, and valid OpenSpec artifacts.

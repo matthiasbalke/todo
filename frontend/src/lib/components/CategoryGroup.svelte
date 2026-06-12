@@ -70,10 +70,10 @@
 <div class="mb-6">
   <h3 class="px-1 mb-2">
     <Button
-      variant="bare"
-      size="compact"
+      tone="neutral" appearance="bare"
+      size="header"
       align="between"
-      class="flex items-center justify-between w-full text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-500 transition-colors"
+      emphasis="muted"
       onclick={() => { collapsed = !collapsed; oncollapsedchange?.(collapsed); }}
       aria-expanded={!collapsed}
     >
@@ -110,10 +110,11 @@
 
     {#if !hideDone && doneItems.length > 0}
       <Button
-        variant="bare"
+        tone="neutral" appearance="bare"
         size="compact"
+        emphasis="muted"
         onclick={() => { doneCollapsed = !doneCollapsed; ondonecollapsedchange?.(doneCollapsed); }}
-        class="mt-2 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-500 transition-colors px-1"
+        class="mt-2"
       >
         <span>{doneCollapsed ? '▶' : '▼'}</span>
         <span>{doneItems.length} checked</span>

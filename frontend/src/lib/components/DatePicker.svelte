@@ -4,6 +4,8 @@
 
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import Button from './Button.svelte';
+	import CalendarDayButton from './CalendarDayButton.svelte';
 	import {
 		addDays,
 		addMonths,
@@ -44,7 +46,7 @@
 
 	let isOpen = $state(false);
 	let containerElement = $state<HTMLElement>();
-	let triggerElement = $state<HTMLButtonElement>();
+	let triggerElement = $state<HTMLButtonElement | null>(null);
 	let displayedYear = $state(todayCalendarDate().year);
 	let displayedMonth = $state(todayCalendarDate().month);
 	let focusedDate = $state<CalendarDate>(todayCalendarDate());
@@ -235,20 +237,24 @@
 		</span>
 	{/if}
 
-	<button
-		bind:this={triggerElement}
-		type="button"
+	<Button
+		bind:element={triggerElement}
 		{disabled}
 		aria-label={ariaLabel || (!label ? placeholder : undefined)}
 		aria-labelledby={!ariaLabel && label ? labelId : undefined}
 		aria-haspopup="dialog"
 		aria-expanded={isOpen}
 		onclick={toggleCalendar}
-		class="flex items-center justify-between gap-3 rounded border border-gray-300 bg-white px-3 py-2 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
+		tone="neutral"
+		appearance="outline"
+		size="field"
+		align="between"
+		weight="normal"
+		class="w-full"
 	>
 		<span class={selectedDate ? 'text-gray-800' : 'text-gray-500 italic'}>{triggerText}</span>
 		<span aria-hidden="true">▾</span>
-	</button>
+	</Button>
 
 	{#if isOpen}
 		<div
@@ -257,23 +263,25 @@
 			class="absolute left-0 top-full z-50 mt-1 w-full min-w-72 max-w-sm rounded-lg border border-gray-200 bg-white p-3 shadow-lg"
 		>
 			<div class="mb-3 flex items-center justify-between">
-				<button
-					type="button"
+				<Button
 					aria-label="Previous month"
 					onclick={() => changeMonth(-1)}
-					class="rounded p-2 text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+					tone="neutral"
+					appearance="ghost"
+					size="icon"
 				>
 					‹
-				</button>
+				</Button>
 				<h3 class="text-sm font-semibold text-gray-800" aria-live="polite">{monthHeading}</h3>
-				<button
-					type="button"
+				<Button
 					aria-label="Next month"
 					onclick={() => changeMonth(1)}
-					class="rounded p-2 text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+					tone="neutral"
+					appearance="ghost"
+					size="icon"
 				>
 					›
-				</button>
+				</Button>
 			</div>
 
 			<div role="grid" aria-label={monthHeading} class="grid grid-cols-7 gap-1">
@@ -289,52 +297,47 @@
 					{@const selected = value === iso}
 					{@const current = toIsoDate(today) === iso}
 					{@const adjacent = date.month !== displayedMonth}
-					<button
-						bind:this={dateButtons[iso]}
-						type="button"
-						role="gridcell"
-						disabled={!allowed}
-						aria-label={formatCalendarDate(date, locale, {
+					<CalendarDayButton
+						bind:element={dateButtons[iso]}
+						value={iso}
+						day={date.day}
+						label={formatCalendarDate(date, locale, {
 							weekday: 'long',
 							year: 'numeric',
 							month: 'long',
 							day: 'numeric'
 						})}
-						aria-selected={selected}
-						aria-current={current ? 'date' : undefined}
-						tabindex={toIsoDate(focusedDate) === iso ? 0 : -1}
+						{selected}
+						{current}
+						{adjacent}
+						disabled={!allowed}
+						focused={toIsoDate(focusedDate) === iso}
 						onclick={() => selectDate(date)}
 						onkeydown={(event) => handleDateKeydown(event, date)}
-						class="aspect-square rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 {selected
-							? 'bg-blue-600 text-white'
-							: current
-								? 'bg-blue-50 font-semibold text-blue-700'
-								: adjacent
-									? 'text-gray-400 hover:bg-gray-100'
-									: 'text-gray-700 hover:bg-gray-100'} disabled:cursor-not-allowed disabled:opacity-30"
-					>
-						{date.day}
-					</button>
+					/>
 				{/each}
 			</div>
 
 			<div class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
-				<button
-					type="button"
+				<Button
 					disabled={!isAllowed(today)}
 					onclick={selectToday}
-					class="text-sm font-medium text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40"
+					tone="primary"
+					appearance="bare"
+					size="small"
 				>
 					Today
-				</button>
-				<button
-					type="button"
+				</Button>
+				<Button
 					disabled={value === null}
 					onclick={clearDate}
-					class="text-sm text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+					tone="neutral"
+					appearance="bare"
+					size="small"
+					emphasis="muted"
 				>
 					Clear
-				</button>
+				</Button>
 			</div>
 		</div>
 	{/if}

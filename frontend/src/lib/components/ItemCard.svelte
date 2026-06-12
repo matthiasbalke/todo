@@ -6,7 +6,9 @@
   import RecurrenceIndicator from './RecurrenceIndicator.svelte';
   import { onMount } from 'svelte';
   import { dragHandle } from 'svelte-dnd-action';
-  import Button from './Button.svelte';
+  import CompletionToggle from './CompletionToggle.svelte';
+  import StarToggle from './StarToggle.svelte';
+  import SwipeDeleteAction from './SwipeDeleteAction.svelte';
 
   let { item, categories, users, isDraggable = false }: { item: TodoItem; categories: Category[]; users: User[]; isDraggable?: boolean } = $props();
   const assignedUsers = $derived(users.filter(u => item.assignedUserIds.includes(u.id)));
@@ -107,8 +109,8 @@
 
 <div class="relative overflow-hidden rounded-lg" bind:this={cardEl}>
   <!-- Red delete background -->
-  <div class="absolute inset-0 bg-red-500 flex items-center justify-end rounded-lg" class:invisible={swipeX >= 0 && !snapping}>
-    <Button variant="bare" size="backdrop" onclick={handleDelete} class="w-20 h-full text-white text-lg" aria-label="Delete item">🗑</Button>
+  <div class="absolute inset-0 flex items-center justify-end" class:invisible={swipeX >= 0 && !snapping}>
+    <SwipeDeleteAction onactivate={handleDelete} />
   </div>
   <!-- Sliding card content -->
   <div
@@ -130,20 +132,7 @@
         </svg>
       </div>
     {/if}
-    <Button
-      variant="bare"
-      size="icon"
-      onclick={handleDone}
-      ontouchend={(e) => { e.stopPropagation(); e.preventDefault(); handleDone(e); }}
-      class="flex-shrink-0 w-5 h-5 rounded-full border-2 {item.done ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'} transition-colors"
-      aria-label={item.done ? 'Mark undone' : 'Mark done'}
-    >
-      {#if item.done}
-        <svg class="w-3 h-3 text-white mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
-        </svg>
-      {/if}
-    </Button>
+    <CompletionToggle done={item.done} onactivate={handleDone} />
 
     <a href="/lists/{item.listId}/items/{item.id}" class="flex-1 min-w-0">
       <div class="flex items-start justify-between gap-2">
@@ -169,13 +158,6 @@
       </div>
     {/each}
 
-    <Button
-      variant="bare"
-      size="icon"
-      onclick={handleStar}
-      ontouchend={(e) => { e.stopPropagation(); e.preventDefault(); handleStar(e); }}
-      class="flex-shrink-0 text-lg leading-none {item.starred ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'} transition-colors"
-      aria-label={item.starred ? 'Unstar' : 'Star'}
-    >★</Button>
+    <StarToggle starred={item.starred} onactivate={handleStar} />
   </div>
 </div>

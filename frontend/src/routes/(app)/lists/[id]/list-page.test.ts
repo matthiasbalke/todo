@@ -127,7 +127,7 @@ describe('ListPage menu presentation', () => {
 			'py-2',
 			'text-sm',
 			'text-gray-700',
-			'hover:bg-gray-50'
+			'hover:text-gray-900'
 		);
 		expect(screen.getByRole('button', { name: 'Configure categories' })).toHaveClass(
 			'justify-start',
@@ -148,7 +148,7 @@ describe('ListPage menu presentation', () => {
 		expect(selected.querySelector('span:last-child')).toHaveTextContent('✓');
 		expect(selected.querySelector('span:last-child')).not.toHaveAttribute('class');
 		expect(selected).not.toHaveClass('font-medium');
-		expect(unselected).toHaveClass('font-normal', 'text-gray-600');
+		expect(unselected).toHaveClass('font-normal', 'text-gray-700');
 		expect(unselected).not.toHaveClass('text-menu-selected', 'font-medium');
 
 		await fireEvent.click(filterButton);
@@ -158,7 +158,7 @@ describe('ListPage menu presentation', () => {
 		const selectedSort = screen.getByRole('button', { name: 'Manual ✓' });
 		expect(selectedSort).toHaveClass('text-menu-selected');
 		expect(selectedSort.querySelector('span:last-child')).toHaveTextContent('✓');
-		expect(screen.getByRole('button', { name: 'Created' })).toHaveClass('text-gray-600');
+		expect(screen.getByRole('button', { name: 'Created' })).toHaveClass('text-gray-700');
 
 		await fireEvent.click(sortButton);
 		const inactiveHideChecked = screen.getByRole('button', { name: 'Hide checked' });

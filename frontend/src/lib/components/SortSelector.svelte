@@ -28,14 +28,12 @@
     selected={fields.find((field) => field.value === value)}
     getOptionLabel={(field) => field.label}
     onSelect={(field) => onchange(field.value, direction)}
-    compact
-    triggerClass="border-gray-200 text-gray-700"
+    size="compact"
   />
   <Button
-    variant="secondary"
+    tone="neutral" appearance="outline"
     size="compact"
     onclick={() => onchange(value, direction === 'ASC' ? 'DESC' : 'ASC')}
-    class="border-gray-200 text-sm text-gray-700"
     title="Toggle direction"
   >
     {direction === 'ASC' ? '↑' : '↓'}

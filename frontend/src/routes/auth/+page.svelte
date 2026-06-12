@@ -147,7 +147,7 @@
             label="Display name"
             placeholder="Your name"
             required
-            class="w-full border-gray-200 text-sm"
+            class="w-full"
           />
           <EmailInput
             id="email"
@@ -155,7 +155,7 @@
             label="Email"
             placeholder="you@example.com"
             required
-            class="w-full border-gray-200 text-sm"
+            class="w-full"
           />
 
           <TextInput
@@ -163,13 +163,14 @@
             bind:value={passkeyLabel}
             label="Passkey name (optional)"
             placeholder="e.g. My MacBook"
-            class="w-full border-gray-200 text-sm"
+            class="w-full"
           />
 
-          <Button variant="primary"
+          <Button tone="primary" appearance="solid"
             type="submit"
             disabled={mode === 'registering'}
-            class="w-full py-2.5"
+            size="large"
+            class="w-full"
           >
             {#if mode === 'registering'}
               <span>Creating account…</span>
@@ -179,21 +180,23 @@
             {/if}
           </Button>
 
-          <Button variant="secondary"
+          <Button tone="neutral" appearance="outline"
             type="button"
             onclick={resetToIdle}
-            class="w-full py-1"
+            size="small"
+            class="w-full"
           >
             Back
           </Button>
         </form>
       {:else}
         <div class="space-y-3">
-          <Button variant="primary"
+          <Button tone="primary" appearance="solid"
             type="button"
             onclick={handleSignIn}
             disabled={mode === 'signing-in'}
-            class="w-full py-2.5"
+            size="large"
+            class="w-full"
           >
             {#if mode === 'signing-in'}
               <span>Waiting for passkey…</span>
@@ -213,10 +216,11 @@
               </div>
             </div>
 
-            <Button variant="secondary"
+            <Button tone="neutral" appearance="outline"
               type="button"
               onclick={showRegisterForm}
-              class="w-full py-2.5"
+              size="large"
+              class="w-full"
             >
               Create account
             </Button>

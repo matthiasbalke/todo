@@ -37,15 +37,15 @@
     onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit(e); } }}
     placeholder="List name"
     required
-    class="w-full text-sm border-gray-200"
+    class="w-full"
   />
 
   <div class="flex justify-end gap-2 pt-1">
     <Button
       type="button"
-      variant="bare"
+      tone="neutral" appearance="bare"
       onclick={oncancel}
-      class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+      emphasis="muted"
     >
       Cancel
     </Button>

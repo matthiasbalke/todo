@@ -165,8 +165,9 @@
         {#each users as user}
           <Button
             type="button"
-            variant="bare"
+            tone="neutral" appearance="outline"
             size="chip"
+            selected={assignedUserIds.has(user.id)}
             onclick={() => {
               const next = new Set(assignedUserIds);
               if (next.has(user.id)) {
@@ -176,9 +177,6 @@
               }
               assignedUserIds = next;
             }}
-            class={assignedUserIds.has(user.id)
-              ? 'px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-300'
-              : 'px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200'}
           >
             {user.name}
           </Button>
@@ -198,9 +196,9 @@
   <div class="flex justify-end gap-2 pt-1">
     <Button
       type="button"
-      variant="bare"
+      tone="neutral" appearance="bare"
       onclick={oncancel}
-      class="text-gray-600 hover:text-gray-800"
+      emphasis="muted"
     >
       Cancel
     </Button>

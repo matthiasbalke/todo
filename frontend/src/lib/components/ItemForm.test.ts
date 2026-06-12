@@ -317,13 +317,13 @@ describe('ItemForm', () => {
 			const { container } = render(ItemForm, { props: { ...defaultProps, users: [user] } });
 
 			const chip = screen.getByRole('button', { name: 'Alice' });
-			expect(chip.className).toContain('bg-gray-100');
+			expect(chip).toHaveClass('bg-white', 'border-gray-300');
 
 			await fireEvent.click(chip);
 			expect(chip.className).toContain('bg-blue-100');
 
 			await fireEvent.click(chip);
-			expect(chip.className).toContain('bg-gray-100');
+			expect(chip).toHaveClass('bg-white', 'border-gray-300');
 
 			const fieldset = container.querySelector('fieldset')!;
 			expect(fieldset.className).not.toContain('m-0');

@@ -76,10 +76,10 @@
       oncancel={handleCancel}
     />
     <div class="mt-4">
-      <Button variant="bare"
+      <Button tone="danger" appearance="ghost"
         type="button"
         onclick={handleDelete}
-        class="w-full py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+        class="w-full"
       >
         Delete item
       </Button>

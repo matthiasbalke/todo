@@ -7,10 +7,14 @@ export const auditedNativeControls = {
 
 export const primitiveExclusions = [
 	'lib/components/Button.svelte',
+	'lib/components/CalendarDayButton.svelte',
+	'lib/components/ColorSwatchButton.svelte',
+	'lib/components/CompletionToggle.svelte',
 	'lib/components/DatePicker.svelte',
 	'lib/components/EditableLabel.svelte',
 	'lib/components/EmailInput.svelte',
 	'lib/components/Select.svelte',
+	'lib/components/StarToggle.svelte',
 	'lib/components/Textarea.svelte',
 	'lib/components/TextInput.svelte'
 ] as const;

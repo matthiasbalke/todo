@@ -4,6 +4,10 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Button from './Button.svelte';
+
+	type Size = 'default' | 'compact' | 'dense';
+
 	interface Props<T> {
 		options: T[];
 		selected?: T | null;
@@ -14,13 +18,10 @@
 		id?: string;
 		listboxId?: string;
 		class?: string;
-		triggerClass?: string;
-		compact?: boolean;
+		size?: Size;
 		getOptionLabel?: (option: T) => string;
 		validate?: ((value: T | null) => string | null) | null;
 		onSelect?: (value: T) => void;
-		triggerSlot?: any;
-		optionSlot?: any;
 	}
 
 	const {
@@ -33,19 +34,16 @@
 		id = '',
 		listboxId = '',
 		class: className = '',
-		triggerClass = '',
-		compact = false,
+		size = 'default',
 		getOptionLabel = (option: any) => String(option),
 		validate = null,
-		onSelect,
-		triggerSlot,
-		optionSlot
+		onSelect
 	}: Props<any> = $props();
 
 	let isOpen = $state(false);
 	let focusedIndex = $state(-1);
 	let errorMessage = $state<string | null>(null);
-	let triggerElement: HTMLElement | undefined = $state();
+	let triggerElement: HTMLButtonElement | null = $state(null);
 	let dropdownElement: HTMLElement | undefined = $state();
 	let containerElement: HTMLElement | undefined = $state();
 	let dropdownPosition = $state({ top: 0, left: 0, width: 0 });
@@ -53,6 +51,7 @@
 	const generatedId = `select-${nextSelectId++}`;
 	const triggerId = $derived(id || labelId || `${generatedId}-trigger`);
 	const resolvedListboxId = $derived(listboxId || `${generatedId}-listbox`);
+	const triggerSize = $derived(size === 'default' ? 'field' : size === 'compact' ? 'small' : 'compact');
 
 	const selectedIndex = $derived(internalSelected !== null ? options.indexOf(internalSelected) : -1);
 
@@ -196,10 +195,9 @@
 		</label>
 	{/if}
 
-	<button
-		bind:this={triggerElement}
+	<Button
+		bind:element={triggerElement}
 		id={triggerId}
-		type="button"
 		{disabled}
 		aria-haspopup="listbox"
 		aria-expanded={isOpen}
@@ -208,9 +206,13 @@
 		onclick={handleTriggerClick}
 		onkeydown={handleKeyDown}
 		onblur={handleBlur}
-		class="flex items-center justify-between rounded border transition-colors {compact ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} {isError
-			? 'border-red-500 bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500'
-			: 'border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500'} disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 {triggerClass}"
+		tone="neutral"
+		appearance="outline"
+		size={triggerSize}
+		align="between"
+		weight="normal"
+		invalid={isError}
+		class="w-full"
 	>
 		<span class="text-left {internalSelected === null ? 'text-gray-500' : ''}">
 			{#if internalSelected !== null}
@@ -227,7 +229,7 @@
 		>
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
 		</svg>
-	</button>
+	</Button>
 
 	{#if errorMessage}
 		<p id={`${triggerId}-error`} class="text-sm text-red-600">
@@ -246,18 +248,21 @@
 		style="top: {dropdownPosition.top}px; left: {dropdownPosition.left}px; width: {dropdownPosition.width}px;"
 	>
 		{#each options as option, index (index)}
-			<button
-				type="button"
+			<Button
 				role="option"
 				aria-selected={selectedIndex === index}
 				onclick={() => selectOption(option)}
 				onmouseenter={() => (focusedIndex = index)}
-				class="w-full text-left px-3 py-2 flex items-center gap-2 transition-colors {focusedIndex === index
-					? 'bg-blue-100'
-					: ''} {selectedIndex === index ? 'bg-blue-50 font-medium' : 'hover:bg-gray-100'}"
+				tone="neutral"
+				appearance="bare"
+				size="menu"
+				align="start"
+				weight={selectedIndex === index ? 'medium' : 'normal'}
+				selected={selectedIndex === index}
+				active={focusedIndex === index}
 			>
 				{getOptionLabel(option)}
-			</button>
+			</Button>
 		{/each}
 
 		{#if options.length === 0}
@@ -267,9 +272,3 @@
 		{/if}
 	</div>
 {/if}
-
-<style>
-	button {
-		font-family: inherit;
-	}
-</style>

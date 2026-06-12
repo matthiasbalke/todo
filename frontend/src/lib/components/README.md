@@ -5,26 +5,29 @@ A small, reusable component library for SvelteKit UI primitives. Components foll
 - **Simple and focused**: each component has a single responsibility
 - **Accessible**: ARIA attributes, keyboard navigation, semantic HTML
 - **Composable**: base components can be extended or combined for specialized behavior
-- **Styled consistently**: Tailwind utilities + scoped component styles; no inline CSS
+- **Styled consistently**: shared controls own Tailwind utilities and any required dynamic styles
 - **Testable**: each component includes comprehensive unit tests
 
 ## Base Components
 
 ### Button
 
-A native button wrapper with consistent variants, focus treatment, disabled behavior, and loading feedback.
+A native button wrapper with semantic tone and appearance, consistent focus treatment, disabled behavior, and loading feedback.
 
 #### Props
 
-- `variant` (`'primary' | 'secondary' | 'danger' | 'ghost' | 'bare'`, default: `'primary'`): visual intent
-- `size` (`'default' | 'small' | 'compact' | 'icon' | 'menu' | 'chip' | 'backdrop'`, default: `'default'`): control geometry
+- `tone` (`'primary' | 'neutral' | 'danger' | 'success'`, default: `'primary'`): semantic intent
+- `appearance` (`'solid' | 'outline' | 'soft' | 'ghost' | 'bare'`, default: `'solid'`): visual treatment
+- `size`: named action, field, menu, option, chip, row, title, and backdrop geometry
 - `align` (`'center' | 'start' | 'between'`, default: `'center'`): horizontal flex alignment for button content
-- `weight` (`'normal' | 'medium'`, default: `'medium'`): button font weight
+- `weight` (`'normal' | 'medium' | 'bold'`, default: `'medium'`): button font weight
+- `emphasis` (`'default' | 'muted' | 'subtle'`, default: `'default'`): neutral-action emphasis
+- `selected`, `active`, and `invalid` (boolean): shared interaction-state presentation
 - `type` (`'button' | 'submit' | 'reset'`, default: `'button'`): native button type
 - `disabled` (boolean, default: false): disable activation
 - `loading` (boolean, default: false): disable activation, set `aria-busy`, and show loading text
 - `loadingLabel` (string, default: `'Loading…'`): text displayed while loading
-- `class` (string, optional): additional classes merged with the component styles
+- `class` (string, optional): parent-layout utilities only
 - `children` (snippet): text, icons, or combined button content
 - All other standard button attributes and native event handlers are forwarded.
 
@@ -38,11 +41,11 @@ A native button wrapper with consistent variants, focus treatment, disabled beha
 </script>
 
 <Button onclick={() => console.log('Saved')}>Save</Button>
-<Button variant="secondary">Cancel</Button>
-<Button variant="danger">Delete</Button>
-<Button variant="ghost" size="icon" aria-label="Open menu">⋮</Button>
-<Button variant="bare" align="start" weight="normal" class="w-full">Menu item</Button>
-<Button variant="bare" align="between" weight="normal" class="w-full text-blue-600">
+<Button tone="neutral" appearance="outline">Cancel</Button>
+<Button tone="danger" appearance="solid">Delete</Button>
+<Button tone="neutral" appearance="ghost" size="icon" aria-label="Open menu">⋮</Button>
+<Button tone="neutral" appearance="bare" size="menu" align="start" weight="normal">Menu item</Button>
+<Button tone="neutral" appearance="bare" size="menu" align="between" weight="normal" selected>
   <span>Filter</span><span>Off</span>
 </Button>
 <Button type="submit" loading={saving} loadingLabel="Saving…" class="w-full">
@@ -52,12 +55,11 @@ A native button wrapper with consistent variants, focus treatment, disabled beha
 
 #### Styling
 
-- Primary: blue background with white text
-- Secondary: white background with neutral border and text
-- Danger: red background with white text
-- All variants share rounded corners, focus rings, transitions, and disabled opacity
+- Tone owns semantic color; appearance independently selects solid, outline, soft, ghost, or bare treatment.
+- All presentations share focus, disabled, loading, alignment, and event behavior.
 - Use `align="start"` for full-width rows with one leading label and `align="between"` when trailing status or disclosure content must remain at the opposite edge.
-- Use `weight="normal"` for menu actions and options. Selected options remain regular weight and use blue text plus their selection indicator; unselected options use neutral text.
+- Use named menu sizes and `selected` for menu options instead of supplying padding, typography, hover, or color utilities.
+- Consumer classes are limited to parent layout such as `w-full`, margin, positioning, and flex participation.
 
 ### DatePicker
 
@@ -116,6 +118,18 @@ A custom single-date calendar popover for nullable ISO calendar dates.
 - **Enter/Space**: select focused date
 - **Escape**: close without changing the value
 
+## Specialized Interaction Controls
+
+These controls expose domain state rather than consumer-owned visual CSS:
+
+- `CalendarDayButton`: `value`, `day`, `label`, `selected`, `current`, `adjacent`, `disabled`, and `focused`; owns `gridcell` semantics, roving tabindex, date-state presentation, native events, and element binding.
+- `ColorSwatchButton`: `color`, `selected`, `label`, `disabled`, and `onselect`; applies arbitrary category color data internally and exposes selection through `aria-pressed`.
+- `CompletionToggle`: `done`, `disabled`, and `onactivate`; owns circular checked presentation, action labeling, `aria-pressed`, and capture-phase touch handling.
+- `StarToggle`: `starred`, `disabled`, and `onactivate`; owns active/inactive star presentation, action labeling, `aria-pressed`, and capture-phase touch handling.
+- `SwipeDeleteAction`: `label`, `width`, `fillHeight`, `disabled`, and `onactivate`; composes `Button` with destructive semantics and exposes only the geometry needed by swipe orchestration.
+
+Calendar, swatch, completion, and star controls use native buttons internally because their geometry and state visuals are domain-specific and would expand the generic Button API. Consumers must not pass visual classes or inline styles to specialized controls. Parent components retain date calculations, persistence, store mutations, and gesture orchestration.
+
 ### TextInput
 
 A text input field with custom validation support, error display, and accessibility features.
@@ -133,7 +147,9 @@ A text input field with custom validation support, error display, and accessibil
 - `id` (string, optional): explicit input ID; otherwise a unique ID is generated
 - `description` (string, optional): supporting text included in `aria-describedby`
 - `element` (`HTMLInputElement | null`, bindable): native input access for focus management
-- `class`, `containerClass`, `labelClass` (string, optional): styling hooks
+- `size` (`'default' | 'small' | 'compact' | 'title'`): named control geometry
+- `appearance` (`'default' | 'inline'`): bordered field or inline title editing
+- `class` and `containerClass` (string, optional): parent-layout hooks
 - Standard text-input attributes and native event handlers are forwarded.
 
 Use `oninput`, `onblur`, and `onfocus` native handler props. `EmailInput` forwards the same surface and adds email validation through `customValidate`.
@@ -254,7 +270,7 @@ An inline editable field that displays as read-only text (label) and transforms 
 - `saveMode` (`'automatic' | 'explicit'`, default: `'automatic'`): save on Enter/blur or require the Save button
 - `showCancel` (boolean, default: false): show an explicit Cancel button in explicit mode
 - `oncancel` (function, optional): notified when an edit is discarded
-- `id`, `displayClass`, `inputClass`, `containerClass`, and `element`: ID, styling, and focus hooks
+- `id`, `displayAppearance`, `inputSize`, `containerClass`, and `element`: ID, named presentation, layout, and focus hooks
 
 #### Events
 
@@ -364,11 +380,13 @@ Test coverage includes:
 ## Guidelines
 
 1. **Reuse components** when building forms or UI areas. Check if a base component exists before creating a new element.
-2. **Compose over copy-paste**: if you need a variant of an existing component, extend it rather than duplicating code.
+2. **Compose over copy-paste**: composite controls reuse lower-level primitives such as Button and TextInput.
 3. **Keep validators simple**: move complex validation to the parent form if needed.
-4. **Use Tailwind for styling**: prefer utility classes over inline styles.
+4. **Keep styling semantic**: use typed tone, appearance, size, emphasis, and state props; consumer classes are for parent layout only.
 5. **Test as you build**: write tests for any new component or specialized variant.
 
 ## Native Control Migration
 
-Production consumers must use `Button`, `TextInput`, `EmailInput`, `Select`, `Textarea`, `DatePicker`, or `EditableLabel` when a matching primitive exists. Native implementations remain allowed inside those primitives and in the development showcase. Run `bun run test --run src/lib/components/nativeControlInventory.test.ts` to check the boundary; any exception must include a source path, line, element, and reason.
+Production consumers must use `Button`, `TextInput`, `EmailInput`, `Select`, `Textarea`, `DatePicker`, `EditableLabel`, or a matching specialized interaction control when one exists. Native implementations remain allowed inside shared primitives and in the development showcase. Run `bun run test --run src/lib/components/nativeControlInventory.test.ts` to check the boundary; any exception must include a source path, line, element, and reason.
+
+The semantic styling guard additionally rejects visual utility overrides and removed visual class props on shared-control consumers. The specialized exception inventory is empty; calendar-day, color-swatch, completion, star, and swipe-delete visuals must use their dedicated controls.

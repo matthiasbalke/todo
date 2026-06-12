@@ -6,6 +6,7 @@
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
 
 	type Resize = 'none' | 'vertical' | 'horizontal' | 'both';
+	type Size = 'default' | 'compact';
 
 	interface Props
 		extends Omit<
@@ -30,6 +31,7 @@
 		disabled?: boolean;
 		rows?: number;
 		resize?: Resize;
+		size?: Size;
 		validate?: ((value: string) => string | null) | null;
 		ariaLabel?: string;
 		class?: string;
@@ -48,6 +50,7 @@
 		disabled = false,
 		rows = 3,
 		resize = 'vertical',
+		size = 'default',
 		validate = null,
 		ariaLabel,
 		class: className = '',
@@ -68,6 +71,10 @@
 		vertical: 'resize-y',
 		horizontal: 'resize-x',
 		both: 'resize'
+	};
+	const sizeClasses: Record<Size, string> = {
+		default: 'px-3 py-2 text-sm',
+		compact: 'px-2 py-1 text-xs'
 	};
 
 	const isError = $derived(Boolean(errorMessage));
@@ -126,7 +133,7 @@
 		aria-describedby={describedBy}
 		oninput={handleInput}
 		onblur={handleBlur}
-		class="w-full rounded border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 {isError
+		class="w-full rounded border transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {isError
 			? 'border-red-500 bg-red-50 focus:ring-red-500'
 			: 'border-gray-300 bg-white focus:ring-blue-500'} disabled:cursor-not-allowed disabled:border-gray-300 disabled:bg-gray-100 disabled:text-gray-500 {resizeClasses[
 			resize

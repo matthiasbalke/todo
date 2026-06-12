@@ -27,9 +27,10 @@ describe('Button', () => {
 			props: {
 				children: text(align),
 				align,
-				variant: 'bare',
+				tone: 'neutral',
+				appearance: 'bare',
 				size: 'menu',
-				class: 'w-full text-left'
+				class: 'w-full'
 			}
 		});
 
@@ -44,9 +45,10 @@ describe('Button', () => {
 			props: {
 				children: text(weight),
 				weight,
-				variant: 'bare',
+				tone: 'neutral',
+				appearance: 'bare',
 				align: 'start',
-				class: 'w-full text-left'
+				class: 'w-full'
 			}
 		});
 
@@ -54,8 +56,7 @@ describe('Button', () => {
 			expectedClass,
 			'bg-transparent',
 			'justify-start',
-			'w-full',
-			'text-left'
+			'w-full'
 		);
 	});
 
@@ -105,39 +106,91 @@ describe('Button', () => {
 	});
 
 	it.each([
-		['primary', 'bg-blue-600'],
-		['secondary', 'border-gray-300'],
-		['danger', 'bg-red-600'],
-		['ghost', 'hover:bg-gray-100'],
-		['bare', 'bg-transparent']
-	] as const)('renders the %s variant', (variant, expectedClass) => {
-		render(Button, { props: { children: text(variant), variant } });
+		['primary', 'solid', 'bg-blue-600'],
+		['primary', 'outline', 'border-blue-300'],
+		['primary', 'soft', 'bg-blue-50'],
+		['primary', 'ghost', 'hover:bg-blue-50'],
+		['primary', 'bare', 'text-blue-600'],
+		['neutral', 'solid', 'bg-gray-700'],
+		['neutral', 'outline', 'border-gray-300'],
+		['neutral', 'soft', 'bg-gray-50'],
+		['neutral', 'ghost', 'hover:bg-gray-100'],
+		['neutral', 'bare', 'text-gray-700'],
+		['danger', 'solid', 'bg-red-600'],
+		['danger', 'outline', 'border-red-300'],
+		['danger', 'soft', 'bg-red-50'],
+		['danger', 'ghost', 'hover:bg-red-50'],
+		['danger', 'bare', 'text-red-600'],
+		['success', 'solid', 'bg-green-600'],
+		['success', 'outline', 'border-green-300'],
+		['success', 'soft', 'bg-green-50'],
+		['success', 'ghost', 'hover:bg-green-50'],
+		['success', 'bare', 'text-green-600']
+	] as const)('renders the %s %s presentation', (tone, appearance, expectedClass) => {
+		render(Button, {
+			props: {
+				children: text(`${tone}-${appearance}`),
+				tone,
+				appearance
+			}
+		});
 
 		expect(screen.getByRole('button')).toHaveClass(expectedClass);
 	});
 
-	it('allows bare consumers to apply an explicit semantic text color', () => {
+	it('owns selected option styling', () => {
 		render(Button, {
 			props: {
 				children: text('Selected option'),
-				variant: 'bare',
-				class: 'text-menu-selected'
+				tone: 'neutral',
+				appearance: 'bare',
+				selected: true,
+				size: 'menu-indented'
 			}
 		});
 
 		const button = screen.getByRole('button', { name: 'Selected option' });
-		expect(button).toHaveClass('bg-transparent', 'text-menu-selected');
-		expect(button).not.toHaveClass('text-inherit');
+		expect(button).toHaveClass('text-menu-selected', 'px-6');
+	});
+
+	it('owns active, invalid, and neutral emphasis states', async () => {
+		const { rerender } = render(Button, {
+			props: { children: text('Stateful'), tone: 'neutral', appearance: 'bare', active: true }
+		});
+		expect(screen.getByRole('button')).toHaveClass('bg-blue-100');
+
+		await rerender({ children: text('Stateful'), tone: 'neutral', appearance: 'outline', invalid: true });
+		expect(screen.getByRole('button')).toHaveClass('border-red-500', 'bg-red-50');
+
+		await rerender({
+			children: text('Stateful'),
+			tone: 'neutral',
+			appearance: 'bare',
+			emphasis: 'muted',
+			active: false,
+			invalid: false
+		});
+		expect(screen.getByRole('button')).toHaveClass('text-gray-500', 'hover:text-gray-700');
 	});
 
 	it.each([
 		['default', 'px-4'],
+		['large', 'py-2.5'],
 		['small', 'px-3'],
 		['compact', 'text-xs'],
 		['icon', 'p-1'],
 		['menu', 'rounded-none'],
+		['menu-indented', 'px-6'],
 		['chip', 'rounded-full'],
-		['backdrop', 'p-0']
+		['backdrop', 'p-0'],
+		['field', 'px-3'],
+		['display', 'min-h-10'],
+		['display-plain', 'p-0'],
+		['empty', 'border-dashed'],
+		['header', 'uppercase'],
+		['row', 'py-3'],
+		['row-muted', 'rounded-xl'],
+		['title', 'text-xl']
 	] as const)('renders the %s size', (size, expectedClass) => {
 		render(Button, { props: { children: text(size), size } });
 		expect(screen.getByRole('button')).toHaveClass(expectedClass);
@@ -180,7 +233,7 @@ describe('Button', () => {
 		expect(screen.getByRole('button', { name: 'Creating account…' })).toBeInTheDocument();
 	});
 
-	it('merges consumer classes with base and variant classes', () => {
+	it('merges layout classes with base presentation classes', () => {
 		render(Button, {
 			props: { children: text('Full width'), align: 'between', class: 'w-full' }
 		});

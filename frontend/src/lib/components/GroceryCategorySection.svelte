@@ -30,10 +30,10 @@
 
 <div class="mb-4">
   <Button
-    variant="bare"
+    tone="neutral" appearance="soft"
+    size="row-muted"
     align="between"
     onclick={ontoggle}
-    class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl text-left"
   >
     <span class="font-semibold text-gray-800">{category?.name ?? 'Uncategorized'}</span>
     <div class="flex items-center gap-2">
@@ -46,10 +46,10 @@
     <div class="mt-1 space-y-1">
       {#each unchecked as item (item.id)}
         <Button
-          variant="bare"
+          tone="neutral" appearance="outline"
+          size="row"
           align="start"
           onclick={() => handleToggle(item)}
-          class="w-full flex items-center gap-4 px-4 py-3 bg-white rounded-lg border border-gray-100 text-left"
         >
           <span class="w-6 h-6 rounded-full border-2 border-gray-300 flex-shrink-0"></span>
           <span class="text-base text-gray-900">{item.title}</span>
@@ -57,10 +57,11 @@
       {/each}
       {#each checked as item (item.id)}
         <Button
-          variant="bare"
+          tone="neutral" appearance="outline"
+          size="row"
           align="start"
           onclick={() => handleToggle(item)}
-          class="w-full flex items-center gap-4 px-4 py-3 bg-white rounded-lg border border-gray-100 text-left opacity-50"
+          class="opacity-50"
         >
           <span class="w-6 h-6 rounded-full bg-green-500 border-2 border-green-500 flex-shrink-0 flex items-center justify-center">
             <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

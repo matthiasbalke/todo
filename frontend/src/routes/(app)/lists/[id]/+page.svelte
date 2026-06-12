@@ -185,21 +185,25 @@
           if (e.key === 'Escape') { editingTitle = false; }
         }}
         containerClass="flex-1 min-w-0"
-        class="w-full text-xl font-bold text-gray-900 bg-transparent border-0 border-b border-gray-300 rounded-none px-0 focus:ring-0 focus:border-blue-500 min-w-0"
+        size="title"
+        appearance="inline"
+        class="w-full min-w-0"
       />
     {:else}
-      <Button variant="bare"
+      <Button tone="neutral" appearance="bare"
         type="button"
-        class="text-xl font-bold text-gray-900 cursor-pointer hover:opacity-70 transition-opacity text-left"
+        size="title"
+        weight="bold"
         onclick={() => { titleEditValue = `${list.emoji ?? '📋'} ${list.name}`; editingTitle = true; }}
       >
         {list.emoji ?? '📋'} {list.name}
       </Button>
     {/if}
       <div class="relative ml-auto">
-        <Button variant="bare"
+        <Button tone="neutral" appearance="bare"
+          size="icon"
+          emphasis="muted"
           onclick={() => { menuOpen = !menuOpen; sortSubmenuOpen = false; filterSubmenuOpen = false; }}
-          class="p-1 text-gray-400 hover:text-gray-600 transition-colors"
           aria-label="List options"
         >
           ⋮
@@ -211,36 +215,36 @@
             role="presentation"
           ></div>
           <div class="absolute right-0 top-8 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
-            <Button variant="bare"
+            <Button tone="neutral" appearance="bare"
+              size="menu"
               align="start"
               weight="normal"
               onclick={() => { menuOpen = false; goto(`/lists/${list.id}/grocery`); }}
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               Grocery mode
             </Button>
-            <Button variant="bare"
+            <Button tone="neutral" appearance="bare"
+              size="menu"
               align="start"
               weight="normal"
               onclick={() => { showCategoryDialog = true; menuOpen = false; }}
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               Configure categories
             </Button>
-            <Button variant="bare"
+            <Button tone="neutral" appearance="bare"
+              size="menu"
               align="start"
               weight="normal"
               onclick={() => { showMembersDialog = true; menuOpen = false; }}
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               Members
             </Button>
             <div class="border-t border-gray-100 mt-1 pt-1">
-              <Button variant="bare"
+              <Button tone="neutral" appearance="bare"
+                size="menu"
                 align="between"
                 weight="normal"
                 onclick={() => { filterSubmenuOpen = !filterSubmenuOpen; sortSubmenuOpen = false; }}
-                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between"
               >
                 <span>Filter</span>
                 <span class="text-gray-400 text-xs">{activeFilterCount > 0 ? `${activeFilterCount} active` : 'Off'}</span>
@@ -249,11 +253,12 @@
                 <div class="bg-gray-50 border-t border-gray-100">
                   <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Starred</p>
                   {#each [{ value: false, label: 'All items' }, { value: true, label: 'Starred only' }] as opt}
-                    <Button variant="bare"
+                    <Button tone="neutral" appearance="bare"
+                      size="menu-indented"
                       align="between"
                       weight="normal"
+                      selected={filters.starredOnly === opt.value}
                       onclick={() => { filters = { ...filters, starredOnly: opt.value }; }}
-                      class="w-full text-left px-6 py-1.5 text-sm flex items-center justify-between {filters.starredOnly === opt.value ? 'text-menu-selected' : 'text-gray-600 hover:bg-gray-100'}"
                     >
                       {opt.label}
                       {#if filters.starredOnly === opt.value}<span>✓</span>{/if}
@@ -261,11 +266,12 @@
                   {/each}
                   <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Due date</p>
                   {#each dueDateOptions as opt}
-                    <Button variant="bare"
+                    <Button tone="neutral" appearance="bare"
+                      size="menu-indented"
                       align="between"
                       weight="normal"
+                      selected={dueDateValue === opt.value}
                       onclick={() => { filters = { ...filters, hideFuture: opt.value === 'hideFuture', hideUndated: opt.value === 'hideUndated' }; }}
-                      class="w-full text-left px-6 py-1.5 text-sm flex items-center justify-between {dueDateValue === opt.value ? 'text-menu-selected' : 'text-gray-600 hover:bg-gray-100'}"
                     >
                       {opt.label}
                       {#if dueDateValue === opt.value}<span>✓</span>{/if}
@@ -278,12 +284,12 @@
                     { value: 'me',     label: 'Assigned to me' },
                     { value: 'others', label: 'Assigned to others' },
                   ] as opt}
-                    <Button variant="bare"
+                    <Button tone="neutral" appearance="bare"
+                      size="menu-indented"
                       align="between"
                       weight="normal"
+                      selected={filters.assigneeFilter === opt.value}
                       onclick={() => { filters = { ...filters, assigneeFilter: opt.value as Filters['assigneeFilter'] }; }}
-                      class="w-full text-left px-6 py-1.5 text-sm flex items-center justify-between
-                        {filters.assigneeFilter === opt.value ? 'text-menu-selected' : 'text-gray-600 hover:bg-gray-100'}"
                     >
                       {opt.label}
                       {#if filters.assigneeFilter === opt.value}<span>✓</span>{/if}
@@ -293,11 +299,11 @@
               {/if}
             </div>
             <div class="border-t border-gray-100 mt-1 pt-1">
-              <Button variant="bare"
+              <Button tone="neutral" appearance="bare"
+                size="menu"
                 align="between"
                 weight="normal"
                 onclick={() => { sortSubmenuOpen = !sortSubmenuOpen; filterSubmenuOpen = false; }}
-                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between"
               >
                 <span>Sort</span>
                 <span class="text-gray-400 text-xs">{sortFields.find(f => f.value === sortField)?.label} {sortDirection === 'ASC' ? '↑' : '↓'}</span>
@@ -305,11 +311,12 @@
               {#if sortSubmenuOpen}
                 <div class="bg-gray-50 border-t border-gray-100">
                   {#each sortFields as f}
-                    <Button variant="bare"
+                    <Button tone="neutral" appearance="bare"
+                      size="menu-indented"
                       align="between"
                       weight="normal"
+                      selected={sortField === f.value}
                       onclick={() => { sortField = f.value; }}
-                      class="w-full text-left px-6 py-1.5 text-sm flex items-center justify-between {sortField === f.value ? 'text-menu-selected' : 'text-gray-600 hover:bg-gray-100'}"
                     >
                       {f.label}
                       {#if sortField === f.value}
@@ -318,11 +325,11 @@
                     </Button>
                   {/each}
                   <div class="border-t border-gray-200 mx-4 my-1"></div>
-                  <Button variant="bare"
+                  <Button tone="neutral" appearance="bare"
+                    size="menu-indented"
                     align="start"
                     weight="normal"
                     onclick={() => { sortDirection = sortDirection === 'ASC' ? 'DESC' : 'ASC'; }}
-                    class="w-full text-left px-6 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
                   >
                     {sortDirection === 'ASC' ? '↑ Ascending' : '↓ Descending'}
                   </Button>
@@ -330,11 +337,12 @@
               {/if}
             </div>
             <div class="border-t border-gray-100 mt-1 pt-1">
-              <Button variant="bare"
+              <Button tone="neutral" appearance="bare"
+                size="menu"
                 align="between"
                 weight="normal"
+                selected={isHideDone(data.id)}
                 onclick={() => { setHideDone(data.id, !isHideDone(data.id)); menuOpen = false; }}
-                class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center justify-between {isHideDone(data.id) ? 'text-menu-selected' : 'text-gray-700'}"
               >
                 <span>Hide checked</span>
                 {#if isHideDone(data.id)}<span>✓</span>{/if}
@@ -342,12 +350,12 @@
             </div>
             {#if isOwner}
               <div class="border-t border-gray-100 mt-1 pt-1">
-                <Button variant="bare"
+                <Button tone="danger" appearance="ghost"
+                  size="menu"
                   align="start"
                   weight="normal"
                   onclick={() => { menuOpen = false; handleDelete(); }}
                   disabled={deleting}
-                  class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
                 >
                   Delete list
                 </Button>
@@ -412,9 +420,10 @@
         />
       </div>
     {:else}
-      <Button variant="bare"
+      <Button tone="neutral" appearance="outline"
+        size="empty"
         onclick={() => { showAddForm = true; }}
-        class="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors"
+        class="w-full"
       >
         + Add item
       </Button>

@@ -5,6 +5,9 @@
 <script lang="ts">
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
+	type Size = 'default' | 'small' | 'compact' | 'title';
+	type Appearance = 'default' | 'inline';
+
 	interface Props
 		extends Omit<
 			HTMLInputAttributes,
@@ -18,6 +21,7 @@
 			| 'onfocus'
 			| 'oninput'
 			| 'required'
+			| 'size'
 			| 'type'
 			| 'value'
 		> {
@@ -30,9 +34,10 @@
 		validate?: ((value: string) => string | null) | null;
 		ariaLabel?: string;
 		id?: string;
+		size?: Size;
+		appearance?: Appearance;
 		class?: string;
 		containerClass?: string;
-		labelClass?: string;
 		element?: HTMLInputElement | null;
 		'aria-describedby'?: string;
 		'aria-label'?: string;
@@ -51,9 +56,10 @@
 		validate = null,
 		ariaLabel,
 		id,
+		size = 'default',
+		appearance = 'default',
 		class: className = '',
 		containerClass = '',
-		labelClass = '',
 		element = $bindable(null),
 		'aria-describedby': consumerDescribedBy,
 		'aria-label': nativeAriaLabel,
@@ -73,6 +79,25 @@
 		[consumerDescribedBy, description ? descriptionId : null, isError ? errorId : null]
 			.filter(Boolean)
 			.join(' ') || undefined
+	);
+	const sizeClasses: Record<Size, string> = {
+		default: 'px-3 py-2 text-sm',
+		small: 'px-3 py-1.5 text-sm',
+		compact: 'px-2 py-0.5 text-xs',
+		title: 'px-0 py-0 text-xl font-bold'
+	};
+	const appearanceClasses: Record<Appearance, string> = {
+		default: 'rounded border',
+		inline: 'rounded-none border-0 border-b bg-transparent focus:ring-0'
+	};
+	const stateClasses = $derived(
+		appearance === 'inline'
+			? isError
+				? 'border-red-500 focus:border-red-500'
+				: 'border-gray-300 focus:border-blue-500'
+			: isError
+				? 'border-red-500 bg-red-50 focus:ring-red-500'
+				: 'border-gray-300 bg-white focus:ring-blue-500'
 	);
 
 	function runValidation() {
@@ -101,7 +126,7 @@
 
 <div class="flex flex-col gap-1 {containerClass}">
 	{#if label}
-		<label for={inputId} class="text-sm font-medium text-gray-700 {labelClass}">
+		<label for={inputId} class="text-sm font-medium text-gray-700">
 			{label}
 			{#if required}<span class="text-red-500" aria-hidden="true">*</span>{/if}
 		</label>
@@ -124,9 +149,9 @@
 		oninput={handleInput}
 		onblur={handleBlur}
 		{onfocus}
-		class="rounded border px-3 py-2 transition-colors focus:outline-none focus:ring-2 {isError
-			? 'border-red-500 bg-red-50 focus:ring-red-500'
-			: 'border-gray-300 bg-white focus:ring-blue-500'} disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 {className}"
+		class="transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {appearanceClasses[
+			appearance
+		]} {stateClasses} disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 {className}"
 		{...restProps}
 	/>
 

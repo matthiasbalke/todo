@@ -97,20 +97,19 @@
           bind:element={groupInput}
           bind:value={newGroupName}
           placeholder="Group name"
-          class="w-full text-sm border-gray-200"
+          class="w-full"
           onkeydown={(e) => { if (e.key === 'Enter') handleAddGroup(); if (e.key === 'Escape') { addingGroup = false; newGroupName = ''; } }}
         />
         <div class="flex justify-end gap-2 pt-1">
-          <Button variant="bare"
+          <Button tone="neutral" appearance="bare"
             type="button"
             onclick={() => { addingGroup = false; newGroupName = ''; groupError = null; }}
-            class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+            emphasis="muted"
           >
             Cancel
           </Button>
-          <Button variant="bare"
+          <Button tone="primary" appearance="solid"
             onclick={handleAddGroup}
-            class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Add
           </Button>
@@ -121,16 +120,17 @@
       </div>
     {:else}
       <div class="flex gap-2">
-        <Button variant="bare"
+        <Button tone="neutral" appearance="outline"
+          size="empty"
           onclick={() => { showAddForm = true; }}
           disabled={saving}
-          class="flex-1 py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors disabled:opacity-50"
+          class="flex-1"
         >
           + New list
         </Button>
-        <Button variant="bare"
+        <Button tone="neutral" appearance="outline"
+          size="empty"
           onclick={() => { addingGroup = true; }}
-          class="py-3 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors"
         >
           + New group
         </Button>

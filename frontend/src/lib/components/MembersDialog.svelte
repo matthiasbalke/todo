@@ -110,7 +110,7 @@
 <div class="fixed inset-x-4 top-1/2 z-40 -translate-y-1/2 max-w-md mx-auto bg-white rounded-2xl shadow-xl p-6">
   <div class="flex items-center justify-between mb-4">
     <h2 class="text-lg font-semibold text-gray-900">Members</h2>
-    <Button variant="bare" size="icon" onclick={onclose} class="text-gray-400 hover:text-gray-600 text-xl leading-none" aria-label="Close">✕</Button>
+    <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={onclose} aria-label="Close">✕</Button>
   </div>
 
   {#if loadError}
@@ -128,14 +128,12 @@
               options={roles}
               selected={member.role}
               onSelect={(role) => handleRoleChange(member.userId, role)}
-              compact
-              triggerClass="text-xs border-gray-200 px-1.5 py-1"
+              size="dense"
             />
             <Button
-              variant="bare"
+              tone="danger" appearance="bare"
               size="compact"
               onclick={() => handleRemove(member.userId)}
-              class="text-xs text-red-500 hover:text-red-700 transition-colors"
               aria-label="Remove {member.displayName}"
             >
               Remove
@@ -161,15 +159,14 @@
           placeholder="Email address"
           required
           label=""
-          class="w-full text-sm border-gray-200"
+          class="w-full"
         />
         <div class="flex gap-2">
           <Select
             options={roles}
             selected={inviteRole}
             onSelect={(role) => { inviteRole = role; }}
-            compact
-            triggerClass="border-gray-200 py-2"
+            size="default"
           />
           <Button
             type="submit"

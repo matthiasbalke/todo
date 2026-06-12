@@ -35,8 +35,7 @@
     selected={filters.starredOnly ? 'starred' : 'all'}
     getOptionLabel={(value) => filterLabels[value]}
     onSelect={(value) => onchange({ ...filters, starredOnly: value === 'starred' })}
-    compact
-    triggerClass="border-gray-200 text-gray-700"
+    size="compact"
   />
 
   <Select
@@ -44,7 +43,6 @@
     selected={dueDateValue}
     getOptionLabel={(value) => dueDateLabels[value]}
     onSelect={setDueDate}
-    compact
-    triggerClass="border-gray-200 text-gray-700"
+    size="compact"
   />
 </div>

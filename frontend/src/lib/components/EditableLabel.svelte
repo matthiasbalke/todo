@@ -4,6 +4,8 @@
 
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import Button from './Button.svelte';
+	import TextInput from './TextInput.svelte';
 
 	interface Props {
 		value?: string;
@@ -17,8 +19,8 @@
 		ariaLabel?: string;
 		saveMode?: 'automatic' | 'explicit';
 		id?: string;
-		displayClass?: string;
-		inputClass?: string;
+		displayAppearance?: 'default' | 'plain';
+		inputSize?: 'default' | 'small' | 'compact';
 		containerClass?: string;
 		showCancel?: boolean;
 		oncancel?: () => void;
@@ -38,8 +40,8 @@
 		ariaLabel,
 		saveMode = 'automatic',
 		id = '',
-		displayClass = '',
-		inputClass = '',
+		displayAppearance = 'default',
+		inputSize = 'default',
 		containerClass = '',
 		showCancel = false,
 		oncancel,
@@ -55,7 +57,6 @@
 	let ignoreNextFocusOut = false;
 	const generatedId = `editable-label-${nextEditableLabelId++}`;
 	const inputId = $derived(id || `${generatedId}-input`);
-	const errorId = $derived(`${inputId}-error`);
 
 	function startEdit() {
 		if (disabled || isSaving) return;
@@ -142,8 +143,6 @@
 		}
 	}
 
-	const isError = $derived(errorMessage !== null && errorMessage !== '');
-
 	$effect(() => {
 		if (isEditing) {
 			element?.focus();
@@ -153,15 +152,6 @@
 
 {#if isEditing}
 	<div class="flex flex-col gap-1">
-		{#if label}
-		<label for={inputId} class="text-sm font-medium text-gray-700">
-				{label}
-				{#if required}
-					<span class="text-red-500">*</span>
-				{/if}
-			</label>
-		{/if}
-
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div
 			class="flex items-center gap-2 {containerClass}"
@@ -169,85 +159,64 @@
 			onmousedown={saveMode === 'explicit' ? handleExplicitMouseDown : undefined}
 			onfocusout={saveMode === 'explicit' ? handleExplicitFocusOut : undefined}
 		>
-			<input
-				bind:this={element}
+			<TextInput
+				bind:element
+				bind:value={editValue}
 				id={inputId}
 				{type}
-				bind:value={editValue}
+				{label}
 				{placeholder}
 				disabled={isSaving}
 				{required}
-				aria-label={ariaLabel || label}
-				aria-invalid={isError}
-				aria-describedby={isError ? errorId : undefined}
+				ariaLabel={ariaLabel || label}
+				{validate}
+				size={inputSize}
 				oninput={handleInput}
 				onblur={handleBlur}
 				onkeydown={handleKeydown}
-				class="min-w-0 flex-1 px-3 py-2 rounded border transition-colors {isError
-					? 'border-red-500 bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500'
-					: 'border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500'} {isSaving
-					? 'opacity-50 cursor-not-allowed'
-					: ''} disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 {inputClass}"
+				class="min-w-0 flex-1"
 			/>
 
 			{#if saveMode === 'explicit'}
-				<button
-					type="button"
+				<Button
 					onclick={saveEdit}
-					disabled={isSaving}
-					class="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					loading={isSaving}
+					loadingLabel="Saving…"
 				>
-					{isSaving ? 'Saving…' : 'Save'}
-				</button>
+					Save
+				</Button>
 				{#if showCancel}
-					<button
-						type="button"
+					<Button
+						tone="neutral"
+						appearance="ghost"
 						onclick={cancelEdit}
 						disabled={isSaving}
-						class="px-3 py-2 rounded text-gray-600 hover:bg-gray-100 disabled:opacity-50"
 					>
 						Cancel
-					</button>
+					</Button>
 				{/if}
 			{/if}
 		</div>
-
-		{#if errorMessage}
-			<p id={errorId} class="text-sm text-red-600">
-				{errorMessage}
-			</p>
-		{/if}
 	</div>
 {:else}
-	<div
+	<Button
 		onclick={startEdit}
-		onkeydown={(e) => {
-			if (e.key === 'Enter' || e.key === ' ') {
-				e.preventDefault();
+		onkeydown={(event) => {
+			if (event.key === 'Enter' || event.key === ' ') {
+				event.preventDefault();
 				startEdit();
 			}
 		}}
 		role="button"
-		tabindex={disabled || isSaving ? -1 : 0}
 		aria-label={ariaLabel || `Edit ${label}`.trim()}
 		aria-disabled={disabled || isSaving}
-		class="px-3 py-2 rounded border-2 border-transparent bg-white transition-all hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 {disabled ||
-		isSaving
-			? 'cursor-not-allowed opacity-50 text-gray-400'
-			: 'cursor-pointer text-gray-700 hover:bg-gray-50'} {displayClass}"
+		disabled={disabled || isSaving}
+		tone="neutral"
+		appearance={displayAppearance === 'plain' ? 'bare' : 'ghost'}
+		size={displayAppearance === 'plain' ? 'display-plain' : 'display'}
+		align="start"
+		weight="normal"
 	>
 		{value || placeholder || 'Click to edit'}
-	</div>
+	</Button>
 {/if}
-
-<style>
-	input {
-		font-family: inherit;
-	}
-
-	div[role='button'] {
-		min-height: 2.5rem; /* Same as py-2 + font height */
-		display: flex;
-		align-items: center;
-	}
-</style>
