@@ -77,3 +77,10 @@
 - `extract-specialized-interaction-controls` now provides CalendarDayButton, ColorSwatchButton, CompletionToggle, StarToggle, and SwipeDeleteAction; DatePicker, CategoryConfigDialog, and ItemCard use them and the specialized styling exception list is empty.
 - `fix-select-dropdown-positioning` replaces Select's fixed viewport coordinates with a trigger-local relative/absolute listbox, so transformed dialogs such as MembersDialog keep role options directly below their triggers.
 - Verification completed with 371 Vitest tests, clean `svelte-check`, successful production build, and valid OpenSpec artifacts.
+
+## OpenSpec archive consolidation
+
+- On June 12, 2026, the 15 completed changes listed in `openspec-changes.txt` were synced to main specs and archived in list order under `openspec/changes/archive/2026-06-12-<change-name>/`.
+- The ordered `shared-component-adoption` deltas required one manual merge because `fix-shared-button-left-alignment` modified the capability before `replace-native-elements-with-shared-components` introduced its baseline; the later typography delta then applied normally.
+- `openspec validate --all` passed all 18 current specs and active changes after the archive operation.
+- `highlight-selected-burger-menu-options` was subsequently synced to the new `burger-menu-selection-styling` main spec and archived as `2026-06-12-highlight-selected-burger-menu-options`; no active OpenSpec changes remain.
