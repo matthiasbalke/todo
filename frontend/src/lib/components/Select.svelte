@@ -46,7 +46,6 @@
 	let triggerElement: HTMLButtonElement | null = $state(null);
 	let dropdownElement: HTMLElement | undefined = $state();
 	let containerElement: HTMLElement | undefined = $state();
-	let dropdownPosition = $state({ top: 0, left: 0, width: 0 });
 	let internalSelected = $state(selected ?? null);
 	const generatedId = `select-${nextSelectId++}`;
 	const triggerId = $derived(id || labelId || `${generatedId}-trigger`);
@@ -59,24 +58,12 @@
 		if (!disabled) {
 			isOpen = true;
 			focusedIndex = selectedIndex >= 0 ? selectedIndex : 0;
-			updateDropdownPosition();
 		}
 	}
 
 	function closeDropdown() {
 		isOpen = false;
 		focusedIndex = -1;
-	}
-
-	function updateDropdownPosition() {
-		if (triggerElement) {
-			const rect = triggerElement.getBoundingClientRect();
-			dropdownPosition = {
-				top: rect.bottom,
-				left: rect.left,
-				width: rect.width
-			};
-		}
 	}
 
 	function selectOption(option: any) {
@@ -195,41 +182,77 @@
 		</label>
 	{/if}
 
-	<Button
-		bind:element={triggerElement}
-		id={triggerId}
-		{disabled}
-		aria-haspopup="listbox"
-		aria-expanded={isOpen}
-		aria-controls={isOpen ? resolvedListboxId : undefined}
-		aria-describedby={isError ? `${triggerId}-error` : undefined}
-		onclick={handleTriggerClick}
-		onkeydown={handleKeyDown}
-		onblur={handleBlur}
-		tone="neutral"
-		appearance="outline"
-		size={triggerSize}
-		align="between"
-		weight="normal"
-		invalid={isError}
-		class="w-full"
-	>
-		<span class="text-left {internalSelected === null ? 'text-gray-500' : ''}">
-			{#if internalSelected !== null}
-				{getOptionLabel(internalSelected)}
-			{:else}
-				<span class="italic">{placeholder}</span>
-			{/if}
-		</span>
-		<svg
-			class="w-4 h-4 transition-transform {isOpen ? 'rotate-180' : ''}"
-			fill="none"
-			stroke="currentColor"
-			viewBox="0 0 24 24"
+	<div class="relative">
+		<Button
+			bind:element={triggerElement}
+			id={triggerId}
+			{disabled}
+			aria-haspopup="listbox"
+			aria-expanded={isOpen}
+			aria-controls={isOpen ? resolvedListboxId : undefined}
+			aria-describedby={isError ? `${triggerId}-error` : undefined}
+			onclick={handleTriggerClick}
+			onkeydown={handleKeyDown}
+			onblur={handleBlur}
+			tone="neutral"
+			appearance="outline"
+			size={triggerSize}
+			align="between"
+			weight="normal"
+			invalid={isError}
+			class="w-full"
 		>
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-		</svg>
-	</Button>
+			<span class="text-left {internalSelected === null ? 'text-gray-500' : ''}">
+				{#if internalSelected !== null}
+					{getOptionLabel(internalSelected)}
+				{:else}
+					<span class="italic">{placeholder}</span>
+				{/if}
+			</span>
+			<svg
+				class="w-4 h-4 transition-transform {isOpen ? 'rotate-180' : ''}"
+				fill="none"
+				stroke="currentColor"
+				viewBox="0 0 24 24"
+			>
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+			</svg>
+		</Button>
+
+		{#if isOpen}
+			<div
+				bind:this={dropdownElement}
+				id={resolvedListboxId}
+				role="listbox"
+				aria-label={label}
+				class="absolute left-0 top-full z-50 max-h-60 w-full overflow-y-auto rounded border border-gray-300 bg-white shadow-lg"
+			>
+				{#each options as option, index (index)}
+					<Button
+						role="option"
+						aria-selected={selectedIndex === index}
+						onclick={() => selectOption(option)}
+						onmouseenter={() => (focusedIndex = index)}
+						tone="neutral"
+						appearance="bare"
+						size="menu"
+						align="start"
+						weight={selectedIndex === index ? 'medium' : 'normal'}
+						selected={selectedIndex === index}
+						active={focusedIndex === index}
+					>
+						{getOptionLabel(option)}
+					</Button>
+				{/each}
+
+				{#if options.length === 0}
+					<div class="px-3 py-2 text-gray-500 text-center">
+						No options available
+					</div>
+				{/if}
+			</div>
+		{/if}
+	</div>
 
 	{#if errorMessage}
 		<p id={`${triggerId}-error`} class="text-sm text-red-600">
@@ -237,38 +260,3 @@
 		</p>
 	{/if}
 </div>
-
-{#if isOpen}
-	<div
-		bind:this={dropdownElement}
-		id={resolvedListboxId}
-		role="listbox"
-		aria-label={label}
-		class="fixed z-50 bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-y-auto"
-		style="top: {dropdownPosition.top}px; left: {dropdownPosition.left}px; width: {dropdownPosition.width}px;"
-	>
-		{#each options as option, index (index)}
-			<Button
-				role="option"
-				aria-selected={selectedIndex === index}
-				onclick={() => selectOption(option)}
-				onmouseenter={() => (focusedIndex = index)}
-				tone="neutral"
-				appearance="bare"
-				size="menu"
-				align="start"
-				weight={selectedIndex === index ? 'medium' : 'normal'}
-				selected={selectedIndex === index}
-				active={focusedIndex === index}
-			>
-				{getOptionLabel(option)}
-			</Button>
-		{/each}
-
-		{#if options.length === 0}
-			<div class="px-3 py-2 text-gray-500 text-center">
-				No options available
-			</div>
-		{/if}
-	</div>
-{/if}

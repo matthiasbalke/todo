@@ -118,6 +118,14 @@ A custom single-date calendar popover for nullable ISO calendar dates.
 - **Enter/Space**: select focused date
 - **Escape**: close without changing the value
 
+### Select
+
+Select renders a semantic Button trigger and listbox options with unique IDs, keyboard navigation, validation, and typed option values.
+
+The trigger and listbox share a trigger-local positioning wrapper. An open listbox is placed directly below the trigger at the same width, including inside transformed dialogs such as MembersDialog. Consumers must not provide positioning offsets or listbox visual styles.
+
+Select currently does not perform viewport collision detection, upward opening, or edge shifting. Those behaviors require a separate popover positioning capability if a future overflow-constrained consumer needs them.
+
 ## Specialized Interaction Controls
 
 These controls expose domain state rather than consumer-owned visual CSS:

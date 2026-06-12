@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Select from './Select.svelte';
+import SelectTransformedFixture from './test/SelectTransformedFixture.svelte';
 
 afterEach(cleanup);
 
@@ -127,6 +128,48 @@ await fireEvent.click(button);
 
 listbox = screen.queryByRole('listbox');
 expect(listbox).not.toBeInTheDocument();
+});
+});
+
+describe('Dropdown Positioning', () => {
+it('anchors the listbox to a trigger-local wrapper inside a transformed ancestor', async () => {
+render(SelectTransformedFixture);
+
+const trigger = screen.getByRole('button', { name: 'Transformed select' });
+await fireEvent.click(trigger);
+const listbox = screen.getByRole('listbox', { name: 'Transformed select' });
+const wrapper = trigger.parentElement;
+
+expect(wrapper).toHaveClass('relative');
+expect(listbox.parentElement).toBe(wrapper);
+expect(listbox).toHaveClass('absolute', 'left-0', 'top-full', 'w-full');
+expect(listbox).not.toHaveClass('fixed');
+expect(listbox).not.toHaveAttribute('style');
+});
+
+it('uses the same trigger-relative placement in a normal form', async () => {
+render(Select, { props: { options: testOptions, label: 'Normal select' } });
+
+const trigger = screen.getByRole('button', { name: 'Normal select' });
+await fireEvent.click(trigger);
+const listbox = screen.getByRole('listbox', { name: 'Normal select' });
+
+expect(listbox.parentElement).toBe(trigger.parentElement);
+expect(listbox).toHaveClass('top-full', 'w-full');
+});
+
+it('closes on outside click and restores trigger focus on Escape', async () => {
+render(Select, { props: { options: testOptions, label: 'Dismissible select' } });
+const trigger = screen.getByRole('button', { name: 'Dismissible select' });
+
+await fireEvent.click(trigger);
+await fireEvent.click(document.body);
+expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+
+await fireEvent.click(trigger);
+await fireEvent.keyDown(trigger, { key: 'Escape' });
+expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+expect(trigger).toHaveFocus();
 });
 });
 

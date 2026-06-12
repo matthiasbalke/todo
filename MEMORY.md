@@ -75,4 +75,5 @@
 - `sharedComponentStyling.test.ts` permits only parent-layout classes on shared controls and rejects visual/custom classes, inline styles, removed hooks, and invalid exceptions with source diagnostics.
 - The remaining exact exceptions match `extract-specialized-interaction-controls`: calendar day, two color swatches, completion toggle, star toggle, and swipe-delete action.
 - `extract-specialized-interaction-controls` now provides CalendarDayButton, ColorSwatchButton, CompletionToggle, StarToggle, and SwipeDeleteAction; DatePicker, CategoryConfigDialog, and ItemCard use them and the specialized styling exception list is empty.
+- `fix-select-dropdown-positioning` replaces Select's fixed viewport coordinates with a trigger-local relative/absolute listbox, so transformed dialogs such as MembersDialog keep role options directly below their triggers.
 - Verification completed with 371 Vitest tests, clean `svelte-check`, successful production build, and valid OpenSpec artifacts.
