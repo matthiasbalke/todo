@@ -84,3 +84,8 @@
 - The ordered `shared-component-adoption` deltas required one manual merge because `fix-shared-button-left-alignment` modified the capability before `replace-native-elements-with-shared-components` introduced its baseline; the later typography delta then applied normally.
 - `openspec validate --all` passed all 18 current specs and active changes after the archive operation.
 - `highlight-selected-burger-menu-options` was subsequently synced to the new `burger-menu-selection-styling` main spec and archived as `2026-06-12-highlight-selected-burger-menu-options`; no active OpenSpec changes remain.
+
+## Account E2E shared-component selectors
+
+- The account display-name E2E test locates `EditableLabel` by accessible role and current-value name in both display and edit modes.
+- Avoid selectors for the removed `Edit` text and generic input-type selectors; the shared component exposes a stable button/textbox accessibility contract.
