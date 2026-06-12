@@ -5,6 +5,7 @@
   import { clearSession, getAccessToken, getCurrentUser, refreshIfExpired } from '$lib/stores/auth.svelte';
   import { flushOfflineQueue, hasPending } from '$lib/stores/offlineQueue.svelte';
   import { loadItemsForList } from '$lib/stores/items.svelte';
+  import Button from '$lib/components/Button.svelte';
 
   interface BeforeInstallPromptEvent extends Event {
     prompt(): Promise<void>;
@@ -84,43 +85,45 @@
 
       <div class="flex items-center gap-2">
         {#if deferredPrompt}
-          <button
+          <Button tone="primary" appearance="solid"
             onclick={installApp}
-            class="text-sm text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+            size="compact"
           >
             Install app
-          </button>
+          </Button>
         {/if}
       </div>
 
       <div class="relative">
-        <button
+        <Button tone="neutral" appearance="ghost"
+          size="small"
           onclick={() => (userMenuOpen = !userMenuOpen)}
-          class="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-gray-100 transition-colors"
           aria-label="User menu"
         >
           <span class="text-sm text-gray-500">{user?.displayName ?? ''}</span>
           <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold select-none">
             {(user?.displayName ?? '?')[0]}
           </div>
-        </button>
+        </Button>
 
         {#if userMenuOpen}
           <div class="absolute right-0 top-10 z-20 w-44 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
             <a
               href="/account"
               onclick={() => (userMenuOpen = false)}
-              class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              class="block w-full text-left px-4 py-2 text-sm font-normal text-gray-700 hover:bg-gray-50"
             >
               Account
             </a>
             <div class="border-t border-gray-100 my-1"></div>
-            <button
+            <Button tone="neutral" appearance="bare"
+              size="menu"
+              align="start"
+              weight="normal"
               onclick={handleLogout}
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               Log out
-            </button>
+            </Button>
           </div>
         {/if}
       </div>

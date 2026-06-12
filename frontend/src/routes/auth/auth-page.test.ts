@@ -58,6 +58,21 @@ describe('AuthPage', () => {
 		expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
 	});
 
+	it('uses primary styling for passkey sign-in and registration actions', async () => {
+		render(AuthPage);
+		await waitForIdle();
+
+		const signInButton = screen.getByRole('button', { name: /sign in with passkey/i });
+		expect(signInButton).toHaveClass('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+		expect(signInButton).not.toHaveClass('bg-transparent');
+
+		await fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+		const registerButton = screen.getByRole('button', { name: /register passkey/i });
+		expect(registerButton).toHaveClass('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+		expect(registerButton).not.toHaveClass('bg-transparent');
+	});
+
 	it('does not show registration form by default', async () => {
 		render(AuthPage);
 		await waitForIdle();
