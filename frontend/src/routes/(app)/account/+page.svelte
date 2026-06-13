@@ -296,12 +296,9 @@
         disabled={preferencesSaving}
         onSelect={handlePreferenceChange}
       />
-      <p class="mt-2 text-sm text-gray-500">
-        Your timezone determines which calendar date is considered today for Today and other date-sensitive behavior.
-      </p>
     </div>
     <div class="flex items-center justify-between gap-4">
-      <span id="today-view-label" class="text-sm font-medium text-gray-700">Today View</span>
+      <span id="today-view-label" class="text-sm font-medium text-gray-700">Show Today View</span>
       <Toggle
         bind:checked={todayViewEnabled}
         disabled={preferencesSaving}
