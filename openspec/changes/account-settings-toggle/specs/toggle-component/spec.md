@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Toggle represents boolean state
-The frontend SHALL provide a reusable shared `Toggle` component that exposes a bindable boolean checked value and renders distinct on and off states.
+The frontend SHALL provide a reusable shared `Toggle` component that exposes a bindable boolean `checked` value, defaults it to false, and renders distinct on and off states.
 
 #### Scenario: Toggle is off
 - **WHEN** a consumer renders `Toggle` with checked set to false
@@ -16,7 +16,15 @@ The frontend SHALL provide a reusable shared `Toggle` component that exposes a b
 #### Scenario: Consumer binds state
 - **WHEN** the user activates the toggle
 - **THEN** the bound checked value changes to the opposite boolean value
-- **AND** the component invokes its optional change callback with the updated value
+- **AND** the component invokes its optional `onchange` callback with the updated value
+
+### Requirement: Toggle exposes shared control integration props
+`Toggle` SHALL support `disabled`, `ariaLabel`, `id`, layout-only `class`, a bindable native `element`, and applicable forwarded native button attributes.
+
+#### Scenario: Consumer integrates the toggle
+- **WHEN** a consumer supplies an ID, layout class, native element binding, or applicable native button attribute
+- **THEN** the value is applied to the underlying button
+- **AND** visual track, thumb, state, and focus styling remain owned by Toggle
 
 ### Requirement: Toggle uses accessible switch semantics
 `Toggle` SHALL expose switch semantics and SHALL support native button keyboard and focus behavior.
@@ -25,7 +33,7 @@ The frontend SHALL provide a reusable shared `Toggle` component that exposes a b
 - **WHEN** the toggle is rendered
 - **THEN** it has role `switch`
 - **AND** `aria-checked` reflects the current checked value
-- **AND** it has an accessible name supplied by its consumer
+- **AND** it has an accessible name supplied through `ariaLabel` or `aria-labelledby`
 
 #### Scenario: Keyboard user activates the toggle
 - **WHEN** the focused toggle receives Enter or Space

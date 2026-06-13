@@ -1,11 +1,12 @@
 ## ADDED Requirements
 
-### Requirement: Account page is titled Settings
-The account preference page SHALL use `Settings` as its page title while retaining the existing account route and profile, security, and deletion features.
+### Requirement: Account preferences use a Settings section
+The account page SHALL retain its `Account` page title and `/account` route while presenting timezone and Today View preferences in a section titled `Settings`.
 
 #### Scenario: User opens account preferences
 - **WHEN** the user navigates to `/account`
-- **THEN** the page heading is `Settings`
+- **THEN** the page heading is `Account`
+- **AND** the preference section heading is `Settings`
 - **AND** the existing profile, security, and danger-zone sections remain available
 
 ### Requirement: Timezone preference explains its purpose
@@ -36,23 +37,40 @@ The Settings page SHALL present the Today visibility preference as a row labeled
 #### Scenario: User changes Today View
 - **WHEN** the user activates the `Today View` toggle
 - **THEN** the local preference value changes
-- **AND** the change is persisted only when the existing preferences save action succeeds
+- **AND** prior success feedback is cleared
+- **AND** both current preference values are submitted immediately through the existing preference API
 
 #### Scenario: Preference save is in progress
-- **WHEN** the Settings page is saving preferences
+- **WHEN** the Settings section is saving preferences
 - **THEN** the Today View toggle is disabled
+- **AND** the timezone selector is disabled
 
-### Requirement: Existing preference save behavior is preserved
-The Settings page SHALL continue to save timezone and Today View together through the existing preference operation and SHALL retain current success, error, persisted-state, and Today-refresh behavior.
+### Requirement: Preference changes save immediately
+The Settings section SHALL save timezone and Today View changes immediately through the existing preference operation without displaying a separate save button.
+
+#### Scenario: User changes timezone
+- **WHEN** the user selects a different timezone
+- **THEN** prior success feedback is cleared
+- **AND** both current preference values are submitted immediately through the existing preference API
+
+#### Scenario: No explicit save action is presented
+- **WHEN** the user views the Settings section
+- **THEN** no `Save Today preferences` button is displayed
 
 #### Scenario: Preference save succeeds
-- **WHEN** the user saves changed timezone or Today View values
+- **WHEN** an immediate preference save succeeds
 - **THEN** both current values are submitted through the existing preference API
 - **AND** the returned values replace local preference state
 - **AND** Today data and count are refreshed
-- **AND** success feedback is displayed
+- **AND** `Preferences saved.` is displayed
+
+#### Scenario: User modifies a setting after a successful save
+- **WHEN** success feedback is visible
+- **AND** the user changes timezone or Today View
+- **THEN** the success feedback is cleared before the new save completes
 
 #### Scenario: Preference save fails
-- **WHEN** saving preferences fails
+- **WHEN** an immediate preference save fails
 - **THEN** error feedback is displayed
-- **AND** persisted account preferences are not represented as successfully saved
+- **AND** both controls return to the last successfully persisted values
+- **AND** success feedback is not displayed

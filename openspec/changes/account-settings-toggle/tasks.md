@@ -1,9 +1,9 @@
 ## 1. Shared Toggle Component
 
-- [ ] 1.1 Implement shared `Toggle` with bindable checked state, disabled state, accessible naming, `role="switch"`, `aria-checked`, and checked-change callback
+- [ ] 1.1 Implement shared `Toggle` with bindable `checked`, `disabled`, `ariaLabel`, `onchange`, `id`, layout-only `class`, bindable `element`, forwarded native button attributes, `role="switch"`, and `aria-checked`
 - [ ] 1.2 Add iOS-style track, thumb, checked, focus, transition, and disabled presentation owned by the component
 - [ ] 1.3 Add Toggle component tests for on/off rendering, binding, pointer activation, Enter/Space activation, callbacks, accessible semantics, focus, and disabled behavior
-- [ ] 1.4 Export Toggle through the shared component entry point and include it in shared component styling/inventory checks
+- [ ] 1.4 Register Toggle in shared component styling and native-control inventory checks
 
 ## 2. Documentation And Showcase
 
@@ -13,14 +13,22 @@
 
 ## 3. Account Settings Adoption
 
-- [ ] 3.1 Rename the `/account` page heading from `Account` to `Settings` without changing the route or existing account features
+- [ ] 3.1 Keep the `/account` page heading and navigation label as `Account`, and rename the preference section from `Today` to `Settings`
 - [ ] 3.2 Add muted supporting text directly below `TimezonePicker` explaining its Today and date-sensitive calendar behavior
 - [ ] 3.3 Replace the enabled/disabled preference button with a `Today View` settings row using shared Toggle
-- [ ] 3.4 Preserve the existing explicit save, disabled-while-saving, success, error, persisted-state, and Today-refresh behavior
+- [ ] 3.4 Remove the explicit save button and auto-save both current preference values when timezone or Today View changes
+- [ ] 3.5 Disable both settings controls during save, clear prior feedback on modification, show success after save, restore persisted values after failure, and retain Today refresh behavior
 
 ## 4. Verification
 
-- [ ] 4.1 Add account-page tests for the Settings heading, timezone explanation, Today View label, on/off state, disabled state, and save payload
+- [ ] 4.1 Add account-page tests for the Account page heading, Settings section heading, timezone explanation, Today View label, on/off state, immediate save payloads, disabled state, feedback clearing, success, and failure rollback
 - [ ] 4.2 Update end-to-end account/Today preference coverage to use the shared toggle interaction and verify persistence
 - [ ] 4.3 Run frontend type checks, component/page tests, shared styling checks, and relevant end-to-end tests
 - [ ] 4.4 Update project feature documentation and `MEMORY.md` with the shared Toggle and Settings presentation
+
+## 5. Small Interaction Fixes
+
+- [ ] 5.1 Change StarToggle focus styling so pointer activation does not display a border or ring while keyboard focus remains visibly indicated
+- [ ] 5.2 Add or update StarToggle tests for pointer activation presentation and keyboard-visible focus
+- [ ] 5.3 Replace broad `/Today/` locators in `e2e/tests/today.spec.ts` with exact, route-aware locators that distinguish the virtual Today link from lists such as `Today Source`
+- [ ] 5.4 Run the affected StarToggle tests and the `Today preferences, count, completion, and source navigation` Playwright test
