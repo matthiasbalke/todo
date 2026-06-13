@@ -34,10 +34,10 @@ test('Today preferences, count, completion, and source navigation', async ({ pag
 	await expect(page.getByText('Today task')).toBeVisible();
 	await page.getByRole('button', { name: /Mark done/i }).click();
 	await expect(page.getByText('1 checked')).toBeVisible();
-	await page
-		.getByRole('link', { name: 'Today Source', exact: true })
-		.and(page.locator(`a[href="/lists/${setup.listId}"]`))
-		.click();
+	const sourceListLink = page.locator(`a[href="/lists/${setup.listId}"]`);
+	await expect(sourceListLink).toHaveCount(1);
+	await expect(sourceListLink).toContainText('Today Source');
+	await sourceListLink.click();
 	await expect(page).toHaveURL(new RegExp(`/lists/${setup.listId}$`));
 
 	await page.goto('/account');
