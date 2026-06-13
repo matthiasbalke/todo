@@ -25,7 +25,9 @@ test('Today preferences, count, completion, and source navigation', async ({ pag
 
 	await page.goto('/lists');
 	await waitForHydration(page);
-	const todayLink = page.getByRole('link', { name: /^Today(?:\s+1)?$/ }).and(page.locator('a[href="/today"]'));
+	const todayLink = page.locator('a[href="/today"]');
+	await expect(todayLink).toHaveCount(1);
+	await expect(todayLink).toContainText('Today');
 	await expect(todayLink).toContainText('1');
 	await todayLink.click();
 	await expect(page).toHaveURL(/\/today$/);
