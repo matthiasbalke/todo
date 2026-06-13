@@ -7,10 +7,10 @@
 
 ## 2. TimezonePicker Component
 
-- [ ] 2.1 Implement timezone option generation, browser-detected fallback handling, and friendly IANA labels
-- [ ] 2.2 Implement shared `TimezonePicker` by composing `Select` with bindable selection, disabled state, labeling, and selection callbacks
-- [ ] 2.3 Add TimezonePicker component tests for IANA values, friendly labels, selection, shared Select behavior, disabled state, and enumeration fallback
-- [ ] 2.4 Add TimezonePicker examples and API guidance to the development component showcase
+- [x] 2.1 Implement timezone option generation, browser-detected fallback handling, and friendly IANA labels
+- [x] 2.2 Implement shared `TimezonePicker` by composing `Select` with bindable selection, disabled state, labeling, and selection callbacks
+- [x] 2.3 Add TimezonePicker component tests for IANA values, friendly labels, selection, shared Select behavior, disabled state, and enumeration fallback
+- [x] 2.4 Add TimezonePicker examples and API guidance to the development component showcase
 
 ## 3. User Preference APIs And Initialization
 

@@ -12,6 +12,7 @@
 	import StarToggle from '$lib/components/StarToggle.svelte';
 	import SwipeDeleteAction from '$lib/components/SwipeDeleteAction.svelte';
 	import Textarea from '$lib/components/Textarea.svelte';
+	import TimezonePicker from '$lib/components/TimezonePicker.svelte';
 
 	let lastButtonAction = 'None';
 	let showcaseCalendarSelected = true;
@@ -39,6 +40,7 @@
 	let selectedFruit: string | null = null;
 	let selectedPriority: string | null = null;
 	let selectedCategory: string | null = null;
+	let selectedTimeZone: string | null = 'Europe/Berlin';
 
 	const fruits = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig'];
 	const priorities = ['Low', 'Medium', 'High', 'Urgent'];
@@ -244,6 +246,18 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
     console.log('Selected:', value);
     // Handle selection
   }}
+/>`;
+
+	const timezonePickerCode = `<script lang="ts">
+  import TimezonePicker from '$lib/components/TimezonePicker.svelte';
+
+  let timeZone: string | null = 'UTC';
+<\/script>
+
+<TimezonePicker
+  bind:selected={timeZone}
+  label="Timezone"
+  onSelect={(value) => console.log('Selected IANA timezone:', value)}
 />`;
 </script>
 
@@ -1545,6 +1559,85 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 						<p class="font-mono text-sm text-blue-600 mb-1">Click outside</p>
 						<p class="text-sm text-gray-600">Close dropdown</p>
 					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- TimezonePicker Section -->
+		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+			<h2 class="text-2xl font-bold text-gray-900 mb-8">TimezonePicker Component</h2>
+			<p class="text-gray-600 mb-8">
+				A timezone-specific Select that exposes exact IANA identifiers, displays friendly
+				region labels, includes UTC, and falls back to the selected and browser-detected zones
+				when full browser enumeration is unavailable.
+			</p>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">IANA Timezone Binding</h3>
+					<TimezonePicker bind:selected={selectedTimeZone} label="Account timezone" />
+					<p class="text-xs text-gray-500 mt-2">
+						Selected identifier: <code>{selectedTimeZone ?? '(none)'}</code>
+					</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Disabled State</h3>
+					<TimezonePicker selected="UTC" label="Locked timezone" disabled />
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Example</h3>
+				<p class="text-sm font-mono text-gray-600 mb-2">Bindable IANA identifier:</p>
+				<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{timezonePickerCode}</code></pre>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Props Reference</h3>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Prop</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Type</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Default</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Description</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">selected</td>
+								<td class="px-4 py-2 text-gray-600">string | null</td>
+								<td class="px-4 py-2 text-gray-600">null</td>
+								<td class="px-4 py-2 text-gray-600">Bindable exact IANA timezone identifier.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">label</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">'Timezone'</td>
+								<td class="px-4 py-2 text-gray-600">Visible Select label.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">placeholder</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">'Select a timezone'</td>
+								<td class="px-4 py-2 text-gray-600">Text shown when no timezone is selected.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">disabled</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Disables the shared Select trigger.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">onSelect</td>
+								<td class="px-4 py-2 text-gray-600">(value: string) =&gt; void</td>
+								<td class="px-4 py-2 text-gray-600">undefined</td>
+								<td class="px-4 py-2 text-gray-600">Receives the selected IANA identifier.</td>
+							</tr>
+						</tbody>
+					</table>
 				</div>
 			</div>
 		</section>

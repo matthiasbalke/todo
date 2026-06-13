@@ -313,3 +313,30 @@ describe('ComponentsPage specialized controls showcase', () => {
 		expect(showcase.getByRole('button', { name: 'Delete example item' })).toHaveClass('bg-red-600');
 	});
 });
+
+describe('ComponentsPage TimezonePicker showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('demonstrates IANA binding, disabled state, usage, and API guidance', async () => {
+		render(ComponentsPage);
+		const section = screen
+			.getByRole('heading', { name: 'TimezonePicker Component' })
+			.closest('section')!;
+		const showcase = within(section);
+
+		expect(showcase.getByRole('button', { name: 'Account timezone' })).toHaveTextContent(
+			'Berlin (Europe)'
+		);
+		expect(showcase.getByRole('button', { name: 'Locked timezone' })).toBeDisabled();
+		expect(showcase.getByText('Selected identifier:').parentElement).toHaveTextContent(
+			'Europe/Berlin'
+		);
+		expect(showcase.getByText('Bindable IANA identifier:')).toBeInTheDocument();
+
+		for (const prop of ['selected', 'label', 'placeholder', 'disabled', 'onSelect']) {
+			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
+		}
+	});
+});

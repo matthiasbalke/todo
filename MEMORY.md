@@ -90,3 +90,10 @@
 - The account display-name E2E test locates `EditableLabel` by accessible role and current-value name in both display and edit modes.
 - `viewer-read-only-list-ui` adds the authenticated user's `ListRole` to list summary/detail responses and stores it on the frontend list model. UI policy is centralized in `frontend/src/lib/listCapabilities.ts`: owners can edit items/categories/list/members, editors can edit items/categories, and viewers receive read-only list, grocery, item-detail, and membership presentations while retaining local display controls, navigation, and personal list grouping.
 - Avoid selectors for the removed `Edit` text and generic input-type selectors; the shared component exposes a stable button/textbox accessibility contract.
+
+## TimezonePicker component
+
+- `TimezonePicker.svelte` composes shared `Select` and exposes a bindable exact IANA identifier, disabled state, label/placeholder configuration, and `onSelect`.
+- `timezonePicker.ts` builds options from `Intl.supportedValuesOf('timeZone')`, always includes `UTC`, and retains valid selected and browser-detected zones when enumeration is unavailable.
+- Friendly labels are derived without changing values, for example `Europe/Berlin` displays as `Berlin (Europe)`.
+- The development component showcase documents binding and API usage; verification passes all 421 frontend tests and clean `svelte-check`.

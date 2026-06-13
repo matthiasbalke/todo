@@ -126,6 +126,25 @@ The trigger and listbox share a trigger-local positioning wrapper. An open listb
 
 Select currently does not perform viewport collision detection, upward opening, or edge shifting. Those behaviors require a separate popover positioning capability if a future overflow-constrained consumer needs them.
 
+### TimezonePicker
+
+TimezonePicker composes `Select` for IANA timezone selection. It always includes `UTC`, uses
+`Intl.supportedValuesOf('timeZone')` when available, and retains valid selected and
+browser-detected values when full enumeration is unavailable.
+
+- `selected` (`string | null`, bindable, default: `null`): exact IANA identifier
+- `label` (string, default: `'Timezone'`): visible Select label
+- `placeholder` (string, default: `'Select a timezone'`): null-selection text
+- `disabled` (boolean, default: false): disable selection
+- `onSelect` (`(value: string) => void`, optional): receives the exact selected identifier
+
+```svelte
+<TimezonePicker bind:selected={timeZone} label="Account timezone" />
+```
+
+Visible labels are derived from identifiers, such as `Berlin (Europe)`, while bound and callback
+values remain unchanged, such as `Europe/Berlin`.
+
 ## Specialized Interaction Controls
 
 These controls expose domain state rather than consumer-owned visual CSS:
