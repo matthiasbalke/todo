@@ -1,17 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CategoryDto } from '$lib/api/lists';
+import type { CategoryDto, ListDto, ListSummaryDto } from '$lib/api/lists';
 
 const mockCreateCategory = vi.fn<() => Promise<CategoryDto>>();
+const mockGetLists = vi.fn<() => Promise<ListSummaryDto[]>>();
+const mockUpdateList = vi.fn<() => Promise<ListDto>>();
 
 vi.mock('$lib/api/lists', () => ({
-	getLists: vi.fn(),
+	getLists: mockGetLists,
 	createList: vi.fn(),
-	updateList: vi.fn(),
+	updateList: mockUpdateList,
 	deleteList: vi.fn(),
 	getCategories: vi.fn(),
 	createCategory: mockCreateCategory,
 	updateCategory: vi.fn(),
 	deleteCategory: vi.fn(),
+	getListGroups: vi.fn().mockResolvedValue([]),
 }));
 
 function makeDto(id: string): CategoryDto {
@@ -66,5 +69,60 @@ describe('saveCategory (create path)', () => {
 
 		expect(getCategoriesForList('list-1')).toHaveLength(1);
 		expect(getCategoriesForList('list-1')[0].id).toBe('cat-1');
+	});
+});
+
+describe('list role storage', () => {
+	it('retains roles when loading list summaries', async () => {
+		mockGetLists.mockResolvedValue([
+			{
+				id: 'list-1',
+				name: 'Shared',
+				emoji: null,
+				createdAt: '2026-01-01T00:00:00Z',
+				groupId: null,
+				sortOrderInGroup: 0,
+				role: 'VIEWER',
+			},
+		]);
+
+		const { loadLists, getList } = await getStore();
+		await loadLists();
+
+		expect(getList('list-1')?.role).toBe('VIEWER');
+	});
+
+	it('keeps the response role and personal grouping when a list is updated', async () => {
+		mockGetLists.mockResolvedValue([
+			{
+				id: 'list-1',
+				name: 'Shared',
+				emoji: null,
+				createdAt: '2026-01-01T00:00:00Z',
+				groupId: 'group-1',
+				sortOrderInGroup: 3,
+				role: 'OWNER',
+			},
+		]);
+		mockUpdateList.mockResolvedValue({
+			id: 'list-1',
+			name: 'Renamed',
+			emoji: null,
+			description: null,
+			defaultSortField: 'MANUAL',
+			defaultSortDirection: 'ASC',
+			createdAt: '2026-01-01T00:00:00Z',
+			role: 'OWNER',
+		});
+
+		const { loadLists, updateList, getList } = await getStore();
+		await loadLists();
+		await updateList('list-1', { name: 'Renamed' });
+
+		expect(getList('list-1')).toMatchObject({
+			role: 'OWNER',
+			groupId: 'group-1',
+			sortOrderInGroup: 3,
+		});
 	});
 });

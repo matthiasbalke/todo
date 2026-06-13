@@ -123,6 +123,8 @@ Build a small, consistent component library in SvelteKit for standard UI primiti
 - Create, rename, delete (OWNER only; multiple OWNERs allowed)
 - Invite member by email → ListMembership (OWNER | EDITOR | VIEWER)
 - VIEWER: read only; EDITOR: create/edit/complete items; OWNER: all EDITOR permissions + manage members + delete list
+- List summary and detail responses include the authenticated member's role. The frontend derives item, category, list, and membership capabilities centrally from that role.
+- VIEWER list screens present completion, starred, category, assignment, recurrence, and membership state without shared mutation controls. Filters, sorting, collapse state, hide-checked preferences, mode navigation, and personal list grouping remain available.
 - **Default sort** configurable per list:
   - Alphabetically (A→Z / Z→A)
   - Due date (earliest first / latest first)

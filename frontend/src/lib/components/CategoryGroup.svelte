@@ -17,6 +17,7 @@
     collapsed: collapsedProp = false,
     doneCollapsed: doneCollapsedProp = true,
     listId,
+    editable = true,
     isDraggable = false,
     oncollapsedchange,
     ondonecollapsedchange
@@ -30,6 +31,7 @@
     collapsed?: boolean;
     doneCollapsed?: boolean;
     listId: string;
+    editable?: boolean;
     isDraggable?: boolean;
     oncollapsedchange?: (v: boolean) => void;
     ondonecollapsedchange?: (v: boolean) => void;
@@ -96,14 +98,14 @@
       >
         {#each dndItems as item (item.id)}
           <div>
-            <ItemCard {item} categories={allCategories} {users} {isDraggable} />
+            <ItemCard {item} categories={allCategories} {users} {editable} {isDraggable} />
           </div>
         {/each}
       </div>
     {:else}
       <div class="space-y-2">
         {#each undoneItems as item (item.id)}
-          <ItemCard {item} categories={allCategories} {users} />
+          <ItemCard {item} categories={allCategories} {users} {editable} />
         {/each}
       </div>
     {/if}
@@ -122,7 +124,7 @@
       {#if !doneCollapsed}
         <div class="space-y-2 mt-1">
           {#each doneItems as item (item.id)}
-            <ItemCard {item} categories={allCategories} {users} />
+            <ItemCard {item} categories={allCategories} {users} {editable} />
           {/each}
         </div>
       {/if}

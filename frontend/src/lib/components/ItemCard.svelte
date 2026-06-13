@@ -10,7 +10,13 @@
   import StarToggle from './StarToggle.svelte';
   import SwipeDeleteAction from './SwipeDeleteAction.svelte';
 
-  let { item, categories, users, isDraggable = false }: { item: TodoItem; categories: Category[]; users: User[]; isDraggable?: boolean } = $props();
+  let { item, categories, users, editable = true, isDraggable = false }: {
+    item: TodoItem;
+    categories: Category[];
+    users: User[];
+    editable?: boolean;
+    isDraggable?: boolean;
+  } = $props();
   const assignedUsers = $derived(users.filter(u => item.assignedUserIds.includes(u.id)));
 
   const SNAP_OPEN = 80;       // px — resting position that reveals the delete button
@@ -77,7 +83,7 @@
   }
 
   onMount(() => {
-    if (!cardEl) return;
+    if (!cardEl || !editable) return;
     cardEl.addEventListener('touchstart', onTouchStart, { passive: true });
     cardEl.addEventListener('touchmove',  onTouchMove,  { passive: false });
     cardEl.addEventListener('touchend',   onTouchEnd,   { passive: true });
@@ -108,17 +114,18 @@
 </script>
 
 <div class="relative overflow-hidden rounded-lg" bind:this={cardEl}>
-  <!-- Red delete background -->
-  <div class="absolute inset-0 flex items-center justify-end" class:invisible={swipeX >= 0 && !snapping}>
-    <SwipeDeleteAction onactivate={handleDelete} />
-  </div>
+  {#if editable}
+    <div class="absolute inset-0 flex items-center justify-end" class:invisible={swipeX >= 0 && !snapping}>
+      <SwipeDeleteAction onactivate={handleDelete} />
+    </div>
+  {/if}
   <!-- Sliding card content -->
   <div
     class="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors {isDraggable ? 'select-none' : ''}"
     style="transform: translateX({swipeX}px); transition: {snapping ? 'transform 0.2s ease' : 'none'}"
     ontransitionend={() => { snapping = false; }}
   >
-    {#if isDraggable}
+    {#if editable && isDraggable}
       <div
         use:dragHandle
         class="flex-shrink-0 flex items-center justify-center w-5 cursor-grab active:cursor-grabbing touch-none text-gray-300 hover:text-gray-400"
@@ -132,7 +139,20 @@
         </svg>
       </div>
     {/if}
-    <CompletionToggle done={item.done} onactivate={handleDone} />
+    {#if editable}
+      <CompletionToggle done={item.done} onactivate={handleDone} />
+    {:else}
+      <span
+        class="h-5 w-5 flex-shrink-0 rounded-full border-2 {item.done ? 'border-green-500 bg-green-500' : 'border-gray-300'}"
+        aria-label={item.done ? 'Completed' : 'Not completed'}
+      >
+        {#if item.done}
+          <svg class="mx-auto h-3 w-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+          </svg>
+        {/if}
+      </span>
+    {/if}
 
     <a href="/lists/{item.listId}/items/{item.id}" class="flex-1 min-w-0">
       <div class="flex items-start justify-between gap-2">
@@ -158,6 +178,10 @@
       </div>
     {/each}
 
-    <StarToggle starred={item.starred} onactivate={handleStar} />
+    {#if editable}
+      <StarToggle starred={item.starred} onactivate={handleStar} />
+    {:else if item.starred}
+      <span class="flex-shrink-0 text-lg leading-none text-yellow-400" aria-label="Starred">★</span>
+    {/if}
   </div>
 </div>

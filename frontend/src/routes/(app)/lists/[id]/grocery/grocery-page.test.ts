@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const listStoreState = vi.hoisted(() => ({ hideDone: false }));
+const listStoreState = vi.hoisted(() => ({ hideDone: false, role: 'OWNER' as 'OWNER' | 'EDITOR' | 'VIEWER' }));
 
 vi.mock('$lib/stores/items.svelte', () => ({
 	getItems: vi.fn(() => []),
@@ -17,7 +17,8 @@ vi.mock('$lib/stores/lists.svelte', () => ({
 		defaultSortDirection: 'ASC',
 		createdAt: '2026-06-10',
 		groupId: null,
-		sortOrderInGroup: 0
+		sortOrderInGroup: 0,
+		role: listStoreState.role
 	})),
 	updateList: vi.fn(),
 	getCategoriesForList: vi.fn(() => []),
@@ -46,7 +47,32 @@ import GroceryPage from './+page.svelte';
 afterEach(() => {
 	cleanup();
 	listStoreState.hideDone = false;
+	listStoreState.role = 'OWNER';
 	vi.clearAllMocks();
+});
+
+describe('Grocery page capabilities', () => {
+	it('keeps navigation and presentation controls but hides mutation controls for viewers', async () => {
+		listStoreState.role = 'VIEWER';
+		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		expect(screen.getByRole('link', { name: 'Standard mode' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: /Filter/ })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: /Sort/ })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Hide checked' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Edit list' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Configure categories' })).not.toBeInTheDocument();
+	});
+
+	it('allows editors to configure categories but not edit the list', async () => {
+		listStoreState.role = 'EDITOR';
+		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		expect(screen.getByRole('button', { name: 'Configure categories' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Edit list' })).not.toBeInTheDocument();
+	});
 });
 
 describe('Grocery page menu presentation', () => {

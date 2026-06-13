@@ -249,3 +249,95 @@ test.describe('Grocery mode', () => {
 		await expect(page.getByRole('button', { name: /Oranges/i })).toBeVisible();
 	});
 });
+
+test.describe('Viewer read-only list UI', () => {
+	test('keeps list data and navigation visible without shared mutation controls', async ({
+		page,
+		context,
+		browser,
+	}, testInfo) => {
+		const ownerEmail = uniqueEmail('e2e-viewer-owner');
+		const viewerEmail = uniqueEmail('e2e-viewer-member');
+
+		await registerPasskey(page, context, 'Viewer Owner', ownerEmail);
+
+		const viewerContext = await browser.newContext({
+			baseURL: testInfo.project.use.baseURL as string,
+			ignoreHTTPSErrors: true,
+		});
+		const viewerPage = await viewerContext.newPage();
+
+		try {
+			await registerPasskey(viewerPage, viewerContext, 'Read Only Viewer', viewerEmail);
+
+			const { listId, itemIds: [itemId] } = await setupListWithCategoriesAndItems(
+				page,
+				'Shared Groceries',
+				['Produce'],
+				[{ title: 'Apples', notes: 'Braeburn preferred', starred: true, categoryIndex: 0 }],
+			);
+
+			await page.evaluate(
+				async ({ listId, viewerEmail }) => {
+					const { accessToken } = await fetch('/api/auth/refresh', {
+						method: 'POST',
+						credentials: 'include',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({}),
+					}).then((response) => response.json());
+					await fetch(`/api/lists/${listId}/members`, {
+						method: 'POST',
+						credentials: 'include',
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: `Bearer ${accessToken}`,
+						},
+						body: JSON.stringify({ email: viewerEmail, role: 'VIEWER' }),
+					});
+				},
+				{ listId, viewerEmail },
+			);
+
+			await viewerPage.goto(`/lists/${listId}`);
+			await waitForHydration(viewerPage);
+
+			await expect(viewerPage.getByRole('heading', { name: /Shared Groceries/ })).toBeVisible();
+			await expect(viewerPage.getByText('Apples')).toBeVisible();
+			await expect(viewerPage.getByRole('button', { name: '+ Add item' })).not.toBeVisible();
+			await expect(viewerPage.getByRole('button', { name: 'Mark done' })).not.toBeVisible();
+			await expect(viewerPage.getByRole('button', { name: 'Unstar' })).not.toBeVisible();
+			await expect(viewerPage.getByLabel('Drag to reorder')).not.toBeVisible();
+
+			await viewerPage.getByRole('button', { name: 'List options' }).click();
+			await expect(viewerPage.getByRole('button', { name: 'Grocery mode' })).toBeVisible();
+			await expect(viewerPage.getByRole('button', { name: 'Members' })).toBeVisible();
+			await expect(viewerPage.getByRole('button', { name: 'Configure categories' })).not.toBeVisible();
+			await expect(viewerPage.getByRole('button', { name: 'Delete list' })).not.toBeVisible();
+
+			await viewerPage.getByRole('button', { name: 'Members' }).click();
+			await expect(viewerPage.getByText(viewerEmail)).toBeVisible();
+			await expect(viewerPage.getByPlaceholder('Email address')).not.toBeVisible();
+			await expect(viewerPage.getByRole('button', { name: /Remove/ })).not.toBeVisible();
+			await viewerPage.getByRole('button', { name: 'Close' }).click();
+
+			await viewerPage.getByText('Apples').click();
+			await viewerPage.waitForURL(`**/lists/${listId}/items/${itemId}`);
+			await expect(viewerPage.getByRole('heading', { name: 'Apples' })).toBeVisible();
+			await expect(viewerPage.getByText('Braeburn preferred')).toBeVisible();
+			await expect(viewerPage.getByRole('button', { name: 'Save' })).not.toBeVisible();
+			await expect(viewerPage.getByRole('button', { name: 'Delete item' })).not.toBeVisible();
+
+			await viewerPage.goto(`/lists/${listId}/grocery`);
+			await waitForHydration(viewerPage);
+			await expect(viewerPage.getByText('Apples')).toBeVisible();
+			await expect(viewerPage.getByRole('button', { name: 'Apples' })).not.toBeVisible();
+
+			await viewerPage.getByRole('button', { name: 'List options' }).click();
+			await expect(viewerPage.getByRole('link', { name: 'Standard mode' })).toBeVisible();
+			await expect(viewerPage.getByRole('button', { name: 'Edit list' })).not.toBeVisible();
+			await expect(viewerPage.getByRole('button', { name: 'Configure categories' })).not.toBeVisible();
+		} finally {
+			await viewerContext.close();
+		}
+	});
+});

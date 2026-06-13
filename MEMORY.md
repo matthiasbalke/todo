@@ -88,4 +88,5 @@
 ## Account E2E shared-component selectors
 
 - The account display-name E2E test locates `EditableLabel` by accessible role and current-value name in both display and edit modes.
+- `viewer-read-only-list-ui` adds the authenticated user's `ListRole` to list summary/detail responses and stores it on the frontend list model. UI policy is centralized in `frontend/src/lib/listCapabilities.ts`: owners can edit items/categories/list/members, editors can edit items/categories, and viewers receive read-only list, grocery, item-detail, and membership presentations while retaining local display controls, navigation, and personal list grouping.
 - Avoid selectors for the removed `Edit` text and generic input-type selectors; the shared component exposes a stable button/textbox accessibility contract.

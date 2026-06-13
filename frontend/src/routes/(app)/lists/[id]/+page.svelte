@@ -18,6 +18,7 @@
   import { getCurrentUser } from '$lib/stores/auth.svelte';
   import { connectToList, disconnectFromList } from '$lib/stores/sse.svelte';
   import { getMembers } from '$lib/api/lists';
+  import { getListCapabilities } from '$lib/listCapabilities';
   import { friendlyError } from '$lib/api/errors';
   import type { User } from '$lib/mock-data';
   import Button from '$lib/components/Button.svelte';
@@ -27,6 +28,7 @@
 
   const list = $derived(getList(data.id));
   const categories = $derived(getCategoriesForList(data.id));
+  const capabilities = $derived(list ? getListCapabilities(list.role) : getListCapabilities('VIEWER'));
 
   $effect(() => { loadCategoriesForList(data.id); });
   $effect(() => { loadItemsForList(data.id); });
@@ -79,20 +81,15 @@
     if (editingTitle && titleInput) titleInput.focus();
   });
 
-  // Determine current user's role in this list, and populate real members for assignment
-  let myRole = $state<string | null>(null);
+  // Populate real members for assignment and member display.
   let members = $state<User[]>([]);
   $effect(() => {
-    const currentUser = getCurrentUser();
-    if (!currentUser) return;
     getMembers(data.id).then(ms => {
-      myRole = ms.find(m => m.userId === currentUser.id)?.role ?? null;
       members = ms.map(m => ({ id: m.userId, name: m.displayName || m.email, email: m.email }));
     }).catch(() => { /* ignore */ });
   });
 
-  const isOwner = $derived(myRole === 'OWNER');
-  const isDraggable = $derived(sortField === 'MANUAL' && (myRole === 'EDITOR' || myRole === 'OWNER'));
+  const isDraggable = $derived(sortField === 'MANUAL' && capabilities.canEditItems);
 
   const dueDateOptions = [
     { value: 'all', label: 'Any due date' },
@@ -189,7 +186,7 @@
         appearance="inline"
         class="w-full min-w-0"
       />
-    {:else}
+    {:else if capabilities.canEditList}
       <Button tone="neutral" appearance="bare"
         type="button"
         size="title"
@@ -198,6 +195,10 @@
       >
         {list.emoji ?? '📋'} {list.name}
       </Button>
+    {:else}
+      <h1 class="flex-1 min-w-0 text-xl font-bold text-gray-900">
+        {list.emoji ?? '📋'} {list.name}
+      </h1>
     {/if}
       <div class="relative ml-auto">
         <Button tone="neutral" appearance="bare"
@@ -223,14 +224,16 @@
             >
               Grocery mode
             </Button>
-            <Button tone="neutral" appearance="bare"
-              size="menu"
-              align="start"
-              weight="normal"
-              onclick={() => { showCategoryDialog = true; menuOpen = false; }}
-            >
-              Configure categories
-            </Button>
+            {#if capabilities.canManageCategories}
+              <Button tone="neutral" appearance="bare"
+                size="menu"
+                align="start"
+                weight="normal"
+                onclick={() => { showCategoryDialog = true; menuOpen = false; }}
+              >
+                Configure categories
+              </Button>
+            {/if}
             <Button tone="neutral" appearance="bare"
               size="menu"
               align="start"
@@ -348,7 +351,7 @@
                 {#if isHideDone(data.id)}<span>✓</span>{/if}
               </Button>
             </div>
-            {#if isOwner}
+            {#if capabilities.canEditList}
               <div class="border-t border-gray-100 mt-1 pt-1">
                 <Button tone="danger" appearance="ghost"
                   size="menu"
@@ -382,6 +385,7 @@
         collapsed={collapsedMap[key ?? '__null__'] ?? false}
         doneCollapsed={doneCollapsedMap[key ?? '__null__'] ?? true}
         listId={data.id}
+        editable={capabilities.canEditItems}
         {isDraggable}
         oncollapsedchange={(v) => {
           const next = { ...collapsedMap };
@@ -397,37 +401,43 @@
     {/each}
   </div>
 
-  {#if showCategoryDialog}
+  {#if showCategoryDialog && capabilities.canManageCategories}
     <CategoryConfigDialog {categories} listId={data.id} onclose={() => { showCategoryDialog = false; }} />
   {/if}
 
   {#if showMembersDialog}
-    <MembersDialog listId={data.id} onclose={() => { showMembersDialog = false; }} />
+    <MembersDialog
+      listId={data.id}
+      canManageMembers={capabilities.canManageMembers}
+      onclose={() => { showMembersDialog = false; }}
+    />
   {/if}
 </div>
 
-<div class="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gray-100 shadow-lg">
-  <div class="max-w-2xl mx-auto px-4 py-3">
-    {#if showAddForm}
-      <div class="max-h-[70vh] overflow-y-auto">
-        <ItemForm
-          listId={data.id}
-          {categories}
-          users={members}
-          onsubmit={handleAddItem}
-          oncancel={() => { showAddForm = false; }}
-          defaultCategoryId={lastCategoryId ?? undefined}
-        />
-      </div>
-    {:else}
-      <Button tone="neutral" appearance="outline"
-        size="empty"
-        onclick={() => { showAddForm = true; }}
-        class="w-full"
-      >
-        + Add item
-      </Button>
-    {/if}
+{#if capabilities.canEditItems}
+  <div class="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gray-100 shadow-lg">
+    <div class="max-w-2xl mx-auto px-4 py-3">
+      {#if showAddForm}
+        <div class="max-h-[70vh] overflow-y-auto">
+          <ItemForm
+            listId={data.id}
+            {categories}
+            users={members}
+            onsubmit={handleAddItem}
+            oncancel={() => { showAddForm = false; }}
+            defaultCategoryId={lastCategoryId ?? undefined}
+          />
+        </div>
+      {:else}
+        <Button tone="neutral" appearance="outline"
+          size="empty"
+          onclick={() => { showAddForm = true; }}
+          class="w-full"
+        >
+          + Add item
+        </Button>
+      {/if}
+    </div>
   </div>
-</div>
+{/if}
 {/if}

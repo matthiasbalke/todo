@@ -167,3 +167,20 @@ describe('ItemCard specialized actions', () => {
     expect(itemsStore.deleteItem).toHaveBeenCalledWith('list-1', 'item-1');
   });
 });
+
+describe('ItemCard read-only presentation', () => {
+	it('shows item state and navigation without mutation controls', () => {
+		const item = { ...baseItem, done: true, starred: true };
+		const { container } = render(ItemCard, {
+			props: { item, categories: [], users: [], editable: false, isDraggable: true },
+		});
+
+		expect(container.querySelector('[aria-label="Completed"]')).not.toBeNull();
+		expect(container.querySelector('[aria-label="Starred"]')).not.toBeNull();
+		expect(container.querySelector('a[href="/lists/list-1/items/item-1"]')).not.toBeNull();
+		expect(container.querySelector('button[aria-label="Mark undone"]')).toBeNull();
+		expect(container.querySelector('button[aria-label="Unstar"]')).toBeNull();
+		expect(container.querySelector('button[aria-label="Delete item"]')).toBeNull();
+		expect(container.querySelector('[aria-label="Drag to reorder"]')).toBeNull();
+	});
+});

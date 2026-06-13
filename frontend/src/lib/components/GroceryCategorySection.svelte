@@ -8,11 +8,13 @@
     category,
     items,
     collapsed = false,
+    editable = true,
     ontoggle
   }: {
     category: Category | null;
     items: TodoItem[];
     collapsed: boolean;
+    editable?: boolean;
     ontoggle: () => void;
   } = $props();
 
@@ -45,31 +47,49 @@
   {#if !collapsed}
     <div class="mt-1 space-y-1">
       {#each unchecked as item (item.id)}
-        <Button
-          tone="neutral" appearance="outline"
-          size="row"
-          align="start"
-          onclick={() => handleToggle(item)}
-        >
-          <span class="w-6 h-6 rounded-full border-2 border-gray-300 flex-shrink-0"></span>
-          <span class="text-base text-gray-900">{item.title}</span>
-        </Button>
+        {#if editable}
+          <Button
+            tone="neutral" appearance="outline"
+            size="row"
+            align="start"
+            onclick={() => handleToggle(item)}
+          >
+            <span class="w-6 h-6 rounded-full border-2 border-gray-300 flex-shrink-0"></span>
+            <span class="text-base text-gray-900">{item.title}</span>
+          </Button>
+        {:else}
+          <div class="flex w-full items-center justify-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
+            <span class="w-6 h-6 rounded-full border-2 border-gray-300 flex-shrink-0" aria-label="Not completed"></span>
+            <span class="text-base text-gray-900">{item.title}</span>
+          </div>
+        {/if}
       {/each}
       {#each checked as item (item.id)}
-        <Button
-          tone="neutral" appearance="outline"
-          size="row"
-          align="start"
-          onclick={() => handleToggle(item)}
-          class="opacity-50"
-        >
+        {#if editable}
+          <Button
+            tone="neutral" appearance="outline"
+            size="row"
+            align="start"
+            onclick={() => handleToggle(item)}
+            class="opacity-50"
+          >
+            <span class="w-6 h-6 rounded-full bg-green-500 border-2 border-green-500 flex-shrink-0 flex items-center justify-center">
+              <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </span>
+            <span class="text-base text-gray-400 line-through">{item.title}</span>
+          </Button>
+        {:else}
+          <div class="flex w-full items-center justify-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 opacity-50">
           <span class="w-6 h-6 rounded-full bg-green-500 border-2 border-green-500 flex-shrink-0 flex items-center justify-center">
-            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Completed">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
             </svg>
           </span>
           <span class="text-base text-gray-400 line-through">{item.title}</span>
-        </Button>
+          </div>
+        {/if}
       {/each}
     </div>
   {/if}

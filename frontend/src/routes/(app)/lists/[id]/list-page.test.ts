@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const listStoreState = vi.hoisted(() => ({ hideDone: false }));
+const listStoreState = vi.hoisted(() => ({ hideDone: false, role: 'OWNER' as 'OWNER' | 'EDITOR' | 'VIEWER' }));
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
@@ -20,6 +20,9 @@ vi.mock('$lib/stores/lists.svelte', () => ({
 		defaultSortField: 'MANUAL',
 		defaultSortDirection: 'ASC',
 		createdAt: '2024-01-01T00:00:00Z',
+		groupId: null,
+		sortOrderInGroup: 0,
+		role: listStoreState.role,
 	})),
 	updateList: vi.fn(),
 	deleteList: vi.fn(),
@@ -68,6 +71,7 @@ describe('ListPage title emoji extraction', () => {
 	afterEach(() => {
 		cleanup();
 		listStoreState.hideDone = false;
+		listStoreState.role = 'OWNER';
 		vi.clearAllMocks();
 	});
 
@@ -88,6 +92,7 @@ describe('ListPage accessibility', () => {
 	afterEach(() => {
 		cleanup();
 		listStoreState.hideDone = false;
+		listStoreState.role = 'OWNER';
 		vi.clearAllMocks();
 	});
 
@@ -111,7 +116,37 @@ describe('ListPage menu presentation', () => {
 	afterEach(() => {
 		cleanup();
 		listStoreState.hideDone = false;
+		listStoreState.role = 'OWNER';
 		vi.clearAllMocks();
+	});
+
+	it('hides shared mutation controls for viewers while preserving presentation and navigation controls', async () => {
+		listStoreState.role = 'VIEWER';
+		render(ListPage, { props: { data: mockData } });
+
+		expect(screen.getByRole('heading', { name: /Groceries/i })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '+ Add item' })).not.toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		expect(screen.getByRole('button', { name: 'Grocery mode' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: /Filter/ })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: /Sort/ })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Hide checked' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Members' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Configure categories' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Delete list' })).not.toBeInTheDocument();
+	});
+
+	it('keeps item and category controls for editors but hides list management', async () => {
+		listStoreState.role = 'EDITOR';
+		render(ListPage, { props: { data: mockData } });
+
+		expect(screen.getByRole('button', { name: '+ Add item' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /Groceries/i })).not.toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		expect(screen.getByRole('button', { name: 'Configure categories' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Delete list' })).not.toBeInTheDocument();
 	});
 
 	it('uses blue text and inherited check marks for selected menu choices', async () => {

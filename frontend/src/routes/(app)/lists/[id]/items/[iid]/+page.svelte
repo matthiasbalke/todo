@@ -8,6 +8,8 @@
   import { friendlyError } from '$lib/api/errors';
   import { getMembers } from '$lib/api/lists';
   import Button from '$lib/components/Button.svelte';
+  import ItemDetails from '$lib/components/ItemDetails.svelte';
+  import { getListCapabilities } from '$lib/listCapabilities';
 
   let { data }: { data: PageData } = $props();
 
@@ -22,6 +24,7 @@
   });
 
   const list = $derived(getList(data.id));
+  const capabilities = $derived(list ? getListCapabilities(list.role) : getListCapabilities('VIEWER'));
   const item = $derived(getItems().find(i => i.id === data.iid && i.listId === data.id));
   const categories = $derived(getCategoriesForList(data.id));
 
@@ -67,23 +70,27 @@
   </div>
 
   {#if item}
-    <ItemForm
-      {item}
-      listId={data.id}
-      {categories}
-      users={members}
-      onsubmit={handleSave}
-      oncancel={handleCancel}
-    />
-    <div class="mt-4">
-      <Button tone="danger" appearance="ghost"
-        type="button"
-        onclick={handleDelete}
-        class="w-full"
-      >
-        Delete item
-      </Button>
-    </div>
+    {#if capabilities.canEditItems}
+      <ItemForm
+        {item}
+        listId={data.id}
+        {categories}
+        users={members}
+        onsubmit={handleSave}
+        oncancel={handleCancel}
+      />
+      <div class="mt-4">
+        <Button tone="danger" appearance="ghost"
+          type="button"
+          onclick={handleDelete}
+          class="w-full"
+        >
+          Delete item
+        </Button>
+      </div>
+    {:else}
+      <ItemDetails {item} {categories} users={members} />
+    {/if}
   {:else}
     <div class="text-center py-12 text-gray-400">Item not found.</div>
   {/if}

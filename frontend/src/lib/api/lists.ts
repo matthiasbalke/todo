@@ -9,6 +9,7 @@ export interface ListSummaryDto {
 	createdAt: string;
 	groupId: string | null;
 	sortOrderInGroup: number;
+	role: ListRole;
 }
 
 export interface ListDto {
@@ -19,6 +20,7 @@ export interface ListDto {
 	defaultSortField: string;
 	defaultSortDirection: string;
 	createdAt: string;
+	role: ListRole;
 }
 
 export interface MemberDto {

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Category, TodoItem } from '$lib/mock-data';
 
@@ -11,6 +11,7 @@ vi.mock('$lib/api/errors', () => ({
 }));
 
 import GroceryCategorySection from './GroceryCategorySection.svelte';
+import * as itemsStore from '$lib/stores/items.svelte';
 
 const category: Category = {
 	id: 'produce',
@@ -60,5 +61,23 @@ describe('GroceryCategorySection alignment', () => {
 
 		expect(screen.getByRole('button', { name: 'Apples' })).toHaveClass('justify-start');
 		expect(screen.getByRole('button', { name: 'Bananas' })).toHaveClass('justify-start');
+	});
+
+	it('renders viewer rows as non-interactive state indicators', async () => {
+		render(GroceryCategorySection, {
+			props: {
+				category,
+				items: [baseItem, { ...baseItem, id: 'item-2', title: 'Bananas', done: true }],
+				collapsed: false,
+				editable: false,
+				ontoggle: vi.fn()
+			}
+		});
+
+		expect(screen.queryByRole('button', { name: 'Apples' })).not.toBeInTheDocument();
+		expect(screen.getByText('Apples')).toBeInTheDocument();
+		expect(screen.getByText('Bananas')).toHaveClass('line-through');
+		await fireEvent.click(screen.getByText('Apples'));
+		expect(itemsStore.toggleDone).not.toHaveBeenCalled();
 	});
 });
