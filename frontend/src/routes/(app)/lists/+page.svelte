@@ -7,10 +7,23 @@
   import { friendlyError } from '$lib/api/errors';
   import Button from '$lib/components/Button.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
+  import { getProfile } from '$lib/stores/preferences.svelte';
+  import { getTodayUnfinishedCount, loadTodayCount } from '$lib/stores/today.svelte';
+  import { onMount } from 'svelte';
 
   const lists = $derived(getLists());
   const groups = $derived(getListGroups());
   const draggingAny = $derived(isDraggingAny());
+  const profile = $derived(getProfile());
+  const todayCount = $derived(getTodayUnfinishedCount());
+
+  onMount(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible' && profile?.todayViewEnabled) loadTodayCount();
+    };
+    document.addEventListener('visibilitychange', refresh);
+    return () => document.removeEventListener('visibilitychange', refresh);
+  });
 
   const sortedGroups = $derived(groups.slice().sort((a, b) => a.sortOrder - b.sortOrder));
   const ungroupedLists = $derived(lists.filter(l => l.groupId === null));
@@ -65,6 +78,19 @@
     </div>
   {:else}
     <div class="space-y-2">
+      {#if profile?.todayViewEnabled}
+        <div class="flex items-center gap-4 p-4 rounded-xl border border-blue-100 bg-blue-50 hover:border-blue-200 hover:shadow-sm transition-all mb-4">
+          <div class="flex-shrink-0 w-5" aria-hidden="true"></div>
+          <a href="/today" class="flex items-center gap-4 flex-1 min-w-0">
+            <span class="text-3xl">📆</span>
+            <div class="flex-1 min-w-0">
+              <h2 class="font-semibold text-blue-900">Today</h2>
+            </div>
+            <span class="rounded-full bg-blue-100 px-2 py-0.5 text-sm text-blue-800">{todayCount}</span>
+            <span class="text-gray-300">›</span>
+          </a>
+        </div>
+      {/if}
       {#each sortedGroups as group (group.id)}
         <ListGroupSection
           {group}

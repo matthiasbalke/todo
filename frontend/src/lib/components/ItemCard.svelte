@@ -10,14 +10,19 @@
   import StarToggle from './StarToggle.svelte';
   import SwipeDeleteAction from './SwipeDeleteAction.svelte';
 
-  let { item, categories, users, editable = true, isDraggable = false }: {
+  let { item, categories, users, editable = true, isDraggable = false, onchanged, returnTo }: {
     item: TodoItem;
     categories: Category[];
     users: User[];
     editable?: boolean;
     isDraggable?: boolean;
+    onchanged?: () => void | Promise<void>;
+    returnTo?: string;
   } = $props();
   const assignedUsers = $derived(users.filter(u => item.assignedUserIds.includes(u.id)));
+  const detailHref = $derived(
+    `/lists/${item.listId}/items/${item.id}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`
+  );
 
   const SNAP_OPEN = 80;       // px — resting position that reveals the delete button
   const SNAP_THRESHOLD = 40;  // drag past this → snap open; less → snap closed
@@ -77,6 +82,7 @@
     opened = false;
     try {
       await deleteItem(item.listId, item.id);
+      await onchanged?.();
     } catch (e) {
       alert(friendlyError(e, 'Failed to delete item'));
     }
@@ -98,6 +104,7 @@
     e.preventDefault();
     try {
       await toggleDone(item.listId, item.id);
+      await onchanged?.();
     } catch (e) {
       alert(friendlyError(e, 'Failed to update item'));
     }
@@ -107,6 +114,7 @@
     e.preventDefault();
     try {
       await toggleStarred(item.listId, item.id);
+      await onchanged?.();
     } catch (e) {
       alert(friendlyError(e, 'Failed to update item'));
     }
@@ -154,7 +162,7 @@
       </span>
     {/if}
 
-    <a href="/lists/{item.listId}/items/{item.id}" class="flex-1 min-w-0">
+    <a href={detailHref} class="flex-1 min-w-0">
       <div class="flex items-start justify-between gap-2">
         <span class="text-sm font-medium text-gray-900 {item.done ? 'line-through text-gray-400' : ''}">
           {item.title}

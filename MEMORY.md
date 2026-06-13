@@ -95,5 +95,7 @@
 
 - `TimezonePicker.svelte` composes shared `Select` and exposes a bindable exact IANA identifier, disabled state, label/placeholder configuration, and `onSelect`.
 - `timezonePicker.ts` builds options from `Intl.supportedValuesOf('timeZone')`, always includes `UTC`, and retains valid selected and browser-detected zones when enumeration is unavailable.
+- Today preferences persist `time_zone`, `time_zone_initialized`, and `today_view_enabled` on users. The frontend initializes timezone once from the browser (falling back to UTC), and `/api/today` qualifies assigned items with readable-list membership and `due_date <= LocalDate.now(userZone)`.
+- The Today frontend uses a dedicated per-user local-storage key, groups enriched results by source list/category, applies each source list's capability role, and refreshes items/count on load, visibility regain, mutations, and timezone changes without cross-list SSE.
 - Friendly labels are derived without changing values, for example `Europe/Berlin` displays as `Berlin (Europe)`.
 - The development component showcase documents binding and API usage; verification passes all 421 frontend tests and clean `svelte-check`.

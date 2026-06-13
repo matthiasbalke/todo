@@ -6,6 +6,8 @@ A personal/household app for managing todos, grocery shopping, and recurring hou
 
 ## Features
 
+- **Today view** — review assigned due and overdue work across readable lists, grouped by source list/category with role-aware item actions and a timezone-based date boundary
+
 - **Grocery lists** — items organized by category (store/aisle), shared in real time, with a dedicated in-store view
 - **Todos** — due dates, priorities, assignments, notes, and photo attachments
 - **Recurring tasks** — chores that auto-regenerate on a configurable schedule when completed

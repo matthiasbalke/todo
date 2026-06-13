@@ -19,6 +19,8 @@
     listId,
     editable = true,
     isDraggable = false,
+    onchanged,
+    returnTo,
     oncollapsedchange,
     ondonecollapsedchange
   }: {
@@ -33,6 +35,8 @@
     listId: string;
     editable?: boolean;
     isDraggable?: boolean;
+    onchanged?: () => void | Promise<void>;
+    returnTo?: string;
     oncollapsedchange?: (v: boolean) => void;
     ondonecollapsedchange?: (v: boolean) => void;
   } = $props();
@@ -98,14 +102,14 @@
       >
         {#each dndItems as item (item.id)}
           <div>
-            <ItemCard {item} categories={allCategories} {users} {editable} {isDraggable} />
+            <ItemCard {item} categories={allCategories} {users} {editable} {isDraggable} {onchanged} {returnTo} />
           </div>
         {/each}
       </div>
     {:else}
       <div class="space-y-2">
         {#each undoneItems as item (item.id)}
-          <ItemCard {item} categories={allCategories} {users} {editable} />
+          <ItemCard {item} categories={allCategories} {users} {editable} {onchanged} {returnTo} />
         {/each}
       </div>
     {/if}
@@ -124,7 +128,7 @@
       {#if !doneCollapsed}
         <div class="space-y-2 mt-1">
           {#each doneItems as item (item.id)}
-            <ItemCard {item} categories={allCategories} {users} {editable} />
+            <ItemCard {item} categories={allCategories} {users} {editable} {onchanged} {returnTo} />
           {/each}
         </div>
       {/if}

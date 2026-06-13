@@ -11,6 +11,7 @@ vi.mock('$lib/stores/auth.svelte', () => ({
 
 vi.mock('$lib/api/users', () => ({
 	updateMe: vi.fn(),
+	updatePreferences: vi.fn(),
 	getPasskeys: vi.fn().mockResolvedValue([]),
 	getAddPasskeyOptions: vi.fn(),
 	submitAddPasskey: vi.fn(),
@@ -51,6 +52,9 @@ const mockProfile = {
 	id: 'user-1',
 	displayName: 'Test User',
 	email: 'test@example.com',
+	timeZone: 'UTC',
+	timeZoneInitialized: true,
+	todayViewEnabled: true,
 };
 
 const mockData = {
