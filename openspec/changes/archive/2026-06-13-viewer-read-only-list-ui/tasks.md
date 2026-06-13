@@ -32,5 +32,5 @@
 ## 6. End-To-End Verification
 
 - [x] 6.1 Add an end-to-end viewer scenario covering standard list, grocery mode, item detail, categories, list management, and membership controls
-- [ ] 6.2 Run backend tests, frontend checks and tests, and the relevant end-to-end suite
+- [x] 6.2 Run backend tests, frontend checks and tests, and the relevant end-to-end suite
 - [x] 6.3 Update project feature documentation and `MEMORY.md` with the capability model and viewer read-only behavior
