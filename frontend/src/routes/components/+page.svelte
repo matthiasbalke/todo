@@ -13,12 +13,15 @@
 	import SwipeDeleteAction from '$lib/components/SwipeDeleteAction.svelte';
 	import Textarea from '$lib/components/Textarea.svelte';
 	import TimezonePicker from '$lib/components/TimezonePicker.svelte';
+	import Toggle from '$lib/components/Toggle.svelte';
 
 	let lastButtonAction = 'None';
 	let showcaseCalendarSelected = true;
 	let showcaseColor = '#60a5fa';
 	let showcaseDone = false;
 	let showcaseStarred = false;
+	let showcaseToggle = false;
+	let lastToggleChange = 'None';
 	let emptyDate: string | null = null;
 	let selectedDate: string | null = '2026-06-09';
 	let constrainedDate: string | null = '2026-06-15';
@@ -132,6 +135,19 @@
 <Button type="submit" class="w-full">
   Submit form
 </Button>`;
+
+	const toggleCode = `<script lang="ts">
+  import Toggle from '$lib/components/Toggle.svelte';
+
+  let enabled = false;
+<\/script>
+
+<label id="notifications-label">Notifications</label>
+<Toggle
+  bind:checked={enabled}
+  aria-labelledby="notifications-label"
+  onchange={(checked) => console.log('Changed:', checked)}
+/>`;
 
 	const basicDatePickerCode = `<script lang="ts">
   import DatePicker from '$lib/components/DatePicker.svelte';
@@ -436,6 +452,75 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					Standard native button attributes and handlers such as <code>title</code>,
 					<code>aria-label</code>, <code>data-*</code>, and <code>onclick</code> are forwarded.
 				</p>
+			</div>
+		</section>
+
+		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+			<h2 class="text-2xl font-bold text-gray-900 mb-4">Toggle Component</h2>
+			<p class="text-gray-600 mb-8">
+				An accessible switch for persistent boolean settings. Toggle owns its track, thumb,
+				state, focus, transition, and disabled presentation.
+			</p>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+				<div class="flex items-center justify-between gap-4">
+					<span id="toggle-off-label" class="text-sm font-medium text-gray-700">Off example</span>
+					<Toggle aria-labelledby="toggle-off-label" />
+				</div>
+				<div class="flex items-center justify-between gap-4">
+					<span id="toggle-on-label" class="text-sm font-medium text-gray-700">On example</span>
+					<Toggle checked aria-labelledby="toggle-on-label" />
+				</div>
+				<div class="flex items-center justify-between gap-4">
+					<span id="toggle-disabled-label" class="text-sm font-medium text-gray-700">Disabled example</span>
+					<Toggle checked disabled aria-labelledby="toggle-disabled-label" />
+				</div>
+				<div>
+					<div class="flex items-center justify-between gap-4">
+						<span class="text-sm font-medium text-gray-700">Bound example</span>
+						<Toggle
+							bind:checked={showcaseToggle}
+							ariaLabel="Bound example"
+							onchange={(checked) => { lastToggleChange = String(checked); }}
+						/>
+					</div>
+					<p class="text-xs text-gray-500 mt-2">
+						Bound value: <code>{showcaseToggle}</code>; callback: <code>{lastToggleChange}</code>
+					</p>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Example</h3>
+				<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{toggleCode}</code></pre>
+				<p class="text-sm text-gray-600 mt-4">
+					Provide an accessible name with <code>ariaLabel</code> or
+					<code>aria-labelledby</code>. Standard native button attributes and handlers are
+					forwarded.
+				</p>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Props Reference</h3>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Prop</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Description</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							<tr><td class="px-4 py-2 font-mono text-blue-600">checked</td><td class="px-4 py-2 text-gray-600">Bindable boolean state.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">disabled</td><td class="px-4 py-2 text-gray-600">Prevents activation and applies disabled feedback.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">ariaLabel</td><td class="px-4 py-2 text-gray-600">Accessible name when no external label is referenced.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">onchange</td><td class="px-4 py-2 text-gray-600">Receives the updated boolean after activation.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">id</td><td class="px-4 py-2 text-gray-600">Native button identifier.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">class</td><td class="px-4 py-2 text-gray-600">Parent-layout utilities only.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">element</td><td class="px-4 py-2 text-gray-600">Bindable native button reference.</td></tr>
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</section>
 

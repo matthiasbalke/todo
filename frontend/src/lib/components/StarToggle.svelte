@@ -24,7 +24,7 @@
 		event.preventDefault();
 		activate(event);
 	}}
-	class="flex-shrink-0 text-lg leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 {starred
+	class="flex-shrink-0 text-lg leading-none transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 {starred
 		? 'text-yellow-400'
 		: 'text-gray-200 hover:text-yellow-300'}"
 >★</button>

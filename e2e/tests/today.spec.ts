@@ -25,22 +25,28 @@ test('Today preferences, count, completion, and source navigation', async ({ pag
 
 	await page.goto('/lists');
 	await waitForHydration(page);
-	await expect(page.getByRole('link', { name: /Today/ })).toContainText('1');
-	await page.getByRole('link', { name: /Today/ }).click();
+	const todayLink = page.getByRole('link', { name: /^Today(?:\s+1)?$/ }).and(page.locator('a[href="/today"]'));
+	await expect(todayLink).toContainText('1');
+	await todayLink.click();
 	await expect(page).toHaveURL(/\/today$/);
 	await expect(page.getByText('Today task')).toBeVisible();
 	await page.getByRole('button', { name: /Mark done/i }).click();
 	await expect(page.getByText('1 checked')).toBeVisible();
-	await page.getByRole('link', { name: /Today Source/ }).click();
+	await page
+		.getByRole('link', { name: 'Today Source', exact: true })
+		.and(page.locator(`a[href="/lists/${setup.listId}"]`))
+		.click();
 	await expect(page).toHaveURL(new RegExp(`/lists/${setup.listId}$`));
 
 	await page.goto('/account');
 	await page.getByRole('button', { name: /UTC/ }).click();
 	await page.getByRole('option', { name: 'Berlin (Europe)' }).click();
-	await page.getByRole('button', { name: 'Save Today preferences' }).click();
 	await expect(page.getByText('Preferences saved.')).toBeVisible();
-	await page.getByRole('button', { name: /Today view: Enabled/ }).click();
-	await page.getByRole('button', { name: 'Save Today preferences' }).click();
+	await page.getByRole('switch', { name: 'Today View' }).click();
+	await expect(page.getByText('Preferences saved.')).toBeVisible();
+	await expect(page.getByRole('switch', { name: 'Today View' })).toHaveAttribute('aria-checked', 'false');
+	await page.reload();
+	await expect(page.getByRole('switch', { name: 'Today View' })).toHaveAttribute('aria-checked', 'false');
 	await page.goto('/today');
 	await expect(page).toHaveURL(/\/lists$/);
 });

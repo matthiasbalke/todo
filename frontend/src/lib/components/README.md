@@ -10,6 +10,43 @@ A small, reusable component library for SvelteKit UI primitives. Components foll
 
 ## Base Components
 
+### Toggle
+
+Toggle is a native button switch for persistent boolean settings. It owns the rounded track,
+movable thumb, on/off colors, transition, keyboard-visible focus ring, and disabled presentation.
+
+- `checked` (boolean, bindable, default: `false`): current switch state
+- `disabled` (boolean, default: `false`): prevent pointer and keyboard activation
+- `ariaLabel` (string, optional): accessible name when `aria-labelledby` is not supplied
+- `onchange` (`(checked: boolean) => void`, optional): receives the updated value
+- `id` (string, optional): native button ID
+- `class` (string, optional): parent-layout utilities only
+- `element` (`HTMLButtonElement | null`, bindable): native element access
+- Other native button attributes and handlers are forwarded.
+
+Consumers must provide an accessible name with `ariaLabel` or `aria-labelledby`. Use Toggle for
+persistent settings such as notification or view preferences; keep action buttons and
+domain-specific completion/star controls on their dedicated components.
+
+```svelte
+<script lang="ts">
+  import Toggle from '$lib/components/Toggle.svelte';
+
+  let enabled = false;
+</script>
+
+<div class="flex items-center justify-between">
+  <span id="notifications-label">Notifications</span>
+  <Toggle
+    bind:checked={enabled}
+    aria-labelledby="notifications-label"
+    onchange={(checked) => console.log(checked)}
+  />
+</div>
+
+<Toggle checked disabled ariaLabel="Locked setting" />
+```
+
 ### Button
 
 A native button wrapper with semantic tone and appearance, consistent focus treatment, disabled behavior, and loading feedback.

@@ -225,6 +225,41 @@ describe('ComponentsPage Button showcase', () => {
 	});
 });
 
+describe('ComponentsPage Toggle showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('demonstrates states, binding, accessible labels, callbacks, and API guidance', async () => {
+		render(ComponentsPage);
+		const section = screen.getByRole('heading', { name: 'Toggle Component' }).closest('section')!;
+		const showcase = within(section);
+
+		expect(showcase.getByRole('switch', { name: 'Off example' })).toHaveAttribute(
+			'aria-checked',
+			'false'
+		);
+		expect(showcase.getByRole('switch', { name: 'On example' })).toHaveAttribute(
+			'aria-checked',
+			'true'
+		);
+		expect(showcase.getByRole('switch', { name: 'Disabled example' })).toBeDisabled();
+
+		await fireEvent.click(showcase.getByRole('switch', { name: 'Bound example' }));
+		expect(showcase.getByText(/Bound value:/)).toHaveTextContent(
+			'Bound value: true; callback: true'
+		);
+
+		for (const prop of ['checked', 'disabled', 'ariaLabel', 'onchange', 'id', 'class', 'element']) {
+			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
+		}
+		expect(section).toHaveTextContent(
+			'Provide an accessible name with ariaLabel or aria-labelledby.'
+		);
+		expect(showcase.getByText(/standard native button attributes and handlers/i)).toBeInTheDocument();
+	});
+});
+
 describe('ComponentsPage DatePicker showcase', () => {
 	afterEach(() => {
 		cleanup();

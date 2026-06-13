@@ -99,7 +99,8 @@ describe('shared component semantic styling', () => {
 		'ColorSwatchButton',
 		'CompletionToggle',
 		'StarToggle',
-		'SwipeDeleteAction'
+		'SwipeDeleteAction',
+		'Toggle'
 	])('guards specialized control consumers: %s', (component) => {
 		expect(sharedControlNames).toContain(component);
 		const source = `<${component} class="text-red-600 rounded-full" style="color: red" />`;

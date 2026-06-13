@@ -21,6 +21,7 @@
   import EditableLabel from '$lib/components/EditableLabel.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
   import TimezonePicker from '$lib/components/TimezonePicker.svelte';
+  import Toggle from '$lib/components/Toggle.svelte';
   import { setProfile } from '$lib/stores/preferences.svelte';
   import { refreshToday } from '$lib/stores/today.svelte';
 
@@ -30,6 +31,8 @@
   let passkeys = $state<PasskeyDto[]>(untrack(() => [...data.passkeys]));
   let timeZone = $state(untrack(() => profile.timeZone));
   let todayViewEnabled = $state(untrack(() => profile.todayViewEnabled));
+  let persistedTimeZone = $state(untrack(() => profile.timeZone));
+  let persistedTodayViewEnabled = $state(untrack(() => profile.todayViewEnabled));
   let preferencesSaving = $state(false);
   let preferencesError = $state('');
   let preferencesSaved = $state(false);
@@ -43,14 +46,24 @@
       profile = updated;
       timeZone = updated.timeZone;
       todayViewEnabled = updated.todayViewEnabled;
+      persistedTimeZone = updated.timeZone;
+      persistedTodayViewEnabled = updated.todayViewEnabled;
       setProfile(updated);
       await refreshToday();
       preferencesSaved = true;
     } catch (e) {
+      timeZone = persistedTimeZone;
+      todayViewEnabled = persistedTodayViewEnabled;
       preferencesError = friendlyError(e, 'Failed to save preferences');
     } finally {
       preferencesSaving = false;
     }
+  }
+
+  function handlePreferenceChange() {
+    preferencesError = '';
+    preferencesSaved = false;
+    void saveFeaturePreferences();
   }
 
   // ─── Display name ─────────────────────────────────────────────────────────
@@ -276,20 +289,25 @@
   </section>
 
   <section class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Today</h2>
-    <TimezonePicker bind:selected={timeZone} disabled={preferencesSaving} />
-    <Button
-      tone="neutral"
-      appearance="outline"
-      selected={todayViewEnabled}
-      onclick={() => { todayViewEnabled = !todayViewEnabled; preferencesSaved = false; }}
-    >
-      Today view: {todayViewEnabled ? 'Enabled' : 'Disabled'}
-    </Button>
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Settings</h2>
     <div>
-      <Button tone="primary" appearance="solid" onclick={saveFeaturePreferences} disabled={preferencesSaving}>
-        {preferencesSaving ? 'Saving…' : 'Save Today preferences'}
-      </Button>
+      <TimezonePicker
+        bind:selected={timeZone}
+        disabled={preferencesSaving}
+        onSelect={handlePreferenceChange}
+      />
+      <p class="mt-2 text-sm text-gray-500">
+        Your timezone determines which calendar date is considered today for Today and other date-sensitive behavior.
+      </p>
+    </div>
+    <div class="flex items-center justify-between gap-4">
+      <span id="today-view-label" class="text-sm font-medium text-gray-700">Today View</span>
+      <Toggle
+        bind:checked={todayViewEnabled}
+        disabled={preferencesSaving}
+        aria-labelledby="today-view-label"
+        onchange={handlePreferenceChange}
+      />
     </div>
     {#if preferencesError}<p class="text-sm text-red-600">{preferencesError}</p>{/if}
     {#if preferencesSaved}<p class="text-sm text-green-600">Preferences saved.</p>{/if}

@@ -9,4 +9,8 @@ Today is an optional virtual list shown above user-created list groups. It conta
 - The overview count includes unfinished qualifying items only.
 - Today data refreshes on load, visibility regain, and successful local mutations. It does not open cross-list SSE subscriptions.
 
-Account settings provide the shared timezone picker and a Today enable/disable control. An account timezone is initialized once from the browser, with `UTC` as the fallback; later explicit choices are preserved.
+Account Settings provide the shared timezone picker and a shared `Toggle` row labeled `Today View`.
+Both values save immediately, disable together while persistence is pending, refresh Today after
+success, and roll back to the last persisted values after failure. The timezone explanation notes
+that the selected zone determines which calendar date is considered today. An account timezone is
+initialized once from the browser, with `UTC` as the fallback; later explicit choices are preserved.

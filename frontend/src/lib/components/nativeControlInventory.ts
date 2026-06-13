@@ -16,7 +16,8 @@ export const primitiveExclusions = [
 	'lib/components/Select.svelte',
 	'lib/components/StarToggle.svelte',
 	'lib/components/Textarea.svelte',
-	'lib/components/TextInput.svelte'
+	'lib/components/TextInput.svelte',
+	'lib/components/Toggle.svelte'
 ] as const;
 
 export const showcaseExclusions = ['routes/components/+page.svelte'] as const;

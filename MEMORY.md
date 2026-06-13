@@ -99,3 +99,17 @@
 - The Today frontend uses a dedicated per-user local-storage key, groups enriched results by source list/category, applies each source list's capability role, and refreshes items/count on load, visibility regain, mutations, and timezone changes without cross-list SSE.
 - Friendly labels are derived without changing values, for example `Europe/Berlin` displays as `Berlin (Europe)`.
 - The development component showcase documents binding and API usage; verification passes all 421 frontend tests and clean `svelte-check`.
+
+## Account Settings toggle
+
+- `/account` keeps the `Account` page and navigation label while the timezone/Today preference
+  section is named `Settings`.
+- `Toggle.svelte` is the shared native button switch with bindable checked and element state,
+  `role="switch"`, `aria-checked`, accessible naming, callback support, forwarded button
+  attributes, and component-owned iOS-style presentation.
+- Timezone and `Today View` changes save both current values immediately. Both controls are disabled
+  during persistence; success refreshes Today, and failure restores the last server-confirmed values.
+- `StarToggle` uses `focus-visible` rings so pointer activation does not leave a border while
+  keyboard focus remains visible.
+- Today E2E navigation uses exact route-aware locators so the virtual Today link remains distinct
+  from user lists such as `Today Source`.
