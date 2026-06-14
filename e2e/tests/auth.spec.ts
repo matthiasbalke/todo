@@ -9,6 +9,9 @@
  *
  * Prerequisites: backend running on http://localhost:8080
  * (proxied to /api by the Vite dev server on port 5173).
+ *
+ * The startup-recovery tests at the end of this file stub API responses in the
+ * page context so they can run against the static frontend alone.
  */
 
 import { test, expect } from '@playwright/test';
@@ -33,6 +36,103 @@ async function addVirtualAuthenticator(cdp: CDPSession): Promise<void> {
 
 async function waitForHydration(page: Page): Promise<void> {
 	await page.waitForSelector('body[data-hydrated="true"]');
+}
+
+function authSessionResponse() {
+	return {
+		accessToken: 'header.payload.signature',
+		user: { id: 'u1', email: 'user@example.com', displayName: 'User' },
+	};
+}
+
+async function installStartupRecoveryFixtures(page: Page, options: {
+	refreshResponses: Array<{ status: number; body: unknown }>;
+	healthResponses: Array<{ status: number; body?: unknown }>;
+}) {
+	let refreshCalls = 0;
+	let healthCalls = 0;
+
+	await page.route('**/api/auth/refresh', async (route) => {
+		const response = options.refreshResponses[Math.min(refreshCalls, options.refreshResponses.length - 1)];
+		refreshCalls += 1;
+		await route.fulfill({
+			status: response.status,
+			contentType: 'application/json',
+			body: JSON.stringify(response.body),
+		});
+	});
+
+	await page.route('**/actuator/health', async (route) => {
+		const response = options.healthResponses[Math.min(healthCalls, options.healthResponses.length - 1)];
+		healthCalls += 1;
+		await route.fulfill({
+			status: response.status,
+			contentType: 'application/json',
+			body: JSON.stringify(response.body ?? { status: 'DOWN' }),
+		});
+	});
+
+	await page.route('**/api/auth/config', async (route) => {
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({ registrationEnabled: true }),
+		});
+	});
+
+	await page.route('**/api/users/me', async (route) => {
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({
+				id: 'u1',
+				email: 'user@example.com',
+				displayName: 'User',
+				timeZone: 'UTC',
+				timeZoneInitialized: true,
+				todayViewEnabled: true,
+			}),
+		});
+	});
+
+	await page.route('**/api/lists', async (route) => {
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify([]),
+		});
+	});
+
+	await page.route('**/api/list-groups', async (route) => {
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify([]),
+		});
+	});
+
+	await page.route('**/api/users/me/preferences', async (route) => {
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({
+				id: 'u1',
+				email: 'user@example.com',
+				displayName: 'User',
+				timeZone: 'UTC',
+				timeZoneInitialized: true,
+				todayViewEnabled: true,
+			}),
+		});
+	});
+
+	await page.route('**/api/today/count', async (route) => {
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({ count: 0 }),
+		});
+	});
 }
 
 let emailCounter = 0;
@@ -240,5 +340,50 @@ test.describe('Session management', () => {
 		await page.goto('/lists');
 		await page.waitForURL('**/auth');
 		await expect(page).toHaveURL(/\/auth/);
+	});
+});
+
+test.describe('Startup recovery', () => {
+	test('valid refresh session launched while backend is unavailable eventually reaches /lists', async ({
+		page,
+	}) => {
+		await installStartupRecoveryFixtures(page, {
+			refreshResponses: [
+				{ status: 503, body: { message: 'Service Unavailable' } },
+				{ status: 200, body: authSessionResponse() },
+			],
+			healthResponses: [
+				{ status: 503 },
+				{ status: 503 },
+				{ status: 200, body: { status: 'UP' } },
+			],
+		});
+
+		await page.goto('/');
+		await waitForHydration(page);
+		await expect(page.getByText(/Application is starting/i)).toBeVisible();
+		await page.waitForURL('**/lists');
+		await expect(page).toHaveURL(/\/lists$/);
+		await expect(page.getByRole('button', { name: /Sign in with Passkey/ })).toHaveCount(0);
+	});
+
+	test('unauthenticated startup recovery reaches /auth', async ({ page }) => {
+		await installStartupRecoveryFixtures(page, {
+			refreshResponses: [
+				{ status: 503, body: { message: 'Service Unavailable' } },
+				{ status: 401, body: { message: 'Unauthorized' } },
+			],
+			healthResponses: [
+				{ status: 503 },
+				{ status: 200, body: { status: 'UP' } },
+			],
+		});
+
+		await page.goto('/');
+		await waitForHydration(page);
+		await expect(page.getByText(/Application is starting/i)).toBeVisible();
+		await page.waitForURL('**/auth');
+		await expect(page).toHaveURL(/\/auth$/);
+		await expect(page.getByRole('button', { name: /Sign in with Passkey/ })).toBeVisible();
 	});
 });

@@ -116,12 +116,13 @@
 
 ## Authentication-aware frontend routing
 
-- `/` and `/auth` use client-only load guards that await `restoreSession(fetch)` before deciding whether to redirect.
-- `/` sends authenticated users to `/lists` and unauthenticated users to `/auth`; `/auth` sends authenticated users to `/lists`.
-- The `(app)` layout remains the shared protected-route guard and does not load protected data until session restoration succeeds.
-- The PWA manifest is defined in `frontend/src/lib/pwaManifest.ts` and launches at `/`, removing the `/lists` workaround introduced by #90.
-- Route-load unit coverage verifies authenticated, unauthenticated, failed-restoration, and protected-data ordering behavior.
-- Verification completed with 454 frontend tests, clean `svelte-check`, a successful production build, and all 11 authentication Playwright tests passing against the HTTPS deployment.
+- `/` is the neutral startup surface: it attempts session restoration, shows the startup indicator only when the backend is unavailable, and re-runs routing after health recovers.
+- `/auth` now assumes backend availability; it redirects authenticated users to `/lists` and otherwise renders the sign-in UI.
+- The `(app)` layout remains the shared protected-route guard and routes backend-unavailable restoration back through `/`.
+- The PWA manifest is defined in `frontend/src/lib/pwaManifest.ts` and launches at `/`, so installed app startup is session-aware.
+- Route-load and startup-surface unit coverage verifies authenticated, unauthenticated, backend-unavailable, and protected-data ordering behavior.
+- Auth-focused Playwright coverage now passes against the full stack, including backend-unavailable startup recovery to `/lists` and `/auth`.
+- Verification completed with frontend unit tests, clean `svelte-check`, a successful production build, and passing auth-focused Playwright coverage.
 
 ## Per-computer local HTTPS domain
 

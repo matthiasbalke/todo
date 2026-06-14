@@ -1,11 +1,14 @@
 import { redirect } from '@sveltejs/kit';
-import { isAuthenticated, restoreSession } from '$lib/stores/auth.svelte';
+import { restoreSession } from '$lib/stores/auth.svelte';
 
 export const ssr = false;
 
 export async function load({ fetch }) {
-	await restoreSession(fetch);
-	if (isAuthenticated()) {
+	const sessionState = await restoreSession(fetch);
+	if (sessionState === 'backend-unavailable') {
+		throw redirect(307, '/');
+	}
+	if (sessionState === 'authenticated') {
 		throw redirect(307, '/lists');
 	}
 }

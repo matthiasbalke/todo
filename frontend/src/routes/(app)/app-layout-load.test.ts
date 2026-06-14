@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const authState = vi.hoisted(() => ({
-	authenticated: false,
 	events: [] as string[],
 }));
 
@@ -9,7 +8,6 @@ vi.mock('$lib/stores/auth.svelte', () => ({
 	restoreSession: vi.fn(async () => {
 		authState.events.push('restore');
 	}),
-	isAuthenticated: vi.fn(() => authState.authenticated),
 }));
 vi.mock('$lib/stores/lists.svelte', () => ({
 	loadLists: vi.fn(async () => {
@@ -37,12 +35,9 @@ const fetchFn = vi.fn() as unknown as typeof fetch;
 
 describe('protected app layout load guard', () => {
 	beforeEach(() => {
-		authState.authenticated = false;
 		authState.events = [];
 		vi.clearAllMocks();
-		vi.mocked(restoreSession).mockImplementation(async () => {
-			authState.events.push('restore');
-		});
+		vi.mocked(restoreSession).mockResolvedValue('unauthenticated');
 	});
 
 	it('runs only in the browser', () => {
@@ -52,7 +47,7 @@ describe('protected app layout load guard', () => {
 	it('restores an existing session before loading protected data', async () => {
 		vi.mocked(restoreSession).mockImplementation(async () => {
 			authState.events.push('restore');
-			authState.authenticated = true;
+			return 'authenticated';
 		});
 
 		await expect(load({ fetch: fetchFn } as never)).resolves.toBeUndefined();
@@ -75,5 +70,14 @@ describe('protected app layout load guard', () => {
 		expect(loadLists).not.toHaveBeenCalled();
 		expect(loadPreferences).not.toHaveBeenCalled();
 		expect(loadTodayCount).not.toHaveBeenCalled();
+	});
+
+	it('routes backend-unavailable startup through /', async () => {
+		vi.mocked(restoreSession).mockResolvedValue('backend-unavailable');
+
+		await expect(load({ fetch: fetchFn } as never)).rejects.toMatchObject({
+			status: 307,
+			location: '/',
+		});
 	});
 });

@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Mock SvelteKit navigation
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
@@ -8,7 +8,6 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/stores/auth.svelte', () => ({
 	setSession: vi.fn(),
 	clearSession: vi.fn(),
-	restoreSession: vi.fn(),
 	isAuthenticated: vi.fn(() => false),
 	getCurrentUser: vi.fn(() => null),
 	getAccessToken: vi.fn(() => null),
@@ -26,41 +25,25 @@ vi.mock('$lib/api/auth', () => ({
 	},
 }));
 
-// Mock the health API — backend is healthy by default
-vi.mock('$lib/api/health', () => ({
-	checkHealth: vi.fn().mockResolvedValue(true),
-}));
-
 import { goto } from '$app/navigation';
 import * as authApi from '$lib/api/auth';
 import { setSession } from '$lib/stores/auth.svelte';
 import AuthPage from './+page.svelte';
 
-async function waitForIdle() {
-	await vi.advanceTimersByTimeAsync(0);
-}
-
 describe('AuthPage', () => {
-	beforeEach(() => {
-		vi.useFakeTimers();
-	});
-
 	afterEach(() => {
-		vi.useRealTimers();
 		cleanup();
 		vi.clearAllMocks();
 	});
 
 	it('renders Sign in with Passkey and Create account buttons', async () => {
 		render(AuthPage);
-		await waitForIdle();
 		expect(screen.getByRole('button', { name: /sign in with passkey/i })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
 	});
 
 	it('uses primary styling for passkey sign-in and registration actions', async () => {
 		render(AuthPage);
-		await waitForIdle();
 
 		const signInButton = screen.getByRole('button', { name: /sign in with passkey/i });
 		expect(signInButton).toHaveClass('bg-blue-600', 'text-white', 'hover:bg-blue-700');
@@ -75,14 +58,12 @@ describe('AuthPage', () => {
 
 	it('does not show registration form by default', async () => {
 		render(AuthPage);
-		await waitForIdle();
 		expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
 		expect(screen.queryByLabelText(/display name/i)).not.toBeInTheDocument();
 	});
 
 	it('shows registration form when Create account is clicked', async () => {
 		render(AuthPage);
-		await waitForIdle();
 		await fireEvent.click(screen.getByRole('button', { name: /create account/i }));
 		expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
 		expect(screen.getByLabelText(/display name/i)).toBeInTheDocument();
@@ -93,7 +74,6 @@ describe('AuthPage', () => {
 		vi.mocked(authApi.loginWithPasskey).mockResolvedValue(mockResult);
 
 		render(AuthPage);
-		await waitForIdle();
 		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
 
 		await waitFor(() => {
@@ -107,7 +87,6 @@ describe('AuthPage', () => {
 		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
 
 		render(AuthPage);
-		await waitForIdle();
 		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
 
 		await waitFor(() => {
@@ -121,7 +100,6 @@ describe('AuthPage', () => {
 		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
 
 		render(AuthPage);
-		await waitForIdle();
 		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
 
 		await waitFor(() => {
@@ -135,7 +113,6 @@ describe('AuthPage', () => {
 		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
 
 		render(AuthPage);
-		await waitForIdle();
 		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
 
 		await waitFor(() => {
@@ -148,7 +125,6 @@ describe('AuthPage', () => {
 		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
 
 		render(AuthPage);
-		await waitForIdle();
 		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
 
 		await waitFor(() => {
@@ -162,7 +138,6 @@ describe('AuthPage', () => {
 		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
 
 		render(AuthPage);
-		await waitForIdle();
 		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
 
 		await waitFor(() => {
@@ -176,7 +151,6 @@ describe('AuthPage', () => {
 		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
 
 		render(AuthPage);
-		await waitForIdle();
 		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
 
 		await waitFor(() => {
@@ -191,7 +165,6 @@ describe('AuthPage', () => {
 		vi.mocked(authApi.registerWithPasskey).mockResolvedValue(mockResult);
 
 		render(AuthPage);
-		await waitForIdle();
 		await fireEvent.click(screen.getByRole('button', { name: /create account/i }));
 
 		await fireEvent.input(screen.getByLabelText(/display name/i), {
