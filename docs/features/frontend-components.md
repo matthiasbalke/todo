@@ -11,6 +11,8 @@ A small, consistent component library for the SvelteKit frontend that standardiz
 - Location: place components under frontend/src/lib/components to match project structure and make imports predictable.
 - Styling: prefer Tailwind utility classes and Svelte component-scoped styles; avoid inline CSS to keep templates declarative and testable.
 - API consistency: components expose predictable props/events (value, on:input/on:change, disabled, class overrides) and support slot-based composition where appropriate.
+- Boolean settings: use the shared `Toggle` with switch semantics, an accessible name, bindable
+  checked state, and component-owned iOS-style presentation.
 
 ## Security considerations
 

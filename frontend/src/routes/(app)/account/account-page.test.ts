@@ -11,6 +11,7 @@ vi.mock('$lib/stores/auth.svelte', () => ({
 
 vi.mock('$lib/api/users', () => ({
 	updateMe: vi.fn(),
+	updatePreferences: vi.fn(),
 	getPasskeys: vi.fn().mockResolvedValue([]),
 	getAddPasskeyOptions: vi.fn(),
 	submitAddPasskey: vi.fn(),
@@ -44,13 +45,25 @@ vi.mock('$lib/api/client', () => ({
 	},
 }));
 
+vi.mock('$lib/stores/preferences.svelte', () => ({
+	setProfile: vi.fn(),
+}));
+
+vi.mock('$lib/stores/today.svelte', () => ({
+	refreshToday: vi.fn().mockResolvedValue(undefined),
+}));
+
 import AccountPage from './+page.svelte';
-import { updateMe } from '$lib/api/users';
+import { updateMe, updatePreferences } from '$lib/api/users';
+import { refreshToday } from '$lib/stores/today.svelte';
 
 const mockProfile = {
 	id: 'user-1',
 	displayName: 'Test User',
 	email: 'test@example.com',
+	timeZone: 'UTC',
+	timeZoneInitialized: true,
+	todayViewEnabled: true,
 };
 
 const mockData = {
@@ -107,5 +120,107 @@ describe('AccountPage email inline-edit', () => {
 		await fireEvent.focusOut(input, { relatedTarget: null });
 
 		expect(screen.getByRole('textbox')).toBeInTheDocument();
+	});
+});
+
+describe('AccountPage settings', () => {
+	afterEach(() => {
+		cleanup();
+		vi.clearAllMocks();
+	});
+
+	it('keeps the Account heading and presents the account settings', () => {
+		render(AccountPage, { props: { data: mockData } });
+
+		expect(screen.getByRole('heading', { name: 'Account' })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+		expect(
+			screen.queryByText(/timezone determines which calendar date is considered today/i)
+		).not.toBeInTheDocument();
+		expect(screen.getByText('Show Today View')).toBeInTheDocument();
+		expect(screen.getByRole('switch', { name: 'Show Today View' })).toHaveAttribute(
+			'aria-checked',
+			'true'
+		);
+		expect(screen.queryByText(/Today view: Enabled|Today view: Disabled/)).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Save Today preferences' })).not.toBeInTheDocument();
+	});
+
+	it('saves a Today View change immediately and refreshes Today on success', async () => {
+		vi.mocked(updatePreferences).mockResolvedValueOnce({
+			...mockProfile,
+			todayViewEnabled: false,
+		});
+		render(AccountPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('switch', { name: 'Show Today View' }));
+
+		expect(updatePreferences).toHaveBeenCalledWith({
+			timeZone: 'UTC',
+			todayViewEnabled: false,
+		});
+		expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
+		expect(refreshToday).toHaveBeenCalledOnce();
+		expect(screen.getByRole('switch', { name: 'Show Today View' })).toHaveAttribute(
+			'aria-checked',
+			'false'
+		);
+	});
+
+	it('saves timezone changes immediately with both current values', async () => {
+		vi.mocked(updatePreferences).mockResolvedValueOnce({
+			...mockProfile,
+			timeZone: 'Europe/Berlin',
+		});
+		render(AccountPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Timezone' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'Berlin (Europe)' }));
+
+		expect(updatePreferences).toHaveBeenCalledWith({
+			timeZone: 'Europe/Berlin',
+			todayViewEnabled: true,
+		});
+		expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
+	});
+
+	it('disables both controls and clears prior feedback while a new save is pending', async () => {
+		vi.mocked(updatePreferences).mockResolvedValueOnce({
+			...mockProfile,
+			todayViewEnabled: false,
+		});
+		render(AccountPage, { props: { data: mockData } });
+		const toggle = screen.getByRole('switch', { name: 'Show Today View' });
+
+		await fireEvent.click(toggle);
+		expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
+
+		let resolveSave!: (value: typeof mockProfile) => void;
+		vi.mocked(updatePreferences).mockImplementationOnce(
+			() => new Promise((resolve) => { resolveSave = resolve; })
+		);
+		await fireEvent.click(toggle);
+
+		expect(screen.queryByText('Preferences saved.')).not.toBeInTheDocument();
+		expect(toggle).toBeDisabled();
+		expect(screen.getByRole('button', { name: 'Timezone' })).toBeDisabled();
+
+		resolveSave(mockProfile);
+		expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
+	});
+
+	it('rolls both controls back to the last persisted values after failure', async () => {
+		vi.mocked(updatePreferences).mockRejectedValueOnce(new Error('Save failed'));
+		render(AccountPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('switch', { name: 'Show Today View' }));
+
+		expect(await screen.findByText('Error: Save failed')).toBeInTheDocument();
+		expect(screen.queryByText('Preferences saved.')).not.toBeInTheDocument();
+		expect(screen.getByRole('switch', { name: 'Show Today View' })).toHaveAttribute(
+			'aria-checked',
+			'true'
+		);
+		expect(screen.getByRole('button', { name: 'Timezone' })).toHaveTextContent('UTC');
 	});
 });

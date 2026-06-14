@@ -10,6 +10,43 @@ A small, reusable component library for SvelteKit UI primitives. Components foll
 
 ## Base Components
 
+### Toggle
+
+Toggle is a native button switch for persistent boolean settings. It owns the rounded track,
+movable thumb, on/off colors, transition, keyboard-visible focus ring, and disabled presentation.
+
+- `checked` (boolean, bindable, default: `false`): current switch state
+- `disabled` (boolean, default: `false`): prevent pointer and keyboard activation
+- `ariaLabel` (string, optional): accessible name when `aria-labelledby` is not supplied
+- `onchange` (`(checked: boolean) => void`, optional): receives the updated value
+- `id` (string, optional): native button ID
+- `class` (string, optional): parent-layout utilities only
+- `element` (`HTMLButtonElement | null`, bindable): native element access
+- Other native button attributes and handlers are forwarded.
+
+Consumers must provide an accessible name with `ariaLabel` or `aria-labelledby`. Use Toggle for
+persistent settings such as notification or view preferences; keep action buttons and
+domain-specific completion/star controls on their dedicated components.
+
+```svelte
+<script lang="ts">
+  import Toggle from '$lib/components/Toggle.svelte';
+
+  let enabled = false;
+</script>
+
+<div class="flex items-center justify-between">
+  <span id="notifications-label">Notifications</span>
+  <Toggle
+    bind:checked={enabled}
+    aria-labelledby="notifications-label"
+    onchange={(checked) => console.log(checked)}
+  />
+</div>
+
+<Toggle checked disabled ariaLabel="Locked setting" />
+```
+
 ### Button
 
 A native button wrapper with semantic tone and appearance, consistent focus treatment, disabled behavior, and loading feedback.
@@ -125,6 +162,25 @@ Select renders a semantic Button trigger and listbox options with unique IDs, ke
 The trigger and listbox share a trigger-local positioning wrapper. An open listbox is placed directly below the trigger at the same width, including inside transformed dialogs such as MembersDialog. Consumers must not provide positioning offsets or listbox visual styles.
 
 Select currently does not perform viewport collision detection, upward opening, or edge shifting. Those behaviors require a separate popover positioning capability if a future overflow-constrained consumer needs them.
+
+### TimezonePicker
+
+TimezonePicker composes `Select` for IANA timezone selection. It always includes `UTC`, uses
+`Intl.supportedValuesOf('timeZone')` when available, and retains valid selected and
+browser-detected values when full enumeration is unavailable.
+
+- `selected` (`string | null`, bindable, default: `null`): exact IANA identifier
+- `label` (string, default: `'Timezone'`): visible Select label
+- `placeholder` (string, default: `'Select a timezone'`): null-selection text
+- `disabled` (boolean, default: false): disable selection
+- `onSelect` (`(value: string) => void`, optional): receives the exact selected identifier
+
+```svelte
+<TimezonePicker bind:selected={timeZone} label="Account timezone" />
+```
+
+Visible labels are derived from identifiers, such as `Berlin (Europe)`, while bound and callback
+values remain unchanged, such as `Europe/Berlin`.
 
 ## Specialized Interaction Controls
 

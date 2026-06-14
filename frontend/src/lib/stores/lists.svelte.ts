@@ -63,6 +63,7 @@ export async function loadLists(fetchFn: typeof fetch = fetch): Promise<void> {
       createdAt: dto.createdAt,
       groupId: dto.groupId,
       sortOrderInGroup: dto.sortOrderInGroup,
+      role: dto.role,
     }));
     listGroups = groupDtos.map(dto => ({
       id: dto.id,
@@ -88,6 +89,7 @@ export async function createList(req: CreateListRequest): Promise<List> {
     createdAt: dto.createdAt,
     groupId: null,
     sortOrderInGroup: 0,
+    role: dto.role,
   };
   lists.push(list);
   return list;
@@ -147,6 +149,7 @@ export async function updateList(id: string, req: UpdateListRequest): Promise<Li
     createdAt: dto.createdAt,
     groupId: existing?.groupId ?? null,
     sortOrderInGroup: existing?.sortOrderInGroup ?? 0,
+    role: dto.role ?? existing?.role ?? 'OWNER',
   };
   const idx = lists.findIndex(l => l.id === id);
   if (idx >= 0) lists[idx] = list;

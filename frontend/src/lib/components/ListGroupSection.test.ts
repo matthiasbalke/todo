@@ -42,6 +42,7 @@ const lists: List[] = [
     createdAt: '2024-01-01T00:00:00Z',
     groupId: 'group-home',
     sortOrderInGroup: 0,
+    role: 'OWNER',
   },
   {
     id: 'household',
@@ -53,6 +54,7 @@ const lists: List[] = [
     createdAt: '2024-01-01T00:00:00Z',
     groupId: 'group-home',
     sortOrderInGroup: 1,
+    role: 'OWNER',
   },
 ];
 
@@ -61,6 +63,14 @@ describe('ListGroupSection', () => {
     const { container } = render(ListGroupSection, { props: { group, lists } });
     const handles = container.querySelectorAll('[aria-label="Drag to reorder"]');
     expect(handles.length).toBe(lists.length);
+  });
+
+  it('keeps personal list ordering available for viewer-role lists', () => {
+    const viewerLists = lists.map((list) => ({ ...list, role: 'VIEWER' as const }));
+    const { container } = render(ListGroupSection, { props: { group, lists: viewerLists } });
+
+    expect(container.querySelectorAll('[aria-label="Drag to reorder"]')).toHaveLength(viewerLists.length);
+    expect(container.querySelector('a[href="/lists/grocery"]')).not.toBeNull();
   });
 
   it('long-press on list card anchor does not show browser link preview (contextmenu suppressed)', () => {
@@ -103,6 +113,7 @@ describe('ListGroupSection', () => {
         createdAt: '2024-01-01T00:00:00Z',
         groupId: null,
         sortOrderInGroup: 0,
+        role: 'OWNER',
       },
     ];
     const { getAllByText, getByText, getByRole } = render(ListGroupSection, { props: { group: null, lists: ungrouped } });

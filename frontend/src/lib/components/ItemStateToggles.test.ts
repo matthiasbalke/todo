@@ -49,6 +49,19 @@ describe('StarToggle', () => {
 		expect(screen.getByRole('button', { name: 'Unstar' })).toHaveClass('text-yellow-400');
 	});
 
+	it('shows focus treatment only for keyboard-visible focus', () => {
+		render(StarToggle, { props: { starred: false } });
+		const toggle = screen.getByRole('button', { name: 'Star' });
+
+		expect(toggle).toHaveClass(
+			'focus:outline-none',
+			'focus-visible:ring-2',
+			'focus-visible:ring-yellow-400',
+			'focus-visible:ring-offset-1'
+		);
+		expect(toggle).not.toHaveClass('focus:ring-2', 'focus:ring-yellow-400');
+	});
+
 	it('stops touch propagation and does not activate while disabled', async () => {
 		const onactivate = vi.fn();
 		const parentTouch = vi.fn();

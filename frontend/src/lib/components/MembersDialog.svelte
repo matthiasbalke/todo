@@ -14,7 +14,11 @@
   import EmailInput from './EmailInput.svelte';
   import Select from './Select.svelte';
 
-  let { listId, onclose }: { listId: string; onclose: () => void } = $props();
+  let { listId, canManageMembers, onclose }: {
+    listId: string;
+    canManageMembers: boolean;
+    onclose: () => void;
+  } = $props();
 
   let members = $state<MemberDto[]>([]);
   let loadError = $state<string | null>(null);
@@ -23,13 +27,7 @@
   let inviteEmail = $state('');
   let inviteRole = $state<ListRole>('EDITOR');
   let inviting = $state(false);
-
   const currentUser = getCurrentUser();
-
-  const myRole = $derived(
-    members.find(m => m.userId === currentUser?.id)?.role ?? null
-  );
-  const isOwner = $derived(myRole === 'OWNER');
 
   const roles: ListRole[] = ['OWNER', 'EDITOR', 'VIEWER'];
 
@@ -123,7 +121,7 @@
             <p class="text-sm font-medium text-gray-900 truncate">{member.displayName}</p>
             <p class="text-xs text-gray-500 truncate">{member.email}</p>
           </div>
-          {#if isOwner && member.userId !== currentUser?.id}
+          {#if canManageMembers && member.userId !== currentUser?.id}
             <Select
               options={roles}
               selected={member.role}
@@ -151,7 +149,7 @@
       <p class="text-sm text-red-600 mb-3">{actionError}</p>
     {/if}
 
-    {#if isOwner}
+    {#if canManageMembers}
       <form onsubmit={handleInvite} class="border-t border-gray-100 pt-4 space-y-3">
         <p class="text-sm font-medium text-gray-700">Invite member</p>
         <EmailInput

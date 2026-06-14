@@ -13,6 +13,7 @@
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
   import { friendlyError } from '$lib/api/errors';
   import Button from '$lib/components/Button.svelte';
+  import { getListCapabilities } from '$lib/listCapabilities';
 
   let { data }: { data: PageData } = $props();
 
@@ -28,6 +29,7 @@
 
   const list = $derived(getList(data.id));
   const categories = $derived(getCategoriesForList(data.id));
+  const capabilities = $derived(list ? getListCapabilities(list.role) : getListCapabilities('VIEWER'));
 
   $effect(() => { loadCategoriesForList(data.id); });
   $effect(() => { loadItemsForList(data.id); });
@@ -150,23 +152,29 @@
             >
               Standard mode
             </a>
-            <div class="border-t border-gray-100 mt-1 pt-1"></div>
-            <Button tone="neutral" appearance="bare"
-              size="menu"
-              align="start"
-              weight="normal"
-              onclick={() => { showEditForm = true; menuOpen = false; }}
-            >
-              Edit list
-            </Button>
-            <Button tone="neutral" appearance="bare"
-              size="menu"
-              align="start"
-              weight="normal"
-              onclick={() => { showCategoryDialog = true; menuOpen = false; }}
-            >
-              Configure categories
-            </Button>
+            {#if capabilities.canEditList || capabilities.canManageCategories}
+              <div class="border-t border-gray-100 mt-1 pt-1"></div>
+            {/if}
+            {#if capabilities.canEditList}
+              <Button tone="neutral" appearance="bare"
+                size="menu"
+                align="start"
+                weight="normal"
+                onclick={() => { showEditForm = true; menuOpen = false; }}
+              >
+                Edit list
+              </Button>
+            {/if}
+            {#if capabilities.canManageCategories}
+              <Button tone="neutral" appearance="bare"
+                size="menu"
+                align="start"
+                weight="normal"
+                onclick={() => { showCategoryDialog = true; menuOpen = false; }}
+              >
+                Configure categories
+              </Button>
+            {/if}
             <div class="border-t border-gray-100 mt-1 pt-1">
               <Button tone="neutral" appearance="bare"
                 size="menu"
@@ -268,12 +276,13 @@
         {category}
         {items}
         collapsed={collapsedSections.has(key ?? '__null__')}
+        editable={capabilities.canEditItems}
         ontoggle={() => toggleSection(key)}
       />
     {/each}
   </div>
 
-  {#if showCategoryDialog}
+  {#if showCategoryDialog && capabilities.canManageCategories}
     <CategoryConfigDialog {categories} listId={data.id} onclose={() => { showCategoryDialog = false; }} />
   {/if}
 </div>

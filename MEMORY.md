@@ -88,4 +88,28 @@
 ## Account E2E shared-component selectors
 
 - The account display-name E2E test locates `EditableLabel` by accessible role and current-value name in both display and edit modes.
+- `viewer-read-only-list-ui` adds the authenticated user's `ListRole` to list summary/detail responses and stores it on the frontend list model. UI policy is centralized in `frontend/src/lib/listCapabilities.ts`: owners can edit items/categories/list/members, editors can edit items/categories, and viewers receive read-only list, grocery, item-detail, and membership presentations while retaining local display controls, navigation, and personal list grouping.
 - Avoid selectors for the removed `Edit` text and generic input-type selectors; the shared component exposes a stable button/textbox accessibility contract.
+
+## TimezonePicker component
+
+- `TimezonePicker.svelte` composes shared `Select` and exposes a bindable exact IANA identifier, disabled state, label/placeholder configuration, and `onSelect`.
+- `timezonePicker.ts` builds options from `Intl.supportedValuesOf('timeZone')`, always includes `UTC`, and retains valid selected and browser-detected zones when enumeration is unavailable.
+- Today preferences persist `time_zone`, `time_zone_initialized`, and `today_view_enabled` on users. The frontend initializes timezone once from the browser (falling back to UTC), and `/api/today` qualifies assigned items with readable-list membership and `due_date <= LocalDate.now(userZone)`.
+- The Today frontend uses a dedicated per-user local-storage key, groups enriched results by source list/category, applies each source list's capability role, and refreshes items/count on load, visibility regain, mutations, and timezone changes without cross-list SSE.
+- Friendly labels are derived without changing values, for example `Europe/Berlin` displays as `Berlin (Europe)`.
+- The development component showcase documents binding and API usage; verification passes all 421 frontend tests and clean `svelte-check`.
+
+## Account Settings toggle
+
+- `/account` keeps the `Account` page and navigation label while the timezone/Today preference
+  section is named `Settings`.
+- `Toggle.svelte` is the shared native button switch with bindable checked and element state,
+  `role="switch"`, `aria-checked`, accessible naming, callback support, forwarded button
+  attributes, and component-owned iOS-style presentation.
+- Timezone and `Show Today View` changes save both current values immediately. Both controls are disabled
+  during persistence; success refreshes Today, and failure restores the last server-confirmed values.
+- `StarToggle` uses `focus-visible` rings so pointer activation does not leave a border while
+  keyboard focus remains visible.
+- Today E2E navigation uses exact route-aware locators so the virtual Today link remains distinct
+  from user lists such as `Today Source`.

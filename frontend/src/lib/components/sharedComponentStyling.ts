@@ -10,7 +10,8 @@ export const sharedControlNames = [
 	'StarToggle',
 	'SwipeDeleteAction',
 	'Textarea',
-	'TextInput'
+	'TextInput',
+	'Toggle'
 ] as const;
 
 export const legacyVisualProps = ['variant', 'triggerClass', 'inputClass', 'displayClass', 'labelClass'] as const;

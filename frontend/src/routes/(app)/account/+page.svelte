@@ -10,6 +10,7 @@
     deletePasskey,
     getDeletionPreview,
     deleteAccount,
+    updatePreferences,
     type PasskeyDto,
     type DeletionPreviewDto,
   } from '$lib/api/users';
@@ -19,11 +20,51 @@
   import Button from '$lib/components/Button.svelte';
   import EditableLabel from '$lib/components/EditableLabel.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
+  import TimezonePicker from '$lib/components/TimezonePicker.svelte';
+  import Toggle from '$lib/components/Toggle.svelte';
+  import { setProfile } from '$lib/stores/preferences.svelte';
+  import { refreshToday } from '$lib/stores/today.svelte';
 
   let { data }: { data: PageData } = $props();
 
   let profile = $state(untrack(() => ({ ...data.profile })));
   let passkeys = $state<PasskeyDto[]>(untrack(() => [...data.passkeys]));
+  let timeZone = $state(untrack(() => profile.timeZone));
+  let todayViewEnabled = $state(untrack(() => profile.todayViewEnabled));
+  let persistedTimeZone = $state(untrack(() => profile.timeZone));
+  let persistedTodayViewEnabled = $state(untrack(() => profile.todayViewEnabled));
+  let preferencesSaving = $state(false);
+  let preferencesError = $state('');
+  let preferencesSaved = $state(false);
+
+  async function saveFeaturePreferences() {
+    preferencesSaving = true;
+    preferencesError = '';
+    preferencesSaved = false;
+    try {
+      const updated = await updatePreferences({ timeZone, todayViewEnabled });
+      profile = updated;
+      timeZone = updated.timeZone;
+      todayViewEnabled = updated.todayViewEnabled;
+      persistedTimeZone = updated.timeZone;
+      persistedTodayViewEnabled = updated.todayViewEnabled;
+      setProfile(updated);
+      await refreshToday();
+      preferencesSaved = true;
+    } catch (e) {
+      timeZone = persistedTimeZone;
+      todayViewEnabled = persistedTodayViewEnabled;
+      preferencesError = friendlyError(e, 'Failed to save preferences');
+    } finally {
+      preferencesSaving = false;
+    }
+  }
+
+  function handlePreferenceChange() {
+    preferencesError = '';
+    preferencesSaved = false;
+    void saveFeaturePreferences();
+  }
 
   // ─── Display name ─────────────────────────────────────────────────────────
   let editingName = $state(false);
@@ -245,6 +286,28 @@
         <p class="mt-1 text-xs text-green-600">Email updated.</p>
       {/if}
     </div>
+  </section>
+
+  <section class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Settings</h2>
+    <div>
+      <TimezonePicker
+        bind:selected={timeZone}
+        disabled={preferencesSaving}
+        onSelect={handlePreferenceChange}
+      />
+    </div>
+    <div class="flex items-center justify-between gap-4">
+      <span id="today-view-label" class="text-sm font-medium text-gray-700">Show Today View</span>
+      <Toggle
+        bind:checked={todayViewEnabled}
+        disabled={preferencesSaving}
+        aria-labelledby="today-view-label"
+        onchange={handlePreferenceChange}
+      />
+    </div>
+    {#if preferencesError}<p class="text-sm text-red-600">{preferencesError}</p>{/if}
+    {#if preferencesSaved}<p class="text-sm text-green-600">Preferences saved.</p>{/if}
   </section>
 
   <!-- Security section -->

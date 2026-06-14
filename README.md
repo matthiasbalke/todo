@@ -6,10 +6,12 @@ A personal/household app for managing todos, grocery shopping, and recurring hou
 
 ## Features
 
+- **Today view** — review assigned due and overdue work across readable lists, grouped by source list/category with role-aware item actions and a timezone-based date boundary
+
 - **Grocery lists** — items organized by category (store/aisle), shared in real time, with a dedicated in-store view
 - **Todos** — due dates, priorities, assignments, notes, and photo attachments
 - **Recurring tasks** — chores that auto-regenerate on a configurable schedule when completed
-- **Shared lists** — invite household members by email with OWNER / EDITOR / VIEWER roles
+- **Shared lists** — invite household members by email with OWNER / EDITOR / VIEWER roles; viewers get a read-only list, grocery, item-detail, category, and membership UI
 - **PWA** — installable on iPhone, works offline, push notifications for due/assigned items
 
 ## Tech Stack
@@ -79,6 +81,9 @@ bun run test -- --run    # run unit tests
 
 **E2E tests**
 ```bash
+cd backend
+./gradlew bootrun
+
 cd e2e
 bun install
 bunx playwright test

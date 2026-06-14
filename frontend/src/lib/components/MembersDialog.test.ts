@@ -56,7 +56,9 @@ describe('MembersDialog Select positioning', () => {
 	});
 
 	async function renderOwnerDialog() {
-		render(MembersDialog, { props: { listId: 'list-1', onclose: vi.fn() } });
+		render(MembersDialog, {
+			props: { listId: 'list-1', canManageMembers: true, onclose: vi.fn() }
+		});
 		await screen.findByText('editor@example.com');
 		return screen.getAllByRole('button', { name: 'EDITOR' });
 	}
@@ -77,6 +79,18 @@ describe('MembersDialog Select positioning', () => {
 
 			await fireEvent.click(trigger);
 		}
+	});
+
+	it('shows membership without mutation controls when management is unavailable', async () => {
+		render(MembersDialog, {
+			props: { listId: 'list-1', canManageMembers: false, onclose: vi.fn() }
+		});
+
+		await screen.findByText('editor@example.com');
+		expect(screen.getByText('OWNER')).toBeInTheDocument();
+		expect(screen.getByText('EDITOR')).toBeInTheDocument();
+		expect(screen.queryByPlaceholderText('Email address')).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /Remove/ })).not.toBeInTheDocument();
 	});
 
 	it('preserves existing-member role changes', async () => {

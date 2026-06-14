@@ -1,6 +1,7 @@
 export type SortField = 'ALPHA' | 'DUE_DATE' | 'STARRED' | 'CREATED' | 'MANUAL';
 export type SortDirection = 'ASC' | 'DESC';
 export type IntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
+import type { ListRole } from '$lib/api/lists';
 
 export interface RecurrenceRule {
   intervalUnit: IntervalUnit;
@@ -24,6 +25,7 @@ export interface List {
   createdAt: string;
   groupId: string | null;
   sortOrderInGroup: number;
+  role: ListRole;
 }
 
 export interface ListGroup {
@@ -70,9 +72,9 @@ export const mockListGroups: ListGroup[] = [
 ];
 
 export const mockLists: List[] = [
-  { id: 'grocery', name: 'Grocery', emoji: '🛒', description: null, defaultSortField: 'MANUAL', defaultSortDirection: 'ASC', createdAt: '2024-01-01T00:00:00Z', groupId: 'group-home', sortOrderInGroup: 0 },
-  { id: 'household', name: 'Household', emoji: '🏠', description: null, defaultSortField: 'DUE_DATE', defaultSortDirection: 'ASC', createdAt: '2024-01-01T00:00:00Z', groupId: 'group-home', sortOrderInGroup: 1 },
-  { id: 'personal', name: 'Personal', emoji: '📋', description: null, defaultSortField: 'STARRED', defaultSortDirection: 'DESC', createdAt: '2024-01-01T00:00:00Z', groupId: null, sortOrderInGroup: 0 }
+  { id: 'grocery', name: 'Grocery', emoji: '🛒', description: null, defaultSortField: 'MANUAL', defaultSortDirection: 'ASC', createdAt: '2024-01-01T00:00:00Z', groupId: 'group-home', sortOrderInGroup: 0, role: 'OWNER' },
+  { id: 'household', name: 'Household', emoji: '🏠', description: null, defaultSortField: 'DUE_DATE', defaultSortDirection: 'ASC', createdAt: '2024-01-01T00:00:00Z', groupId: 'group-home', sortOrderInGroup: 1, role: 'OWNER' },
+  { id: 'personal', name: 'Personal', emoji: '📋', description: null, defaultSortField: 'STARRED', defaultSortDirection: 'DESC', createdAt: '2024-01-01T00:00:00Z', groupId: null, sortOrderInGroup: 0, role: 'OWNER' }
 ];
 
 export const mockCategories: Category[] = [
