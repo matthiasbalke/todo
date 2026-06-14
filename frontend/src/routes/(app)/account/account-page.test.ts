@@ -129,16 +129,16 @@ describe('AccountPage settings', () => {
 		vi.clearAllMocks();
 	});
 
-	it('keeps the Account heading and presents Settings guidance with Today View', () => {
+	it('keeps the Account heading and presents the account settings', () => {
 		render(AccountPage, { props: { data: mockData } });
 
 		expect(screen.getByRole('heading', { name: 'Account' })).toBeInTheDocument();
 		expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
 		expect(
-			screen.getByText(/timezone determines which calendar date is considered today/i)
-		).toBeInTheDocument();
-		expect(screen.getByText('Today View')).toBeInTheDocument();
-		expect(screen.getByRole('switch', { name: 'Today View' })).toHaveAttribute(
+			screen.queryByText(/timezone determines which calendar date is considered today/i)
+		).not.toBeInTheDocument();
+		expect(screen.getByText('Show Today View')).toBeInTheDocument();
+		expect(screen.getByRole('switch', { name: 'Show Today View' })).toHaveAttribute(
 			'aria-checked',
 			'true'
 		);
@@ -153,7 +153,7 @@ describe('AccountPage settings', () => {
 		});
 		render(AccountPage, { props: { data: mockData } });
 
-		await fireEvent.click(screen.getByRole('switch', { name: 'Today View' }));
+		await fireEvent.click(screen.getByRole('switch', { name: 'Show Today View' }));
 
 		expect(updatePreferences).toHaveBeenCalledWith({
 			timeZone: 'UTC',
@@ -161,7 +161,7 @@ describe('AccountPage settings', () => {
 		});
 		expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
 		expect(refreshToday).toHaveBeenCalledOnce();
-		expect(screen.getByRole('switch', { name: 'Today View' })).toHaveAttribute(
+		expect(screen.getByRole('switch', { name: 'Show Today View' })).toHaveAttribute(
 			'aria-checked',
 			'false'
 		);
@@ -190,7 +190,7 @@ describe('AccountPage settings', () => {
 			todayViewEnabled: false,
 		});
 		render(AccountPage, { props: { data: mockData } });
-		const toggle = screen.getByRole('switch', { name: 'Today View' });
+		const toggle = screen.getByRole('switch', { name: 'Show Today View' });
 
 		await fireEvent.click(toggle);
 		expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
@@ -204,9 +204,6 @@ describe('AccountPage settings', () => {
 		expect(screen.queryByText('Preferences saved.')).not.toBeInTheDocument();
 		expect(toggle).toBeDisabled();
 		expect(screen.getByRole('button', { name: 'Timezone' })).toBeDisabled();
-		expect(
-			screen.getByText(/timezone determines which calendar date is considered today/i)
-		).toBeVisible();
 
 		resolveSave(mockProfile);
 		expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
@@ -216,11 +213,11 @@ describe('AccountPage settings', () => {
 		vi.mocked(updatePreferences).mockRejectedValueOnce(new Error('Save failed'));
 		render(AccountPage, { props: { data: mockData } });
 
-		await fireEvent.click(screen.getByRole('switch', { name: 'Today View' }));
+		await fireEvent.click(screen.getByRole('switch', { name: 'Show Today View' }));
 
 		expect(await screen.findByText('Error: Save failed')).toBeInTheDocument();
 		expect(screen.queryByText('Preferences saved.')).not.toBeInTheDocument();
-		expect(screen.getByRole('switch', { name: 'Today View' })).toHaveAttribute(
+		expect(screen.getByRole('switch', { name: 'Show Today View' })).toHaveAttribute(
 			'aria-checked',
 			'true'
 		);

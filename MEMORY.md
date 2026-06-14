@@ -107,7 +107,7 @@
 - `Toggle.svelte` is the shared native button switch with bindable checked and element state,
   `role="switch"`, `aria-checked`, accessible naming, callback support, forwarded button
   attributes, and component-owned iOS-style presentation.
-- Timezone and `Today View` changes save both current values immediately. Both controls are disabled
+- Timezone and `Show Today View` changes save both current values immediately. Both controls are disabled
   during persistence; success refreshes Today, and failure restores the last server-confirmed values.
 - `StarToggle` uses `focus-visible` rings so pointer activation does not leave a border while
   keyboard focus remains visible.
