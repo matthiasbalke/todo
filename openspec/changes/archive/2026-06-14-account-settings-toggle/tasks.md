@@ -23,7 +23,7 @@
 
 - [x] 4.1 Add account-page tests for the Account page heading, Settings section heading, timezone explanation, Today View label, on/off state, immediate save payloads, disabled state, feedback clearing, success, and failure rollback
 - [x] 4.2 Update end-to-end account/Today preference coverage to use the shared toggle interaction and verify persistence
-- [ ] 4.3 Run frontend type checks, component/page tests, shared styling checks, and relevant end-to-end tests
+- [x] 4.3 Run frontend type checks, component/page tests, shared styling checks, and relevant end-to-end tests
 - [x] 4.4 Update project feature documentation and `MEMORY.md` with the shared Toggle and Settings presentation
 
 ## 5. Small Interaction Fixes
@@ -31,4 +31,4 @@
 - [x] 5.1 Change StarToggle focus styling so pointer activation does not display a border or ring while keyboard focus remains visibly indicated
 - [x] 5.2 Add or update StarToggle tests for pointer activation presentation and keyboard-visible focus
 - [x] 5.3 Replace broad `/Today/` locators in `e2e/tests/today.spec.ts` with exact, route-aware locators that distinguish the virtual Today link from lists such as `Today Source`
-- [ ] 5.4 Run the affected StarToggle tests and the `Today preferences, count, completion, and source navigation` Playwright test
+- [x] 5.4 Run the affected StarToggle tests and the `Today preferences, count, completion, and source navigation` Playwright test
