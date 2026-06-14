@@ -68,10 +68,16 @@ async function registerPasskey(
 // Tests
 // ---------------------------------------------------------------------------
 
-test.describe('/ redirects to /auth', () => {
+test.describe('Unauthenticated route guards', () => {
 	test('root redirects to auth page', async ({ page }) => {
 		await page.goto('/');
 		await waitForHydration(page);
+		await expect(page).toHaveURL(/\/auth$/);
+	});
+
+	test('protected route redirects to auth page', async ({ page }) => {
+		await page.goto('/lists');
+		await page.waitForURL('**/auth');
 		await expect(page).toHaveURL(/\/auth$/);
 	});
 });
@@ -189,6 +195,22 @@ test.describe('Passkey sign-in', () => {
 });
 
 test.describe('Session management', () => {
+	test('root redirects an authenticated user to /lists', async ({ page, context }) => {
+		await registerPasskey(page, context, 'Root Session User', uniqueEmail());
+
+		await page.goto('/');
+		await page.waitForURL('**/lists');
+		await expect(page).toHaveURL(/\/lists$/);
+	});
+
+	test('/auth redirects an authenticated user to /lists', async ({ page, context }) => {
+		await registerPasskey(page, context, 'Auth Route User', uniqueEmail());
+
+		await page.goto('/auth');
+		await page.waitForURL('**/lists');
+		await expect(page).toHaveURL(/\/lists$/);
+	});
+
 	test('session survives a full page reload via refresh token cookie', async ({
 		page,
 		context,
