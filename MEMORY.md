@@ -122,3 +122,11 @@
 - The PWA manifest is defined in `frontend/src/lib/pwaManifest.ts` and launches at `/`, removing the `/lists` workaround introduced by #90.
 - Route-load unit coverage verifies authenticated, unauthenticated, failed-restoration, and protected-data ordering behavior.
 - Verification completed with 454 frontend tests, clean `svelte-check`, a successful production build, and all 11 authentication Playwright tests passing against the HTTPS deployment.
+
+## Per-computer local HTTPS domain
+
+- The tracked `.local-domain.example` contains `todo.example.com`; developers copy it to the git-ignored repo-root `.local-domain` and set a hostname-only value.
+- `scripts/load-local-domain.sh` resolves the repo root, validates and exports `LOCAL_HTTPS_DOMAIN`, and provides the copy/edit recovery command when configuration is missing.
+- Frontend and backend HTTPS launchers source the shared loader from any working directory and now accept only an optional `[PORT]`, defaulting to `443`.
+- README agent E2E commands derive `BASE_URL` from `LOCAL_HTTPS_DOMAIN`; the detailed HTTPS guide documents setup and migration from `[DOMAIN] [PORT]`.
+- `scripts/tests/local-domain.test.sh` covers valid, trimmed, missing, empty, malformed, launcher environment, working-directory, port, legacy-argument, and fail-before-child behavior.

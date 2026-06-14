@@ -1,22 +1,35 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-DOMAIN=${1:-todo.example.com}
-PORT=${2:-443}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-ADDRESS=https://${DOMAIN}:${PORT}
+if (( $# > 1 )); then
+	echo "Usage: $0 [PORT]" >&2
+	exit 2
+fi
 
-echo Starting on "${ADDRESS}"
-echo ""
+source "${REPO_ROOT}/scripts/load-local-domain.sh"
 
-CORS_ALLOWED_ORIGINS="${ADDRESS}"
-export CORS_ALLOWED_ORIGINS
+PORT="${1:-443}"
+validate_local_https_port "${PORT}"
+ADDRESS="https://${LOCAL_HTTPS_DOMAIN}:${PORT}"
 
-WEBAUTHN_RP_ID="${DOMAIN}"
-export WEBAUTHN_RP_ID
+export CORS_ALLOWED_ORIGINS="${ADDRESS}"
+export WEBAUTHN_RP_ID="${LOCAL_HTTPS_DOMAIN}"
+
+echo "Starting on ${ADDRESS}"
+echo
+
+cd "${SCRIPT_DIR}"
 
 ./gradlew compileJava compileKotlin --continuous --parallel --build-cache --configuration-cache &
 CONTINUOUS_PID=$!
 
-trap 'kill $CONTINUOUS_PID 2>/dev/null; wait $CONTINUOUS_PID 2>/dev/null' EXIT
+cleanup() {
+	kill "${CONTINUOUS_PID}" 2>/dev/null || true
+	wait "${CONTINUOUS_PID}" 2>/dev/null || true
+}
+trap cleanup EXIT
 
 ./gradlew bootRun #--args='--debug'
