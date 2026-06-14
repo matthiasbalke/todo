@@ -50,5 +50,5 @@
 
 - [x] 7.1 Add frontend component/page tests for grouping, ordering, completed-item retention, preferences, empty/disabled states, mixed permissions, and count updates
 - [x] 7.2 Add end-to-end coverage for enabling/disabling Today, timezone selection, overview count, completing/reopening items, viewer-source items, and source-list navigation
-- [ ] 7.3 Run backend tests, frontend checks and tests, and the relevant end-to-end suite
+- [x] 7.3 Run backend tests, frontend checks and tests, and the relevant end-to-end suite
 - [x] 7.4 Document Today and timezone behavior in project feature documentation and update `MEMORY.md`
