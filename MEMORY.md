@@ -122,6 +122,11 @@
 - The PWA manifest is defined in `frontend/src/lib/pwaManifest.ts` and launches at `/`, removing the `/lists` workaround introduced by #90.
 - Route-load unit coverage verifies authenticated, unauthenticated, failed-restoration, and protected-data ordering behavior.
 - Verification completed with 454 frontend tests, clean `svelte-check`, a successful production build, and all 11 authentication Playwright tests passing against the HTTPS deployment.
+- A remaining startup race exists when `/auth` loads before the backend: the load guard's one-time
+  `restoreSession` catches the network failure, while the page's later health success only loads auth
+  configuration and shows login controls. Because the refresh cookie is HttpOnly, the fix is to preserve
+  an unavailable restoration outcome and retry restoration after backend health succeeds, not inspect
+  local storage. The `restore-auth-after-backend-startup` OpenSpec change defines this follow-up.
 
 ## Per-computer local HTTPS domain
 
