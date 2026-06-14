@@ -5,5 +5,7 @@ export const ssr = false;
 
 export async function load({ fetch }) {
 	await restoreSession(fetch);
-	throw redirect(307, isAuthenticated() ? '/lists' : '/auth');
+	if (isAuthenticated()) {
+		throw redirect(307, '/lists');
+	}
 }

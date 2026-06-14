@@ -89,6 +89,19 @@ bun install
 bunx playwright test
 ```
 
+For an agent running against the shared, already-started stack:
+
+```bash
+cd e2e
+bun install
+bunx playwright install chromium-headless-shell
+BASE_URL=https://todo-notebook.example.com bunx playwright test
+```
+
+Setting `BASE_URL` makes Playwright use that deployment instead of starting the local Vite
+development server. To run one spec, append its path, for example
+`BASE_URL=https://todo-notebook.example.com bunx playwright test tests/auth.spec.ts`.
+
 ## Architecture
 
 See [`docs/requirements.md`](docs/requirements.md) for the full requirements and architecture document, including data model, API shape, and feature specification.

@@ -113,3 +113,12 @@
   keyboard focus remains visible.
 - Today E2E navigation uses exact route-aware locators so the virtual Today link remains distinct
   from user lists such as `Today Source`.
+
+## Authentication-aware frontend routing
+
+- `/` and `/auth` use client-only load guards that await `restoreSession(fetch)` before deciding whether to redirect.
+- `/` sends authenticated users to `/lists` and unauthenticated users to `/auth`; `/auth` sends authenticated users to `/lists`.
+- The `(app)` layout remains the shared protected-route guard and does not load protected data until session restoration succeeds.
+- The PWA manifest is defined in `frontend/src/lib/pwaManifest.ts` and launches at `/`, removing the `/lists` workaround introduced by #90.
+- Route-load unit coverage verifies authenticated, unauthenticated, failed-restoration, and protected-data ordering behavior.
+- Verification completed with 454 frontend tests, clean `svelte-check`, a successful production build, and all 11 authentication Playwright tests passing against the HTTPS deployment.
