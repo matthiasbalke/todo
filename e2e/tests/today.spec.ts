@@ -41,7 +41,7 @@ test('Today preferences, count, completion, and source navigation', async ({ pag
 	await expect(page).toHaveURL(new RegExp(`/lists/${setup.listId}$`));
 
 	await page.goto('/account');
-	await page.getByRole('button', { name: /UTC/ }).click();
+	await page.getByRole('button', { name: 'Timezone' }).click();
 	await page.getByRole('option', { name: 'Berlin (Europe)' }).click();
 	await expect(page.getByText('Preferences saved.')).toBeVisible();
 	await page.getByRole('switch', { name: 'Show Today View' }).click();
