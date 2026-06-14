@@ -81,6 +81,9 @@ bun run test -- --run    # run unit tests
 
 **E2E tests**
 ```bash
+cd backend
+./gradlew bootrun
+
 cd e2e
 bun install
 bunx playwright test
