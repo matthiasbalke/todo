@@ -13,6 +13,6 @@ export default mergeConfig(baseConfig, {
 			cert: fs.readFileSync('../.certs/cert.pem'),
 		},
 		host: '0.0.0.0',   // listen on all interfaces so the iPhone can reach it
-		port: 443
+		port: 5173
 	},
 });

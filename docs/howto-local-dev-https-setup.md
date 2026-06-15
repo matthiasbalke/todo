@@ -89,11 +89,20 @@ Starts the Vite dev server with HTTPS and configures HMR (Hot Module Reloading) 
 **Parameters:**
 - `PORT` (optional, default: `443`) — the HTTPS port
 
+The script uses an existing TCP relay binary on the privileged port, such as `socat`.
+Install it with your package manager before launching:
+
+```bash
+sudo apt install socat
+# or
+brew install socat
+```
+
 **Examples:**
 
 ```bash
 # Use the configured domain with a non-standard port
-./frontend/start-https-frontend.sh 5173
+./frontend/start-https-frontend.sh 4443
 
 # Use the configured domain and default port 443
 ./frontend/start-https-frontend.sh
@@ -132,8 +141,8 @@ Starts the Spring Boot backend with HTTPS configuration and WebAuthn settings.
 
 > **Migration:** The scripts no longer accept a domain argument. Move the former domain value
 > into `.local-domain` and pass only the optional port. For example,
-> `./frontend/start-https-frontend.sh todo.example.com 443` becomes
-> `./frontend/start-https-frontend.sh 443`.
+> `./frontend/start-https-frontend.sh todo.example.com 4443` becomes
+> `./frontend/start-https-frontend.sh 4443`.
 
 ### Manual approach
 
@@ -144,11 +153,13 @@ cd frontend && bun run dev:https
 ```
 
 The package command uses Bun as the package runner but starts Vite with Node. The
-HTTPS launcher calls Node directly. Vite's HTTPS server uses `node:http2` with
-HTTP/1.1 fallback; running the Vite CLI under Bun can return `HTTP/1.0 403
-Forbidden` to HTTP/1.1 clients such as GNU Wget.
+HTTPS launcher also starts Vite with Node, then uses a privileged relay binary
+such as `socat` to expose port `443`. Vite's HTTPS server uses `node:http2`
+with HTTP/1.1 fallback; running the Vite CLI under Bun can return
+`HTTP/1.0 403 Forbidden` to HTTP/1.1 clients such as GNU Wget.
 
-The dev server will now be reachable at `https://<MY_IP>:5173`.
+The direct dev server will now be reachable at `https://<MY_IP>:5173`.
+The HTTPS launcher keeps Vite on `5173` and exposes it on `443` through the relay binary.
 
 #### HMR when accessing via a tunnel or reverse proxy
 
@@ -330,9 +341,9 @@ cp .local-domain.example .local-domain
 ./backend/start-https-backend.sh 5173
 
 # In another terminal, start the frontend
-./frontend/start-https-frontend.sh 5173
+./frontend/start-https-frontend.sh
 
-# On the iPhone, open Safari and navigate to https://192.168.1.42:5173
+# On the iPhone, open Safari and navigate to https://192.168.1.42
 ```
 
 **Manual approach:**
