@@ -1,61 +1,107 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
+  import type { PageData } from './$types';
   import { goto } from '$app/navigation';
   import { WebAuthnError } from '@simplewebauthn/browser';
   import { ApiError, getAuthConfig, loginWithPasskey, registerWithPasskey } from '$lib/api/auth';
   import { checkHealth } from '$lib/api/health';
-  import { setSession } from '$lib/stores/auth.svelte';
+  import { restoreSession, setSession, type RestoreSessionResult } from '$lib/stores/auth.svelte';
   import Button from '$lib/components/Button.svelte';
   import EmailInput from '$lib/components/EmailInput.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
 
   type Mode = 'starting' | 'idle' | 'register-form' | 'signing-in' | 'registering' | 'error' | 'startup-timeout';
 
+  let { data = { buildNumber: '0', restoreStatus: 'unauthenticated' } }: { data?: PageData } = $props();
   let mode = $state<Mode>('starting');
   let errorMessage = $state('');
   let email = $state('');
   let displayName = $state('');
   let passkeyLabel = $state('');
   let registrationEnabled = $state(true);
+  let startupRestoreStatus = $state<RestoreSessionResult>('unauthenticated');
+  $effect(() => {
+    startupRestoreStatus = data.restoreStatus;
+  });
 
   let pollInterval: ReturnType<typeof setInterval> | undefined;
+  let startupRetries = 0;
+  let startupAttemptInFlight = false;
+  let destroyed = false;
+
+  function clearPolling() {
+    if (pollInterval !== undefined) {
+      clearInterval(pollInterval);
+      pollInterval = undefined;
+    }
+  }
+
+  async function loadAuthConfig() {
+    try {
+      const config = await getAuthConfig();
+      registrationEnabled = config.registrationEnabled;
+    } catch {
+      // default to true if config fetch fails — backend will enforce the real value
+    }
+  }
+
+  async function completeStartup() {
+    clearPolling();
+    await loadAuthConfig();
+    if (!destroyed) mode = 'idle';
+  }
+
+  async function handleStartupTick() {
+    if (startupAttemptInFlight || destroyed || mode !== 'starting') return;
+    startupAttemptInFlight = true;
+    try {
+      const healthy = await checkHealth();
+      if (!healthy) {
+        startupRetries++;
+        if (startupRetries >= 60) {
+          clearPolling();
+          if (!destroyed) mode = 'startup-timeout';
+        }
+        return;
+      }
+
+      if (startupRestoreStatus === 'unavailable') {
+        startupRestoreStatus = await restoreSession();
+      }
+
+      if (startupRestoreStatus === 'authenticated') {
+        clearPolling();
+        if (!destroyed) await goto('/lists');
+        return;
+      }
+
+      if (startupRestoreStatus === 'unauthenticated') {
+        await completeStartup();
+        return;
+      }
+
+      startupRetries++;
+      if (startupRetries >= 60) {
+        clearPolling();
+        if (!destroyed) mode = 'startup-timeout';
+      }
+    } finally {
+      startupAttemptInFlight = false;
+    }
+  }
 
   onMount(async () => {
-    let retries = 0;
-    const maxRetries = 60;
-
-    async function tryConnect() {
-      const healthy = await checkHealth();
-      if (healthy) {
-        clearInterval(pollInterval);
-        pollInterval = undefined;
-        try {
-          const config = await getAuthConfig();
-          registrationEnabled = config.registrationEnabled;
-        } catch {
-          // default to true if config fetch fails — backend will enforce the real value
-        }
-        mode = 'idle';
-      } else {
-        retries++;
-        if (retries >= maxRetries) {
-          clearInterval(pollInterval);
-          pollInterval = undefined;
-          mode = 'startup-timeout';
-        }
-      }
-    }
-
-    await tryConnect();
+    await handleStartupTick();
     if (mode === 'starting') {
-      pollInterval = setInterval(tryConnect, 2000);
+      pollInterval = setInterval(() => {
+        void handleStartupTick();
+      }, 2000);
     }
   });
 
   onDestroy(() => {
-    if (pollInterval !== undefined) {
-      clearInterval(pollInterval);
-    }
+    destroyed = true;
+    clearPolling();
   });
 
   function passkeyErrorMessage(err: unknown): string {

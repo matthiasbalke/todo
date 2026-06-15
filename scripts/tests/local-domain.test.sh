@@ -4,6 +4,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TEST_ROOT="$(mktemp -d)"
 PASS_COUNT=0
+BASH_BIN="$(command -v bash)"
 
 cleanup() {
 	rm -rf "${TEST_ROOT}"
@@ -31,6 +32,15 @@ assert_equals() {
 	local actual="$1"
 	local expected="$2"
 	[[ "${actual}" == "${expected}" ]] || fail "expected '${expected}', got '${actual}'"
+}
+
+file_owner_uid() {
+	local path="$1"
+	if stat -c %u "${path}" >/dev/null 2>&1; then
+		stat -c %u "${path}"
+	else
+		stat -f %u "${path}"
+	fi
 }
 
 pass() {
@@ -62,13 +72,27 @@ write_frontend_stubs() {
 	local fixture="$1"
 	cat > "${fixture}/bin/bun" <<'EOF'
 #!/usr/bin/env bash
+mkdir -p .svelte-kit
+touch .svelte-kit/generated
+printf 'bun cwd=%s host=%s port=%s args=%s\n' "${PWD}" "${VITE_HMR_HOST}" "${VITE_HMR_CLIENT_PORT}" "$*" >> "${PWD}/bun.log"
 printf 'bun cwd=%s host=%s port=%s args=%s\n' "${PWD}" "${VITE_HMR_HOST}" "${VITE_HMR_CLIENT_PORT}" "$*"
+EOF
+	cat > "${fixture}/bin/socat" <<'EOF'
+#!/usr/bin/env bash
+trap 'printf "terminated\n" >> "${PWD}/socat.exit"; exit 0' INT TERM
+trap 'printf "exited\n" >> "${PWD}/socat.exit"' EXIT
+printf 'socat cwd=%s args=%s\n' "${PWD}" "$*" >> "${PWD}/socat.log"
+printf 'socat cwd=%s args=%s\n' "${PWD}" "$*"
+while true; do
+	sleep 1
+done
 EOF
 	cat > "${fixture}/bin/sudo" <<'EOF'
 #!/usr/bin/env bash
+printf '%s\n' "$*" >> "${PWD}/sudo.log"
 exec "$@"
 EOF
-	chmod +x "${fixture}/bin/bun" "${fixture}/bin/sudo"
+	chmod +x "${fixture}/bin/bun" "${fixture}/bin/socat" "${fixture}/bin/sudo"
 }
 
 write_backend_stub() {
@@ -150,14 +174,43 @@ test_frontend_script() {
 
 	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" "${fixture}/frontend/start-https-frontend.sh")"
 	assert_contains "${output}" "Starting on https://frontend.example.test:443"
-	assert_contains "${output}" "cwd=${fixture}/frontend"
-	assert_contains "${output}" "host=frontend.example.test"
-	assert_contains "${output}" "port=443"
-	assert_contains "${output}" "args=run dev:https"
+	assert_contains "$(cat "${fixture}/frontend/bun.log")" "cwd=${fixture}/frontend"
+	assert_contains "$(cat "${fixture}/frontend/bun.log")" "host=frontend.example.test"
+	assert_contains "$(cat "${fixture}/frontend/bun.log")" "port=443"
+	assert_contains "$(cat "${fixture}/frontend/bun.log")" "args=run dev:https"
+	assert_contains "$(cat "${fixture}/frontend/socat.log")" "socat cwd=${fixture}/frontend"
+	assert_contains "$(cat "${fixture}/frontend/socat.log")" "TCP-LISTEN:443,fork,reuseaddr TCP:127.0.0.1:5173"
+	assert_contains "$(cat "${fixture}/frontend/sudo.log")" "${fixture}/bin/socat TCP-LISTEN:443,fork,reuseaddr TCP:127.0.0.1:5173"
+	[[ -f "${fixture}/frontend/socat.exit" ]] || fail "relay binary should be shut down when the launcher exits"
+	[[ "$(file_owner_uid "${fixture}/frontend/.svelte-kit/generated")" == "$(id -u)" ]] || fail "generated frontend artifacts should be owned by the invoking user"
 
 	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" "${fixture}/frontend/start-https-frontend.sh" 4443)"
-	assert_contains "${output}" "port=4443"
+	assert_contains "$(cat "${fixture}/frontend/bun.log")" "port=4443"
 	pass "frontend script exports configured domain and ports"
+}
+
+test_frontend_missing_relay() {
+	local fixture output status
+	fixture="$(new_fixture)"
+	printf 'frontend.example.test\n' > "${fixture}/.local-domain"
+	cat > "${fixture}/bin/bun" <<'EOF'
+#!/usr/bin/env bash
+printf 'bun should not run\n'
+EOF
+	cat > "${fixture}/bin/sudo" <<'EOF'
+#!/usr/bin/env bash
+printf 'sudo should not run\n'
+exit 1
+EOF
+	chmod +x "${fixture}/bin/bun" "${fixture}/bin/sudo"
+
+	set +e
+	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" SOCAT_BIN=/nonexistent/socat "${BASH_BIN}" "${fixture}/frontend/start-https-frontend.sh" 2>&1)"
+	status=$?
+	set -e
+	[[ ${status} -ne 0 ]] || fail "frontend should fail when socat is missing"
+	assert_contains "${output}" "Missing required relay binary: socat"
+	pass "frontend launcher fails clearly when the relay binary is missing"
 }
 
 test_backend_script() {
@@ -268,6 +321,7 @@ test_invalid_domain "todo.example.com:443" "port-containing values"
 test_invalid_domain "todo.example.com/path" "path-containing values"
 test_invalid_domain "todo example.com" "internal whitespace"
 test_frontend_script
+test_frontend_missing_relay
 test_backend_script
 test_scripts_stop_before_children
 test_extra_arguments

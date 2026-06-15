@@ -8,6 +8,7 @@ const authState = vi.hoisted(() => ({
 vi.mock('$lib/stores/auth.svelte', () => ({
 	restoreSession: vi.fn(async () => {
 		authState.events.push('restore');
+		return 'unauthenticated';
 	}),
 	isAuthenticated: vi.fn(() => authState.authenticated),
 }));
@@ -42,6 +43,7 @@ describe('protected app layout load guard', () => {
 		vi.clearAllMocks();
 		vi.mocked(restoreSession).mockImplementation(async () => {
 			authState.events.push('restore');
+			return 'unauthenticated';
 		});
 	});
 
@@ -53,6 +55,7 @@ describe('protected app layout load guard', () => {
 		vi.mocked(restoreSession).mockImplementation(async () => {
 			authState.events.push('restore');
 			authState.authenticated = true;
+			return 'authenticated';
 		});
 
 		await expect(load({ fetch: fetchFn } as never)).resolves.toBeUndefined();

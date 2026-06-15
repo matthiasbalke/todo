@@ -89,21 +89,6 @@ bun install
 bunx playwright test
 ```
 
-For an agent running against the shared, already-started stack:
-
-```bash
-cp .local-domain.example .local-domain # first run only; edit the domain afterward
-source scripts/load-local-domain.sh
-cd e2e
-bun install
-bunx playwright install chromium-headless-shell
-BASE_URL="https://${LOCAL_HTTPS_DOMAIN}" bunx playwright test
-```
-
-Setting `BASE_URL` makes Playwright use that deployment instead of starting the local Vite
-development server. To run one spec, append its path, for example
-`BASE_URL="https://${LOCAL_HTTPS_DOMAIN}" bunx playwright test tests/auth.spec.ts`.
-
 ## Architecture
 
 See [`docs/requirements.md`](docs/requirements.md) for the full requirements and architecture document, including data model, API shape, and feature specification.
