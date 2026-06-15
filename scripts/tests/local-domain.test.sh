@@ -70,12 +70,12 @@ run_loader() {
 
 write_frontend_stubs() {
 	local fixture="$1"
-	cat > "${fixture}/bin/node" <<'EOF'
+	cat > "${fixture}/bin/bun" <<'EOF'
 #!/usr/bin/env bash
 mkdir -p .svelte-kit
 touch .svelte-kit/generated
-printf 'node cwd=%s host=%s port=%s args=%s\n' "${PWD}" "${VITE_HMR_HOST}" "${VITE_HMR_CLIENT_PORT}" "$*" >> "${PWD}/node.log"
-printf 'node cwd=%s host=%s port=%s args=%s\n' "${PWD}" "${VITE_HMR_HOST}" "${VITE_HMR_CLIENT_PORT}" "$*"
+printf 'bun cwd=%s host=%s port=%s args=%s\n' "${PWD}" "${VITE_HMR_HOST}" "${VITE_HMR_CLIENT_PORT}" "$*" >> "${PWD}/bun.log"
+printf 'bun cwd=%s host=%s port=%s args=%s\n' "${PWD}" "${VITE_HMR_HOST}" "${VITE_HMR_CLIENT_PORT}" "$*"
 EOF
 	cat > "${fixture}/bin/socat" <<'EOF'
 #!/usr/bin/env bash
@@ -92,7 +92,7 @@ EOF
 printf '%s\n' "$*" >> "${PWD}/sudo.log"
 exec "$@"
 EOF
-	chmod +x "${fixture}/bin/node" "${fixture}/bin/socat" "${fixture}/bin/sudo"
+	chmod +x "${fixture}/bin/bun" "${fixture}/bin/socat" "${fixture}/bin/sudo"
 }
 
 write_backend_stub() {
@@ -174,10 +174,10 @@ test_frontend_script() {
 
 	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" "${fixture}/frontend/start-https-frontend.sh")"
 	assert_contains "${output}" "Starting on https://frontend.example.test:443"
-	assert_contains "$(cat "${fixture}/frontend/node.log")" "cwd=${fixture}/frontend"
-	assert_contains "$(cat "${fixture}/frontend/node.log")" "host=frontend.example.test"
-	assert_contains "$(cat "${fixture}/frontend/node.log")" "port=443"
-	assert_contains "$(cat "${fixture}/frontend/node.log")" "args=./node_modules/vite/bin/vite.js dev --config vite.config.https.ts --port 5173 --strictPort"
+	assert_contains "$(cat "${fixture}/frontend/bun.log")" "cwd=${fixture}/frontend"
+	assert_contains "$(cat "${fixture}/frontend/bun.log")" "host=frontend.example.test"
+	assert_contains "$(cat "${fixture}/frontend/bun.log")" "port=443"
+	assert_contains "$(cat "${fixture}/frontend/bun.log")" "args=run dev:https"
 	assert_contains "$(cat "${fixture}/frontend/socat.log")" "socat cwd=${fixture}/frontend"
 	assert_contains "$(cat "${fixture}/frontend/socat.log")" "TCP-LISTEN:443,fork,reuseaddr TCP:127.0.0.1:5173"
 	assert_contains "$(cat "${fixture}/frontend/sudo.log")" "${fixture}/bin/socat TCP-LISTEN:443,fork,reuseaddr TCP:127.0.0.1:5173"
@@ -185,7 +185,7 @@ test_frontend_script() {
 	[[ "$(file_owner_uid "${fixture}/frontend/.svelte-kit/generated")" == "$(id -u)" ]] || fail "generated frontend artifacts should be owned by the invoking user"
 
 	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" "${fixture}/frontend/start-https-frontend.sh" 4443)"
-	assert_contains "$(cat "${fixture}/frontend/node.log")" "port=4443"
+	assert_contains "$(cat "${fixture}/frontend/bun.log")" "port=4443"
 	pass "frontend script exports configured domain and ports"
 }
 
@@ -193,16 +193,16 @@ test_frontend_missing_relay() {
 	local fixture output status
 	fixture="$(new_fixture)"
 	printf 'frontend.example.test\n' > "${fixture}/.local-domain"
-	cat > "${fixture}/bin/node" <<'EOF'
+	cat > "${fixture}/bin/bun" <<'EOF'
 #!/usr/bin/env bash
-printf 'node should not run\n'
+printf 'bun should not run\n'
 EOF
 	cat > "${fixture}/bin/sudo" <<'EOF'
 #!/usr/bin/env bash
 printf 'sudo should not run\n'
 exit 1
 EOF
-	chmod +x "${fixture}/bin/node" "${fixture}/bin/sudo"
+	chmod +x "${fixture}/bin/bun" "${fixture}/bin/sudo"
 
 	set +e
 	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" SOCAT_BIN=/nonexistent/socat "${BASH_BIN}" "${fixture}/frontend/start-https-frontend.sh" 2>&1)"

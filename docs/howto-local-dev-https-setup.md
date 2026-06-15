@@ -152,10 +152,9 @@ A dedicated Vite config (`frontend/vite.config.https.ts`) is already committed. 
 cd frontend && bun run dev:https
 ```
 
-The package command uses Bun as the package runner but starts Vite with Node. The
-HTTPS launcher also starts Vite with Node, then uses a privileged relay binary
+The HTTPS launcher starts Vite, then uses a privileged relay binary
 such as `socat` to expose port `443`. Vite's HTTPS server uses `node:http2`
-with HTTP/1.1 fallback; running the Vite CLI under Bun can return
+with HTTP/1.1 fallback; Bun versions before `1.3.14` can return
 `HTTP/1.0 403 Forbidden` to HTTP/1.1 clients such as GNU Wget.
 
 The direct dev server will now be reachable at `https://<MY_IP>:5173`.
@@ -384,6 +383,6 @@ The iPhone profile can stay installed — it only affects connections to your de
 | Certificate error on Mac too | Re-run `mkcert -install` after `brew install nss` |
 | IP changed after router reboot | Assign a static DHCP lease to your Mac, or regenerate the cert for the new IP |
 | `WebSocket connection to 'wss://…' failed` in console | Set `VITE_HMR_HOST` to the correct domain/IP using `start-https-frontend.sh` |
-| Wget receives `HTTP/1.0 403 Forbidden` from the HTTPS frontend | Ensure `bun run dev:https` uses the committed package script, which starts Vite with Node, and stop any older frontend process still listening on the port |
+| Wget receives `HTTP/1.0 403 Forbidden` from the HTTPS frontend | Upgrade Bun to `1.3.14` or newer, then restart `bun run dev:https`; also stop any older frontend process still listening on the port |
 | Backend not starting | Make sure `WEBAUTHN_RP_ID` and `CORS_ALLOWED_ORIGINS` match exactly |
 | Startup script reports a missing local domain file | Run `cp .local-domain.example .local-domain`, then edit `.local-domain` |

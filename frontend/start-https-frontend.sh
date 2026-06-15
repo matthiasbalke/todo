@@ -15,7 +15,6 @@ PORT="${1:-443}"
 validate_local_https_port "${PORT}"
 export VITE_HMR_HOST="${LOCAL_HTTPS_DOMAIN}"
 export VITE_HMR_CLIENT_PORT="${PORT}"
-NODE_BIN="$(command -v node)"
 SOCAT_BIN="${SOCAT_BIN:-$(command -v socat || true)}"
 
 if [[ -z "${SOCAT_BIN}" || ! -x "${SOCAT_BIN}" ]]; then
@@ -35,7 +34,7 @@ echo "Starting on https://${VITE_HMR_HOST}:${VITE_HMR_CLIENT_PORT}"
 echo
 
 cd "${SCRIPT_DIR}"
-"${NODE_BIN}" ./node_modules/vite/bin/vite.js dev --config vite.config.https.ts --port "${VITE_INTERNAL_PORT}" --strictPort &
+"$(command -v bun)" run dev:https &
 VITE_PID=$!
 
 sudo "${SOCAT_BIN}" "TCP-LISTEN:${PORT},fork,reuseaddr" "TCP:127.0.0.1:${VITE_INTERNAL_PORT}" &
