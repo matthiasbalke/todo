@@ -15,9 +15,11 @@ PORT="${1:-443}"
 validate_local_https_port "${PORT}"
 export VITE_HMR_HOST="${LOCAL_HTTPS_DOMAIN}"
 export VITE_HMR_CLIENT_PORT="${PORT}"
+NODE_BIN="$(command -v node)"
 
 echo "Starting on https://${VITE_HMR_HOST}:${VITE_HMR_CLIENT_PORT}"
 echo
 
 cd "${SCRIPT_DIR}"
-sudo "$(command -v bun)" run dev:https
+sudo --preserve-env=VITE_HMR_HOST,VITE_HMR_CLIENT_PORT \
+	"${NODE_BIN}" ./node_modules/vite/bin/vite.js dev --config vite.config.https.ts

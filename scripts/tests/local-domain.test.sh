@@ -60,15 +60,18 @@ run_loader() {
 
 write_frontend_stubs() {
 	local fixture="$1"
-	cat > "${fixture}/bin/bun" <<'EOF'
+	cat > "${fixture}/bin/node" <<'EOF'
 #!/usr/bin/env bash
-printf 'bun cwd=%s host=%s port=%s args=%s\n' "${PWD}" "${VITE_HMR_HOST}" "${VITE_HMR_CLIENT_PORT}" "$*"
+printf 'node cwd=%s host=%s port=%s args=%s\n' "${PWD}" "${VITE_HMR_HOST}" "${VITE_HMR_CLIENT_PORT}" "$*"
 EOF
 	cat > "${fixture}/bin/sudo" <<'EOF'
 #!/usr/bin/env bash
+if [[ "$1" == --preserve-env=* ]]; then
+	shift
+fi
 exec "$@"
 EOF
-	chmod +x "${fixture}/bin/bun" "${fixture}/bin/sudo"
+	chmod +x "${fixture}/bin/node" "${fixture}/bin/sudo"
 }
 
 write_backend_stub() {
@@ -153,7 +156,7 @@ test_frontend_script() {
 	assert_contains "${output}" "cwd=${fixture}/frontend"
 	assert_contains "${output}" "host=frontend.example.test"
 	assert_contains "${output}" "port=443"
-	assert_contains "${output}" "args=run dev:https"
+	assert_contains "${output}" "args=./node_modules/vite/bin/vite.js dev --config vite.config.https.ts"
 
 	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" "${fixture}/frontend/start-https-frontend.sh" 4443)"
 	assert_contains "${output}" "port=4443"
