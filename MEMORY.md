@@ -135,3 +135,4 @@
 - Frontend and backend HTTPS launchers source the shared loader from any working directory and now accept only an optional `[PORT]`, defaulting to `443`.
 - README agent E2E commands derive `BASE_URL` from `LOCAL_HTTPS_DOMAIN`; the detailed HTTPS guide documents setup and migration from `[DOMAIN] [PORT]`.
 - `scripts/tests/local-domain.test.sh` covers valid, trimmed, missing, empty, malformed, launcher environment, working-directory, port, legacy-argument, and fail-before-child behavior.
+- Agent e2e runs should try the shared HTTPS deployment first by checking `curl` reachability for `https://${LOCAL_HTTPS_DOMAIN}` and then using `BASE_URL` with Playwright. The agent environment in this workspace does not have direct Docker or PostgreSQL access, so local-stack startup is not the first path to try.

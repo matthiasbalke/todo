@@ -18,7 +18,7 @@ describe('root page load guard', () => {
 	beforeEach(() => {
 		authState.authenticated = false;
 		vi.clearAllMocks();
-		vi.mocked(restoreSession).mockResolvedValue();
+		vi.mocked(restoreSession).mockResolvedValue('unauthenticated');
 	});
 
 	it('runs only in the browser', () => {
@@ -28,6 +28,7 @@ describe('root page load guard', () => {
 	it('restores the session before redirecting an authenticated user to /lists', async () => {
 		vi.mocked(restoreSession).mockImplementation(async () => {
 			authState.authenticated = true;
+			return 'authenticated';
 		});
 
 		await expect(load({ fetch: fetchFn } as never)).rejects.toMatchObject({
@@ -47,7 +48,7 @@ describe('root page load guard', () => {
 	});
 
 	it('redirects to /auth when session restoration cannot authenticate the user', async () => {
-		vi.mocked(restoreSession).mockResolvedValue();
+		vi.mocked(restoreSession).mockResolvedValue('unauthenticated');
 
 		await expect(load({ fetch: fetchFn } as never)).rejects.toMatchObject({
 			status: 307,

@@ -8,7 +8,7 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/stores/auth.svelte', () => ({
 	setSession: vi.fn(),
 	clearSession: vi.fn(),
-	restoreSession: vi.fn(),
+	restoreSession: vi.fn().mockResolvedValue('unauthenticated'),
 	isAuthenticated: vi.fn(() => false),
 	getCurrentUser: vi.fn(() => null),
 	getAccessToken: vi.fn(() => null),
@@ -33,7 +33,8 @@ vi.mock('$lib/api/health', () => ({
 
 import { goto } from '$app/navigation';
 import * as authApi from '$lib/api/auth';
-import { setSession } from '$lib/stores/auth.svelte';
+import { checkHealth } from '$lib/api/health';
+import { restoreSession, setSession } from '$lib/stores/auth.svelte';
 import AuthPage from './+page.svelte';
 
 async function waitForIdle() {
@@ -43,6 +44,8 @@ async function waitForIdle() {
 describe('AuthPage', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
+		vi.mocked(checkHealth).mockResolvedValue(true);
+		vi.mocked(restoreSession).mockResolvedValue('unauthenticated');
 	});
 
 	afterEach(() => {
@@ -208,5 +211,52 @@ describe('AuthPage', () => {
 			expect(setSession).toHaveBeenCalledWith(mockResult);
 			expect(goto).toHaveBeenCalledWith('/lists');
 		});
+	});
+
+	it('redirects to /lists when backend startup later restores a valid session', async () => {
+		vi.mocked(checkHealth).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+		vi.mocked(restoreSession).mockResolvedValueOnce('authenticated');
+
+		render(AuthPage, { props: { data: { buildNumber: '0', restoreStatus: 'unavailable' } } });
+		await waitForIdle();
+
+		expect(screen.queryByRole('button', { name: /sign in with passkey/i })).not.toBeInTheDocument();
+
+		await vi.advanceTimersByTimeAsync(2000);
+
+		await waitFor(() => {
+			expect(restoreSession).toHaveBeenCalledTimes(1);
+			expect(goto).toHaveBeenCalledWith('/lists');
+		});
+	});
+
+	it('shows the auth controls when backend startup resolves to an unauthenticated session', async () => {
+		vi.mocked(checkHealth).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+		vi.mocked(restoreSession).mockResolvedValueOnce('unauthenticated');
+
+		render(AuthPage, { props: { data: { buildNumber: '0', restoreStatus: 'unavailable' } } });
+		await waitForIdle();
+
+		expect(screen.queryByRole('button', { name: /sign in with passkey/i })).not.toBeInTheDocument();
+
+		await vi.advanceTimersByTimeAsync(2000);
+
+		await waitFor(() => {
+			expect(screen.getByRole('button', { name: /sign in with passkey/i })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
+		});
+	});
+
+	it('shows the startup timeout when health never becomes available', async () => {
+		vi.mocked(checkHealth).mockResolvedValue(false);
+
+		render(AuthPage, { props: { data: { buildNumber: '0', restoreStatus: 'unavailable' } } });
+		await waitForIdle();
+
+		await vi.advanceTimersByTimeAsync(120_000);
+
+		expect(screen.getByText(/backend did not respond/i)).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /sign in with passkey/i })).not.toBeInTheDocument();
+		expect(restoreSession).not.toHaveBeenCalled();
 	});
 });
