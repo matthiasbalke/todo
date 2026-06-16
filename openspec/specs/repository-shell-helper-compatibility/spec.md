@@ -1,4 +1,10 @@
-## ADDED Requirements
+# repository-shell-helper-compatibility Specification
+
+## Purpose
+
+Define the shell compatibility expectations for repository-owned helper scripts.
+
+## Requirements
 
 ### Requirement: Repository helper scripts are zsh-compatible
 Repository-owned `.sh` helper scripts SHALL run successfully under the repository's `zsh` execution environment, unless a script explicitly delegates to an external tool with documented shell requirements.
