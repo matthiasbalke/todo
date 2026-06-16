@@ -81,6 +81,7 @@ describe('ItemForm', () => {
 			['existing category', itemWithCategory('category-2'), undefined, 'Household'],
 			['uncategorized item', itemWithCategory(null), undefined, 'Uncategorized'],
 			['new-item default', undefined, 'category-1', 'Groceries'],
+			['stale new-item default', undefined, 'missing-category', 'Uncategorized'],
 			['stale category', itemWithCategory('missing-category'), undefined, 'missing-category']
 		])('initializes from the %s', (_name, item, defaultCategoryId, label) => {
 			render(ItemForm, {
@@ -88,6 +89,20 @@ describe('ItemForm', () => {
 			});
 
 			expect(screen.getByRole('button', { name: 'Category' })).toHaveTextContent(label);
+		});
+
+		it('submits a stale new-item default as Uncategorized', async () => {
+			const onsubmit = vi.fn();
+			render(ItemForm, {
+				props: { ...defaultProps, categories, defaultCategoryId: 'missing-category', onsubmit }
+			});
+
+			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+				target: { value: 'Uncategorized fallback item' }
+			});
+			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+			expect(onsubmit.mock.calls[0][0].categoryId).toBeNull();
 		});
 
 		it('selects a category with a pointer and submits its ID without cancelling', async () => {
@@ -149,6 +164,7 @@ describe('ItemForm', () => {
 
 		it.each([
 			['configured default', 'category-1', 'Groceries'],
+			['stale default', 'missing-category', 'Uncategorized'],
 			['Uncategorized', undefined, 'Uncategorized']
 		])('resets to %s after creating an item', async (_name, defaultCategoryId, label) => {
 			const onsubmit = vi.fn().mockResolvedValue(undefined);

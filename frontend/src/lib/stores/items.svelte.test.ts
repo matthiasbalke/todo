@@ -12,11 +12,11 @@ vi.mock('$lib/stores/offlineQueue.svelte', () => ({
 	enqueue: vi.fn(),
 }));
 
-function makeDto(id: string): ItemDto {
+function makeDto(id: string, categoryId: string | null = null): ItemDto {
 	return {
 		id,
 		listId: 'list-1',
-		categoryId: null,
+		categoryId,
 		title: 'Test item',
 		notes: null,
 		done: false,
@@ -75,5 +75,20 @@ describe('createItem', () => {
 
 		expect(getItems()).toHaveLength(1);
 		expect(getItems()[0].id).toBe('item-1');
+	});
+});
+
+describe('clearCategoryFromItems', () => {
+	it('uncategorizes loaded items assigned to a deleted category', async () => {
+		const { clearCategoryFromItems, dtoToItem, getItems, saveItem } = await getStore();
+		saveItem(dtoToItem(makeDto('item-1', 'category-1')));
+		saveItem(dtoToItem(makeDto('item-2', 'category-2')));
+		saveItem(dtoToItem(makeDto('item-3', null)));
+
+		clearCategoryFromItems('category-1');
+
+		expect(getItems().find((item) => item.id === 'item-1')?.categoryId).toBeNull();
+		expect(getItems().find((item) => item.id === 'item-2')?.categoryId).toBe('category-2');
+		expect(getItems().find((item) => item.id === 'item-3')?.categoryId).toBeNull();
 	});
 });

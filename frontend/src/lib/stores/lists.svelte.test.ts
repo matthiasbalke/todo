@@ -4,6 +4,7 @@ import type { CategoryDto, ListDto, ListSummaryDto } from '$lib/api/lists';
 const mockCreateCategory = vi.fn<() => Promise<CategoryDto>>();
 const mockGetLists = vi.fn<() => Promise<ListSummaryDto[]>>();
 const mockUpdateList = vi.fn<() => Promise<ListDto>>();
+const mockDeleteCategory = vi.fn<() => Promise<void>>();
 
 vi.mock('$lib/api/lists', () => ({
 	getLists: mockGetLists,
@@ -13,7 +14,7 @@ vi.mock('$lib/api/lists', () => ({
 	getCategories: vi.fn(),
 	createCategory: mockCreateCategory,
 	updateCategory: vi.fn(),
-	deleteCategory: vi.fn(),
+	deleteCategory: mockDeleteCategory,
 	getListGroups: vi.fn().mockResolvedValue([]),
 }));
 
@@ -69,6 +70,40 @@ describe('saveCategory (create path)', () => {
 
 		expect(getCategoriesForList('list-1')).toHaveLength(1);
 		expect(getCategoriesForList('list-1')[0].id).toBe('cat-1');
+	});
+});
+
+describe('deleteCategory', () => {
+	it('removes the category and uncategorizes loaded items assigned to it', async () => {
+		mockCreateCategory.mockImplementation((async () => makeDto('cat-1')) as typeof mockCreateCategory);
+		mockDeleteCategory.mockResolvedValue(undefined);
+
+		const { saveCategory, deleteCategory, getCategoriesForList } = await getStore();
+		const { dtoToItem, getItems, saveItem } = await import('$lib/stores/items.svelte');
+
+		await saveCategory({ id: 'cat-1', listId: 'list-1', name: 'Produce', color: null, sortOrder: 0 });
+		saveItem(dtoToItem({
+			id: 'item-1',
+			listId: 'list-1',
+			categoryId: 'cat-1',
+			title: 'Apples',
+			notes: null,
+			done: false,
+			starred: false,
+			dueDate: null,
+			assignedUserIds: [],
+			recurrenceRule: null,
+			parentItemId: null,
+			createdByUserId: 'user-1',
+			sortOrder: 0,
+			createdAt: '2026-01-01T00:00:00Z',
+			updatedAt: '2026-01-01T00:00:00Z',
+		}));
+
+		await deleteCategory('list-1', 'cat-1');
+
+		expect(getCategoriesForList('list-1')).toHaveLength(0);
+		expect(getItems()[0].categoryId).toBeNull();
 	});
 });
 
