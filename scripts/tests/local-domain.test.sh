@@ -1,10 +1,10 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO_ROOT="${${(%):-%x}:A:h:h:h}"
 TEST_ROOT="$(mktemp -d)"
 PASS_COUNT=0
-BASH_BIN="$(command -v bash)"
+ZSH_BIN="$(command -v zsh)"
 
 cleanup() {
 	rm -rf "${TEST_ROOT}"
@@ -35,11 +35,11 @@ assert_equals() {
 }
 
 file_owner_uid() {
-	local path="$1"
-	if stat -c %u "${path}" >/dev/null 2>&1; then
-		stat -c %u "${path}"
+	local file_path="$1"
+	if stat -c %u "${file_path}" >/dev/null 2>&1; then
+		stat -c %u "${file_path}"
 	else
-		stat -f %u "${path}"
+		stat -f %u "${file_path}"
 	fi
 }
 
@@ -71,14 +71,14 @@ run_loader() {
 write_frontend_stubs() {
 	local fixture="$1"
 	cat > "${fixture}/bin/bun" <<'EOF'
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 mkdir -p .svelte-kit
 touch .svelte-kit/generated
 printf 'bun cwd=%s host=%s port=%s args=%s\n' "${PWD}" "${VITE_HMR_HOST}" "${VITE_HMR_CLIENT_PORT}" "$*" >> "${PWD}/bun.log"
 printf 'bun cwd=%s host=%s port=%s args=%s\n' "${PWD}" "${VITE_HMR_HOST}" "${VITE_HMR_CLIENT_PORT}" "$*"
 EOF
 	cat > "${fixture}/bin/socat" <<'EOF'
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 trap 'printf "terminated\n" >> "${PWD}/socat.exit"; exit 0' INT TERM
 trap 'printf "exited\n" >> "${PWD}/socat.exit"' EXIT
 printf 'socat cwd=%s args=%s\n' "${PWD}" "$*" >> "${PWD}/socat.log"
@@ -88,7 +88,7 @@ while true; do
 done
 EOF
 	cat > "${fixture}/bin/sudo" <<'EOF'
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 printf '%s\n' "$*" >> "${PWD}/sudo.log"
 exec "$@"
 EOF
@@ -98,7 +98,7 @@ EOF
 write_backend_stub() {
 	local fixture="$1"
 	cat > "${fixture}/backend/gradlew" <<'EOF'
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 printf 'gradle cwd=%s rp=%s cors=%s args=%s\n' "${PWD}" "${WEBAUTHN_RP_ID}" "${CORS_ALLOWED_ORIGINS}" "$*"
 EOF
 	chmod +x "${fixture}/backend/gradlew"
@@ -123,13 +123,13 @@ test_trimmed_domain() {
 }
 
 test_missing_domain() {
-	local fixture output status
+	local fixture output exit_status
 	fixture="$(new_fixture)"
 	set +e
 	output="$(run_loader "${fixture}" 2>&1)"
-	status=$?
+	exit_status=$?
 	set -e
-	[[ ${status} -ne 0 ]] || fail "missing domain file should fail"
+	[[ ${exit_status} -ne 0 ]] || fail "missing domain file should fail"
 	assert_contains "${output}" ".local-domain"
 	assert_contains "${output}" 'cp "'
 	assert_contains "${output}" ".local-domain.example"
@@ -140,27 +140,27 @@ test_missing_domain() {
 test_invalid_domain() {
 	local value="$1"
 	local label="$2"
-	local fixture output status
+	local fixture output exit_status
 	fixture="$(new_fixture)"
 	printf '%s\n' "${value}" > "${fixture}/.local-domain"
 	set +e
 	output="$(run_loader "${fixture}" 2>&1)"
-	status=$?
+	exit_status=$?
 	set -e
-	[[ ${status} -ne 0 ]] || fail "${label} should fail"
+	[[ ${exit_status} -ne 0 ]] || fail "${label} should fail"
 	assert_contains "${output}" "hostname only"
 	pass "rejects ${label}"
 }
 
 test_empty_domain() {
-	local fixture output status
+	local fixture output exit_status
 	fixture="$(new_fixture)"
 	printf ' \n' > "${fixture}/.local-domain"
 	set +e
 	output="$(run_loader "${fixture}" 2>&1)"
-	status=$?
+	exit_status=$?
 	set -e
-	[[ ${status} -ne 0 ]] || fail "empty domain should fail"
+	[[ ${exit_status} -ne 0 ]] || fail "empty domain should fail"
 	assert_contains "${output}" "is empty"
 	assert_contains "${output}" "hostname only"
 	pass "rejects an empty domain"
@@ -190,25 +190,25 @@ test_frontend_script() {
 }
 
 test_frontend_missing_relay() {
-	local fixture output status
+	local fixture output exit_status
 	fixture="$(new_fixture)"
 	printf 'frontend.example.test\n' > "${fixture}/.local-domain"
 	cat > "${fixture}/bin/bun" <<'EOF'
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 printf 'bun should not run\n'
 EOF
 	cat > "${fixture}/bin/sudo" <<'EOF'
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 printf 'sudo should not run\n'
 exit 1
 EOF
 	chmod +x "${fixture}/bin/bun" "${fixture}/bin/sudo"
 
 	set +e
-	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" SOCAT_BIN=/nonexistent/socat "${BASH_BIN}" "${fixture}/frontend/start-https-frontend.sh" 2>&1)"
-	status=$?
+	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" SOCAT_BIN=/nonexistent/socat "${ZSH_BIN}" "${fixture}/frontend/start-https-frontend.sh" 2>&1)"
+	exit_status=$?
 	set -e
-	[[ ${status} -ne 0 ]] || fail "frontend should fail when socat is missing"
+	[[ ${exit_status} -ne 0 ]] || fail "frontend should fail when socat is missing"
 	assert_contains "${output}" "Missing required relay binary: socat"
 	pass "frontend launcher fails clearly when the relay binary is missing"
 }
@@ -232,65 +232,65 @@ test_backend_script() {
 }
 
 test_scripts_stop_before_children() {
-	local fixture output status marker
+	local fixture output exit_status marker
 	fixture="$(new_fixture)"
 	marker="${fixture}/child-called"
 	cat > "${fixture}/bin/bun" <<EOF
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 touch "${marker}"
 EOF
 	cat > "${fixture}/bin/sudo" <<'EOF'
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 exec "$@"
 EOF
 	cat > "${fixture}/backend/gradlew" <<EOF
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 touch "${marker}"
 EOF
 	chmod +x "${fixture}/bin/bun" "${fixture}/bin/sudo" "${fixture}/backend/gradlew"
 
 	set +e
 	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" "${fixture}/frontend/start-https-frontend.sh" 2>&1)"
-	status=$?
+	exit_status=$?
 	set -e
-	[[ ${status} -ne 0 ]] || fail "frontend should fail without configuration"
+	[[ ${exit_status} -ne 0 ]] || fail "frontend should fail without configuration"
 	assert_not_contains "${output}" "Starting on"
 	[[ ! -e "${marker}" ]] || fail "frontend child command should not run"
 
 	set +e
 	output="$(cd /tmp && "${fixture}/backend/start-https-backend.sh" 2>&1)"
-	status=$?
+	exit_status=$?
 	set -e
-	[[ ${status} -ne 0 ]] || fail "backend should fail without configuration"
+	[[ ${exit_status} -ne 0 ]] || fail "backend should fail without configuration"
 	assert_not_contains "${output}" "Starting on"
 	[[ ! -e "${marker}" ]] || fail "backend child command should not run"
 	pass "startup scripts stop before child commands on configuration errors"
 }
 
 test_extra_arguments() {
-	local fixture output status
+	local fixture output exit_status
 	fixture="$(new_fixture)"
 	printf 'devbox.example.test\n' > "${fixture}/.local-domain"
 	write_frontend_stubs "${fixture}"
 
 	set +e
 	output="$(PATH="${fixture}/bin:${PATH}" "${fixture}/frontend/start-https-frontend.sh" old.example.test 443 2>&1)"
-	status=$?
+	exit_status=$?
 	set -e
-	[[ ${status} -eq 2 ]] || fail "extra frontend arguments should return usage status"
+	[[ ${exit_status} -eq 2 ]] || fail "extra frontend arguments should return usage status"
 	assert_contains "${output}" "Usage:"
 
 	set +e
 	output="$("${fixture}/backend/start-https-backend.sh" old.example.test 443 2>&1)"
-	status=$?
+	exit_status=$?
 	set -e
-	[[ ${status} -eq 2 ]] || fail "extra backend arguments should return usage status"
+	[[ ${exit_status} -eq 2 ]] || fail "extra backend arguments should return usage status"
 	assert_contains "${output}" "Usage:"
 	pass "startup scripts reject the old domain and port argument form"
 }
 
 test_domain_argument_as_port() {
-	local fixture output status
+	local fixture output exit_status
 	fixture="$(new_fixture)"
 	printf 'devbox.example.test\n' > "${fixture}/.local-domain"
 	write_frontend_stubs "${fixture}"
@@ -298,16 +298,16 @@ test_domain_argument_as_port() {
 
 	set +e
 	output="$(PATH="${fixture}/bin:${PATH}" "${fixture}/frontend/start-https-frontend.sh" old.example.test 2>&1)"
-	status=$?
+	exit_status=$?
 	set -e
-	[[ ${status} -ne 0 ]] || fail "frontend should reject a domain in the port position"
+	[[ ${exit_status} -ne 0 ]] || fail "frontend should reject a domain in the port position"
 	assert_contains "${output}" "invalid HTTPS port"
 
 	set +e
 	output="$("${fixture}/backend/start-https-backend.sh" old.example.test 2>&1)"
-	status=$?
+	exit_status=$?
 	set -e
-	[[ ${status} -ne 0 ]] || fail "backend should reject a domain in the port position"
+	[[ ${exit_status} -ne 0 ]] || fail "backend should reject a domain in the port position"
 	assert_contains "${output}" "invalid HTTPS port"
 	pass "startup scripts reject a legacy domain as the sole argument"
 }

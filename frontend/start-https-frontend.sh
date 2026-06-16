@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="${${(%):-%x}:A:h}"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 if (( $# > 1 )); then
@@ -50,4 +50,16 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-wait -n "${VITE_PID}" "${PROXY_PID}"
+is_job_running() {
+	jobs -lr | grep -Eq "[[:space:]]$1[[:space:]]+running"
+}
+
+while is_job_running "${VITE_PID}" && is_job_running "${PROXY_PID}"; do
+	sleep 1
+done
+
+if is_job_running "${VITE_PID}"; then
+	wait "${PROXY_PID}"
+else
+	wait "${VITE_PID}"
+fi
