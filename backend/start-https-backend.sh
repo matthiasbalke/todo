@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="${${(%):-%x}:A:h}"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 if (( $# > 1 )); then

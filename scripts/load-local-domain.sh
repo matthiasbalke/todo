@@ -1,11 +1,11 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 
 load_local_https_domain() {
 	local script_dir repo_root domain_file raw_domain domain label
 	local -a labels
 
 	# Resolve the config relative to this helper so callers can run from any directory.
-	script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+	script_dir="${${(%):-%x}:A:h}"
 	repo_root="$(cd "${script_dir}/.." && pwd)"
 	domain_file="${repo_root}/.local-domain"
 
@@ -36,7 +36,7 @@ load_local_https_domain() {
 	fi
 
 	# Validate each DNS label: 1-63 alphanumeric/hyphen characters, no edge hyphens.
-	IFS='.' read -r -a labels <<< "${domain}"
+	labels=("${(@s:.:)domain}")
 	for label in "${labels[@]}"; do
 		if [[ ${#label} -gt 63 ]] || [[ ! "${label}" =~ ^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$ ]]; then
 			printf 'Error: invalid local HTTPS domain in %s: %s\n' "${domain_file}" "${domain}" >&2

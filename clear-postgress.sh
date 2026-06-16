@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 
 echo "============================================"
 echo "  Do you want to drop all tables and data?"

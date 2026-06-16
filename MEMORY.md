@@ -137,3 +137,9 @@
 - README agent E2E commands derive `BASE_URL` from `LOCAL_HTTPS_DOMAIN`; the detailed HTTPS guide documents setup and migration from `[DOMAIN] [PORT]`.
 - `scripts/tests/local-domain.test.sh` covers valid, trimmed, missing, empty, malformed, launcher environment, working-directory, port, legacy-argument, and fail-before-child behavior.
 - Agent e2e runs should try the shared HTTPS deployment first by checking `curl` reachability for `https://${LOCAL_HTTPS_DOMAIN}` and then using `BASE_URL` with Playwright. The agent environment in this workspace does not have direct Docker or PostgreSQL access, so local-stack startup is not the first path to try.
+
+## Zsh helper scripts
+
+- Repository-owned `.sh` helpers use `zsh` shebangs. Use `${${(%):-%x}:A:h}` for script-relative directory resolution instead of Bash-only `${BASH_SOURCE[0]}`.
+- Avoid zsh special parameter names such as `status` and `path` for local variables; they can be read-only or tied to command lookup state.
+- This workspace's zsh 5.9 does not support Bash-style `wait -n`; `frontend/start-https-frontend.sh` uses a job-table polling helper so either child process can end and still trigger cleanup.
