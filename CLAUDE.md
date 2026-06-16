@@ -26,6 +26,7 @@ Early setup — no source code exists yet. The `.gitignore` is pre-configured fo
 - **Real-time:** SSE (Server-Sent Events)
 - **Push notifications:** Web Push API via `java-webpush`
 - **Deployment:** Docker Compose (backend + frontend + PostgreSQL + optional MinIO)
+- **Helper Scripts:** zsh compatible shell scripts
 
 ## Planned Project Structure
 
