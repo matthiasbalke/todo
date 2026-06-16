@@ -7,12 +7,13 @@ test.describe('SSE real-time sync', () => {
 		const context = await browser.newContext();
 
 		const page1 = await context.newPage();
-		const page2 = await context.newPage();
 
 		try {
 			// Register user and create a list in page1
 			await registerPasskey(page1, context, 'SSE User', `sse-${Date.now()}@example.com`);
 			const { listId } = await setupListWithItems(page1, 'SSE Test List', []);
+
+			const page2 = await context.newPage();
 
 			// Open the list in both tabs
 			await page1.goto(`/lists/${listId}`);

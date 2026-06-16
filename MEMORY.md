@@ -120,6 +120,14 @@
   keyboard focus remains visible.
 - Today E2E navigation uses exact route-aware locators so the virtual Today link remains distinct
   from user lists such as `Today Source`.
+- Today E2E failure #43 troubleshooting on June 16, 2026 found the `/lists` Today count could remain
+  stale after direct API item setup because the app layout loaded the count before the item existed and
+  the lists page only refreshed on visibility changes. `/lists` now refreshes Today count on mount when
+  Today View is enabled, with regression coverage in `lists-page.test.ts`.
+- In this agent environment, Playwright's configured Chromium package was missing. Attempts to install
+  `chromium` and `chromium-headless-shell` downloaded archives but hung before producing
+  `chromium_headless_shell-1208`, so local e2e rerun could not complete despite the HTTPS deployment
+  being reachable.
 
 ## Authentication-aware frontend routing
 

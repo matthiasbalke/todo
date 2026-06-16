@@ -18,6 +18,7 @@
   const todayCount = $derived(getTodayUnfinishedCount());
 
   onMount(() => {
+    if (profile?.todayViewEnabled) loadTodayCount();
     const refresh = () => {
       if (document.visibilityState === 'visible' && profile?.todayViewEnabled) loadTodayCount();
     };
