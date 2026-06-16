@@ -2,9 +2,6 @@
 
 This file provides guidance to coding agents when working with code in this repository.
 
-## Memory
-After any bigger update or troubleshooting, update the MEMORY.md with your findings.
-
 ## Documentation
 
 Always use Context7 when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.

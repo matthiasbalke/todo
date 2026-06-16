@@ -68,29 +68,29 @@ describe('TimezonePicker', () => {
 			}
 		});
 
-		const trigger = screen.getByRole('button', { name: 'Account timezone' });
-		expect(trigger).toHaveTextContent('Berlin (Europe)');
+		const trigger = screen.getByRole('combobox', { name: 'Account timezone' });
+		expect(trigger).toHaveValue('Berlin (Europe)');
 
 		await fireEvent.click(trigger);
 		expect(screen.getByRole('listbox', { name: 'Account timezone' })).toBeInTheDocument();
 		await fireEvent.click(screen.getByRole('option', { name: 'New York (America)' }));
 
 		expect(onSelect).toHaveBeenCalledWith('America/New_York');
-		expect(trigger).toHaveTextContent('New York (America)');
+		expect(trigger).toHaveValue('New York (America)');
 	});
 
 	it('uses shared Select keyboard behavior and supports bind:selected', async () => {
 		vi.spyOn(Intl, 'supportedValuesOf').mockReturnValue(['Europe/Berlin']);
 		render(TimezonePickerBinding);
 
-		const trigger = screen.getByRole('button', { name: 'Bound timezone' });
+		const trigger = screen.getByRole('combobox', { name: 'Bound timezone' });
 		await fireEvent.keyDown(trigger, { key: 'ArrowDown' });
 		expect(screen.getByRole('listbox', { name: 'Bound timezone' })).toBeInTheDocument();
 		await fireEvent.keyDown(trigger, { key: 'End' });
 		await fireEvent.keyDown(trigger, { key: 'Enter' });
 
 		expect(screen.getByRole('status')).toHaveTextContent('Europe/Berlin');
-		expect(trigger).toHaveTextContent('Berlin (Europe)');
+		expect(trigger).toHaveValue('Berlin (Europe)');
 	});
 
 	it('forwards the disabled state to shared Select', async () => {
@@ -98,7 +98,7 @@ describe('TimezonePicker', () => {
 			props: { selected: 'UTC', label: 'Locked timezone', disabled: true }
 		});
 
-		const trigger = screen.getByRole('button', { name: 'Locked timezone' });
+		const trigger = screen.getByRole('combobox', { name: 'Locked timezone' });
 		expect(trigger).toBeDisabled();
 		await fireEvent.click(trigger);
 		expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
@@ -118,7 +118,7 @@ describe('TimezonePicker', () => {
 			props: { selected: 'Europe/Berlin', label: 'Fallback timezone' }
 		});
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Fallback timezone' }));
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Fallback timezone' }));
 		expect(screen.getAllByRole('option').map((option) => option.textContent?.trim())).toEqual([
 			'UTC',
 			'Berlin (Europe)',

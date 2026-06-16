@@ -15,11 +15,21 @@ vi.mock('$lib/stores/drag.svelte', () => ({
 	isDraggingAny: vi.fn(() => false),
 }));
 
+vi.mock('$lib/stores/preferences.svelte', () => ({
+	getProfile: vi.fn(() => ({ todayViewEnabled: true })),
+}));
+
+vi.mock('$lib/stores/today.svelte', () => ({
+	getTodayUnfinishedCount: vi.fn(() => 0),
+	loadTodayCount: vi.fn(),
+}));
+
 vi.mock('$lib/api/errors', () => ({
 	friendlyError: vi.fn((e: unknown, msg: string) => msg),
 }));
 
 import ListsPage from './+page.svelte';
+import { loadTodayCount } from '$lib/stores/today.svelte';
 
 describe('ListsPage add-group form layout matches ListForm', () => {
 	afterEach(() => {
@@ -65,5 +75,11 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		const input = container.querySelector('input[placeholder="Group name"]') as HTMLInputElement;
 		expect(input).not.toBeNull();
 		expect(document.activeElement).toBe(input);
+	});
+
+	it('refreshes the Today count when the page mounts', () => {
+		render(ListsPage, { props: { } });
+
+		expect(loadTodayCount).toHaveBeenCalledOnce();
 	});
 });

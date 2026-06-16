@@ -1454,7 +1454,7 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
 			<h2 class="text-2xl font-bold text-gray-900 mb-8">Select Component</h2>
 			<p class="text-gray-600 mb-8">
-				A reusable single-select dropdown component with keyboard navigation, custom validation, and accessibility support (ARIA attributes, keyboard shortcuts).
+				A reusable searchable single-select component with keyboard navigation, custom validation, predefined typed values, and accessibility support.
 			</p>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -1621,7 +1621,11 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 				<h3 class="text-lg font-semibold text-gray-800 mb-4">Keyboard Shortcuts</h3>
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div>
-						<p class="font-mono text-sm text-blue-600 mb-1">Enter, Space, ↓</p>
+						<p class="font-mono text-sm text-blue-600 mb-1">Type</p>
+						<p class="text-sm text-gray-600">Filter predefined options</p>
+					</div>
+					<div>
+						<p class="font-mono text-sm text-blue-600 mb-1">Enter, ↓</p>
 						<p class="text-sm text-gray-600">Open dropdown (when closed)</p>
 					</div>
 					<div>

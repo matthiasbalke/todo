@@ -87,6 +87,10 @@
 - The ordered `shared-component-adoption` deltas required one manual merge because `fix-shared-button-left-alignment` modified the capability before `replace-native-elements-with-shared-components` introduced its baseline; the later typography delta then applied normally.
 - `openspec validate --all` passed all 18 current specs and active changes after the archive operation.
 - `highlight-selected-burger-menu-options` was subsequently synced to the new `burger-menu-selection-styling` main spec and archived as `2026-06-12-highlight-selected-burger-menu-options`; no active OpenSpec changes remain.
+- On June 16, 2026, `add-typeahead-select` was proposed for GitHub issue #106. It modifies `shared-component-adoption` so shared `Select` uses an editable search query to filter predefined options; typed text remains transient and only explicit option selection changes `selected` or calls `onSelect`.
+- `add-typeahead-select` was implemented with `Select.svelte` as an input-backed combobox. Plain focus selects the current text without opening; click, Enter/ArrowDown, and typing open the inline trigger-local listbox. Filtering uses `getOptionLabel`, no-match search shows `No matching options`, and abandoned search restores the selected label/placeholder. Frontend verification passed with clean `svelte-check` and 473 Vitest tests.
+- Follow-up dense select sizing fix: input-backed selects need an explicit `size` attribute derived from visible text so auto-width flex layouts such as MembersDialog do not expand to the browser default text-input width. Dense selects cap at 6 characters; MembersDialog now has regression coverage for that.
+- On June 16, 2026, `add-typeahead-select` was synced into `openspec/specs/shared-component-adoption/spec.md` and archived at `openspec/changes/archive/2026-06-16-add-typeahead-select/`.
 
 ## Account E2E shared-component selectors
 
@@ -116,6 +120,14 @@
   keyboard focus remains visible.
 - Today E2E navigation uses exact route-aware locators so the virtual Today link remains distinct
   from user lists such as `Today Source`.
+- Today E2E failure #43 troubleshooting on June 16, 2026 found the `/lists` Today count could remain
+  stale after direct API item setup because the app layout loaded the count before the item existed and
+  the lists page only refreshed on visibility changes. `/lists` now refreshes Today count on mount when
+  Today View is enabled, with regression coverage in `lists-page.test.ts`.
+- In this agent environment, Playwright's configured Chromium package was missing. Attempts to install
+  `chromium` and `chromium-headless-shell` downloaded archives but hung before producing
+  `chromium_headless_shell-1208`, so local e2e rerun could not complete despite the HTTPS deployment
+  being reachable.
 
 ## Authentication-aware frontend routing
 

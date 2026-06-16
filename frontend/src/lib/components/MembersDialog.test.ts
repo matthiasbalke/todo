@@ -60,12 +60,13 @@ describe('MembersDialog Select positioning', () => {
 			props: { listId: 'list-1', canManageMembers: true, onclose: vi.fn() }
 		});
 		await screen.findByText('editor@example.com');
-		return screen.getAllByRole('button', { name: 'EDITOR' });
+		return screen.getAllByRole('combobox', { name: 'Select an option' });
 	}
 
 	it('anchors each role listbox to its corresponding trigger inside the transformed dialog', async () => {
 		const triggers = await renderOwnerDialog();
 		expect(triggers).toHaveLength(2);
+		expect(triggers[0]).toHaveAttribute('size', '6');
 
 		for (const trigger of triggers) {
 			await fireEvent.click(trigger);
@@ -73,7 +74,7 @@ describe('MembersDialog Select positioning', () => {
 			const listbox = document.getElementById(listboxId!);
 
 			expect(listbox).not.toBeNull();
-			expect(listbox!.parentElement).toBe(trigger.parentElement);
+			expect(listbox!.parentElement).toBe(trigger.parentElement?.parentElement);
 			expect(listbox).toHaveClass('absolute', 'left-0', 'top-full', 'w-full');
 			expect(listbox).not.toHaveClass('fixed');
 
