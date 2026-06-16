@@ -174,7 +174,7 @@ describe('AccountPage settings', () => {
 		});
 		render(AccountPage, { props: { data: mockData } });
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Timezone' }));
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Timezone' }));
 		await fireEvent.click(screen.getByRole('option', { name: 'Berlin (Europe)' }));
 
 		expect(updatePreferences).toHaveBeenCalledWith({
@@ -203,7 +203,7 @@ describe('AccountPage settings', () => {
 
 		expect(screen.queryByText('Preferences saved.')).not.toBeInTheDocument();
 		expect(toggle).toBeDisabled();
-		expect(screen.getByRole('button', { name: 'Timezone' })).toBeDisabled();
+		expect(screen.getByRole('combobox', { name: 'Timezone' })).toBeDisabled();
 
 		resolveSave(mockProfile);
 		expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
@@ -221,6 +221,6 @@ describe('AccountPage settings', () => {
 			'aria-checked',
 			'true'
 		);
-		expect(screen.getByRole('button', { name: 'Timezone' })).toHaveTextContent('UTC');
+		expect(screen.getByRole('combobox', { name: 'Timezone' })).toHaveValue('UTC');
 	});
 });

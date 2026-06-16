@@ -250,7 +250,7 @@ describe('ListPage menu presentation', () => {
 		await waitFor(() => expect(deleteListItemDefaults).toHaveBeenCalledWith('list-1'));
 		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
 
-		expect(screen.getByRole('button', { name: 'Category' })).toHaveTextContent('Uncategorized');
+		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Uncategorized');
 		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 			target: { value: 'Fallback item' },
 		});

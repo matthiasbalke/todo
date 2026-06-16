@@ -157,7 +157,7 @@ A custom single-date calendar popover for nullable ISO calendar dates.
 
 ### Select
 
-Select renders a semantic Button trigger and listbox options with unique IDs, keyboard navigation, validation, and typed option values.
+Select renders an input-backed combobox and listbox options with unique IDs, type-to-find filtering, keyboard navigation, validation, and typed option values. Search text filters by the displayed option label and remains transient; selecting still emits only an option from the provided list.
 
 The trigger and listbox share a trigger-local positioning wrapper. An open listbox is placed directly below the trigger at the same width, including inside transformed dialogs such as MembersDialog. Consumers must not provide positioning offsets or listbox visual styles.
 
