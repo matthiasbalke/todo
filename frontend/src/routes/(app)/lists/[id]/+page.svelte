@@ -10,7 +10,7 @@
   import type { SortField, SortDirection, TodoItem } from '$lib/mock-data';
   import { loadListPrefs, saveListPrefs, deleteListPrefs } from '$lib/listPrefs';
   import { loadListCategoryState, saveListCategoryState, deleteListCategoryState } from '$lib/listCategoryState';
-  import { loadListItemDefaults, saveListItemDefaults } from '$lib/listItemDefaults';
+  import { deleteListItemDefaults, loadListItemDefaults, saveListItemDefaults } from '$lib/listItemDefaults';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
   import ItemForm from '$lib/components/ItemForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
@@ -30,7 +30,13 @@
   const categories = $derived(getCategoriesForList(data.id));
   const capabilities = $derived(list ? getListCapabilities(list.role) : getListCapabilities('VIEWER'));
 
-  $effect(() => { loadCategoriesForList(data.id); });
+  let categoriesLoaded = $state(false);
+  $effect(() => {
+    categoriesLoaded = false;
+    Promise.resolve(loadCategoriesForList(data.id)).finally(() => {
+      categoriesLoaded = true;
+    });
+  });
   $effect(() => { loadItemsForList(data.id); });
   $effect(() => {
     connectToList(data.id);
@@ -119,6 +125,18 @@
   const filtered = $derived(applyFilters(allItems, filters, getCurrentUser()?.id));
   const sorted = $derived(applySort(filtered, sortField, sortDirection));
   const grouped = $derived(groupByCategory(sorted, categories));
+  const defaultCategoryId = $derived(
+    categoriesLoaded && lastCategoryId && categories.some((category) => category.id === lastCategoryId)
+      ? lastCategoryId
+      : undefined
+  );
+
+  $effect(() => {
+    if (!categoriesLoaded || !lastCategoryId) return;
+    if (categories.some((category) => category.id === lastCategoryId)) return;
+    lastCategoryId = null;
+    deleteListItemDefaults(data.id);
+  });
 
   async function handleAddItem(item: TodoItem) {
     lastCategoryId = item.categoryId ?? null;
@@ -425,7 +443,7 @@
             users={members}
             onsubmit={handleAddItem}
             oncancel={() => { showAddForm = false; }}
-            defaultCategoryId={lastCategoryId ?? undefined}
+            {defaultCategoryId}
           />
         </div>
       {:else}

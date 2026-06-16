@@ -41,7 +41,7 @@
   let title = $state(untrack(() => item?.title ?? ''));
   let notes = $state(untrack(() => item?.notes ?? ''));
   let dueDate = $state<string | null>(untrack(() => item?.dueDate ?? null));
-  let categoryId = $state<string>(untrack(() => item?.categoryId ?? defaultCategoryId ?? ''));
+  let categoryId = $state<string>(untrack(() => item?.categoryId ?? getEffectiveDefaultCategoryId()));
   let assignedUserIds = $state(new Set<string>(untrack(() => item?.assignedUserIds ?? [])));
   let recurrencePreset = $state<string>(untrack(() => getInitialRecurrencePreset(item?.recurrenceRule ?? null)));
   let titleInput = $state<HTMLInputElement | null>(null);
@@ -55,6 +55,12 @@
   function getCategoryLabel(id: string): string {
     if (!id) return 'Uncategorized';
     return categories.find((category) => category.id === id)?.name ?? id;
+  }
+
+  function getEffectiveDefaultCategoryId(): string {
+    return defaultCategoryId && categories.some((category) => category.id === defaultCategoryId)
+      ? defaultCategoryId
+      : '';
   }
 
   function getRecurrenceLabel(preset: string): string {
@@ -100,7 +106,7 @@
         title = '';
         notes = '';
         dueDate = null;
-        categoryId = defaultCategoryId ?? '';
+        categoryId = getEffectiveDefaultCategoryId();
         assignedUserIds = new Set();
         recurrencePreset = '';
         titleInput?.focus();
