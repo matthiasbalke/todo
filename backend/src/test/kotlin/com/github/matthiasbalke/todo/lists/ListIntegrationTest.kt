@@ -50,6 +50,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             jsonPath("$.id") { exists() }
             jsonPath("$.name") { value("Groceries") }
             jsonPath("$.emoji") { value("🛒") }
+            jsonPath("$.role") { value("OWNER") }
         }.andReturn()
 
         val listId = com.fasterxml.jackson.databind.ObjectMapper()
@@ -123,6 +124,25 @@ class ListIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
+    fun `GET lists - includes the caller role for owner editor and viewer`() {
+        val owner = createUser()
+        val editor = createUser()
+        val viewer = createUser()
+        val listId = createListAsUser(owner, "Role List")
+        addMemberToList(listId, owner, editor.email, "EDITOR")
+        addMemberToList(listId, owner, viewer.email, "VIEWER")
+
+        listOf(owner to "OWNER", editor to "EDITOR", viewer to "VIEWER").forEach { (user, role) ->
+            mockMvc.get("/api/lists") {
+                header("Authorization", bearerHeader(user))
+            }.andExpect {
+                status { isOk() }
+                jsonPath("$[0].role") { value(role) }
+            }
+        }
+    }
+
+    @Test
     fun `GET lists - returns shared lists with groupId assigned`() {
         val owner = createUser()
         val sharedUser = createUser()
@@ -175,6 +195,25 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             header("Authorization", bearerHeader(stranger))
         }.andExpect {
             status { isForbidden() }
+        }
+    }
+
+    @Test
+    fun `GET lists - id - includes the caller role for owner editor and viewer`() {
+        val owner = createUser()
+        val editor = createUser()
+        val viewer = createUser()
+        val listId = createListAsUser(owner, "Role Detail")
+        addMemberToList(listId, owner, editor.email, "EDITOR")
+        addMemberToList(listId, owner, viewer.email, "VIEWER")
+
+        listOf(owner to "OWNER", editor to "EDITOR", viewer to "VIEWER").forEach { (user, role) ->
+            mockMvc.get("/api/lists/$listId") {
+                header("Authorization", bearerHeader(user))
+            }.andExpect {
+                status { isOk() }
+                jsonPath("$.role") { value(role) }
+            }
         }
     }
 

@@ -68,10 +68,16 @@ async function registerPasskey(
 // Tests
 // ---------------------------------------------------------------------------
 
-test.describe('/ redirects to /auth', () => {
+test.describe('Unauthenticated route guards', () => {
 	test('root redirects to auth page', async ({ page }) => {
 		await page.goto('/');
 		await waitForHydration(page);
+		await expect(page).toHaveURL(/\/auth$/);
+	});
+
+	test('protected route redirects to auth page', async ({ page }) => {
+		await page.goto('/lists');
+		await page.waitForURL('**/auth');
 		await expect(page).toHaveURL(/\/auth$/);
 	});
 });
@@ -189,6 +195,63 @@ test.describe('Passkey sign-in', () => {
 });
 
 test.describe('Session management', () => {
+	test('root redirects an authenticated user to /lists', async ({ page, context }) => {
+		await registerPasskey(page, context, 'Root Session User', uniqueEmail());
+
+		await page.goto('/');
+		await page.waitForURL('**/lists');
+		await expect(page).toHaveURL(/\/lists$/);
+	});
+
+	test('/auth redirects an authenticated user to /lists', async ({ page, context }) => {
+		await registerPasskey(page, context, 'Auth Route User', uniqueEmail());
+
+		await page.goto('/auth');
+		await page.waitForURL('**/lists');
+		await expect(page).toHaveURL(/\/lists$/);
+	});
+
+	test('auth page retries after backend startup and redirects to /lists', async ({
+		page,
+		context,
+	}) => {
+		await registerPasskey(page, context, 'Startup Retry User', uniqueEmail());
+
+		const startupPage = await context.newPage();
+		let healthCalls = 0;
+		let refreshCalls = 0;
+
+		await startupPage.route('**/actuator/health', async route => {
+			healthCalls += 1;
+			if (healthCalls === 1) {
+				await route.fulfill({
+					status: 503,
+					contentType: 'application/json',
+					body: JSON.stringify({ status: 'DOWN' }),
+				});
+				return;
+			}
+			await route.continue();
+		});
+
+		await startupPage.route('**/api/auth/refresh', async route => {
+			refreshCalls += 1;
+			if (refreshCalls === 1) {
+				await route.fulfill({
+					status: 503,
+					contentType: 'application/json',
+					body: JSON.stringify({ message: 'Backend starting' }),
+				});
+				return;
+			}
+			await route.continue();
+		});
+
+		await startupPage.goto('/auth');
+		await startupPage.waitForURL('**/lists', { timeout: 25000 });
+		await expect(startupPage).toHaveURL(/\/lists$/);
+	});
+
 	test('session survives a full page reload via refresh token cookie', async ({
 		page,
 		context,

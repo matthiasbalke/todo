@@ -2,6 +2,9 @@
   import type { Category } from '$lib/mock-data';
   import { saveCategory, deleteCategory } from '$lib/stores/lists.svelte';
   import { friendlyError } from '$lib/api/errors';
+  import Button from './Button.svelte';
+  import ColorSwatchButton from './ColorSwatchButton.svelte';
+  import TextInput from './TextInput.svelte';
 
   let { categories, listId, onclose }: { categories: Category[]; listId: string; onclose: () => void } = $props();
 
@@ -111,18 +114,20 @@
   aria-label="Category configuration"
 >
   <!-- backdrop click -->
-  <button
+  <Button
+    tone="neutral" appearance="bare"
+    size="backdrop"
     class="absolute inset-0 w-full h-full cursor-default"
-    tabindex="-1"
+    tabindex={-1}
     aria-hidden="true"
     onclick={onclose}
-  ></button>
+  ></Button>
 
   <div class="relative z-10 w-full max-w-sm mx-4 bg-white rounded-2xl shadow-xl flex flex-col max-h-[80vh]">
     <!-- Header -->
     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
       <h2 class="font-semibold text-gray-900">Categories</h2>
-      <button onclick={onclose} class="p-1 text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close">✕</button>
+      <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={onclose} aria-label="Close">✕</Button>
     </div>
 
     {#if error}
@@ -137,25 +142,30 @@
         {#each sorted as cat (cat.id)}
           <div class="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-gray-50 group">
             <!-- Reorder -->
-            <button
+            <Button
+              tone="neutral" appearance="bare"
+              size="icon"
+              emphasis="subtle"
               onclick={() => moveUp(cat)}
               disabled={sorted[0].id === cat.id}
-              class="p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-20 transition-colors"
               aria-label="Move up"
-            >▲</button>
-            <button
+            >▲</Button>
+            <Button
+              tone="neutral" appearance="bare"
+              size="icon"
+              emphasis="subtle"
               onclick={() => moveDown(cat)}
               disabled={sorted[sorted.length - 1].id === cat.id}
-              class="p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-20 transition-colors"
               aria-label="Move down"
-            >▼</button>
+            >▼</Button>
 
             {#if editingId === cat.id}
               <!-- Inline edit -->
               <div class="flex-1 flex flex-col gap-1">
                 <!-- svelte-ignore a11y_autofocus -->
-                <input
-                  class="text-sm border border-blue-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                <TextInput
+                  class="w-full"
+                  size="compact"
                   bind:value={editingName}
                   onkeydown={(e) => { if (e.key === 'Enter') commitEdit(cat); if (e.key === 'Escape') cancelEdit(); }}
                   onblur={() => commitEdit(cat)}
@@ -163,22 +173,19 @@
                 />
                 <div class="flex gap-1">
                   {#each COLOR_SWATCHES as swatch}
-                    <button
-                      type="button"
-                      onmousedown={(e) => e.preventDefault()}
-                      onclick={() => { editingColor = editingColor === swatch ? null : swatch; }}
-                      class="w-4 h-4 rounded-full border-2 transition-all {editingColor === swatch ? 'border-gray-700 scale-110' : 'border-transparent'}"
-                      style="background-color: {swatch}"
-                      aria-label="Color {swatch}"
-                    ></button>
+                    <ColorSwatchButton
+                      color={swatch}
+                      selected={editingColor === swatch}
+                      onselect={() => { editingColor = editingColor === swatch ? null : swatch; }}
+                    />
                   {/each}
                   {#if editingColor}
                     <span class="w-4 h-4 rounded-full" style="background-color: {editingColor}"></span>
                   {/if}
                 </div>
               </div>
-              <button onclick={() => commitEdit(cat)} class="p-0.5 text-green-500 hover:text-green-700 transition-colors" aria-label="Save">✓</button>
-              <button onclick={cancelEdit} class="p-0.5 text-gray-400 hover:text-gray-600 transition-colors" aria-label="Cancel">✕</button>
+              <Button tone="success" appearance="bare" size="icon" onclick={() => commitEdit(cat)} aria-label="Save">✓</Button>
+              <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={cancelEdit} aria-label="Cancel">✕</Button>
             {:else}
               <div class="flex-1 flex items-center gap-2">
                 {#if cat.color}
@@ -192,8 +199,8 @@
                   onkeydown={(e) => { if (e.key === 'Enter') startEdit(cat); }}
                 >{cat.name}</span>
               </div>
-              <button onclick={() => startEdit(cat)} class="p-0.5 text-gray-300 hover:text-gray-600 sm:opacity-0 sm:group-hover:opacity-100 transition-all" aria-label="Rename">✏️</button>
-              <button onclick={() => removeCat(cat)} class="p-0.5 text-gray-300 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100 transition-all" aria-label="Delete">🗑</button>
+              <Button tone="neutral" appearance="bare" size="icon" emphasis="subtle" onclick={() => startEdit(cat)} class="sm:opacity-0 sm:group-hover:opacity-100" aria-label="Rename">✏️</Button>
+              <Button tone="danger" appearance="bare" size="icon" onclick={() => removeCat(cat)} class="sm:opacity-0 sm:group-hover:opacity-100" aria-label="Delete">🗑</Button>
             {/if}
           </div>
         {/each}
@@ -204,30 +211,29 @@
     <div class="flex flex-col gap-2 px-4 py-3 border-t border-gray-100">
       <div class="flex gap-1">
         {#each COLOR_SWATCHES as swatch}
-          <button
-            type="button"
-            onclick={() => { newColor = newColor === swatch ? null : swatch; }}
-            class="w-4 h-4 rounded-full border-2 transition-all {newColor === swatch ? 'border-gray-700 scale-110' : 'border-transparent'}"
-            style="background-color: {swatch}"
-            aria-label="Color {swatch}"
-          ></button>
+          <ColorSwatchButton
+            color={swatch}
+            selected={newColor === swatch}
+            onselect={() => { newColor = newColor === swatch ? null : swatch; }}
+          />
         {/each}
       </div>
       <div class="flex gap-2">
         {#if newColor}
           <span class="w-5 h-5 rounded-full self-center flex-shrink-0" style="background-color: {newColor}"></span>
         {/if}
-        <input
-          class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300"
+        <TextInput
+          class="flex-1"
+          size="small"
           placeholder="New category name"
           bind:value={newName}
           onkeydown={(e) => { if (e.key === 'Enter') addCategory(); }}
         />
-        <button
+        <Button
           onclick={addCategory}
           disabled={!newName.trim()}
-          class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >Add</button>
+          size="small"
+        >Add</Button>
       </div>
     </div>
   </div>

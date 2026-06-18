@@ -5,10 +5,26 @@
   import ListForm from '$lib/components/ListForm.svelte';
   import ListGroupSection from '$lib/components/ListGroupSection.svelte';
   import { friendlyError } from '$lib/api/errors';
+  import Button from '$lib/components/Button.svelte';
+  import TextInput from '$lib/components/TextInput.svelte';
+  import { getProfile } from '$lib/stores/preferences.svelte';
+  import { getTodayUnfinishedCount, loadTodayCount } from '$lib/stores/today.svelte';
+  import { onMount } from 'svelte';
 
   const lists = $derived(getLists());
   const groups = $derived(getListGroups());
   const draggingAny = $derived(isDraggingAny());
+  const profile = $derived(getProfile());
+  const todayCount = $derived(getTodayUnfinishedCount());
+
+  onMount(() => {
+    if (profile?.todayViewEnabled) loadTodayCount();
+    const refresh = () => {
+      if (document.visibilityState === 'visible' && profile?.todayViewEnabled) loadTodayCount();
+    };
+    document.addEventListener('visibilitychange', refresh);
+    return () => document.removeEventListener('visibilitychange', refresh);
+  });
 
   const sortedGroups = $derived(groups.slice().sort((a, b) => a.sortOrder - b.sortOrder));
   const ungroupedLists = $derived(lists.filter(l => l.groupId === null));
@@ -63,6 +79,19 @@
     </div>
   {:else}
     <div class="space-y-2">
+      {#if profile?.todayViewEnabled}
+        <div class="flex items-center gap-4 p-4 rounded-xl border border-blue-100 bg-blue-50 hover:border-blue-200 hover:shadow-sm transition-all mb-4">
+          <div class="flex-shrink-0 w-5" aria-hidden="true"></div>
+          <a href="/today" class="flex items-center gap-4 flex-1 min-w-0">
+            <span class="text-3xl">📆</span>
+            <div class="flex-1 min-w-0">
+              <h2 class="font-semibold text-blue-900">Today</h2>
+            </div>
+            <span class="rounded-full bg-blue-100 px-2 py-0.5 text-sm text-blue-800">{todayCount}</span>
+            <span class="text-gray-300">›</span>
+          </a>
+        </div>
+      {/if}
       {#each sortedGroups as group (group.id)}
         <ListGroupSection
           {group}
@@ -91,28 +120,26 @@
       </div>
     {:else if addingGroup}
       <div class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-        <input
-          type="text"
-          bind:this={groupInput}
+        <TextInput
+          bind:element={groupInput}
           bind:value={newGroupName}
           placeholder="Group name"
-          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full"
           onkeydown={(e) => { if (e.key === 'Enter') handleAddGroup(); if (e.key === 'Escape') { addingGroup = false; newGroupName = ''; } }}
         />
         <div class="flex justify-end gap-2 pt-1">
-          <button
+          <Button tone="neutral" appearance="bare"
             type="button"
             onclick={() => { addingGroup = false; newGroupName = ''; groupError = null; }}
-            class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+            emphasis="muted"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button tone="primary" appearance="solid"
             onclick={handleAddGroup}
-            class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Add
-          </button>
+          </Button>
         </div>
         {#if groupError}
           <p class="text-sm text-red-600">{groupError}</p>
@@ -120,19 +147,20 @@
       </div>
     {:else}
       <div class="flex gap-2">
-        <button
+        <Button tone="neutral" appearance="outline"
+          size="empty"
           onclick={() => { showAddForm = true; }}
           disabled={saving}
-          class="flex-1 py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors disabled:opacity-50"
+          class="flex-1"
         >
           + New list
-        </button>
-        <button
+        </Button>
+        <Button tone="neutral" appearance="outline"
+          size="empty"
           onclick={() => { addingGroup = true; }}
-          class="py-3 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors"
         >
           + New group
-        </button>
+        </Button>
       </div>
     {/if}
     {#if error}

@@ -19,6 +19,15 @@ class User(
     @Column(name = "display_name", nullable = false)
     var displayName: String,
 
+    @Column(name = "time_zone", nullable = false)
+    var timeZone: String = "UTC",
+
+    @Column(name = "time_zone_initialized", nullable = false)
+    var timeZoneInitialized: Boolean = false,
+
+    @Column(name = "today_view_enabled", nullable = false)
+    var todayViewEnabled: Boolean = true,
+
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now(),
 )

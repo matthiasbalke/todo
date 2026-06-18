@@ -1,6 +1,11 @@
 <script lang="ts">
   import { untrack, onMount } from 'svelte';
   import type { TodoItem, Category, User, RecurrenceRule } from '$lib/mock-data';
+  import DatePicker from './DatePicker.svelte';
+  import Select from './Select.svelte';
+  import Textarea from './Textarea.svelte';
+  import Button from './Button.svelte';
+  import TextInput from './TextInput.svelte';
 
   let {
     item,
@@ -20,30 +25,52 @@
     defaultCategoryId?: string;
   } = $props();
 
+  const recurrenceOptions = [
+    { value: '', label: 'No recurrence' },
+    { value: '1_DAYS', label: 'Every day' },
+    { value: '1_WEEKS', label: 'Every week' },
+    { value: '2_WEEKS', label: 'Every 2 weeks' },
+    { value: '1_MONTHS', label: 'Every month' },
+    { value: '3_MONTHS', label: 'Every 3 months' },
+    { value: '1_YEARS', label: 'Every year' }
+  ];
+  const recurrencePresetOptions = recurrenceOptions.map((option) => option.value);
+
   const isNew = $derived(!item);
 
   let title = $state(untrack(() => item?.title ?? ''));
   let notes = $state(untrack(() => item?.notes ?? ''));
-  let dueDate = $state(untrack(() => item?.dueDate ?? ''));
-  let categoryId = $state<string>(untrack(() => item?.categoryId ?? defaultCategoryId ?? ''));
+  let dueDate = $state<string | null>(untrack(() => item?.dueDate ?? null));
+  let categoryId = $state<string>(untrack(() => item?.categoryId ?? getEffectiveDefaultCategoryId()));
   let assignedUserIds = $state(new Set<string>(untrack(() => item?.assignedUserIds ?? [])));
   let recurrencePreset = $state<string>(untrack(() => getInitialRecurrencePreset(item?.recurrenceRule ?? null)));
   let titleInput = $state<HTMLInputElement | null>(null);
   let submitting = $state(false);
   let ignoreNextFocusOut = false;
 
+  const categoryOptions = $derived(['', ...categories.map((category) => category.id)]);
+
   onMount(() => titleInput?.focus());
+
+  function getCategoryLabel(id: string): string {
+    if (!id) return 'Uncategorized';
+    return categories.find((category) => category.id === id)?.name ?? id;
+  }
+
+  function getEffectiveDefaultCategoryId(): string {
+    return defaultCategoryId && categories.some((category) => category.id === defaultCategoryId)
+      ? defaultCategoryId
+      : '';
+  }
+
+  function getRecurrenceLabel(preset: string): string {
+    return recurrenceOptions.find((option) => option.value === preset)?.label ?? preset;
+  }
 
   function getInitialRecurrencePreset(rule: RecurrenceRule | null): string {
     if (!rule) return '';
     const key = `${rule.intervalValue}_${rule.intervalUnit}`;
-    const valid = ['1_DAYS','1_WEEKS','2_WEEKS','1_MONTHS','3_MONTHS','1_YEARS'];
-    return valid.includes(key) ? key : '';
-  }
-
-  function handlePickerBlur() {
-    ignoreNextFocusOut = true;
-    setTimeout(() => { ignoreNextFocusOut = false; }, 0);
+    return recurrencePresetOptions.includes(key) ? key : '';
   }
 
   function parseRecurrencePreset(preset: string): RecurrenceRule | null {
@@ -66,7 +93,7 @@
         notes: notes || null,
         done: item?.done ?? false,
         starred: item?.starred ?? false,
-        dueDate: dueDate || null,
+        dueDate,
         assignedUserIds: [...assignedUserIds],
         recurrenceRule: parseRecurrencePreset(recurrencePreset),
         parentItemId: item?.parentItemId ?? null,
@@ -78,8 +105,8 @@
       if (isNew) {
         title = '';
         notes = '';
-        dueDate = '';
-        categoryId = defaultCategoryId ?? '';
+        dueDate = null;
+        categoryId = getEffectiveDefaultCategoryId();
         assignedUserIds = new Set();
         recurrencePreset = '';
         titleInput?.focus();
@@ -105,60 +132,35 @@
   class="bg-white rounded-xl border border-gray-200 p-4 space-y-3"
 >
   <div>
-    <input
-      type="text"
-      bind:this={titleInput}
+    <TextInput
+      bind:element={titleInput}
       bind:value={title}
       onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit(e); } }}
       placeholder="Item title"
       required
-      class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="w-full text-sm border-gray-200"
     />
   </div>
 
-    <div>
-      <label for="categoryId" class="text-xs text-gray-500 mb-1 block">Category</label>
-      <select
-        id="categoryId"
-        bind:value={categoryId}
-        onblur={handlePickerBlur}
-        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="">Uncategorized</option>
-        {#each categories as cat}
-          <option value={cat.id}>{cat.name}</option>
-        {/each}
-      </select>
-    </div>
+    <Select
+      options={categoryOptions}
+      selected={categoryId}
+      label="Category"
+      labelId="categoryId"
+      getOptionLabel={getCategoryLabel}
+      onSelect={(value) => { categoryId = value; }}
+    />
 
-    <div>
-      <label for="dueDate" class="text-xs text-gray-500 mb-1 block">Due Date</label>
-      <input
-        id="dueDate"
-        type="date"
-        bind:value={dueDate}
-        onblur={handlePickerBlur}
-        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-    </div>
+    <DatePicker bind:value={dueDate} label="Due Date" />
 
-    <div>
-      <label for="recurrencePreset" class="text-xs text-gray-500 mb-1 block">Recurrence</label>
-      <select
-        id="recurrencePreset"
-        bind:value={recurrencePreset}
-        onblur={handlePickerBlur}
-        class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="">No recurrence</option>
-        <option value="1_DAYS">Every day</option>
-        <option value="1_WEEKS">Every week</option>
-        <option value="2_WEEKS">Every 2 weeks</option>
-        <option value="1_MONTHS">Every month</option>
-        <option value="3_MONTHS">Every 3 months</option>
-        <option value="1_YEARS">Every year</option>
-      </select>
-    </div>
+    <Select
+      options={recurrencePresetOptions}
+      selected={recurrencePreset}
+      label="Recurrence"
+      labelId="recurrencePreset"
+      getOptionLabel={getRecurrenceLabel}
+      onSelect={(value) => { recurrencePreset = value; }}
+    />
 
   <fieldset class="border-0 p-0">
     <legend class="text-xs text-gray-500 mb-1">Assign to</legend>
@@ -167,8 +169,11 @@
     {:else}
       <div class="flex flex-wrap gap-1">
         {#each users as user}
-          <button
+          <Button
             type="button"
+            tone="neutral" appearance="outline"
+            size="chip"
+            selected={assignedUserIds.has(user.id)}
             onclick={() => {
               const next = new Set(assignedUserIds);
               if (next.has(user.id)) {
@@ -178,39 +183,37 @@
               }
               assignedUserIds = next;
             }}
-            class={assignedUserIds.has(user.id)
-              ? 'px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-300'
-              : 'px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200'}
           >
             {user.name}
-          </button>
+          </Button>
         {/each}
       </div>
     {/if}
   </fieldset>
 
-  <div>
-    <textarea
-      bind:value={notes}
-      placeholder="Notes (optional)"
-      rows="2"
-      class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-    ></textarea>
-  </div>
+  <Textarea
+    bind:value={notes}
+    ariaLabel="Notes"
+    placeholder="Notes (optional)"
+    rows={2}
+    resize="none"
+  />
 
   <div class="flex justify-end gap-2 pt-1">
-    <button
+    <Button
       type="button"
+      tone="neutral" appearance="bare"
       onclick={oncancel}
-      class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+      emphasis="muted"
     >
       Cancel
-    </button>
-    <button
+    </Button>
+    <Button
       type="submit"
-      class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+      loading={submitting}
+      loadingLabel={isNew ? 'Adding…' : 'Saving…'}
     >
       {isNew ? 'Add' : 'Save'}
-    </button>
+    </Button>
   </div>
 </form>

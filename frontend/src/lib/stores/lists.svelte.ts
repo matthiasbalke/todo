@@ -18,6 +18,7 @@ import {
 	type CreateListRequest,
 	type UpdateListRequest,
 } from '$lib/api/lists';
+import { clearCategoryFromItems } from '$lib/stores/items.svelte';
 
 let lists = $state<List[]>([]);
 let listGroups = $state<ListGroup[]>([]);
@@ -63,6 +64,7 @@ export async function loadLists(fetchFn: typeof fetch = fetch): Promise<void> {
       createdAt: dto.createdAt,
       groupId: dto.groupId,
       sortOrderInGroup: dto.sortOrderInGroup,
+      role: dto.role,
     }));
     listGroups = groupDtos.map(dto => ({
       id: dto.id,
@@ -88,6 +90,7 @@ export async function createList(req: CreateListRequest): Promise<List> {
     createdAt: dto.createdAt,
     groupId: null,
     sortOrderInGroup: 0,
+    role: dto.role,
   };
   lists.push(list);
   return list;
@@ -147,6 +150,7 @@ export async function updateList(id: string, req: UpdateListRequest): Promise<Li
     createdAt: dto.createdAt,
     groupId: existing?.groupId ?? null,
     sortOrderInGroup: existing?.sortOrderInGroup ?? 0,
+    role: dto.role ?? existing?.role ?? 'OWNER',
   };
   const idx = lists.findIndex(l => l.id === id);
   if (idx >= 0) lists[idx] = list;
@@ -199,8 +203,7 @@ export async function saveCategory(updated: Category): Promise<void> {
 
 export async function deleteCategory(listId: string, id: string): Promise<void> {
   await apiDeleteCategory(listId, id);
-  const idx = categories.findIndex(c => c.id === id);
-  if (idx >= 0) categories.splice(idx, 1);
+  removeCategoryFromStore(id);
 }
 
 export function upsertCategoryInStore(category: Category): void {
@@ -214,4 +217,5 @@ export function upsertCategoryInStore(category: Category): void {
 
 export function removeCategoryFromStore(categoryId: string): void {
   categories = categories.filter(c => c.id !== categoryId);
+  clearCategoryFromItems(categoryId);
 }

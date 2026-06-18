@@ -34,6 +34,7 @@ class ListController(
         val defaultSortField: String,
         val defaultSortDirection: String,
         val createdAt: Instant,
+        val role: ListRole,
     )
 
     data class ListSummaryDto(
@@ -43,6 +44,7 @@ class ListController(
         val createdAt: Instant,
         val groupId: UUID?,
         val sortOrderInGroup: Int,
+        val role: ListRole,
     )
 
     data class AssignGroupRequest(val groupId: UUID?)
@@ -101,13 +103,13 @@ class ListController(
             description = body.description,
             sortField = body.defaultSortField,
             sortDirection = body.defaultSortDirection,
-        ).toDto()
+        ).toDto(ListRole.OWNER)
 
     @GetMapping("/{id}")
     fun getList(
         @AuthenticationPrincipal userId: UUID,
         @PathVariable id: UUID,
-    ): ListDto = listService.getListById(id, userId).toDto()
+    ): ListDto = listService.getListById(id, userId).toDto(listService.getRole(id, userId))
 
     @PutMapping("/{id}")
     fun updateList(
@@ -123,7 +125,7 @@ class ListController(
             description = body.description,
             sortField = body.defaultSortField,
             sortDirection = body.defaultSortDirection,
-        ).toDto()
+        ).toDto(listService.getRole(id, userId))
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -181,7 +183,7 @@ class ListController(
 
     // ─── Mapping helpers ─────────────────────────────────────────────────────
 
-    private fun List.toDto() = ListDto(
+    private fun List.toDto(role: ListRole) = ListDto(
         id = id,
         name = name,
         emoji = emoji,
@@ -189,6 +191,7 @@ class ListController(
         defaultSortField = defaultSortField,
         defaultSortDirection = defaultSortDirection,
         createdAt = createdAt,
+        role = role,
     )
 
     private fun List.toSummaryDto(userId: UUID, listGroupService: ListGroupService) : ListSummaryDto {
@@ -200,6 +203,7 @@ class ListController(
             createdAt = createdAt,
             groupId = assignment?.groupId,
             sortOrderInGroup = assignment?.sortOrder ?: 0,
+            role = listService.getRole(id, userId),
         )
     }
 

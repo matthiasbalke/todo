@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="${${(%):-%x}:A:h}"
 
 # Stop only backend and frontend on exit — leave postgres running for dev
 cleanup() { docker compose -f "$SCRIPT_DIR/docker-compose.yml" stop backend frontend nginx; }
@@ -25,7 +25,7 @@ echo "Starting backend and frontend..."#
 docker compose -f "$SCRIPT_DIR/docker-compose.yml" up -d nginx
 
 echo "Waiting for frontend to be ready..."
-timeout 120 bash -c \
+timeout 120 zsh -c \
   'until curl -sf http://localhost > /dev/null; do sleep 2; done'
 
 (cd "$SCRIPT_DIR/e2e" && BASE_URL=http://localhost bunx playwright test)

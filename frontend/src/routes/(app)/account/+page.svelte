@@ -5,24 +5,68 @@
   import { startRegistration, WebAuthnError } from '@simplewebauthn/browser';
   import {
     updateMe,
-    getPasskeys,
     getAddPasskeyOptions,
     submitAddPasskey,
     deletePasskey,
     getDeletionPreview,
     deleteAccount,
+    updatePreferences,
     type PasskeyDto,
     type DeletionPreviewDto,
   } from '$lib/api/users';
   import { updateCurrentUser, clearSession } from '$lib/stores/auth.svelte';
   import { friendlyError } from '$lib/api/errors';
   import { ApiError } from '$lib/api/client';
+
+  import Button from '$lib/components/Button.svelte';
+  import EditableLabel from '$lib/components/EditableLabel.svelte';
+  import TextInput from '$lib/components/TextInput.svelte';
+  import TimezonePicker from '$lib/components/TimezonePicker.svelte';
+  import Toggle from '$lib/components/Toggle.svelte';
+  import { setProfile } from '$lib/stores/preferences.svelte';
+  import { refreshToday } from '$lib/stores/today.svelte';
   import { getPushState, initPushState, requestPushSubscription, revokePushSubscription } from '$lib/stores/push.svelte';
 
   let { data }: { data: PageData } = $props();
 
   let profile = $state(untrack(() => ({ ...data.profile })));
   let passkeys = $state<PasskeyDto[]>(untrack(() => [...data.passkeys]));
+  let timeZone = $state(untrack(() => profile.timeZone));
+  let todayViewEnabled = $state(untrack(() => profile.todayViewEnabled));
+  let persistedTimeZone = $state(untrack(() => profile.timeZone));
+  let persistedTodayViewEnabled = $state(untrack(() => profile.todayViewEnabled));
+  let preferencesSaving = $state(false);
+  let preferencesError = $state('');
+  let preferencesSaved = $state(false);
+
+  async function saveFeaturePreferences() {
+    preferencesSaving = true;
+    preferencesError = '';
+    preferencesSaved = false;
+    try {
+      const updated = await updatePreferences({ timeZone, todayViewEnabled });
+      profile = updated;
+      timeZone = updated.timeZone;
+      todayViewEnabled = updated.todayViewEnabled;
+      persistedTimeZone = updated.timeZone;
+      persistedTodayViewEnabled = updated.todayViewEnabled;
+      setProfile(updated);
+      await refreshToday();
+      preferencesSaved = true;
+    } catch (e) {
+      timeZone = persistedTimeZone;
+      todayViewEnabled = persistedTodayViewEnabled;
+      preferencesError = friendlyError(e, 'Failed to save preferences');
+    } finally {
+      preferencesSaving = false;
+    }
+  }
+
+  function handlePreferenceChange() {
+    preferencesError = '';
+    preferencesSaved = false;
+    void saveFeaturePreferences();
+  }
 
   // ─── Display name ─────────────────────────────────────────────────────────
   let editingName = $state(false);
@@ -234,83 +278,41 @@
     <!-- Display name -->
     <div>
       <p class="block text-sm font-medium text-gray-700 mb-1">Display name</p>
-      {#if editingName}
-        <div class="flex items-center gap-2">
-          <input
-            bind:this={nameInput}
-            bind:value={nameEdit}
-            disabled={nameSaving}
-            onblur={saveDisplayName}
-            onkeydown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); saveDisplayName(); }
-              if (e.key === 'Escape') { editingName = false; }
-            }}
-            class="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
-          />
-          {#if nameSaving}
-            <span class="text-xs text-gray-400">Saving…</span>
-          {/if}
-        </div>
-        {#if nameError}
-          <p class="mt-1 text-xs text-red-600">{nameError}</p>
-        {/if}
-      {:else}
-        <button
-          onclick={startEditName}
-          class="text-sm text-gray-900 hover:opacity-70 transition-opacity cursor-pointer"
-        >
-          {profile.displayName}
-          <span class="text-xs text-gray-400 ml-1">Edit</span>
-        </button>
+      <EditableLabel
+        value={profile.displayName}
+        ariaLabel={profile.displayName}
+        isSaving={nameSaving}
+        inputSize="small"
+        displayAppearance="plain"
+        on:change={(event) => {
+          nameEdit = event.detail.value;
+          saveDisplayName();
+        }}
+      />
+      {#if nameError}
+        <p class="mt-1 text-xs text-red-600">{nameError}</p>
       {/if}
     </div>
 
     <!-- Email -->
     <div>
       <p class="block text-sm font-medium text-gray-700 mb-1">Email</p>
-      {#if editingEmail}
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <div
-          class="flex items-center gap-2"
-          role="group"
-          onmousedown={() => {
-            ignoreNextEmailFocusOut = true;
-            setTimeout(() => { ignoreNextEmailFocusOut = false; }, 0);
-          }}
-          onfocusout={(e) => {
-            if (ignoreNextEmailFocusOut) { ignoreNextEmailFocusOut = false; return; }
-            if (!e.currentTarget.contains(e.relatedTarget as Node)) { editingEmail = false; }
-          }}
-        >
-          <input
-            bind:this={emailInput}
-            id="email"
-            type="email"
-            bind:value={emailEdit}
-            disabled={emailSaving}
-            onkeydown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); saveEmail(); }
-              if (e.key === 'Escape') { editingEmail = false; }
-            }}
-            class="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
-          />
-          <button
-            onclick={saveEmail}
-            disabled={emailSaving}
-            class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {emailSaving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-      {:else}
-        <button
-          onclick={startEditEmail}
-          class="text-sm text-gray-900 hover:opacity-70 transition-opacity cursor-pointer"
-        >
-          {profile.email}
-          <span class="text-xs text-gray-400 ml-1">Edit</span>
-        </button>
-      {/if}
+      <EditableLabel
+        id="email"
+        type="email"
+        value={profile.email}
+        ariaLabel={profile.email}
+        saveMode="explicit"
+        showCancel
+        isSaving={emailSaving}
+        inputSize="small"
+        displayAppearance="plain"
+        oncancel={() => { emailEdit = profile.email; }}
+        on:change={(event) => {
+          emailEdit = event.detail.value;
+          saveEmail();
+        }}
+      />
       {#if emailError}
         <p class="mt-1 text-xs text-red-600">{emailError}</p>
       {/if}
@@ -318,6 +320,28 @@
         <p class="mt-1 text-xs text-green-600">Email updated.</p>
       {/if}
     </div>
+  </section>
+
+  <section class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Settings</h2>
+    <div>
+      <TimezonePicker
+        bind:selected={timeZone}
+        disabled={preferencesSaving}
+        onSelect={handlePreferenceChange}
+      />
+    </div>
+    <div class="flex items-center justify-between gap-4">
+      <span id="today-view-label" class="text-sm font-medium text-gray-700">Show Today View</span>
+      <Toggle
+        bind:checked={todayViewEnabled}
+        disabled={preferencesSaving}
+        aria-labelledby="today-view-label"
+        onchange={handlePreferenceChange}
+      />
+    </div>
+    {#if preferencesError}<p class="text-sm text-red-600">{preferencesError}</p>{/if}
+    {#if preferencesSaved}<p class="text-sm text-green-600">Preferences saved.</p>{/if}
   </section>
 
   <!-- Security section -->
@@ -333,14 +357,14 @@
               <p class="text-xs text-gray-400">Added {formatDate(passkey.createdAt)}</p>
             </div>
             {#if passkeyToRemove !== passkey.id}
-              <button
+              <Button tone="danger" appearance="bare"
                 onclick={() => startRemovePasskey(passkey.id)}
                 disabled={passkeys.length <= 1}
                 title={passkeys.length <= 1 ? "Can't remove the last passkey" : 'Remove passkey'}
-                class="text-xs text-red-500 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                size="compact"
               >
                 Remove
-              </button>
+              </Button>
             {/if}
           </div>
           {#if passkeyToRemove === passkey.id}
@@ -350,19 +374,17 @@
                 <p class="text-sm text-red-600">{removePasskeyError}</p>
               {/if}
               <div class="flex items-center gap-3">
-                <button
+                <Button tone="danger" appearance="solid"
                   onclick={confirmRemovePasskey}
                   disabled={removingPasskey}
-                  class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
                 >
                   {removingPasskey ? 'Removing…' : 'Confirm removal'}
-                </button>
-                <button
+                </Button>
+                <Button tone="neutral" appearance="outline"
                   onclick={() => (passkeyToRemove = null)}
-                  class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           {/if}
@@ -376,37 +398,37 @@
     {#if showAddPasskey}
       <div class="border border-gray-200 rounded-lg p-4 space-y-3">
         <p class="text-sm font-medium text-gray-700">Add passkey for this device</p>
-        <input
+        <TextInput
           bind:value={newLabel}
           placeholder="Label (optional, e.g. My Laptop)"
-          class="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+          size="small"
+          class="w-full"
         />
         {#if addPasskeyError}
           <p class="text-xs text-red-600">{addPasskeyError}</p>
         {/if}
         <div class="flex gap-2">
-          <button
+          <Button tone="primary" appearance="solid"
             onclick={handleAddPasskey}
             disabled={addingPasskey}
-            class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            size="small"
           >
             {addingPasskey ? 'Adding…' : 'Add passkey'}
-          </button>
-          <button
+          </Button>
+          <Button tone="neutral" appearance="outline"
             onclick={() => { showAddPasskey = false; newLabel = ''; addPasskeyError = ''; }}
-            class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+            size="small"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
     {:else}
-      <button
+      <Button tone="primary" appearance="bare"
         onclick={() => (showAddPasskey = true)}
-        class="text-sm text-blue-600 hover:text-blue-800 transition-colors"
       >
         + Add passkey for this device
-      </button>
+      </Button>
     {/if}
   </section>
 
@@ -453,12 +475,11 @@
     <h2 class="text-sm font-semibold text-red-500 uppercase tracking-wide">Danger zone</h2>
 
     {#if !showDeleteConfirm}
-      <button
+      <Button tone="danger" appearance="solid"
         onclick={openDeleteConfirm}
-        class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
       >
         Delete my account
-      </button>
+      </Button>
     {:else}
       <div class="space-y-4">
         {#if loadingPreview}
@@ -495,19 +516,18 @@
           {/if}
 
           <div class="flex items-center gap-3">
-            <button
+            <Button tone="danger" appearance="solid"
               onclick={confirmDelete}
               disabled={deleting}
-              class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {deleting ? 'Deleting…' : 'Confirm deletion'}
-            </button>
-            <button
+            </Button>
+            <Button tone="neutral" appearance="bare"
               onclick={() => (showDeleteConfirm = false)}
-              class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              emphasis="muted"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         {/if}
       </div>
