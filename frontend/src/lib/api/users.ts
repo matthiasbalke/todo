@@ -5,6 +5,9 @@ export interface UserProfileDto {
 	id: string;
 	email: string;
 	displayName: string;
+	timeZone: string;
+	timeZoneInitialized: boolean;
+	todayViewEnabled: boolean;
 }
 
 export interface PasskeyDto {
@@ -24,6 +27,16 @@ export async function getMe(fetchFn: typeof fetch = fetch): Promise<UserProfileD
 
 export async function updateMe(req: { displayName: string; email: string }): Promise<UserProfileDto> {
 	return authedFetch('/api/users/me', {
+		method: 'PUT',
+		body: JSON.stringify(req),
+	});
+}
+
+export async function updatePreferences(req: {
+	timeZone: string;
+	todayViewEnabled: boolean;
+}): Promise<UserProfileDto> {
+	return authedFetch('/api/users/me/preferences', {
 		method: 'PUT',
 		body: JSON.stringify(req),
 	});

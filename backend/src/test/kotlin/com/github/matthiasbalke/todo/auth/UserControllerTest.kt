@@ -58,7 +58,56 @@ class UserControllerTest : AbstractIntegrationTest() {
             jsonPath("$.id") { value(user.id.toString()) }
             jsonPath("$.email") { value(user.email) }
             jsonPath("$.displayName") { value(user.displayName) }
+            jsonPath("$.timeZone") { value("UTC") }
+            jsonPath("$.timeZoneInitialized") { value(false) }
+            jsonPath("$.todayViewEnabled") { value(true) }
         }
+    }
+
+    @Test
+    fun `PUT preferences - persists valid timezone and Today setting`() {
+        val user = createUser()
+        mockMvc.put("/api/users/me/preferences") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"timeZone":"Europe/Berlin","todayViewEnabled":false}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.timeZone") { value("Europe/Berlin") }
+            jsonPath("$.timeZoneInitialized") { value(true) }
+            jsonPath("$.todayViewEnabled") { value(false) }
+        }
+    }
+
+    @Test
+    fun `PUT preferences - accepts explicit UTC selection`() {
+        val user = createUser()
+        mockMvc.put("/api/users/me/preferences") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"timeZone":"UTC","todayViewEnabled":true}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.timeZone") { value("UTC") }
+            jsonPath("$.timeZoneInitialized") { value(true) }
+        }
+    }
+
+    @Test
+    fun `PUT preferences - rejects invalid timezone without changing state`() {
+        val user = createUser()
+        mockMvc.put("/api/users/me/preferences") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"timeZone":"Not/A_Zone","todayViewEnabled":false}"""
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.code") { value("INVALID_TIME_ZONE") }
+        }
+        val unchanged = userRepository.findById(user.id).orElseThrow()
+        assert(unchanged.timeZone == "UTC")
+        assertFalse(unchanged.timeZoneInitialized)
+        assertTrue(unchanged.todayViewEnabled)
     }
 
     @Test

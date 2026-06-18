@@ -21,6 +21,16 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 | Frontend | SvelteKit + TailwindCSS | Lightweight, minimal boilerplate, first-class PWA; Tailwind for modern look |
 | Frontend build | Vite | SvelteKit's default build tool; fast HMR in dev, Rollup-based production bundles |
 | Database | PostgreSQL | Relational model fits lists/items/users/sharing well |
+
+### Frontend components
+
+Build a small, consistent component library in SvelteKit for standard UI primitives (inputs, buttons, selects, date pickers, item cards). Guidelines:
+- Prefer simple, reusable base components that encapsulate behavior and styling.
+- Create specialized components by composing or inheriting from base components when additional behavior or appearance is needed.
+- Reuse existing components across the app to avoid duplication.
+- Keep styling scoped within components (component-level styles or Tailwind classes); avoid inline CSS except for rare runtime-only cases.
+- Place shared components under frontend/src/lib/components and document their API and styling rules.
+
 | Auth | Spring Security + JWT | Stateless, works for PWA + API |
 | Passkey | WebAuthn via Spring Security 6.3+ | FIDO2 passkey — primary login method; no external server required, fully self-hosted |
 | OAuth | Google OAuth2 | Sign in with Google via Spring Security OAuth2 client |
@@ -113,6 +123,8 @@ Accessible from any browser and installable as a PWA on iPhone. Must be performa
 - Create, rename, delete (OWNER only; multiple OWNERs allowed)
 - Invite member by email → ListMembership (OWNER | EDITOR | VIEWER)
 - VIEWER: read only; EDITOR: create/edit/complete items; OWNER: all EDITOR permissions + manage members + delete list
+- List summary and detail responses include the authenticated member's role. The frontend derives item, category, list, and membership capabilities centrally from that role.
+- VIEWER list screens present completion, starred, category, assignment, recurrence, and membership state without shared mutation controls. Filters, sorting, collapse state, hide-checked preferences, mode navigation, and personal list grouping remain available.
 - **Default sort** configurable per list:
   - Alphabetically (A→Z / Z→A)
   - Due date (earliest first / latest first)

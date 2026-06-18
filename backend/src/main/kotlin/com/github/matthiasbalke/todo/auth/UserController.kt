@@ -26,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import java.time.Duration
 import java.time.Instant
+import java.time.ZoneId
+import java.time.zone.ZoneRulesException
 import java.util.Base64
 import java.util.UUID
 
@@ -42,8 +44,16 @@ class UserController(
 
     // ─── DTOs ────────────────────────────────────────────────────────────────
 
-    data class UserProfileDto(val id: UUID, val email: String, val displayName: String)
+    data class UserProfileDto(
+        val id: UUID,
+        val email: String,
+        val displayName: String,
+        val timeZone: String,
+        val timeZoneInitialized: Boolean,
+        val todayViewEnabled: Boolean,
+    )
     data class UpdateProfileRequest(val displayName: String, val email: String)
+    data class UpdatePreferencesRequest(val timeZone: String, val todayViewEnabled: Boolean)
     data class PasskeyDto(val id: UUID, val label: String?, val createdAt: Instant)
     data class AddPasskeyRequest(val credential: PublicKeyCredential<AuthenticatorAttestationResponse>, val label: String?)
     data class ListNameDto(val id: UUID, val name: String)
@@ -75,6 +85,26 @@ class UserController(
                 else -> throw e
             }
         }
+    }
+
+    @PutMapping("/preferences")
+    fun updatePreferences(
+        @AuthenticationPrincipal userId: UUID,
+        @RequestBody body: UpdatePreferencesRequest,
+    ): ResponseEntity<*> {
+        try {
+            ZoneId.of(body.timeZone)
+        } catch (_: ZoneRulesException) {
+            return ResponseEntity.badRequest()
+                .body(ErrorResponse("INVALID_TIME_ZONE", "Unsupported time zone"))
+        }
+        val user = userRepository.findById(userId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND)
+        }
+        user.timeZone = body.timeZone
+        user.timeZoneInitialized = true
+        user.todayViewEnabled = body.todayViewEnabled
+        return ResponseEntity.ok(userRepository.save(user).toDto())
     }
 
     // ─── Passkeys ────────────────────────────────────────────────────────────
@@ -178,7 +208,14 @@ class UserController(
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
-    private fun User.toDto() = UserProfileDto(id, email, displayName)
+    private fun User.toDto() = UserProfileDto(
+        id = id,
+        email = email,
+        displayName = displayName,
+        timeZone = timeZone,
+        timeZoneInitialized = timeZoneInitialized,
+        todayViewEnabled = todayViewEnabled,
+    )
 
     private fun WebAuthnCredential.toDto() = PasskeyDto(id, label, createdAt)
 

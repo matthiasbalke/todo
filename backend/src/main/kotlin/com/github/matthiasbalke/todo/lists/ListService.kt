@@ -58,6 +58,9 @@ class ListService(
         }
     }
 
+    fun getRole(listId: UUID, userId: UUID): ListRole =
+        listAccessService.requireMembership(listId, userId).role
+
     @Transactional
     fun updateList(
         listId: UUID,

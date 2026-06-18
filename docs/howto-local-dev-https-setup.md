@@ -55,6 +55,27 @@ The `.certs/` directory is already in `.gitignore` (Java/Kotlin/Node preset cove
 
 Two wrapper scripts are provided to simplify starting both the backend and frontend with HTTPS and the correct environment variables:
 
+First, create the per-computer domain configuration from the tracked template:
+
+```bash
+cp .local-domain.example .local-domain
+```
+
+Edit `.local-domain` so it contains only the hostname used to access this computer. Do not
+include `https://`, a port, a path, or spaces:
+
+```text
+todo.example.com
+```
+
+`.local-domain` is ignored by Git, so each computer can use a different value. Both startup
+scripts load this same file from the repository root, even when invoked from another working
+directory.
+
+If the file is missing, the scripts stop before starting any processes and print the copy
+command above. Empty values and values containing a scheme, port, path, or whitespace are also
+rejected.
+
 #### `frontend/start-https-frontend.sh`
 
 Starts the Vite dev server with HTTPS and configures HMR (Hot Module Reloading) for access via a domain or tunnel.
@@ -62,23 +83,28 @@ Starts the Vite dev server with HTTPS and configures HMR (Hot Module Reloading) 
 **Usage:**
 
 ```bash
-./frontend/start-https-frontend.sh [DOMAIN] [PORT]
+./frontend/start-https-frontend.sh [PORT]
 ```
 
 **Parameters:**
-- `DOMAIN` (optional, default: `todo.example.com`) — the hostname/domain used to access the app (e.g., your LAN IP `192.168.1.42`, a tunnel domain like `todo.example.com`, or `localhost`)
 - `PORT` (optional, default: `443`) — the HTTPS port
+
+The script uses an existing TCP relay binary on the privileged port, such as `socat`.
+Install it with your package manager before launching:
+
+```bash
+sudo apt install socat
+# or
+brew install socat
+```
 
 **Examples:**
 
 ```bash
-# Direct LAN IP access (no HMR adjustment needed)
-./frontend/start-https-frontend.sh 192.168.1.42 5173
+# Use the configured domain with a non-standard port
+./frontend/start-https-frontend.sh 4443
 
-# Tunnel/reverse proxy access (adjusts HMR to use the tunnel domain)
-./frontend/start-https-frontend.sh todo.example.com 443
-
-# localhost (uses defaults, but forwards HMR correctly if needed)
+# Use the configured domain and default port 443
 ./frontend/start-https-frontend.sh
 ```
 
@@ -91,11 +117,10 @@ Starts the Spring Boot backend with HTTPS configuration and WebAuthn settings.
 **Usage:**
 
 ```bash
-./backend/start-https-backend.sh [DOMAIN] [PORT]
+./backend/start-https-backend.sh [PORT]
 ```
 
 **Parameters:**
-- `DOMAIN` (optional, default: `todo.example.com`) — the hostname/domain matching the frontend access (must match `WEBAUTHN_RP_ID`)
 - `PORT` (optional, default: `443`) — the HTTPS port
 
 **What it does:**
@@ -107,15 +132,17 @@ Starts the Spring Boot backend with HTTPS configuration and WebAuthn settings.
 **Examples:**
 
 ```bash
-# Direct LAN IP access
-./backend/start-https-backend.sh 192.168.1.42 5173
+# Use the configured domain with a non-standard port
+./backend/start-https-backend.sh 5173
 
-# Tunnel/reverse proxy access
-./backend/start-https-backend.sh todo.example.com 443
-
-# localhost
+# Use the configured domain and default port 443
 ./backend/start-https-backend.sh
 ```
+
+> **Migration:** The scripts no longer accept a domain argument. Move the former domain value
+> into `.local-domain` and pass only the optional port. For example,
+> `./frontend/start-https-frontend.sh todo.example.com 4443` becomes
+> `./frontend/start-https-frontend.sh 4443`.
 
 ### Manual approach
 
@@ -125,7 +152,13 @@ A dedicated Vite config (`frontend/vite.config.https.ts`) is already committed. 
 cd frontend && bun run dev:https
 ```
 
-The dev server will now be reachable at `https://<MY_IP>:5173`.
+The HTTPS launcher starts Vite, then uses a privileged relay binary
+such as `socat` to expose port `443`. Vite's HTTPS server uses `node:http2`
+with HTTP/1.1 fallback; Bun versions before `1.3.14` can return
+`HTTP/1.0 403 Forbidden` to HTTP/1.1 clients such as GNU Wget.
+
+The direct dev server will now be reachable at `https://<MY_IP>:5173`.
+The HTTPS launcher keeps Vite on `5173` and exposes it on `443` through the relay binary.
 
 #### HMR when accessing via a tunnel or reverse proxy
 
@@ -299,13 +332,17 @@ Without this step, Safari will show an "untrusted certificate" error and WebAuth
 **Using the convenience scripts (recommended):**
 
 ```bash
+# Configure this computer once
+cp .local-domain.example .local-domain
+# Edit .local-domain to contain 192.168.1.42
+
 # In one terminal, start the backend
-./backend/start-https-backend.sh 192.168.1.42 5173
+./backend/start-https-backend.sh 5173
 
 # In another terminal, start the frontend
-./frontend/start-https-frontend.sh 192.168.1.42 5173
+./frontend/start-https-frontend.sh
 
-# On the iPhone, open Safari and navigate to https://192.168.1.42:5173
+# On the iPhone, open Safari and navigate to https://192.168.1.42
 ```
 
 **Manual approach:**
@@ -346,4 +383,6 @@ The iPhone profile can stay installed — it only affects connections to your de
 | Certificate error on Mac too | Re-run `mkcert -install` after `brew install nss` |
 | IP changed after router reboot | Assign a static DHCP lease to your Mac, or regenerate the cert for the new IP |
 | `WebSocket connection to 'wss://…' failed` in console | Set `VITE_HMR_HOST` to the correct domain/IP using `start-https-frontend.sh` |
+| Wget receives `HTTP/1.0 403 Forbidden` from the HTTPS frontend | Upgrade Bun to `1.3.14` or newer, then restart `bun run dev:https`; also stop any older frontend process still listening on the port |
 | Backend not starting | Make sure `WEBAUTHN_RP_ID` and `CORS_ALLOWED_ORIGINS` match exactly |
+| Startup script reports a missing local domain file | Run `cp .local-domain.example .local-domain`, then edit `.local-domain` |

@@ -133,3 +133,7 @@ export function saveItem(item: TodoItem) {
 export function removeItemFromStore(itemId: string) {
 	items = items.filter(i => i.id !== itemId);
 }
+
+export function clearCategoryFromItems(categoryId: string) {
+	items = items.map(i => i.categoryId === categoryId ? { ...i, categoryId: null } : i);
+}

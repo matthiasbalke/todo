@@ -2,6 +2,8 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 import { defineConfig } from 'vite';
+import { pwaManifest } from './src/lib/pwaManifest';
+
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '0.0.0-dev'),
@@ -34,18 +36,7 @@ export default defineConfig({
     sveltekit(),
     SvelteKitPWA({
       registerType: 'autoUpdate',
-      manifest: {
-        name: 'Todo',
-        short_name: 'Todo',
-        display: 'standalone',
-        start_url: '/lists',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
-        icons: [
-          { src: '/icons/pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/icons/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }
-        ]
-      },
+      manifest: pwaManifest,
       workbox: {
         globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}'],
         runtimeCaching: [

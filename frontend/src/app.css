@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --color-menu-selected: var(--color-blue-600);
+}
+
 /* Prevent iOS Safari from zooming the viewport on input focus (triggers when font-size < 16px) */
 input,
 select,

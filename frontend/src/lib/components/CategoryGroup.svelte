@@ -5,6 +5,7 @@
   import { dragHandleZone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { reorderItemsOptimistic } from '$lib/stores/items.svelte';
   import { friendlyError } from '$lib/api/errors';
+  import Button from './Button.svelte';
 
   let {
     categoryId,
@@ -16,7 +17,10 @@
     collapsed: collapsedProp = false,
     doneCollapsed: doneCollapsedProp = true,
     listId,
+    editable = true,
     isDraggable = false,
+    onchanged,
+    returnTo,
     oncollapsedchange,
     ondonecollapsedchange
   }: {
@@ -29,7 +33,10 @@
     collapsed?: boolean;
     doneCollapsed?: boolean;
     listId: string;
+    editable?: boolean;
     isDraggable?: boolean;
+    onchanged?: () => void | Promise<void>;
+    returnTo?: string;
     oncollapsedchange?: (v: boolean) => void;
     ondonecollapsedchange?: (v: boolean) => void;
   } = $props();
@@ -68,8 +75,11 @@
 
 <div class="mb-6">
   <h3 class="px-1 mb-2">
-    <button
-      class="flex items-center justify-between w-full text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-500 transition-colors"
+    <Button
+      tone="neutral" appearance="bare"
+      size="header"
+      align="between"
+      emphasis="muted"
       onclick={() => { collapsed = !collapsed; oncollapsedchange?.(collapsed); }}
       aria-expanded={!collapsed}
     >
@@ -80,7 +90,7 @@
         {category?.name ?? 'Uncategorized'}
       </span>
       <span class="font-normal normal-case tracking-normal" aria-hidden="true">{collapsed ? '▶' : '▼'}</span>
-    </button>
+    </Button>
   </h3>
   {#if !collapsed}
     {#if isDraggable}
@@ -92,30 +102,33 @@
       >
         {#each dndItems as item (item.id)}
           <div>
-            <ItemCard {item} categories={allCategories} {users} {isDraggable} />
+            <ItemCard {item} categories={allCategories} {users} {editable} {isDraggable} {onchanged} {returnTo} />
           </div>
         {/each}
       </div>
     {:else}
       <div class="space-y-2">
         {#each undoneItems as item (item.id)}
-          <ItemCard {item} categories={allCategories} {users} />
+          <ItemCard {item} categories={allCategories} {users} {editable} {onchanged} {returnTo} />
         {/each}
       </div>
     {/if}
 
     {#if !hideDone && doneItems.length > 0}
-      <button
+      <Button
+        tone="neutral" appearance="bare"
+        size="compact"
+        emphasis="muted"
         onclick={() => { doneCollapsed = !doneCollapsed; ondonecollapsedchange?.(doneCollapsed); }}
-        class="mt-2 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-500 transition-colors px-1"
+        class="mt-2"
       >
         <span>{doneCollapsed ? '▶' : '▼'}</span>
         <span>{doneItems.length} checked</span>
-      </button>
+      </Button>
       {#if !doneCollapsed}
         <div class="space-y-2 mt-1">
           {#each doneItems as item (item.id)}
-            <ItemCard {item} categories={allCategories} {users} />
+            <ItemCard {item} categories={allCategories} {users} {editable} {onchanged} {returnTo} />
           {/each}
         </div>
       {/if}

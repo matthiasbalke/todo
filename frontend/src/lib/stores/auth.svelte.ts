@@ -1,4 +1,6 @@
-import { type AuthUser, refreshAccessToken } from '$lib/api/auth';
+import { type AuthUser, ApiError, refreshAccessToken } from '$lib/api/auth';
+
+export type RestoreSessionResult = 'authenticated' | 'unauthenticated' | 'unavailable';
 
 let currentUser = $state<AuthUser | null>(null);
 let accessToken = $state<string | null>(null);
@@ -63,13 +65,18 @@ export function updateCurrentUser(partial: Partial<AuthUser>): void {
  * Attempts a silent session restore using the refresh token cookie.
  * Called on app load; SSR-safe (no-ops on the server).
  */
-export async function restoreSession(fetchFn: typeof fetch = fetch): Promise<void> {
-	if (typeof window === 'undefined') return;
-	if (isAuthenticated()) return;
+export async function restoreSession(fetchFn: typeof fetch = fetch): Promise<RestoreSessionResult> {
+	if (typeof window === 'undefined') return 'unavailable';
+	if (isAuthenticated()) return 'authenticated';
 	try {
 		const response = await refreshAccessToken(fetchFn);
 		setSession(response);
-	} catch {
-		// No valid refresh token — user is logged out; no action needed
+		return 'authenticated';
+	} catch (err) {
+		if (err instanceof ApiError && err.status === 401) {
+			clearSession();
+			return 'unauthenticated';
+		}
+		return 'unavailable';
 	}
 }

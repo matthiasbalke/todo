@@ -10,8 +10,15 @@
   } from '$lib/api/lists';
   import { ApiError } from '$lib/api/client';
   import { friendlyError } from '$lib/api/errors';
+  import Button from './Button.svelte';
+  import EmailInput from './EmailInput.svelte';
+  import Select from './Select.svelte';
 
-  let { listId, onclose }: { listId: string; onclose: () => void } = $props();
+  let { listId, canManageMembers, onclose }: {
+    listId: string;
+    canManageMembers: boolean;
+    onclose: () => void;
+  } = $props();
 
   let members = $state<MemberDto[]>([]);
   let loadError = $state<string | null>(null);
@@ -20,13 +27,7 @@
   let inviteEmail = $state('');
   let inviteRole = $state<ListRole>('EDITOR');
   let inviting = $state(false);
-
   const currentUser = getCurrentUser();
-
-  const myRole = $derived(
-    members.find(m => m.userId === currentUser?.id)?.role ?? null
-  );
-  const isOwner = $derived(myRole === 'OWNER');
 
   const roles: ListRole[] = ['OWNER', 'EDITOR', 'VIEWER'];
 
@@ -107,7 +108,7 @@
 <div class="fixed inset-x-4 top-1/2 z-40 -translate-y-1/2 max-w-md mx-auto bg-white rounded-2xl shadow-xl p-6">
   <div class="flex items-center justify-between mb-4">
     <h2 class="text-lg font-semibold text-gray-900">Members</h2>
-    <button onclick={onclose} class="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+    <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={onclose} aria-label="Close">✕</Button>
   </div>
 
   {#if loadError}
@@ -120,23 +121,21 @@
             <p class="text-sm font-medium text-gray-900 truncate">{member.displayName}</p>
             <p class="text-xs text-gray-500 truncate">{member.email}</p>
           </div>
-          {#if isOwner && member.userId !== currentUser?.id}
-            <select
-              value={member.role}
-              onchange={(e) => handleRoleChange(member.userId, (e.target as HTMLSelectElement).value as ListRole)}
-              class="text-xs border border-gray-200 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              {#each roles as r}
-                <option value={r}>{r}</option>
-              {/each}
-            </select>
-            <button
+          {#if canManageMembers && member.userId !== currentUser?.id}
+            <Select
+              options={roles}
+              selected={member.role}
+              onSelect={(role) => handleRoleChange(member.userId, role)}
+              size="dense"
+            />
+            <Button
+              tone="danger" appearance="bare"
+              size="compact"
               onclick={() => handleRemove(member.userId)}
-              class="text-xs text-red-500 hover:text-red-700 transition-colors"
               aria-label="Remove {member.displayName}"
             >
               Remove
-            </button>
+            </Button>
           {:else}
             <span class="text-xs font-medium px-2 py-0.5 rounded-full {roleColors[member.role]}">
               {member.role}
@@ -150,32 +149,31 @@
       <p class="text-sm text-red-600 mb-3">{actionError}</p>
     {/if}
 
-    {#if isOwner}
+    {#if canManageMembers}
       <form onsubmit={handleInvite} class="border-t border-gray-100 pt-4 space-y-3">
         <p class="text-sm font-medium text-gray-700">Invite member</p>
-        <input
-          type="email"
+        <EmailInput
           bind:value={inviteEmail}
           placeholder="Email address"
           required
-          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          label=""
+          class="w-full"
         />
         <div class="flex gap-2">
-          <select
-            bind:value={inviteRole}
-            class="text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {#each roles as r}
-              <option value={r}>{r}</option>
-            {/each}
-          </select>
-          <button
+          <Select
+            options={roles}
+            selected={inviteRole}
+            onSelect={(role) => { inviteRole = role; }}
+            size="default"
+          />
+          <Button
             type="submit"
-            disabled={inviting}
-            class="flex-1 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            loading={inviting}
+            loadingLabel="Inviting…"
+            class="flex-1"
           >
-            {inviting ? 'Inviting…' : 'Add'}
-          </button>
+            Add
+          </Button>
         </div>
       </form>
     {/if}

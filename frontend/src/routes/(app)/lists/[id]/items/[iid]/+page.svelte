@@ -7,6 +7,9 @@
   import { goto } from '$app/navigation';
   import { friendlyError } from '$lib/api/errors';
   import { getMembers } from '$lib/api/lists';
+  import Button from '$lib/components/Button.svelte';
+  import ItemDetails from '$lib/components/ItemDetails.svelte';
+  import { getListCapabilities } from '$lib/listCapabilities';
 
   let { data }: { data: PageData } = $props();
 
@@ -21,8 +24,10 @@
   });
 
   const list = $derived(getList(data.id));
+  const capabilities = $derived(list ? getListCapabilities(list.role) : getListCapabilities('VIEWER'));
   const item = $derived(getItems().find(i => i.id === data.iid && i.listId === data.id));
   const categories = $derived(getCategoriesForList(data.id));
+  const returnDestination = $derived(data.returnTo ?? `/lists/${data.id}`);
 
   async function handleSave(updated: TodoItem) {
     try {
@@ -36,21 +41,21 @@
         assignedUserIds: updated.assignedUserIds,
         sortOrder: updated.sortOrder,
       });
-      goto(`/lists/${data.id}`);
+      goto(returnDestination);
     } catch (e) {
       alert(friendlyError(e, 'Failed to save item'));
     }
   }
 
   function handleCancel() {
-    goto(`/lists/${data.id}`);
+    goto(returnDestination);
   }
 
   async function handleDelete() {
     if (!confirm('Delete this item?')) return;
     try {
       await deleteItem(data.id, data.iid);
-      goto(`/lists/${data.id}`);
+      goto(returnDestination);
     } catch (e) {
       alert(friendlyError(e, 'Failed to delete item'));
     }
@@ -59,30 +64,34 @@
 
 <div>
   <div class="flex items-center gap-3 mb-6">
-    <a href="/lists/{data.id}" class="text-gray-400 hover:text-gray-600">←</a>
+    <a href={returnDestination} class="text-gray-400 hover:text-gray-600">←</a>
     {#if list}
       <span class="text-sm text-gray-400">{list.emoji} {list.name}</span>
     {/if}
   </div>
 
   {#if item}
-    <ItemForm
-      {item}
-      listId={data.id}
-      {categories}
-      users={members}
-      onsubmit={handleSave}
-      oncancel={handleCancel}
-    />
-    <div class="mt-4">
-      <button
-        type="button"
-        onclick={handleDelete}
-        class="w-full py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-      >
-        Delete item
-      </button>
-    </div>
+    {#if capabilities.canEditItems}
+      <ItemForm
+        {item}
+        listId={data.id}
+        {categories}
+        users={members}
+        onsubmit={handleSave}
+        oncancel={handleCancel}
+      />
+      <div class="mt-4">
+        <Button tone="danger" appearance="ghost"
+          type="button"
+          onclick={handleDelete}
+          class="w-full"
+        >
+          Delete item
+        </Button>
+      </div>
+    {:else}
+      <ItemDetails {item} {categories} users={members} />
+    {/if}
   {:else}
     <div class="text-center py-12 text-gray-400">Item not found.</div>
   {/if}
