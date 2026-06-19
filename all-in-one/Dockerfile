@@ -21,10 +21,6 @@ RUN bun run build
 FROM dhi.io/eclipse-temurin:21-alpine3.23-dev
 RUN apk add --no-cache nodejs=24.14.1-r0 nginx=1.29.8-r0 supervisor=4.3.0-r0
 
-# user: nonroot 65532
-# user: nobody  65534
-USER 65532:65532
-
 WORKDIR /app
 
 # copy extracted for better caching support
@@ -40,9 +36,13 @@ COPY --from=frontend-build /app/node_modules ./frontend/node_modules
 COPY all-in-one/nginx.conf /etc/nginx/nginx.conf
 COPY all-in-one/supervisord.conf /etc/supervisord.conf
 
+RUN chown -R 65532:65532 /app
+
 ENV NODE_ENV="production"
 ARG BUILD_NUMBER=0
 ENV APP_BUILD_NUMBER=${BUILD_NUMBER}
 
 EXPOSE 80
+# user: nonroot 65532
+# user: nobody  65534
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]
