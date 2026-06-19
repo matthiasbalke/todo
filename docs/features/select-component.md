@@ -2,71 +2,49 @@
 
 ## Overview
 
-A reusable single-select dropdown component for SvelteKit that provides a consistent UI primitive for selecting one value from a list of options. The component displays a trigger button that opens a dropdown menu on click, supporting custom option rendering via Svelte slots. Options can be disabled individually, and the component provides full keyboard navigation support (arrow keys, Enter, Escape).
+`Select.svelte` is the shared single-select control for choosing one predefined value from a list of options. It renders an input-backed combobox for the selected-value area, so users can click or focus the field and type to find matching options.
+
+Typing is only a search query. The selected value remains one of the provided options and changes only when the user chooses an option with pointer or keyboard.
 
 ## Design Decisions
 
 ### Single Select Only
-The component implements single-select semantics (one selected value at a time), distinct from multi-select. This keeps the API simple and focused. Multi-select can be a future component if needed.
 
-### Slot-Based Custom Rendering
-Rather than requiring option objects with specific shapes, the component exposes slots for:
-- `trigger` — the button that opens the dropdown (displays selected value)
-- `option` — each option in the list (rendered with `let:option` context)
+The component supports one selected value at a time. Multi-select and free-form option creation are separate future capabilities.
 
-This allows consumers to render options with icons, colors, or any custom markup without the component needing to know about their structure.
+### Searchable Predefined Options
+
+The selected-value area is editable while the user searches. The query filters the predefined option list by the display label returned from `getOptionLabel(option)`. If the user dismisses the list without selecting an option, the field returns to the selected option label or placeholder.
+
+### Typed Values With Friendly Labels
+
+Consumers may pass primitive values, IDs, or objects. `getOptionLabel` controls what the user sees and what the search query matches, while `selected` and `onSelect` continue to use the original option value.
 
 ### Keyboard Navigation
-Full arrow key navigation (up/down), Enter to select, Escape to close, and Home/End to jump to first/last option. Screen reader users can also use the standard dropdown ARIA patterns.
 
-### Portal Rendering
-The dropdown menu is rendered in the DOM root (via `<Portal>`) rather than inline, avoiding z-index stacking issues and ensuring the menu can overflow document boundaries without clipping.
+The component supports Enter or ArrowDown to open, ArrowUp/ArrowDown to move between options, Home/End to jump to the first or last filtered option, Enter to select the focused option, and Escape or outside click to dismiss without changing the value.
+
+### Trigger-Local Positioning
+
+The listbox is rendered inline in a trigger-local relative wrapper and positioned absolutely below the combobox at the same width. This keeps transformed containers such as dialogs aligned without viewport coordinate calculations.
 
 ### Accessibility
-- ARIA `combobox` role (semantic dropdown pattern)
-- `aria-expanded`, `aria-haspopup`, `aria-controls` for open/closed state
-- `aria-selected` on options
-- Label support via `labelId` prop for association
-- Invalid state indication via `aria-invalid`
+
+- Input uses `role="combobox"` with `aria-autocomplete="list"`.
+- Open state uses `aria-expanded`, `aria-controls`, and `aria-activedescendant`.
+- The option container uses `role="listbox"`.
+- Options use `role="option"` and `aria-selected`.
+- Visible labels are associated with the combobox; unlabeled instances use the placeholder as their accessible name.
+- Validation errors use `aria-invalid` and `aria-describedby`.
 
 ## Security Considerations
 
-- **XSS Prevention:** All option content is rendered via Svelte slots; no HTML strings are directly inserted. The selected value is derived from the options list, preventing injection of arbitrary values.
-- **No User Input:** The component is read-only (no text field to type in), so there's no risk of unvalidated input being submitted.
-- **DOM Structure:** The dropdown is appended to the document root via portal, so the component cannot be accidentally nested in a form that would interfere with event propagation.
+- Option labels are rendered as Svelte text content, not injected HTML.
+- Typed search text is transient and cannot become a persisted or submitted selected value.
+- Selection callbacks receive only values from the provided `options` array.
 
-## Implementation Plan
+## Implementation Notes
 
-1. **Create `Select.svelte` component** with:
-   - Props: `options` (array), `selected` (value), `disabled`, `label`, `placeholder`, `labelId`, `validate`
-   - Slots: `trigger`, `option`
-   - Keyboard navigation and click handling
-   - Portal for dropdown rendering
-
-2. **Create `SelectOption.svelte` helper component** for:
-   - Wrapping individual option elements
-   - Handling hover state, selection, and disabled state
-   - Exposing option context to consumers
-
-3. **Create unit tests** covering:
-   - Rendering and initial state
-   - Opening/closing dropdown
-   - Keyboard navigation (arrow keys, Home, End, Enter, Escape)
-   - Option selection and value binding
-   - Disabled state (both component and individual options)
-   - Accessibility attributes (aria-expanded, aria-selected, etc.)
-   - Slot rendering (trigger and option)
-
-4. **Type safety** with TypeScript generics:
-   - `Select<T>` generic to allow any option type
-   - Proper type inference for `selected` and option iteration
-
-5. **Styling with TailwindCSS**:
-   - Dropdown positioned absolutely below the trigger
-   - Dark overlay when open (optional; configurable)
-   - Hover/focus states on options
-   - Smooth animations for open/close
-
-6. **Integration with existing components**:
-   - Ensure consistent look and feel with `TextInput.svelte`
-   - Use same color scheme and spacing as other form components
+- Props include `options`, bindable `selected`, `disabled`, `label`, `placeholder`, `labelId`, `id`, `listboxId`, `class`, `size`, `getOptionLabel`, `validate`, and `onSelect`.
+- Disabled selects display their current label but do not open, filter, or emit changes.
+- The empty option list shows `No options available`; a search with no matches shows `No matching options`.

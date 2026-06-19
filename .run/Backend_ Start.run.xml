@@ -11,7 +11,9 @@
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="EXECUTE_IN_TERMINAL" value="true" />
     <option name="EXECUTE_SCRIPT_FILE" value="false" />
-    <envs />
+    <envs>
+      <env name="RATE_LIMIT_CAPACITY" value="50000" />
+    </envs>
     <method v="2" />
   </configuration>
 </component>

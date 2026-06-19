@@ -67,8 +67,8 @@ describe('ItemForm', () => {
 				props: { ...defaultProps, categories }
 			});
 
-			const trigger = screen.getByRole('button', { name: 'Category' });
-			expect(trigger).toHaveTextContent('Uncategorized');
+			const trigger = screen.getByRole('combobox', { name: 'Category' });
+			expect(trigger).toHaveValue('Uncategorized');
 			expect(container.querySelector('select#categoryId')).not.toBeInTheDocument();
 
 			await fireEvent.click(trigger);
@@ -81,13 +81,28 @@ describe('ItemForm', () => {
 			['existing category', itemWithCategory('category-2'), undefined, 'Household'],
 			['uncategorized item', itemWithCategory(null), undefined, 'Uncategorized'],
 			['new-item default', undefined, 'category-1', 'Groceries'],
+			['stale new-item default', undefined, 'missing-category', 'Uncategorized'],
 			['stale category', itemWithCategory('missing-category'), undefined, 'missing-category']
 		])('initializes from the %s', (_name, item, defaultCategoryId, label) => {
 			render(ItemForm, {
 				props: { ...defaultProps, categories, item, defaultCategoryId }
 			});
 
-			expect(screen.getByRole('button', { name: 'Category' })).toHaveTextContent(label);
+			expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue(label);
+		});
+
+		it('submits a stale new-item default as Uncategorized', async () => {
+			const onsubmit = vi.fn();
+			render(ItemForm, {
+				props: { ...defaultProps, categories, defaultCategoryId: 'missing-category', onsubmit }
+			});
+
+			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+				target: { value: 'Uncategorized fallback item' }
+			});
+			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+			expect(onsubmit.mock.calls[0][0].categoryId).toBeNull();
 		});
 
 		it('selects a category with a pointer and submits its ID without cancelling', async () => {
@@ -100,7 +115,7 @@ describe('ItemForm', () => {
 			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 				target: { value: 'Categorized item' }
 			});
-			const trigger = screen.getByRole('button', { name: 'Category' });
+			const trigger = screen.getByRole('combobox', { name: 'Category' });
 			await fireEvent.click(trigger);
 			await fireEvent.click(screen.getByRole('option', { name: 'Household' }));
 			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
@@ -122,7 +137,7 @@ describe('ItemForm', () => {
 			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 				target: { value: 'Duplicate category item' }
 			});
-			await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
+			await fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
 			await fireEvent.click(screen.getAllByRole('option', { name: 'Duplicate' })[1]);
 			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
@@ -140,7 +155,7 @@ describe('ItemForm', () => {
 				}
 			});
 
-			await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
+			await fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
 			await fireEvent.click(screen.getByRole('option', { name: 'Uncategorized' }));
 			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
@@ -149,6 +164,7 @@ describe('ItemForm', () => {
 
 		it.each([
 			['configured default', 'category-1', 'Groceries'],
+			['stale default', 'missing-category', 'Uncategorized'],
 			['Uncategorized', undefined, 'Uncategorized']
 		])('resets to %s after creating an item', async (_name, defaultCategoryId, label) => {
 			const onsubmit = vi.fn().mockResolvedValue(undefined);
@@ -159,12 +175,12 @@ describe('ItemForm', () => {
 			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 				target: { value: 'Reset category item' }
 			});
-			const trigger = screen.getByRole('button', { name: 'Category' });
+			const trigger = screen.getByRole('combobox', { name: 'Category' });
 			await fireEvent.click(trigger);
 			await fireEvent.click(screen.getByRole('option', { name: 'Household' }));
 			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
-			expect(trigger).toHaveTextContent(label);
+			expect(trigger).toHaveValue(label);
 		});
 
 		it('supports keyboard selection and Escape dismissal without cancelling', async () => {
@@ -172,19 +188,20 @@ describe('ItemForm', () => {
 			render(ItemForm, {
 				props: { ...defaultProps, categories, oncancel }
 			});
-			const trigger = screen.getByRole('button', { name: 'Category' });
+			const trigger = screen.getByRole('combobox', { name: 'Category' });
+			trigger.focus();
 
 			await fireEvent.keyDown(trigger, { key: 'Enter' });
 			await fireEvent.keyDown(trigger, { key: 'ArrowDown' });
 			await fireEvent.keyDown(trigger, { key: 'Enter' });
-			expect(trigger).toHaveTextContent('Groceries');
+			expect(trigger).toHaveValue('Groceries');
 			expect(oncancel).not.toHaveBeenCalled();
 
 			await fireEvent.keyDown(trigger, { key: 'Enter' });
 			await fireEvent.keyDown(trigger, { key: 'ArrowDown' });
 			await fireEvent.keyDown(trigger, { key: 'Escape' });
 			expect(screen.queryByRole('listbox', { name: 'Category' })).not.toBeInTheDocument();
-			expect(trigger).toHaveTextContent('Groceries');
+			expect(trigger).toHaveValue('Groceries');
 			expect(document.activeElement).toBe(trigger);
 			expect(oncancel).not.toHaveBeenCalled();
 		});
@@ -193,9 +210,9 @@ describe('ItemForm', () => {
 	describe('recurrence', () => {
 		it('renders the shared Select with every recurrence label instead of a native select', async () => {
 			const { container } = render(ItemForm, { props: defaultProps });
-			const trigger = screen.getByRole('button', { name: 'Recurrence' });
+			const trigger = screen.getByRole('combobox', { name: 'Recurrence' });
 
-			expect(trigger).toHaveTextContent('No recurrence');
+			expect(trigger).toHaveValue('No recurrence');
 			expect(container.querySelector('select#recurrencePreset')).not.toBeInTheDocument();
 
 			await fireEvent.click(trigger);
@@ -222,7 +239,7 @@ describe('ItemForm', () => {
 		])('initializes the %s recurrence state', (_name, item, label) => {
 			render(ItemForm, { props: { ...defaultProps, item } });
 
-			expect(screen.getByRole('button', { name: 'Recurrence' })).toHaveTextContent(label);
+			expect(screen.getByRole('combobox', { name: 'Recurrence' })).toHaveValue(label);
 		});
 
 		it.each([
@@ -239,7 +256,7 @@ describe('ItemForm', () => {
 			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 				target: { value: 'Recurring item' }
 			});
-			await fireEvent.click(screen.getByRole('button', { name: 'Recurrence' }));
+			await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
 			await fireEvent.click(screen.getByRole('option', { name: label }));
 			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
@@ -259,7 +276,7 @@ describe('ItemForm', () => {
 				}
 			});
 
-			await fireEvent.click(screen.getByRole('button', { name: 'Recurrence' }));
+			await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
 			await fireEvent.click(screen.getByRole('option', { name: 'No recurrence' }));
 			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
@@ -274,10 +291,10 @@ describe('ItemForm', () => {
 			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 				target: { value: 'Reset recurrence item' }
 			});
-			const trigger = screen.getByRole('button', { name: 'Recurrence' });
+			const trigger = screen.getByRole('combobox', { name: 'Recurrence' });
 			await fireEvent.click(trigger);
 			await fireEvent.click(screen.getByRole('option', { name: 'Every month' }));
-			expect(trigger).toHaveTextContent('Every month');
+			expect(trigger).toHaveValue('Every month');
 			expect(oncancel).not.toHaveBeenCalled();
 
 			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
@@ -286,26 +303,27 @@ describe('ItemForm', () => {
 				intervalValue: 1,
 				intervalUnit: 'MONTHS'
 			});
-			expect(trigger).toHaveTextContent('No recurrence');
+			expect(trigger).toHaveValue('No recurrence');
 			expect(oncancel).not.toHaveBeenCalled();
 		});
 
 		it('supports keyboard selection and Escape dismissal without cancelling', async () => {
 			const oncancel = vi.fn();
 			render(ItemForm, { props: { ...defaultProps, oncancel } });
-			const trigger = screen.getByRole('button', { name: 'Recurrence' });
+			const trigger = screen.getByRole('combobox', { name: 'Recurrence' });
+			trigger.focus();
 
 			await fireEvent.keyDown(trigger, { key: 'Enter' });
 			await fireEvent.keyDown(trigger, { key: 'ArrowDown' });
 			await fireEvent.keyDown(trigger, { key: 'Enter' });
-			expect(trigger).toHaveTextContent('Every day');
+			expect(trigger).toHaveValue('Every day');
 			expect(oncancel).not.toHaveBeenCalled();
 
 			await fireEvent.keyDown(trigger, { key: 'Enter' });
 			await fireEvent.keyDown(trigger, { key: 'ArrowDown' });
 			await fireEvent.keyDown(trigger, { key: 'Escape' });
 			expect(screen.queryByRole('listbox', { name: 'Recurrence' })).not.toBeInTheDocument();
-			expect(trigger).toHaveTextContent('Every day');
+			expect(trigger).toHaveValue('Every day');
 			expect(document.activeElement).toBe(trigger);
 			expect(oncancel).not.toHaveBeenCalled();
 		});

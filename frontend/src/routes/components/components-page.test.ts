@@ -349,6 +349,30 @@ describe('ComponentsPage specialized controls showcase', () => {
 	});
 });
 
+describe('ComponentsPage Select showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('demonstrates searchable predefined selection', async () => {
+		render(ComponentsPage);
+		const section = screen.getByRole('heading', { name: 'Select Component' }).closest('section')!;
+		const showcase = within(section);
+		const trigger = showcase.getByRole('combobox', { name: 'Choose a Fruit' });
+
+		await fireEvent.input(trigger, { target: { value: 'ban' } });
+
+		expect(showcase.getAllByRole('option').map((option) => option.textContent?.trim())).toEqual([
+			'Banana'
+		]);
+
+		await fireEvent.keyDown(trigger, { key: 'Enter' });
+
+		expect(trigger).toHaveValue('Banana');
+		expect(showcase.getAllByText('Selected:')[0].parentElement).toHaveTextContent('Banana');
+	});
+});
+
 describe('ComponentsPage TimezonePicker showcase', () => {
 	afterEach(() => {
 		cleanup();
@@ -361,10 +385,10 @@ describe('ComponentsPage TimezonePicker showcase', () => {
 			.closest('section')!;
 		const showcase = within(section);
 
-		expect(showcase.getByRole('button', { name: 'Account timezone' })).toHaveTextContent(
+		expect(showcase.getByRole('combobox', { name: 'Account timezone' })).toHaveValue(
 			'Berlin (Europe)'
 		);
-		expect(showcase.getByRole('button', { name: 'Locked timezone' })).toBeDisabled();
+		expect(showcase.getByRole('combobox', { name: 'Locked timezone' })).toBeDisabled();
 		expect(showcase.getByText('Selected identifier:').parentElement).toHaveTextContent(
 			'Europe/Berlin'
 		);

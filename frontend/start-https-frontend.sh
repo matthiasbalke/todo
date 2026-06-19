@@ -1,15 +1,65 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
+set -euo pipefail
 
-DOMAIN=${1:-todo.example.com}
-PORT=${2:-443}
+SCRIPT_DIR="${${(%):-%x}:A:h}"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-VITE_HMR_HOST=${DOMAIN}
-export VITE_HMR_HOST
+if (( $# > 1 )); then
+	echo "Usage: $0 [PORT]" >&2
+	exit 2
+fi
 
-VITE_HMR_CLIENT_PORT=${PORT}
-export VITE_HMR_CLIENT_PORT
+source "${REPO_ROOT}/scripts/load-local-domain.sh"
 
-echo Starting on https://${VITE_HMR_HOST}:${VITE_HMR_CLIENT_PORT}
-echo ""
+PORT="${1:-443}"
+validate_local_https_port "${PORT}"
+export VITE_HMR_HOST="${LOCAL_HTTPS_DOMAIN}"
+export VITE_HMR_CLIENT_PORT="${PORT}"
+SOCAT_BIN="${SOCAT_BIN:-$(command -v socat || true)}"
 
-sudo $(which bun) run dev:https
+if [[ -z "${SOCAT_BIN}" || ! -x "${SOCAT_BIN}" ]]; then
+	echo "Missing required relay binary: socat" >&2
+	echo "Install it with your package manager (for example: 'apt install socat' or 'brew install socat')." >&2
+	exit 1
+fi
+
+VITE_INTERNAL_PORT=5173
+
+if [[ "${PORT}" == "${VITE_INTERNAL_PORT}" ]]; then
+	echo "HTTPS port ${PORT} conflicts with the internal Vite port ${VITE_INTERNAL_PORT}; choose a different exposed port." >&2
+	exit 1
+fi
+
+echo "Starting on https://${VITE_HMR_HOST}:${VITE_HMR_CLIENT_PORT}"
+echo
+
+cd "${SCRIPT_DIR}"
+"$(command -v bun)" run dev:https &
+VITE_PID=$!
+
+sudo "${SOCAT_BIN}" "TCP-LISTEN:${PORT},fork,reuseaddr" "TCP:127.0.0.1:${VITE_INTERNAL_PORT}" &
+PROXY_PID=$!
+
+cleanup() {
+	local exit_status=$?
+	trap - EXIT INT TERM
+	kill "${PROXY_PID}" "${VITE_PID}" 2>/dev/null || true
+	wait "${PROXY_PID}" 2>/dev/null || true
+	wait "${VITE_PID}" 2>/dev/null || true
+	exit "${exit_status}"
+}
+trap cleanup EXIT INT TERM
+
+is_job_running() {
+	jobs -lr | grep -Eq "[[:space:]]$1[[:space:]]+running"
+}
+
+while is_job_running "${VITE_PID}" && is_job_running "${PROXY_PID}"; do
+	sleep 1
+done
+
+if is_job_running "${VITE_PID}"; then
+	wait "${PROXY_PID}"
+else
+	wait "${VITE_PID}"
+fi

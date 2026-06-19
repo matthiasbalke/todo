@@ -1,7 +1,17 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const listStoreState = vi.hoisted(() => ({ hideDone: false, role: 'OWNER' as 'OWNER' | 'EDITOR' | 'VIEWER' }));
+const listStoreState = vi.hoisted(() => ({
+	hideDone: false,
+	role: 'OWNER' as 'OWNER' | 'EDITOR' | 'VIEWER',
+	categories: [] as { id: string; listId: string; name: string; color: string | null; sortOrder: number }[],
+}));
+
+const listItemDefaultsMocks = vi.hoisted(() => ({
+	loadListItemDefaults: vi.fn<() => { lastCategoryId: string | null } | null>(() => null),
+	saveListItemDefaults: vi.fn(),
+	deleteListItemDefaults: vi.fn(),
+}));
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
@@ -26,8 +36,8 @@ vi.mock('$lib/stores/lists.svelte', () => ({
 	})),
 	updateList: vi.fn(),
 	deleteList: vi.fn(),
-	getCategoriesForList: vi.fn(() => []),
-	loadCategoriesForList: vi.fn(),
+	getCategoriesForList: vi.fn(() => listStoreState.categories),
+	loadCategoriesForList: vi.fn(() => Promise.resolve()),
 	isHideDone: vi.fn(() => listStoreState.hideDone),
 	setHideDone: vi.fn((_listId: string, value: boolean) => {
 		listStoreState.hideDone = value;
@@ -59,6 +69,8 @@ vi.mock('$lib/listCategoryState', () => ({
 	deleteListCategoryState: vi.fn(),
 }));
 
+vi.mock('$lib/listItemDefaults', () => listItemDefaultsMocks);
+
 vi.mock('$lib/api/errors', () => ({
 	friendlyError: vi.fn((e: unknown) => String(e)),
 }));
@@ -72,6 +84,8 @@ describe('ListPage title emoji extraction', () => {
 		cleanup();
 		listStoreState.hideDone = false;
 		listStoreState.role = 'OWNER';
+		listStoreState.categories = [];
+		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
 
@@ -93,6 +107,8 @@ describe('ListPage accessibility', () => {
 		cleanup();
 		listStoreState.hideDone = false;
 		listStoreState.role = 'OWNER';
+		listStoreState.categories = [];
+		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
 
@@ -117,6 +133,8 @@ describe('ListPage menu presentation', () => {
 		cleanup();
 		listStoreState.hideDone = false;
 		listStoreState.role = 'OWNER';
+		listStoreState.categories = [];
+		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
 
@@ -218,5 +236,26 @@ describe('ListPage menu presentation', () => {
 
 		expect(goto).toHaveBeenCalledWith('/lists/list-1/grocery');
 		expect(screen.queryByRole('button', { name: 'Grocery mode' })).not.toBeInTheDocument();
+	});
+
+	it('clears a remembered category default when that category is no longer in the list', async () => {
+		const { createItem } = await import('$lib/stores/items.svelte');
+		const { deleteListItemDefaults } = await import('$lib/listItemDefaults');
+		listStoreState.categories = [
+			{ id: 'category-1', listId: 'list-1', name: 'Groceries', color: null, sortOrder: 1 },
+		];
+		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue({ lastCategoryId: 'deleted-category' });
+		render(ListPage, { props: { data: mockData } });
+
+		await waitFor(() => expect(deleteListItemDefaults).toHaveBeenCalledWith('list-1'));
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+
+		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Uncategorized');
+		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+			target: { value: 'Fallback item' },
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+		expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({ categoryId: null }));
 	});
 });

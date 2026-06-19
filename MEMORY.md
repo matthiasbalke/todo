@@ -9,6 +9,9 @@
 - `ItemForm.svelte` uses the shared `Select` with category IDs as option values and category names as display labels; the empty string displays as `Uncategorized` and submits as `null`.
 - `Select.svelte` supports an optional `getOptionLabel` resolver while preserving primitive option rendering and original option values in `onSelect`.
 - Category integration coverage verifies defaults, stale IDs, duplicate names, submission/reset, keyboard interaction, and new-form focus/cancel behavior.
+- GitHub issue #113 is covered by OpenSpec change `clear-last-used-category-on-delete`: deleting a category can leave `lastCategoryId` in `todo_list_item_defaults_<listId>`, making new-item category defaults display a stale UUID and submit an invalid category. The proposed fix is to validate remembered new-item defaults against current categories, clear stale local defaults, and have `ItemForm` treat stale new-item defaults as `Uncategorized`.
+- The issue #113 implementation normalizes new-item `defaultCategoryId` inside `ItemForm.svelte`, derives a validated default in `routes/(app)/lists/[id]/+page.svelte`, and deletes persisted list item defaults after category loading when the remembered category disappears. Coverage in `ItemForm.test.ts` and `list-page.test.ts` verifies stale defaults display `Uncategorized`, submit `null`, reset to `Uncategorized`, and clear local defaults. Verification passed with 467 frontend Vitest tests and clean `svelte-check`.
+- Follow-up troubleshooting found that existing loaded items also kept the deleted `categoryId` until refresh, so item inspection could show a UUID in the category Select. `removeCategoryFromStore` now clears the deleted category from loaded items through `clearCategoryFromItems`, covering both direct category deletion and `category.deleted` SSE handling. Store coverage verifies affected items become uncategorized while other category IDs remain intact. Verification passed with 469 frontend Vitest tests and clean `svelte-check`.
 
 ## ItemForm recurrence select
 
@@ -84,6 +87,10 @@
 - The ordered `shared-component-adoption` deltas required one manual merge because `fix-shared-button-left-alignment` modified the capability before `replace-native-elements-with-shared-components` introduced its baseline; the later typography delta then applied normally.
 - `openspec validate --all` passed all 18 current specs and active changes after the archive operation.
 - `highlight-selected-burger-menu-options` was subsequently synced to the new `burger-menu-selection-styling` main spec and archived as `2026-06-12-highlight-selected-burger-menu-options`; no active OpenSpec changes remain.
+- On June 16, 2026, `add-typeahead-select` was proposed for GitHub issue #106. It modifies `shared-component-adoption` so shared `Select` uses an editable search query to filter predefined options; typed text remains transient and only explicit option selection changes `selected` or calls `onSelect`.
+- `add-typeahead-select` was implemented with `Select.svelte` as an input-backed combobox. Plain focus selects the current text without opening; click, Enter/ArrowDown, and typing open the inline trigger-local listbox. Filtering uses `getOptionLabel`, no-match search shows `No matching options`, and abandoned search restores the selected label/placeholder. Frontend verification passed with clean `svelte-check` and 473 Vitest tests.
+- Follow-up dense select sizing fix: input-backed selects need an explicit `size` attribute derived from visible text so auto-width flex layouts such as MembersDialog do not expand to the browser default text-input width. Dense selects cap at 6 characters; MembersDialog now has regression coverage for that.
+- On June 16, 2026, `add-typeahead-select` was synced into `openspec/specs/shared-component-adoption/spec.md` and archived at `openspec/changes/archive/2026-06-16-add-typeahead-select/`.
 
 ## Account E2E shared-component selectors
 
@@ -113,3 +120,41 @@
   keyboard focus remains visible.
 - Today E2E navigation uses exact route-aware locators so the virtual Today link remains distinct
   from user lists such as `Today Source`.
+- Today E2E failure #43 troubleshooting on June 16, 2026 found the `/lists` Today count could remain
+  stale after direct API item setup because the app layout loaded the count before the item existed and
+  the lists page only refreshed on visibility changes. `/lists` now refreshes Today count on mount when
+  Today View is enabled, with regression coverage in `lists-page.test.ts`.
+- In this agent environment, Playwright's configured Chromium package was missing. Attempts to install
+  `chromium` and `chromium-headless-shell` downloaded archives but hung before producing
+  `chromium_headless_shell-1208`, so local e2e rerun could not complete despite the HTTPS deployment
+  being reachable.
+
+## Authentication-aware frontend routing
+
+- `/` and `/auth` use client-only load guards that await `restoreSession(fetch)` before deciding whether to redirect.
+- `/` sends authenticated users to `/lists` and unauthenticated users to `/auth`; `/auth` sends authenticated users to `/lists`.
+- The `(app)` layout remains the shared protected-route guard and does not load protected data until session restoration succeeds.
+- The PWA manifest is defined in `frontend/src/lib/pwaManifest.ts` and launches at `/`, removing the `/lists` workaround introduced by #90.
+- Route-load unit coverage verifies authenticated, unauthenticated, failed-restoration, and protected-data ordering behavior.
+- Verification completed with 454 frontend tests, clean `svelte-check`, a successful production build, and all 11 authentication Playwright tests passing against the HTTPS deployment.
+- A remaining startup race exists when `/auth` loads before the backend: the load guard's one-time
+  `restoreSession` catches the network failure, while the page's later health success only loads auth
+  configuration and shows login controls. Because the refresh cookie is HttpOnly, the fix is to preserve
+  an unavailable restoration outcome and retry restoration after backend health succeeds, not inspect
+  local storage. The `restore-auth-after-backend-startup` OpenSpec change defines this follow-up.
+
+## Per-computer local HTTPS domain
+
+- The tracked `.local-domain.example` contains `todo.example.com`; developers copy it to the git-ignored repo-root `.local-domain` and set a hostname-only value.
+- `scripts/load-local-domain.sh` resolves the repo root, validates and exports `LOCAL_HTTPS_DOMAIN`, and provides the copy/edit recovery command when configuration is missing.
+- Frontend and backend HTTPS launchers source the shared loader from any working directory and now accept only an optional `[PORT]`, defaulting to `443`.
+- `bun run dev:https`: Bun versions before 1.3.14 break Vite 8.0.8's HTTPS server HTTP/1.1 fallback: browser HTTP/2 requests work, while GNU Wget receives a minimal `HTTP/1.0 403 Forbidden` and curl reports HTTP/2 transport errors.
+- README agent E2E commands derive `BASE_URL` from `LOCAL_HTTPS_DOMAIN`; the detailed HTTPS guide documents setup and migration from `[DOMAIN] [PORT]`.
+- `scripts/tests/local-domain.test.sh` covers valid, trimmed, missing, empty, malformed, launcher environment, working-directory, port, legacy-argument, and fail-before-child behavior.
+- Agent e2e runs should try the shared HTTPS deployment first by checking `curl` reachability for `https://${LOCAL_HTTPS_DOMAIN}` and then using `BASE_URL` with Playwright. The agent environment in this workspace does not have direct Docker or PostgreSQL access, so local-stack startup is not the first path to try.
+
+## Zsh helper scripts
+
+- Repository-owned `.sh` helpers use `zsh` shebangs. Use `${${(%):-%x}:A:h}` for script-relative directory resolution instead of Bash-only `${BASH_SOURCE[0]}`.
+- Avoid zsh special parameter names such as `status` and `path` for local variables; they can be read-only or tied to command lookup state.
+- This workspace's zsh 5.9 does not support Bash-style `wait -n`; `frontend/start-https-frontend.sh` uses a job-table polling helper so either child process can end and still trigger cleanup.

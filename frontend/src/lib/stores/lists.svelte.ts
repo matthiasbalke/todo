@@ -18,6 +18,7 @@ import {
 	type CreateListRequest,
 	type UpdateListRequest,
 } from '$lib/api/lists';
+import { clearCategoryFromItems } from '$lib/stores/items.svelte';
 
 let lists = $state<List[]>([]);
 let listGroups = $state<ListGroup[]>([]);
@@ -202,8 +203,7 @@ export async function saveCategory(updated: Category): Promise<void> {
 
 export async function deleteCategory(listId: string, id: string): Promise<void> {
   await apiDeleteCategory(listId, id);
-  const idx = categories.findIndex(c => c.id === id);
-  if (idx >= 0) categories.splice(idx, 1);
+  removeCategoryFromStore(id);
 }
 
 export function upsertCategoryInStore(category: Category): void {
@@ -217,4 +217,5 @@ export function upsertCategoryInStore(category: Category): void {
 
 export function removeCategoryFromStore(categoryId: string): void {
   categories = categories.filter(c => c.id !== categoryId);
+  clearCategoryFromItems(categoryId);
 }
