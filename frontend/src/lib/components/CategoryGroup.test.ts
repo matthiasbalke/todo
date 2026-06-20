@@ -1,13 +1,23 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Category } from '$lib/mock-data';
+import type { Category, TodoItem } from '$lib/mock-data';
+
+const storeMocks = vi.hoisted(() => ({
+	moveItemsToCategoryOptimistic: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock('$lib/stores/items.svelte', () => ({
-	reorderItemsOptimistic: vi.fn().mockResolvedValue(undefined)
+	moveItemsToCategoryOptimistic: storeMocks.moveItemsToCategoryOptimistic,
 }));
 
 vi.mock('$lib/api/errors', () => ({
 	friendlyError: vi.fn((error: unknown) => String(error))
+}));
+
+vi.mock('svelte-dnd-action', () => ({
+	SHADOW_ITEM_MARKER_PROPERTY_NAME: '__isDndShadowItem',
+	dragHandleZone: vi.fn(() => ({ destroy: vi.fn() })),
+	dragHandle: vi.fn(() => ({ destroy: vi.fn() })),
 }));
 
 import CategoryGroup from './CategoryGroup.svelte';
@@ -20,7 +30,29 @@ const category: Category = {
 	sortOrder: 0
 };
 
-afterEach(cleanup);
+function makeItem(id: string, categoryId: string | null): TodoItem {
+	return {
+		id,
+		listId: 'list-1',
+		categoryId,
+		title: `Item ${id}`,
+		notes: null,
+		done: false,
+		starred: false,
+		dueDate: null,
+		assignedUserIds: [],
+		recurrenceRule: null,
+		parentItemId: null,
+		createdByUserId: 'user-1',
+		sortOrder: 0,
+		createdAt: '2026-01-01T00:00:00Z',
+	};
+}
+
+afterEach(() => {
+	cleanup();
+	vi.clearAllMocks();
+});
 
 describe('CategoryGroup header alignment', () => {
 	it('left aligns a named expanded category and collapses it on activation', async () => {
@@ -75,5 +107,87 @@ describe('CategoryGroup header alignment', () => {
 		expect(header).toHaveAttribute('aria-expanded', 'true');
 		expect(header).toHaveTextContent('▼');
 		expect(oncollapsedchange).toHaveBeenCalledWith(false);
+	});
+});
+
+describe('CategoryGroup drag-and-drop', () => {
+	it('moves finalized items into this category in dropped order', async () => {
+		const itemInCategory = makeItem('item-1', category.id);
+		const movedItem = makeItem('item-2', 'category-2');
+		const { container } = render(CategoryGroup, {
+			props: {
+				categoryId: category.id,
+				category,
+				items: [itemInCategory],
+				allCategories: [category],
+				users: [],
+				listId: 'list-1',
+				isDraggable: true,
+			}
+		});
+
+		const zone = container.querySelector('[data-testid="category-drop-zone-category-1"]');
+		await fireEvent(
+			zone as Element,
+			new CustomEvent('finalize', {
+				detail: { items: [itemInCategory, movedItem] },
+				bubbles: true,
+			}),
+		);
+
+		expect(storeMocks.moveItemsToCategoryOptimistic).toHaveBeenCalledWith('list-1', 'category-1', ['item-1', 'item-2']);
+	});
+
+	it('keeps same-category reorders on the current category', async () => {
+		const first = makeItem('item-1', category.id);
+		const second = makeItem('item-2', category.id);
+		const { container } = render(CategoryGroup, {
+			props: {
+				categoryId: category.id,
+				category,
+				items: [first, second],
+				allCategories: [category],
+				users: [],
+				listId: 'list-1',
+				isDraggable: true,
+			}
+		});
+
+		const zone = container.querySelector('[data-testid="category-drop-zone-category-1"]');
+		await fireEvent(
+			zone as Element,
+			new CustomEvent('finalize', {
+				detail: { items: [second, first] },
+				bubbles: true,
+			}),
+		);
+
+		expect(storeMocks.moveItemsToCategoryOptimistic).toHaveBeenCalledWith('list-1', 'category-1', ['item-2', 'item-1']);
+	});
+
+	it('moves finalized items into the uncategorized group', async () => {
+		const movedItem = makeItem('item-1', category.id);
+		const { container } = render(CategoryGroup, {
+			props: {
+				categoryId: null,
+				category: null,
+				items: [],
+				allCategories: [category],
+				users: [],
+				listId: 'list-1',
+				isDraggable: true,
+			}
+		});
+
+		const zone = container.querySelector('[data-testid="category-drop-zone-uncategorized"]');
+		await fireEvent(
+			zone as Element,
+			new CustomEvent('finalize', {
+				detail: { items: [movedItem] },
+				bubbles: true,
+			}),
+		);
+
+		expect(storeMocks.moveItemsToCategoryOptimistic).toHaveBeenCalledWith('list-1', null, ['item-1']);
 	});
 });

@@ -3,9 +3,11 @@
   import type { TodoItem, Category, User } from '$lib/mock-data';
   import ItemCard from './ItemCard.svelte';
   import { dragHandleZone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
-  import { reorderItemsOptimistic } from '$lib/stores/items.svelte';
+  import { moveItemsToCategoryOptimistic } from '$lib/stores/items.svelte';
   import { friendlyError } from '$lib/api/errors';
   import Button from './Button.svelte';
+
+  const ITEM_DND_TYPE = 'category-item';
 
   let {
     categoryId,
@@ -66,7 +68,7 @@
     const newItems = e.detail.items.filter(i => !(i as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME]);
     dndItems = newItems;
     try {
-      await reorderItemsOptimistic(listId, newItems.map(i => i.id));
+      await moveItemsToCategoryOptimistic(listId, categoryId, newItems.map(i => i.id));
     } catch (err) {
       alert(friendlyError(err, 'Failed to reorder items'));
     }
@@ -95,10 +97,11 @@
   {#if !collapsed}
     {#if isDraggable}
       <div
-        use:dragHandleZone={{ items: dndItems, dropTargetStyle: {} }}
+        use:dragHandleZone={{ items: dndItems, type: ITEM_DND_TYPE, dropTargetStyle: {} }}
         onconsider={handleConsider}
         onfinalize={handleFinalize}
-        class="space-y-2"
+        class="space-y-2 min-h-2"
+        data-testid="category-drop-zone-{categoryId ?? 'uncategorized'}"
       >
         {#each dndItems as item (item.id)}
           <div>

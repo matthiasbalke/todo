@@ -5,6 +5,22 @@ const listStoreState = vi.hoisted(() => ({
 	hideDone: false,
 	role: 'OWNER' as 'OWNER' | 'EDITOR' | 'VIEWER',
 	categories: [] as { id: string; listId: string; name: string; color: string | null; sortOrder: number }[],
+	items: [] as {
+		id: string;
+		listId: string;
+		categoryId: string | null;
+		title: string;
+		notes: string | null;
+		done: boolean;
+		starred: boolean;
+		dueDate: string | null;
+		assignedUserIds: string[];
+		recurrenceRule: null;
+		parentItemId: string | null;
+		createdByUserId: string | null;
+		sortOrder: number;
+		createdAt: string;
+	}[],
 }));
 
 const listItemDefaultsMocks = vi.hoisted(() => ({
@@ -16,9 +32,10 @@ const listItemDefaultsMocks = vi.hoisted(() => ({
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 vi.mock('$lib/stores/items.svelte', () => ({
-	getItems: vi.fn(() => []),
+	getItems: vi.fn(() => listStoreState.items),
 	loadItemsForList: vi.fn(),
 	createItem: vi.fn(),
+	moveItemsToCategoryOptimistic: vi.fn(),
 }));
 
 vi.mock('$lib/stores/lists.svelte', () => ({
@@ -97,6 +114,7 @@ describe('ListPage title emoji extraction', () => {
 		listStoreState.hideDone = false;
 		listStoreState.role = 'OWNER';
 		listStoreState.categories = [];
+		listStoreState.items = [];
 		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
@@ -120,6 +138,7 @@ describe('ListPage accessibility', () => {
 		listStoreState.hideDone = false;
 		listStoreState.role = 'OWNER';
 		listStoreState.categories = [];
+		listStoreState.items = [];
 		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
@@ -146,6 +165,7 @@ describe('ListPage menu presentation', () => {
 		listStoreState.hideDone = false;
 		listStoreState.role = 'OWNER';
 		listStoreState.categories = [];
+		listStoreState.items = [];
 		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
@@ -166,6 +186,37 @@ describe('ListPage menu presentation', () => {
 		expect(screen.queryByRole('button', { name: 'Configure categories' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Duplicate list' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Delete list' })).not.toBeInTheDocument();
+	});
+
+	it('does not expose item drag handles or category drop zones to viewers', () => {
+		listStoreState.role = 'VIEWER';
+		listStoreState.categories = [
+			{ id: 'category-1', listId: 'list-1', name: 'Groceries', color: null, sortOrder: 1 },
+		];
+		listStoreState.items = [
+			{
+				id: 'item-1',
+				listId: 'list-1',
+				categoryId: 'category-1',
+				title: 'Milk',
+				notes: null,
+				done: false,
+				starred: false,
+				dueDate: null,
+				assignedUserIds: [],
+				recurrenceRule: null,
+				parentItemId: null,
+				createdByUserId: 'user-1',
+				sortOrder: 0,
+				createdAt: '2026-01-01T00:00:00Z',
+			},
+		];
+
+		const { container } = render(ListPage, { props: { data: mockData } });
+
+		expect(screen.getByText('Milk')).toBeInTheDocument();
+		expect(screen.queryByLabelText('Drag to reorder')).not.toBeInTheDocument();
+		expect(container.querySelector('[data-testid^="category-drop-zone-"]')).not.toBeInTheDocument();
 	});
 
 	it('keeps item and category controls for editors but hides list management', async () => {

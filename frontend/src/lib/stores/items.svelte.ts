@@ -117,6 +117,43 @@ export async function reorderItemsOptimistic(listId: string, orderedIds: string[
 	}
 }
 
+export async function moveItemsToCategoryOptimistic(
+	listId: string,
+	categoryId: string | null,
+	orderedIds: string[],
+): Promise<void> {
+	const snapshot = items.map(i => ({ ...i }));
+	const itemsById = new Map(items.map(item => [item.id, item]));
+	const movedItems = orderedIds
+		.map((id, idx) => ({ item: itemsById.get(id), sortOrder: idx }))
+		.filter((entry): entry is { item: TodoItem; sortOrder: number } => Boolean(entry.item));
+	const categoryChanges = movedItems.filter(({ item }) => item.categoryId !== categoryId);
+
+	movedItems.forEach(({ item, sortOrder }) => {
+		const index = items.findIndex(entry => entry.id === item.id);
+		if (index >= 0) items[index] = { ...items[index], categoryId, sortOrder };
+	});
+
+	try {
+		for (const { item, sortOrder } of categoryChanges) {
+			await itemsApi.updateItem(listId, item.id, {
+				title: item.title,
+				notes: item.notes,
+				categoryId,
+				dueDate: item.dueDate,
+				starred: item.starred,
+				recurrenceRule: item.recurrenceRule,
+				assignedUserIds: item.assignedUserIds,
+				sortOrder,
+			});
+		}
+		await itemsApi.reorderItems(listId, orderedIds.map((id, idx) => ({ id, sortOrder: idx })));
+	} catch (e) {
+		items = snapshot;
+		throw e;
+	}
+}
+
 function isNetworkError(e: unknown): boolean {
 	return !navigator.onLine || (e instanceof TypeError && e.message.includes('fetch'));
 }
