@@ -39,9 +39,9 @@ Issue 126 asks for duplicating an existing list from the list burger menu, copyi
 
    Alternative considered: duplicate only for the requester and drop assignments to other users. That conflicts with the issue requirement to copy all item fields exactly.
 
-4. Generate the suffix from the requesting user's accessible list names.
+4. Generate the suffix from the requesting user's accessible list names after normalizing the source name.
 
-   Rationale: users reason about duplicate names within the list set they can see. This matches the issue examples and avoids unexpected conflicts from inaccessible lists.
+   Rationale: users reason about duplicate names within the list set they can see. This matches the issue examples and avoids unexpected conflicts from inaccessible lists. Normalizing a trailing numeric copy suffix prevents copying `Groceries (1)` into `Groceries (1) (1)` and instead continues the base-name sequence as `Groceries (2)`.
 
    Alternative considered: enforce uniqueness globally across all lists. The data model does not currently require global list-name uniqueness, and global checks would expose implementation complexity without user value.
 

@@ -4,6 +4,7 @@ import type { CategoryDto, ListDto, ListSummaryDto } from '$lib/api/lists';
 const mockCreateCategory = vi.fn<() => Promise<CategoryDto>>();
 const mockGetLists = vi.fn<() => Promise<ListSummaryDto[]>>();
 const mockUpdateList = vi.fn<() => Promise<ListDto>>();
+const mockDuplicateList = vi.fn<() => Promise<ListDto>>();
 const mockDeleteCategory = vi.fn<() => Promise<void>>();
 
 vi.mock('$lib/api/lists', () => ({
@@ -11,6 +12,7 @@ vi.mock('$lib/api/lists', () => ({
 	createList: vi.fn(),
 	updateList: mockUpdateList,
 	deleteList: vi.fn(),
+	duplicateList: mockDuplicateList,
 	getCategories: vi.fn(),
 	createCategory: mockCreateCategory,
 	updateCategory: vi.fn(),
@@ -159,5 +161,45 @@ describe('list role storage', () => {
 			groupId: 'group-1',
 			sortOrderInGroup: 3,
 		});
+	});
+});
+
+describe('duplicateList', () => {
+	it('calls the API, inserts the returned list, and keeps source grouping', async () => {
+		mockGetLists.mockResolvedValue([
+			{
+				id: 'list-1',
+				name: 'Groceries',
+				emoji: '🛒',
+				createdAt: '2026-01-01T00:00:00Z',
+				groupId: 'group-1',
+				sortOrderInGroup: 2,
+				role: 'OWNER',
+			},
+		]);
+		mockDuplicateList.mockResolvedValue({
+			id: 'list-2',
+			name: 'Groceries (1)',
+			emoji: '🛒',
+			description: null,
+			defaultSortField: 'MANUAL',
+			defaultSortDirection: 'ASC',
+			createdAt: '2026-01-02T00:00:00Z',
+			role: 'OWNER',
+		});
+
+		const { loadLists, duplicateList, getList } = await getStore();
+		await loadLists();
+		const duplicated = await duplicateList('list-1');
+
+		expect(mockDuplicateList).toHaveBeenCalledWith('list-1');
+		expect(duplicated).toMatchObject({
+			id: 'list-2',
+			name: 'Groceries (1)',
+			groupId: 'group-1',
+			sortOrderInGroup: 2,
+			role: 'OWNER',
+		});
+		expect(getList('list-2')).toEqual(duplicated);
 	});
 });

@@ -1,6 +1,11 @@
 package com.github.matthiasbalke.todo.lists
 
 import com.github.matthiasbalke.todo.auth.UserRepository
+import com.github.matthiasbalke.todo.items.ItemAssignment
+import com.github.matthiasbalke.todo.items.ItemAssignmentId
+import com.github.matthiasbalke.todo.items.ItemAssignmentRepository
+import com.github.matthiasbalke.todo.items.ItemRepository
+import com.github.matthiasbalke.todo.items.TodoItem
 import com.github.matthiasbalke.todo.sse.ListEvent
 import com.github.matthiasbalke.todo.sse.MemberPayload
 import com.github.matthiasbalke.todo.sse.SsePublisher
@@ -18,6 +23,9 @@ class ListService(
     private val userRepository: UserRepository,
     private val listAccessService: ListAccessService,
     private val listGroupRepository: ListGroupRepository,
+    private val categoryRepository: CategoryRepository,
+    private val itemRepository: ItemRepository,
+    private val itemAssignmentRepository: ItemAssignmentRepository,
     private val ssePublisher: SsePublisher,
 ) {
 
@@ -89,6 +97,31 @@ class ListService(
         listRepository.deleteById(listId)
     }
 
+    @Transactional
+    fun duplicateList(listId: UUID, userId: UUID): List {
+        listAccessService.requireMinRole(listId, userId, ListRole.OWNER)
+        val source = listRepository.findById(listId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND)
+        }
+        val duplicate = listRepository.save(
+            List(
+                name = nextDuplicateName(source.name, userId),
+                emoji = source.emoji,
+                description = source.description,
+                defaultSortField = source.defaultSortField,
+                defaultSortDirection = source.defaultSortDirection,
+            )
+        )
+
+        copyMemberships(listId, duplicate.id)
+        copyRequestingUserGroupAssignment(listId, duplicate.id, userId)
+
+        val categoryIdMap = copyCategories(listId, duplicate.id)
+        copyItems(listId, duplicate.id, categoryIdMap)
+
+        return duplicate
+    }
+
     fun getMembers(listId: UUID, userId: UUID): kotlin.collections.List<ListMembership> {
         listAccessService.requireMembership(listId, userId)
         return listMembershipRepository.findAllByListId(listId)
@@ -158,4 +191,89 @@ class ListService(
         listId = listId,
         role = role.name,
     )
+
+    private fun nextDuplicateName(sourceName: String, userId: UUID): String {
+        val baseName = sourceName.replace(Regex(""" \(\d+\)$"""), "")
+        val existingNames = listRepository.findNamesByMemberUserId(userId).toSet()
+        var counter = 1
+        var candidate = "$baseName ($counter)"
+        while (candidate in existingNames) {
+            counter += 1
+            candidate = "$baseName ($counter)"
+        }
+        return candidate
+    }
+
+    private fun copyMemberships(sourceListId: UUID, duplicateListId: UUID) {
+        val memberships = listMembershipRepository.findAllByListId(sourceListId).map {
+            ListMembership(listId = duplicateListId, userId = it.userId, role = it.role)
+        }
+        listMembershipRepository.saveAll(memberships)
+    }
+
+    private fun copyRequestingUserGroupAssignment(sourceListId: UUID, duplicateListId: UUID, userId: UUID) {
+        val sourceAssignment = listGroupAssignmentRepository.findByListIdAndUserId(sourceListId, userId)
+        listGroupAssignmentRepository.save(
+            ListGroupAssignment(
+                listId = duplicateListId,
+                userId = userId,
+                groupId = sourceAssignment?.groupId,
+                sortOrder = sourceAssignment?.sortOrder ?: 0,
+            )
+        )
+    }
+
+    private fun copyCategories(sourceListId: UUID, duplicateListId: UUID): Map<UUID, UUID> =
+        categoryRepository.findAllByListIdOrderBySortOrder(sourceListId)
+            .associate { sourceCategory ->
+                val duplicateCategory = categoryRepository.save(
+                    Category(
+                        listId = duplicateListId,
+                        name = sourceCategory.name,
+                        color = sourceCategory.color,
+                        sortOrder = sourceCategory.sortOrder,
+                    )
+                )
+                sourceCategory.id to duplicateCategory.id
+            }
+
+    private fun copyItems(sourceListId: UUID, duplicateListId: UUID, categoryIdMap: Map<UUID, UUID>) {
+        val sourceItems = itemRepository.findAllByListId(sourceListId)
+        if (sourceItems.isEmpty()) return
+
+        val itemIdMap = mutableMapOf<UUID, UUID>()
+        val duplicateItems = sourceItems.map { sourceItem ->
+            TodoItem(
+                listId = duplicateListId,
+                categoryId = sourceItem.categoryId?.let { categoryIdMap[it] },
+                title = sourceItem.title,
+                notes = sourceItem.notes,
+                done = sourceItem.done,
+                starred = sourceItem.starred,
+                dueDate = sourceItem.dueDate,
+                recurrenceRule = sourceItem.recurrenceRule,
+                parentItemId = null,
+                createdByUserId = sourceItem.createdByUserId,
+                sortOrder = sourceItem.sortOrder,
+                createdAt = sourceItem.createdAt,
+                updatedAt = sourceItem.updatedAt,
+            ).also { duplicateItem ->
+                itemIdMap[sourceItem.id] = duplicateItem.id
+            }
+        }
+        itemRepository.saveAll(duplicateItems)
+
+        duplicateItems.zip(sourceItems).forEach { (duplicateItem, sourceItem) ->
+            duplicateItem.parentItemId = sourceItem.parentItemId?.let { itemIdMap[it] }
+        }
+        itemRepository.saveAll(duplicateItems)
+
+        val assignments = itemAssignmentRepository.findAllByIdItemIdIn(sourceItems.map { it.id })
+            .mapNotNull { sourceAssignment ->
+                itemIdMap[sourceAssignment.id.itemId]?.let { duplicateItemId ->
+                    ItemAssignment(ItemAssignmentId(duplicateItemId, sourceAssignment.id.userId))
+                }
+            }
+        itemAssignmentRepository.saveAll(assignments)
+    }
 }

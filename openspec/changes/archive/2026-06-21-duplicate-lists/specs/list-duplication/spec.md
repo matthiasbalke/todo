@@ -17,7 +17,7 @@ The system SHALL allow a list owner to duplicate an existing list through a dedi
 - **THEN** the backend rejects the request without exposing the source list contents
 
 ### Requirement: Duplicate list names use the next numeric suffix
-The duplicated list SHALL receive the source list name plus the next available numeric suffix for the requesting user's accessible lists.
+The duplicated list SHALL receive the source list base name plus the next available numeric suffix for the requesting user's accessible lists. If the source list already ends with a numeric copy suffix like ` (1)`, the suffix SHALL be removed before choosing the next number.
 
 #### Scenario: First duplicate is named with suffix one
 - **WHEN** a user duplicates a list named `Groceries` and no accessible list named `Groceries (1)` exists for that user
@@ -26,6 +26,10 @@ The duplicated list SHALL receive the source list name plus the next available n
 #### Scenario: Duplicate name skips existing suffixes
 - **WHEN** a user duplicates a list named `Groceries` and accessible lists named `Groceries (1)` and `Groceries (2)` already exist for that user
 - **THEN** the new list is named `Groceries (3)`
+
+#### Scenario: Duplicating an existing copy increments the base name suffix
+- **WHEN** a user duplicates a list named `Groceries (1)` and an accessible list named `Groceries` already exists for that user
+- **THEN** the new list is named `Groceries (2)`
 
 ### Requirement: Duplicate list preserves source list data
 The duplicate SHALL copy the source list metadata, categories, memberships, items, and item assignments while generating new identifiers for the duplicated list, categories, and items.
