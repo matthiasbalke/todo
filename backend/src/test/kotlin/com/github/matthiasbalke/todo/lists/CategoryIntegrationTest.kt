@@ -194,6 +194,90 @@ class CategoryIntegrationTest : AbstractIntegrationTest() {
         }
     }
 
+    // ─── POST /api/lists/{id}/categories/reorder ────────────────────────────
+
+    @Test
+    fun `POST categories reorder - reorders and normalizes category sortOrder values`() {
+        val owner = createUser()
+        val listId = createListAsUser(owner, "My List")
+        val produce = createCategoryInList(listId, owner, "Produce", sortOrder = 10)
+        val dairy = createCategoryInList(listId, owner, "Dairy", sortOrder = 20)
+        val bakery = createCategoryInList(listId, owner, "Bakery", sortOrder = 30)
+
+        mockMvc.post("/api/lists/$listId/categories/reorder") {
+            header("Authorization", bearerHeader(owner))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"categoryIds":["$bakery","$produce","$dairy"]}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$[0].id") { value(bakery.toString()) }
+            jsonPath("$[0].sortOrder") { value(0) }
+            jsonPath("$[1].id") { value(produce.toString()) }
+            jsonPath("$[1].sortOrder") { value(1) }
+            jsonPath("$[2].id") { value(dairy.toString()) }
+            jsonPath("$[2].sortOrder") { value(2) }
+        }
+
+        mockMvc.get("/api/lists/$listId/categories") {
+            header("Authorization", bearerHeader(owner))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$[0].id") { value(bakery.toString()) }
+            jsonPath("$[1].id") { value(produce.toString()) }
+            jsonPath("$[2].id") { value(dairy.toString()) }
+        }
+    }
+
+    @Test
+    fun `POST categories reorder - returns 400 for foreign category IDs`() {
+        val owner = createUser()
+        val listId = createListAsUser(owner, "List A")
+        val otherListId = createListAsUser(owner, "List B")
+        val category = createCategoryInList(listId, owner, "Produce", sortOrder = 1)
+        val foreignCategory = createCategoryInList(otherListId, owner, "Dairy", sortOrder = 1)
+
+        mockMvc.post("/api/lists/$listId/categories/reorder") {
+            header("Authorization", bearerHeader(owner))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"categoryIds":["$category","$foreignCategory"]}"""
+        }.andExpect {
+            status { isBadRequest() }
+        }
+    }
+
+    @Test
+    fun `POST categories reorder - returns 400 for missing category IDs`() {
+        val owner = createUser()
+        val listId = createListAsUser(owner, "My List")
+        val category = createCategoryInList(listId, owner, "Produce", sortOrder = 1)
+        createCategoryInList(listId, owner, "Dairy", sortOrder = 2)
+
+        mockMvc.post("/api/lists/$listId/categories/reorder") {
+            header("Authorization", bearerHeader(owner))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"categoryIds":["$category"]}"""
+        }.andExpect {
+            status { isBadRequest() }
+        }
+    }
+
+    @Test
+    fun `POST categories reorder - returns 403 for VIEWER`() {
+        val owner = createUser()
+        val viewer = createUser()
+        val listId = createListAsUser(owner, "My List")
+        addMemberToList(listId, owner, viewer.email, "VIEWER")
+        val category = createCategoryInList(listId, owner, "Produce", sortOrder = 1)
+
+        mockMvc.post("/api/lists/$listId/categories/reorder") {
+            header("Authorization", bearerHeader(viewer))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"categoryIds":["$category"]}"""
+        }.andExpect {
+            status { isForbidden() }
+        }
+    }
+
     // ─── DELETE /api/lists/{id}/categories/{cid} ─────────────────────────────
 
     @Test

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { recurrenceRuleToHuman, formatDueDate, isDueDateOverdue, isDueDateToday, applyFilters, applySort } from './utils';
-import type { TodoItem } from './mock-data';
+import { recurrenceRuleToHuman, formatDueDate, isDueDateOverdue, isDueDateToday, applyFilters, applySort, groupByCategory } from './utils';
+import type { Category, TodoItem } from './mock-data';
 import type { Filters } from './utils';
 
 describe('recurrenceRuleToHuman', () => {
@@ -52,5 +52,37 @@ describe('applyFilters — assigneeFilter', () => {
   it("'others' excludes items where current user is one of multiple assignees", () => {
     const result = applyFilters([assignedToMeAndOther], { ...baseFilters, assigneeFilter: 'others' }, 'user1');
     expect(result).toHaveLength(0);
+  });
+});
+
+describe('groupByCategory', () => {
+  const baseItem: Omit<TodoItem, 'id' | 'categoryId'> = {
+    listId: 'l1',
+    title: 'Test',
+    starred: false,
+    done: false,
+    createdAt: '2024-01-01T00:00:00Z',
+    sortOrder: 0,
+    dueDate: null,
+    notes: null,
+    recurrenceRule: null,
+    parentItemId: null,
+    createdByUserId: null,
+    assignedUserIds: [],
+  };
+
+  const categories: Category[] = [
+    { id: 'cat-a', listId: 'l1', name: 'A', color: null, sortOrder: 2 },
+    { id: 'cat-b', listId: 'l1', name: 'B', color: null, sortOrder: 0 },
+  ];
+
+  it('orders real category groups by sortOrder and keeps uncategorized at the bottom', () => {
+    const items: TodoItem[] = [
+      { ...baseItem, id: 'item-uncategorized', categoryId: null },
+      { ...baseItem, id: 'item-a', categoryId: 'cat-a' },
+      { ...baseItem, id: 'item-b', categoryId: 'cat-b' },
+    ];
+
+    expect(Array.from(groupByCategory(items, categories).keys())).toEqual(['cat-b', 'cat-a', null]);
   });
 });
