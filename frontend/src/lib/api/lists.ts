@@ -83,6 +83,10 @@ export function deleteList(id: string): Promise<void> {
 	return authedFetch(`/api/lists/${id}`, { method: 'DELETE' });
 }
 
+export function duplicateList(id: string): Promise<ListDto> {
+	return authedFetch(`/api/lists/${id}/duplicate`, { method: 'POST' });
+}
+
 export function getMembers(listId: string): Promise<MemberDto[]> {
 	return authedFetch(`/api/lists/${listId}/members`);
 }

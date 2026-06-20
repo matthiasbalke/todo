@@ -36,6 +36,18 @@ vi.mock('$lib/stores/lists.svelte', () => ({
 	})),
 	updateList: vi.fn(),
 	deleteList: vi.fn(),
+	duplicateList: vi.fn().mockResolvedValue({
+		id: 'list-2',
+		name: 'Groceries (1)',
+		emoji: '🛒',
+		description: null,
+		defaultSortField: 'MANUAL',
+		defaultSortDirection: 'ASC',
+		createdAt: '2024-01-02T00:00:00Z',
+		groupId: null,
+		sortOrderInGroup: 0,
+		role: 'OWNER',
+	}),
 	getCategoriesForList: vi.fn(() => listStoreState.categories),
 	loadCategoriesForList: vi.fn(() => Promise.resolve()),
 	isHideDone: vi.fn(() => listStoreState.hideDone),
@@ -152,6 +164,7 @@ describe('ListPage menu presentation', () => {
 		expect(screen.getByRole('button', { name: 'Hide checked' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Members' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Configure categories' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Duplicate list' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Delete list' })).not.toBeInTheDocument();
 	});
 
@@ -164,7 +177,49 @@ describe('ListPage menu presentation', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
 		expect(screen.getByRole('button', { name: 'Configure categories' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Duplicate list' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Delete list' })).not.toBeInTheDocument();
+	});
+
+	it('shows duplicate directly above delete for owners', async () => {
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		const buttons = screen.getAllByRole('button').map((button) => button.textContent?.trim());
+		const duplicateIndex = buttons.indexOf('Duplicate list');
+		const deleteIndex = buttons.indexOf('Delete list');
+
+		expect(duplicateIndex).toBeGreaterThan(-1);
+		expect(deleteIndex).toBeGreaterThan(-1);
+		expect(duplicateIndex).toBe(deleteIndex - 1);
+	});
+
+	it('duplicates the list and navigates to the copy', async () => {
+		const { goto } = await import('$app/navigation');
+		const { duplicateList } = await import('$lib/stores/lists.svelte');
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Duplicate list' }));
+
+		expect(duplicateList).toHaveBeenCalledWith('list-1');
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/lists/list-2'));
+	});
+
+	it('reports duplicate failures without navigating away', async () => {
+		const alert = vi.fn();
+		vi.stubGlobal('alert', alert);
+		const { goto } = await import('$app/navigation');
+		const { duplicateList } = await import('$lib/stores/lists.svelte');
+		vi.mocked(duplicateList).mockRejectedValueOnce(new Error('boom'));
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Duplicate list' }));
+
+		await waitFor(() => expect(alert).toHaveBeenCalledWith('Error: boom'));
+		expect(goto).not.toHaveBeenCalledWith('/lists/list-2');
+		vi.unstubAllGlobals();
 	});
 
 	it('uses blue text and inherited check marks for selected menu choices', async () => {

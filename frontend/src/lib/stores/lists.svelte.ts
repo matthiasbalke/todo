@@ -4,6 +4,7 @@ import {
 	createList as apiCreateList,
 	updateList as apiUpdateList,
 	deleteList as apiDeleteList,
+	duplicateList as apiDuplicateList,
 	getCategories as apiGetCategories,
 	createCategory as apiCreateCategory,
 	updateCategory as apiUpdateCategory,
@@ -161,6 +162,25 @@ export async function deleteList(id: string): Promise<void> {
   await apiDeleteList(id);
   const idx = lists.findIndex(l => l.id === id);
   if (idx >= 0) lists.splice(idx, 1);
+}
+
+export async function duplicateList(id: string): Promise<List> {
+  const dto = await apiDuplicateList(id);
+  const source = lists.find(l => l.id === id);
+  const list: List = {
+    id: dto.id,
+    name: dto.name,
+    emoji: dto.emoji,
+    description: dto.description,
+    defaultSortField: dto.defaultSortField as SortField,
+    defaultSortDirection: dto.defaultSortDirection as SortDirection,
+    createdAt: dto.createdAt,
+    groupId: source?.groupId ?? null,
+    sortOrderInGroup: source?.sortOrderInGroup ?? 0,
+    role: dto.role,
+  };
+  lists.push(list);
+  return list;
 }
 
 export function getCategoriesForList(listId: string): Category[] {
