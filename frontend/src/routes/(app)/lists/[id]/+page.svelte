@@ -2,7 +2,7 @@
   import type { PageData } from './$types';
   import { goto } from '$app/navigation';
   import { getItems, loadItemsForList, createItem } from '$lib/stores/items.svelte';
-  import { getList, updateList, deleteList, getCategoriesForList, loadCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
+  import { getList, updateList, deleteList, duplicateList, getCategoriesForList, loadCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
   import { applyFilters, applySort, groupByCategory } from '$lib/utils';
   import { extractEmoji } from '$lib/utils/emoji';
   import type { Filters } from '$lib/utils';
@@ -82,6 +82,7 @@
   let sortSubmenuOpen = $state(false);
   let filterSubmenuOpen = $state(false);
   let deleting = $state(false);
+  let duplicating = $state(false);
   let titleInput = $state<HTMLInputElement | null>(null);
   $effect(() => {
     if (editingTitle && titleInput) titleInput.focus();
@@ -180,6 +181,17 @@
     } catch (e) {
       alert(friendlyError(e, 'Failed to delete list'));
       deleting = false;
+    }
+  }
+
+  async function handleDuplicate() {
+    duplicating = true;
+    try {
+      const duplicated = await duplicateList(data.id);
+      goto(`/lists/${duplicated.id}`);
+    } catch (e) {
+      alert(friendlyError(e, 'Failed to duplicate list'));
+      duplicating = false;
     }
   }
 </script>
@@ -369,17 +381,30 @@
                 {#if isHideDone(data.id)}<span>✓</span>{/if}
               </Button>
             </div>
-            {#if capabilities.canEditList}
+            {#if capabilities.canDuplicateList || capabilities.canEditList}
               <div class="border-t border-gray-100 mt-1 pt-1">
-                <Button tone="danger" appearance="ghost"
-                  size="menu"
-                  align="start"
-                  weight="normal"
-                  onclick={() => { menuOpen = false; handleDelete(); }}
-                  disabled={deleting}
-                >
-                  Delete list
-                </Button>
+                {#if capabilities.canDuplicateList}
+                  <Button tone="neutral" appearance="bare"
+                    size="menu"
+                    align="start"
+                    weight="normal"
+                    onclick={() => { menuOpen = false; handleDuplicate(); }}
+                    disabled={duplicating}
+                  >
+                    Duplicate list
+                  </Button>
+                {/if}
+                {#if capabilities.canEditList}
+                  <Button tone="danger" appearance="ghost"
+                    size="menu"
+                    align="start"
+                    weight="normal"
+                    onclick={() => { menuOpen = false; handleDelete(); }}
+                    disabled={deleting}
+                  >
+                    Delete list
+                  </Button>
+                {/if}
               </div>
             {/if}
           </div>

@@ -4,27 +4,31 @@ import type { CategoryDto, ListDto, ListSummaryDto } from '$lib/api/lists';
 const mockCreateCategory = vi.fn<() => Promise<CategoryDto>>();
 const mockGetLists = vi.fn<() => Promise<ListSummaryDto[]>>();
 const mockUpdateList = vi.fn<() => Promise<ListDto>>();
+const mockDuplicateList = vi.fn<() => Promise<ListDto>>();
 const mockDeleteCategory = vi.fn<() => Promise<void>>();
+const mockReorderCategories = vi.fn<() => Promise<CategoryDto[]>>();
 
 vi.mock('$lib/api/lists', () => ({
 	getLists: mockGetLists,
 	createList: vi.fn(),
 	updateList: mockUpdateList,
 	deleteList: vi.fn(),
+	duplicateList: mockDuplicateList,
 	getCategories: vi.fn(),
 	createCategory: mockCreateCategory,
 	updateCategory: vi.fn(),
 	deleteCategory: mockDeleteCategory,
+	reorderCategories: mockReorderCategories,
 	getListGroups: vi.fn().mockResolvedValue([]),
 }));
 
-function makeDto(id: string): CategoryDto {
+function makeDto(id: string, sortOrder = 0, name = 'Produce'): CategoryDto {
 	return {
 		id,
 		listId: 'list-1',
-		name: 'Produce',
+		name,
 		color: null,
-		sortOrder: 0,
+		sortOrder,
 		createdAt: '2026-01-01T00:00:00Z',
 	};
 }
@@ -107,6 +111,47 @@ describe('deleteCategory', () => {
 	});
 });
 
+describe('reorderCategoriesOptimistic', () => {
+	it('optimistically reorders categories and applies normalized response order', async () => {
+		mockCreateCategory
+			.mockResolvedValueOnce(makeDto('cat-1', 5, 'Produce'))
+			.mockResolvedValueOnce(makeDto('cat-2', 9, 'Dairy'));
+		mockReorderCategories.mockResolvedValue([
+			makeDto('cat-2', 0, 'Dairy'),
+			makeDto('cat-1', 1, 'Produce'),
+		]);
+
+		const { saveCategory, reorderCategoriesOptimistic, getCategoriesForList } = await getStore();
+		await saveCategory({ id: 'cat-1', listId: 'list-1', name: 'Produce', color: null, sortOrder: 5 });
+		await saveCategory({ id: 'cat-2', listId: 'list-1', name: 'Dairy', color: null, sortOrder: 9 });
+
+		const promise = reorderCategoriesOptimistic('list-1', ['cat-2', 'cat-1']);
+		expect(getCategoriesForList('list-1').map(category => category.id)).toEqual(['cat-2', 'cat-1']);
+		await promise;
+
+		expect(mockReorderCategories).toHaveBeenCalledWith('list-1', { categoryIds: ['cat-2', 'cat-1'] });
+		expect(getCategoriesForList('list-1').map(category => [category.id, category.sortOrder])).toEqual([
+			['cat-2', 0],
+			['cat-1', 1],
+		]);
+	});
+
+	it('rolls back optimistic category order when persistence fails', async () => {
+		mockCreateCategory
+			.mockResolvedValueOnce(makeDto('cat-1', 0, 'Produce'))
+			.mockResolvedValueOnce(makeDto('cat-2', 1, 'Dairy'));
+		mockReorderCategories.mockRejectedValue(new Error('network down'));
+
+		const { saveCategory, reorderCategoriesOptimistic, getCategoriesForList } = await getStore();
+		await saveCategory({ id: 'cat-1', listId: 'list-1', name: 'Produce', color: null, sortOrder: 0 });
+		await saveCategory({ id: 'cat-2', listId: 'list-1', name: 'Dairy', color: null, sortOrder: 1 });
+
+		await expect(reorderCategoriesOptimistic('list-1', ['cat-2', 'cat-1'])).rejects.toThrow('network down');
+
+		expect(getCategoriesForList('list-1').map(category => category.id)).toEqual(['cat-1', 'cat-2']);
+	});
+});
+
 describe('list role storage', () => {
 	it('retains roles when loading list summaries', async () => {
 		mockGetLists.mockResolvedValue([
@@ -159,5 +204,45 @@ describe('list role storage', () => {
 			groupId: 'group-1',
 			sortOrderInGroup: 3,
 		});
+	});
+});
+
+describe('duplicateList', () => {
+	it('calls the API, inserts the returned list, and keeps source grouping', async () => {
+		mockGetLists.mockResolvedValue([
+			{
+				id: 'list-1',
+				name: 'Groceries',
+				emoji: '🛒',
+				createdAt: '2026-01-01T00:00:00Z',
+				groupId: 'group-1',
+				sortOrderInGroup: 2,
+				role: 'OWNER',
+			},
+		]);
+		mockDuplicateList.mockResolvedValue({
+			id: 'list-2',
+			name: 'Groceries (1)',
+			emoji: '🛒',
+			description: null,
+			defaultSortField: 'MANUAL',
+			defaultSortDirection: 'ASC',
+			createdAt: '2026-01-02T00:00:00Z',
+			role: 'OWNER',
+		});
+
+		const { loadLists, duplicateList, getList } = await getStore();
+		await loadLists();
+		const duplicated = await duplicateList('list-1');
+
+		expect(mockDuplicateList).toHaveBeenCalledWith('list-1');
+		expect(duplicated).toMatchObject({
+			id: 'list-2',
+			name: 'Groceries (1)',
+			groupId: 'group-1',
+			sortOrderInGroup: 2,
+			role: 'OWNER',
+		});
+		expect(getList('list-2')).toEqual(duplicated);
 	});
 });

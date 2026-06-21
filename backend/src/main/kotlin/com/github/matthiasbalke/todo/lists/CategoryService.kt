@@ -41,6 +41,26 @@ class CategoryService(
     }
 
     @Transactional
+    fun reorderCategories(listId: UUID, userId: UUID, categoryIds: kotlin.collections.List<UUID>): kotlin.collections.List<Category> {
+        listAccessService.requireMinRole(listId, userId, ListRole.EDITOR)
+        val categoriesById = categoryRepository.findAllByListIdOrderBySortOrder(listId).associateBy { it.id }
+        if (categoryIds.toSet().size != categoryIds.size) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Category IDs must be unique")
+        }
+        if (categoriesById.keys != categoryIds.toSet()) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Category order must include every category in the list exactly once")
+        }
+
+        val reordered = categoryIds.mapIndexed { index, categoryId ->
+            categoriesById.getValue(categoryId).also { it.sortOrder = index }
+        }
+        val saved = categoryRepository.saveAll(reordered)
+            .sortedBy { it.sortOrder }
+        saved.forEach { ssePublisher.publish(ListEvent.CategoryUpdated(listId, it.toPayload())) }
+        return saved
+    }
+
+    @Transactional
     fun deleteCategory(listId: UUID, categoryId: UUID, userId: UUID) {
         listAccessService.requireMinRole(listId, userId, ListRole.EDITOR)
         categoryRepository.findByIdAndListId(categoryId, listId)

@@ -5,6 +5,22 @@ const listStoreState = vi.hoisted(() => ({
 	hideDone: false,
 	role: 'OWNER' as 'OWNER' | 'EDITOR' | 'VIEWER',
 	categories: [] as { id: string; listId: string; name: string; color: string | null; sortOrder: number }[],
+	items: [] as {
+		id: string;
+		listId: string;
+		categoryId: string | null;
+		title: string;
+		notes: string | null;
+		done: boolean;
+		starred: boolean;
+		dueDate: string | null;
+		assignedUserIds: string[];
+		recurrenceRule: null;
+		parentItemId: string | null;
+		createdByUserId: string | null;
+		sortOrder: number;
+		createdAt: string;
+	}[],
 }));
 
 const listItemDefaultsMocks = vi.hoisted(() => ({
@@ -16,9 +32,10 @@ const listItemDefaultsMocks = vi.hoisted(() => ({
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 vi.mock('$lib/stores/items.svelte', () => ({
-	getItems: vi.fn(() => []),
+	getItems: vi.fn(() => listStoreState.items),
 	loadItemsForList: vi.fn(),
 	createItem: vi.fn(),
+	moveItemsToCategoryOptimistic: vi.fn(),
 }));
 
 vi.mock('$lib/stores/lists.svelte', () => ({
@@ -36,6 +53,18 @@ vi.mock('$lib/stores/lists.svelte', () => ({
 	})),
 	updateList: vi.fn(),
 	deleteList: vi.fn(),
+	duplicateList: vi.fn().mockResolvedValue({
+		id: 'list-2',
+		name: 'Groceries (1)',
+		emoji: '🛒',
+		description: null,
+		defaultSortField: 'MANUAL',
+		defaultSortDirection: 'ASC',
+		createdAt: '2024-01-02T00:00:00Z',
+		groupId: null,
+		sortOrderInGroup: 0,
+		role: 'OWNER',
+	}),
 	getCategoriesForList: vi.fn(() => listStoreState.categories),
 	loadCategoriesForList: vi.fn(() => Promise.resolve()),
 	isHideDone: vi.fn(() => listStoreState.hideDone),
@@ -85,6 +114,7 @@ describe('ListPage title emoji extraction', () => {
 		listStoreState.hideDone = false;
 		listStoreState.role = 'OWNER';
 		listStoreState.categories = [];
+		listStoreState.items = [];
 		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
@@ -108,6 +138,7 @@ describe('ListPage accessibility', () => {
 		listStoreState.hideDone = false;
 		listStoreState.role = 'OWNER';
 		listStoreState.categories = [];
+		listStoreState.items = [];
 		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
@@ -134,6 +165,7 @@ describe('ListPage menu presentation', () => {
 		listStoreState.hideDone = false;
 		listStoreState.role = 'OWNER';
 		listStoreState.categories = [];
+		listStoreState.items = [];
 		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
@@ -152,7 +184,39 @@ describe('ListPage menu presentation', () => {
 		expect(screen.getByRole('button', { name: 'Hide checked' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Members' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Configure categories' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Duplicate list' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Delete list' })).not.toBeInTheDocument();
+	});
+
+	it('does not expose item drag handles or category drop zones to viewers', () => {
+		listStoreState.role = 'VIEWER';
+		listStoreState.categories = [
+			{ id: 'category-1', listId: 'list-1', name: 'Groceries', color: null, sortOrder: 1 },
+		];
+		listStoreState.items = [
+			{
+				id: 'item-1',
+				listId: 'list-1',
+				categoryId: 'category-1',
+				title: 'Milk',
+				notes: null,
+				done: false,
+				starred: false,
+				dueDate: null,
+				assignedUserIds: [],
+				recurrenceRule: null,
+				parentItemId: null,
+				createdByUserId: 'user-1',
+				sortOrder: 0,
+				createdAt: '2026-01-01T00:00:00Z',
+			},
+		];
+
+		const { container } = render(ListPage, { props: { data: mockData } });
+
+		expect(screen.getByText('Milk')).toBeInTheDocument();
+		expect(screen.queryByLabelText('Drag to reorder')).not.toBeInTheDocument();
+		expect(container.querySelector('[data-testid^="category-drop-zone-"]')).not.toBeInTheDocument();
 	});
 
 	it('keeps item and category controls for editors but hides list management', async () => {
@@ -164,7 +228,49 @@ describe('ListPage menu presentation', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
 		expect(screen.getByRole('button', { name: 'Configure categories' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Duplicate list' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Delete list' })).not.toBeInTheDocument();
+	});
+
+	it('shows duplicate directly above delete for owners', async () => {
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		const buttons = screen.getAllByRole('button').map((button) => button.textContent?.trim());
+		const duplicateIndex = buttons.indexOf('Duplicate list');
+		const deleteIndex = buttons.indexOf('Delete list');
+
+		expect(duplicateIndex).toBeGreaterThan(-1);
+		expect(deleteIndex).toBeGreaterThan(-1);
+		expect(duplicateIndex).toBe(deleteIndex - 1);
+	});
+
+	it('duplicates the list and navigates to the copy', async () => {
+		const { goto } = await import('$app/navigation');
+		const { duplicateList } = await import('$lib/stores/lists.svelte');
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Duplicate list' }));
+
+		expect(duplicateList).toHaveBeenCalledWith('list-1');
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/lists/list-2'));
+	});
+
+	it('reports duplicate failures without navigating away', async () => {
+		const alert = vi.fn();
+		vi.stubGlobal('alert', alert);
+		const { goto } = await import('$app/navigation');
+		const { duplicateList } = await import('$lib/stores/lists.svelte');
+		vi.mocked(duplicateList).mockRejectedValueOnce(new Error('boom'));
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Duplicate list' }));
+
+		await waitFor(() => expect(alert).toHaveBeenCalledWith('Error: boom'));
+		expect(goto).not.toHaveBeenCalledWith('/lists/list-2');
+		vi.unstubAllGlobals();
 	});
 
 	it('uses blue text and inherited check marks for selected menu choices', async () => {

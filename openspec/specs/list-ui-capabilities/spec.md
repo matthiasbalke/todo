@@ -33,16 +33,61 @@ The frontend SHALL derive list UI capabilities from the current user's role thro
 
 #### Scenario: Owner capabilities are derived
 - **WHEN** the current user's list role is `OWNER`
-- **THEN** the derived capabilities permit item mutation, category management, list management, and membership management
+- **THEN** the derived capabilities permit item mutation, category management, list management, list duplication, and membership management
 
 #### Scenario: Editor capabilities are derived
 - **WHEN** the current user's list role is `EDITOR`
 - **THEN** the derived capabilities permit item mutation and category management
-- **AND** they do not permit list management or membership management
+- **AND** they do not permit list management, list duplication, or membership management
 
 #### Scenario: Viewer capabilities are derived
 - **WHEN** the current user's list role is `VIEWER`
-- **THEN** the derived capabilities do not permit item mutation, category management, list management, or membership management
+- **THEN** the derived capabilities do not permit item mutation, category management, list management, list duplication, or membership management
+
+### Requirement: Editable users can drag items between category groups
+The list view SHALL allow users with item mutation capability to move an unchecked item between category groups by drag and drop when manual item dragging is active.
+
+#### Scenario: Item is moved into another category
+- **WHEN** an editable user drags an unchecked item from one category group and drops it into a different category group
+- **THEN** the item is assigned to the destination category
+- **AND** the destination category's manual item order is persisted with the moved item at the dropped position
+
+#### Scenario: Item is moved into uncategorized group
+- **WHEN** an editable user drags an unchecked categorized item into the uncategorized group
+- **THEN** the item category is cleared
+- **AND** the uncategorized group's manual item order is persisted with the moved item at the dropped position
+
+#### Scenario: Item is reordered inside current category
+- **WHEN** an editable user drags an unchecked item within its current category group
+- **THEN** the item remains assigned to its current category
+- **AND** that category group's manual item order is persisted
+
+#### Scenario: Viewer cannot drag items between categories
+- **WHEN** a viewer opens a list grouped by category
+- **THEN** item drag handles and category drop targets are not available for moving items
+
+### Requirement: Editable users can sort categories in the configure dialog
+The configure categories dialog SHALL allow users with category management capability to reorder real categories by drag and drop.
+
+#### Scenario: Category order is changed in configure dialog
+- **WHEN** an editable user drags a category by its reorder handle to a different position in the configure categories dialog
+- **THEN** the dialog category rows are reordered to match the dropped position
+- **AND** the category order is persisted for subsequent loads of the list
+
+#### Scenario: Configure dialog uses drag handles instead of arrows
+- **WHEN** an editable user opens the configure categories dialog
+- **THEN** each category row exposes a drag handle for reordering
+- **AND** up and down arrow controls for reordering categories are not displayed
+
+#### Scenario: Dialog category editing remains available
+- **WHEN** an editable user reorders categories in the configure categories dialog
+- **THEN** category rename, color selection, delete, and add actions remain available
+- **AND** the reordered categories keep their names, colors, and item assignments
+
+#### Scenario: Uncategorized is not sortable in the dialog
+- **WHEN** an editable user opens the configure categories dialog
+- **THEN** only real categories are displayed as sortable rows
+- **AND** no uncategorized category row is created or persisted
 
 ### Requirement: Backend authorization remains authoritative
 Frontend capability handling SHALL complement and SHALL NOT replace the backend role checks on write endpoints.

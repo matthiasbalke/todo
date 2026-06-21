@@ -41,6 +41,10 @@ class CategoryController(private val categoryService: CategoryService) {
         val sortOrder: Int,
     )
 
+    data class ReorderCategoriesRequest(
+        val categoryIds: kotlin.collections.List<UUID>,
+    )
+
     // ─── Endpoints ───────────────────────────────────────────────────────────
 
     @GetMapping
@@ -67,6 +71,14 @@ class CategoryController(private val categoryService: CategoryService) {
         @RequestBody body: UpdateCategoryRequest,
     ): CategoryDto =
         categoryService.updateCategory(id, cid, userId, body.name, body.color, body.sortOrder).toDto()
+
+    @PostMapping("/reorder")
+    fun reorderCategories(
+        @AuthenticationPrincipal userId: UUID,
+        @PathVariable id: UUID,
+        @RequestBody body: ReorderCategoriesRequest,
+    ): kotlin.collections.List<CategoryDto> =
+        categoryService.reorderCategories(id, userId, body.categoryIds).map { cat -> cat.toDto() }
 
     @DeleteMapping("/{cid}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

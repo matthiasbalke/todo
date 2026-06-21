@@ -12,6 +12,7 @@ interface AssignedUserProjection {
 
 interface ItemAssignmentRepository : JpaRepository<ItemAssignment, ItemAssignmentId> {
     fun findAllByIdItemId(itemId: UUID): List<ItemAssignment>
+    fun findAllByIdItemIdIn(itemIds: Collection<UUID>): List<ItemAssignment>
     fun deleteAllByIdItemId(itemId: UUID)
 
     @Query(

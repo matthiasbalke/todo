@@ -83,6 +83,10 @@ export function deleteList(id: string): Promise<void> {
 	return authedFetch(`/api/lists/${id}`, { method: 'DELETE' });
 }
 
+export function duplicateList(id: string): Promise<ListDto> {
+	return authedFetch(`/api/lists/${id}/duplicate`, { method: 'POST' });
+}
+
 export function getMembers(listId: string): Promise<MemberDto[]> {
 	return authedFetch(`/api/lists/${listId}/members`);
 }
@@ -132,6 +136,10 @@ export interface UpdateCategoryRequest {
 	sortOrder: number;
 }
 
+export interface ReorderCategoriesRequest {
+	categoryIds: string[];
+}
+
 export function getCategories(listId: string): Promise<CategoryDto[]> {
 	return authedFetch(`/api/lists/${listId}/categories`);
 }
@@ -156,6 +164,16 @@ export function updateCategory(
 
 export function deleteCategory(listId: string, categoryId: string): Promise<void> {
 	return authedFetch(`/api/lists/${listId}/categories/${categoryId}`, { method: 'DELETE' });
+}
+
+export function reorderCategories(
+	listId: string,
+	req: ReorderCategoriesRequest,
+): Promise<CategoryDto[]> {
+	return authedFetch(`/api/lists/${listId}/categories/reorder`, {
+		method: 'POST',
+		body: JSON.stringify(req),
+	});
 }
 
 // ─── List Groups ──────────────────────────────────────────────────────────────
