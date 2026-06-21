@@ -47,6 +47,29 @@ class ListGroupService(
     }
 
     @Transactional
+    fun reorderGroups(userId: UUID, groupIds: kotlin.collections.List<UUID>): kotlin.collections.List<ListGroup> {
+        if (groupIds.toSet().size != groupIds.size) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Group order must not contain duplicates")
+        }
+
+        val existing = listGroupRepository.findAllByUserIdOrderBySortOrder(userId)
+        val existingById = existing.associateBy { it.id }
+
+        if (existing.size != groupIds.size) {
+            throwIfAnyForeignGroup(userId, groupIds, existingById.keys)
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Group order must include every group exactly once")
+        }
+
+        val reordered = groupIds.mapIndexed { index, groupId ->
+            existingById[groupId]
+                ?: throwForeignOrBadRequest(userId, groupId)
+            existingById.getValue(groupId).also { it.sortOrder = index }
+        }
+
+        return listGroupRepository.saveAll(reordered).sortedBy { it.sortOrder }
+    }
+
+    @Transactional
     fun assignListToGroup(listId: UUID, userId: UUID, groupId: UUID?): com.github.matthiasbalke.todo.lists.List {
         listAccessService.requireMembership(listId, userId)
         if (groupId != null) {
@@ -86,6 +109,24 @@ class ListGroupService(
             throw ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this group")
         }
         return group
+    }
+
+    private fun throwIfAnyForeignGroup(userId: UUID, groupIds: kotlin.collections.List<UUID>, ownGroupIds: Set<UUID>) {
+        val submittedForeignGroup = groupIds
+            .filterNot { it in ownGroupIds }
+            .mapNotNull { groupId -> listGroupRepository.findById(groupId).orElse(null) }
+            .firstOrNull { it.userId != userId }
+        if (submittedForeignGroup != null) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this group")
+        }
+    }
+
+    private fun throwForeignOrBadRequest(userId: UUID, groupId: UUID): Nothing {
+        val group = listGroupRepository.findById(groupId).orElse(null)
+        if (group != null && group.userId != userId) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this group")
+        }
+        throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Group order must include every group exactly once")
     }
 
     fun getListAssignmentForUser(listId: UUID, userId: UUID): ListGroupAssignment? =

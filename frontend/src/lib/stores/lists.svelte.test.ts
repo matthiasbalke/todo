@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CategoryDto, ListDto, ListSummaryDto } from '$lib/api/lists';
+import type { CategoryDto, ListDto, ListGroupDto, ListSummaryDto } from '$lib/api/lists';
 
 const mockCreateCategory = vi.fn<() => Promise<CategoryDto>>();
 const mockGetLists = vi.fn<() => Promise<ListSummaryDto[]>>();
@@ -7,6 +7,8 @@ const mockUpdateList = vi.fn<() => Promise<ListDto>>();
 const mockDuplicateList = vi.fn<() => Promise<ListDto>>();
 const mockDeleteCategory = vi.fn<() => Promise<void>>();
 const mockReorderCategories = vi.fn<() => Promise<CategoryDto[]>>();
+const mockGetListGroups = vi.fn<() => Promise<ListGroupDto[]>>();
+const mockReorderListGroups = vi.fn<() => Promise<ListGroupDto[]>>();
 
 vi.mock('$lib/api/lists', () => ({
 	getLists: mockGetLists,
@@ -19,7 +21,14 @@ vi.mock('$lib/api/lists', () => ({
 	updateCategory: vi.fn(),
 	deleteCategory: mockDeleteCategory,
 	reorderCategories: mockReorderCategories,
-	getListGroups: vi.fn().mockResolvedValue([]),
+	getListGroups: mockGetListGroups,
+	createListGroup: vi.fn(),
+	renameListGroup: vi.fn(),
+	deleteListGroup: vi.fn(),
+	reorderListGroup: vi.fn(),
+	reorderListGroups: mockReorderListGroups,
+	assignListGroup: vi.fn(),
+	reorderListInGroup: vi.fn(),
 }));
 
 function makeDto(id: string, sortOrder = 0, name = 'Produce'): CategoryDto {
@@ -36,6 +45,8 @@ function makeDto(id: string, sortOrder = 0, name = 'Produce'): CategoryDto {
 beforeEach(() => {
 	vi.clearAllMocks();
 	vi.resetModules();
+	mockGetLists.mockResolvedValue([]);
+	mockGetListGroups.mockResolvedValue([]);
 });
 
 async function getStore() {
@@ -149,6 +160,57 @@ describe('reorderCategoriesOptimistic', () => {
 		await expect(reorderCategoriesOptimistic('list-1', ['cat-2', 'cat-1'])).rejects.toThrow('network down');
 
 		expect(getCategoriesForList('list-1').map(category => category.id)).toEqual(['cat-1', 'cat-2']);
+	});
+});
+
+describe('reorderListGroupsOptimistic', () => {
+	function makeGroupDto(id: string, sortOrder: number, name = id): ListGroupDto {
+		return {
+			id,
+			userId: 'user-1',
+			name,
+			sortOrder,
+			createdAt: '2026-01-01T00:00:00Z',
+		};
+	}
+
+	it('optimistically reorders list groups and applies normalized response order', async () => {
+		mockGetListGroups.mockResolvedValue([
+			makeGroupDto('group-home', 5, 'Home'),
+			makeGroupDto('group-work', 9, 'Work'),
+		]);
+		mockReorderListGroups.mockResolvedValue([
+			makeGroupDto('group-work', 0, 'Work'),
+			makeGroupDto('group-home', 1, 'Home'),
+		]);
+
+		const { loadLists, reorderListGroupsOptimistic, getListGroups } = await getStore();
+		await loadLists();
+
+		const promise = reorderListGroupsOptimistic(['group-work', 'group-home']);
+		expect(getListGroups().map(group => group.id)).toEqual(['group-work', 'group-home']);
+		await promise;
+
+		expect(mockReorderListGroups).toHaveBeenCalledWith({ groupIds: ['group-work', 'group-home'] });
+		expect(getListGroups().map(group => [group.id, group.sortOrder])).toEqual([
+			['group-work', 0],
+			['group-home', 1],
+		]);
+	});
+
+	it('rolls back optimistic list group order when persistence fails', async () => {
+		mockGetListGroups.mockResolvedValue([
+			makeGroupDto('group-home', 0, 'Home'),
+			makeGroupDto('group-work', 1, 'Work'),
+		]);
+		mockReorderListGroups.mockRejectedValue(new Error('network down'));
+
+		const { loadLists, reorderListGroupsOptimistic, getListGroups } = await getStore();
+		await loadLists();
+
+		await expect(reorderListGroupsOptimistic(['group-work', 'group-home'])).rejects.toThrow('network down');
+
+		expect(getListGroups().map(group => group.id)).toEqual(['group-home', 'group-work']);
 	});
 });
 

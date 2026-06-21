@@ -73,6 +73,15 @@ describe('ListGroupSection', () => {
     expect(container.querySelector('a[href="/lists/grocery"]')).not.toBeNull();
   });
 
+  it('renders a separate list group drag handle only when requested', () => {
+    const grouped = render(ListGroupSection, { props: { group, lists, showGroupDragHandle: true } });
+    expect(grouped.container.querySelectorAll('[aria-label="Drag to reorder list group"]')).toHaveLength(1);
+    expect(grouped.container.querySelectorAll('[aria-label="Drag to reorder"]')).toHaveLength(lists.length);
+
+    const ungrouped = render(ListGroupSection, { props: { group: null, lists, showGroupDragHandle: true } });
+    expect(ungrouped.container.querySelector('[aria-label="Drag to reorder list group"]')).toBeNull();
+  });
+
   it('long-press on list card anchor does not show browser link preview (contextmenu suppressed)', () => {
     const { container } = render(ListGroupSection, { props: { group, lists } });
     const anchor = container.querySelector('a[href]') as HTMLAnchorElement;
