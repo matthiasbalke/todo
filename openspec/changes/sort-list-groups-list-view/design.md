@@ -27,7 +27,10 @@ Issue 129 is about sorting the list group wrappers on `/lists`. It is not about 
 ## Decisions
 
 - Reuse the existing list group ordering model.
-  Rationale: `ListGroup.sortOrder`, `GET /api/list-groups`, `PATCH /api/list-groups/{gid}/order`, and `reorderListGroup` already exist. The feature should build on those concepts instead of introducing a parallel ordering model. Alternative considered: add a category-style batch reorder endpoint immediately, but the existing endpoint may be enough if the implementation normalizes the affected group order safely.
+  Rationale: `ListGroup.sortOrder` and `GET /api/list-groups` already define the persisted group order. The feature should build on those concepts instead of introducing a parallel ordering model.
+
+- Add a batch list group reorder endpoint for final persistence.
+  Rationale: Drag finalization produces a complete ordered set of persisted list group IDs. Persisting that set with a single endpoint lets the backend validate ownership, reject duplicate/missing/foreign IDs, and normalize `sortOrder` values to `0..n` transactionally. This follows the existing category reorder pattern more closely than sending repeated single-group `PATCH /api/list-groups/{gid}/order` calls, which can leave sparse or duplicate order values if a request fails midway.
 
 - Sort only persisted list groups in the group-wrapper drag zone.
   Rationale: Ungrouped is virtual (`group === null`) and should remain after persisted groups. Today is a separate overview entry, not a list group. Including either in the sortable zone would create misleading persistence semantics.
@@ -41,6 +44,6 @@ Issue 129 is about sorting the list group wrappers on `/lists`. It is not about 
 ## Risks / Trade-offs
 
 - Nested drag zones can conflict between wrapper movement and list-card movement. Mitigation: make group drag start only from a dedicated section handle and keep existing list-card handles unchanged.
-- Updating one group's `sortOrder` at a time can leave sparse or duplicate order values. Mitigation: normalize the affected persisted groups during finalization, either in the frontend store with sequential `reorderListGroup` calls or by tightening backend behavior if needed.
+- Batch reordering requires a new API contract instead of only reusing the existing single-group order endpoint. Mitigation: mirror the existing category reorder endpoint shape and validation style so the contract remains predictable.
 - Re-rendering grouped data after an optimistic reorder can disturb collapsed state. Mitigation: key collapsed state by list group ID and keep those keys unchanged during reordering.
 - Users may expect the virtual Ungrouped section to be sortable too. Mitigation: keep this change scoped to persisted list groups and leave Ungrouped fixed at the bottom.

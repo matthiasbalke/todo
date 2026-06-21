@@ -21,6 +21,6 @@ The `/lists` overview lets users organize lists into list groups, but the group 
 ## Impact
 
 - Frontend `/lists` overview and `ListGroupSection` rendering: support group-wrapper drag-and-drop while preserving existing list-card drag-and-drop.
-- Frontend list store/API client: reuse or harden `reorderListGroup` for persisted group order updates.
-- Backend list group ordering: may need normalization/transactional behavior if the existing single-group order update is insufficient for drag reordering.
+- Frontend list store/API client: add a batch list-group reorder path for persisted group order updates.
+- Backend list group ordering: add a batch reorder endpoint that validates the signed-in user's complete persisted group set and normalizes `sortOrder` transactionally.
 - Tests: component coverage for list group wrapper reordering, Ungrouped-section behavior, and existing list drag regression coverage.
