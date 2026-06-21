@@ -1,28 +1,28 @@
 ## ADDED Requirements
 
-### Requirement: Editable users can sort category groups in the list view
-The standard list view SHALL allow users with category management capability to reorder real category groups by drag and drop.
+### Requirement: Users can sort list groups on the lists overview
+The `/lists` overview SHALL allow a signed-in user to reorder their persisted list group wrappers by drag and drop.
 
-#### Scenario: Category group order is changed in list view
-- **WHEN** an editable user drags a real category group to a different position in the standard list view
-- **THEN** the displayed real category groups are reordered to match the dropped position
-- **AND** the category order is persisted for subsequent loads of the list
+#### Scenario: List group order is changed on lists overview
+- **WHEN** a signed-in user drags a persisted list group wrapper to a different position on `/lists`
+- **THEN** the displayed persisted list groups are reordered to match the dropped position
+- **AND** the list group order is persisted for subsequent loads of `/lists`
 
-#### Scenario: Items remain inside their groups
-- **WHEN** an editable user reorders category groups in the standard list view
-- **THEN** each item remains assigned to its original category or uncategorized group
-- **AND** each group's item order remains unchanged
+#### Scenario: Lists remain inside their groups
+- **WHEN** a signed-in user reorders list group wrappers on `/lists`
+- **THEN** each list remains assigned to its original persisted group or the virtual Ungrouped section
+- **AND** each group's list order remains unchanged
 
-#### Scenario: Uncategorized group remains at bottom
-- **WHEN** the uncategorized group is visible and an editable user reorders category groups in the standard list view
-- **THEN** only real category groups are repositioned
-- **AND** the uncategorized group remains displayed after all real category groups
+#### Scenario: Ungrouped section remains at bottom
+- **WHEN** the virtual Ungrouped section is visible and a signed-in user reorders persisted list groups on `/lists`
+- **THEN** only persisted list group wrappers are repositioned
+- **AND** the virtual Ungrouped section remains displayed after all persisted list groups
 
-#### Scenario: Existing item dragging remains available
-- **WHEN** manual item dragging is active and an editable user reorders or moves items within category groups
-- **THEN** item drag handles and item drop behavior continue to work independently from category group dragging
+#### Scenario: Existing list dragging remains available
+- **WHEN** a signed-in user reorders or moves lists within or between list group sections
+- **THEN** list-card drag handles and list drop behavior continue to work independently from list group wrapper dragging
 
-#### Scenario: Viewer cannot sort category groups
-- **WHEN** a viewer opens a list grouped by category
-- **THEN** category group drag handles and group drop targets are not available
-- **AND** the viewer cannot persist category group order changes through the UI
+#### Scenario: List category order is unchanged
+- **WHEN** a signed-in user reorders list group wrappers on `/lists`
+- **THEN** no category order within any individual list is changed
+- **AND** no category reorder endpoint is invoked

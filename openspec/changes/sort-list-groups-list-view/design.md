@@ -1,44 +1,46 @@
 ## Context
 
-The standard list page groups items by category through `groupByCategory` and renders each group with `CategoryGroup.svelte`. Item drag-and-drop is already implemented with `svelte-dnd-action`, including cross-category item moves. The first `sort-list-groups` iteration introduces transactional category reorder persistence and configure-dialog row drag-and-drop.
+The `/lists` overview groups lists by user-owned `ListGroup` records and renders each wrapper with `ListGroupSection.svelte`. Lists inside a section are already draggable with `svelte-dnd-action`, including moves between persisted groups and the virtual Ungrouped section. The page currently renders persisted groups as `groups.slice().sort((a, b) => a.sortOrder - b.sortOrder)`, and the backend exposes `/api/list-groups/{gid}/order` through `reorderListGroup`.
 
-This second iteration must start only after the dialog iteration has been reviewed and approved. It should reuse the category reorder API and store operation from that first iteration instead of adding a second persistence path.
+Issue 129 is about sorting the list group wrappers on `/lists`. It is not about list categories, category groups inside a list detail page, or the archived `sort-list-groups` category-ordering change.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Allow owners and editors to reorder real category groups from the standard list page.
-- Reuse the dialog iteration's category reorder API and optimistic store operation.
-- Keep the uncategorized group fixed after all real category groups.
-- Preserve item membership and per-group item order when category groups move.
-- Keep existing item drag-and-drop behavior working.
-- Keep group reordering unavailable to viewers.
+- Allow a signed-in user to reorder their persisted list group wrappers on `/lists`.
+- Persist the resulting list group order so subsequent `/lists` loads render the new order.
+- Keep lists inside each group assigned to the same group and in the same order when group wrappers move.
+- Keep existing list-card drag-and-drop inside and between groups working.
+- Keep the virtual Ungrouped section fixed after persisted list groups and out of group-wrapper sorting.
+- Keep Today, new-list, and new-group affordances out of the sortable list group set.
 
 **Non-Goals:**
 
-- Change the configure categories dialog; that belongs to the first iteration.
-- Add group sorting to grocery mode or the Today view.
-- Persist or reorder the virtual uncategorized group.
-- Change item category assignment semantics.
+- Change category ordering in the configure categories dialog or a list detail page.
+- Add category group sorting to standard list detail, grocery mode, or the Today view.
+- Persist or reorder the virtual Ungrouped section.
+- Change list assignment semantics inside groups.
+- Change item or item-category assignment semantics.
 - Add a new drag-and-drop dependency.
 
 ## Decisions
 
-- Reuse the category reorder API and store operation from `sort-list-groups`.
-  Rationale: The list page is another UI surface for the same real category order. Reusing the dialog iteration's persistence path avoids duplicate reorder contracts and keeps category ordering consistent. Alternative considered: implement a list-page-specific reorder endpoint, but that would fragment the category order model.
+- Reuse the existing list group ordering model.
+  Rationale: `ListGroup.sortOrder`, `GET /api/list-groups`, `PATCH /api/list-groups/{gid}/order`, and `reorderListGroup` already exist. The feature should build on those concepts instead of introducing a parallel ordering model. Alternative considered: add a category-style batch reorder endpoint immediately, but the existing endpoint may be enough if the implementation normalizes the affected group order safely.
 
-- Wrap only real category groups in the list-page sortable zone.
-  Rationale: The uncategorized group is virtual and must remain at the bottom. Real category groups can be reordered while the uncategorized group is rendered separately after the sortable zone. Alternative considered: include uncategorized in the zone and force it back to the bottom, but that creates misleading drag affordances.
+- Sort only persisted list groups in the group-wrapper drag zone.
+  Rationale: Ungrouped is virtual (`group === null`) and should remain after persisted groups. Today is a separate overview entry, not a list group. Including either in the sortable zone would create misleading persistence semantics.
 
-- Add a dedicated group drag handle to avoid conflicts with item drag handles.
-  Rationale: `CategoryGroup.svelte` already owns item-level drag behavior. Starting category group drag only from a group handle prevents accidental group movement while users reorder or move items. Alternative considered: make the entire group draggable, but that would conflict with item interactions and collapse controls.
+- Add a dedicated group drag handle to avoid conflicts with list-card drag handles.
+  Rationale: `ListGroupSection.svelte` already owns list-card drag behavior. Starting list group wrapper drag only from a section-level handle prevents accidental wrapper movement while users reorder or move lists. Alternative considered: make the entire section draggable, but that would conflict with collapse, rename/delete menu, and list-card drag handles.
 
-- Gate list-page group sorting with `canManageCategories`.
-  Rationale: Category ordering is category management, while item dragging is item mutation. Owners and editors can manage categories; viewers should see the resulting order without mutation affordances. Backend role checks remain authoritative through the existing reorder endpoint.
+- Keep group sorting scoped to the current user.
+  Rationale: List groups are per-user wrappers, and `ListGroupService.requireOwnership` already enforces ownership for group writes. Reordering groups should affect only the signed-in user's `/lists` overview, including groups that contain shared lists.
 
 ## Risks / Trade-offs
 
-- Nested drag zones can conflict between group movement and item movement. Mitigation: make group drag start only from a dedicated handle and keep existing item handles unchanged.
-- Re-rendering grouped data after an optimistic reorder can disturb collapsed state. Mitigation: key collapse state by category ID and keep those keys unchanged during reordering.
-- Users may expect grocery mode sorting too. Mitigation: keep this iteration scoped to the standard list page and leave grocery mode out of the requirements.
+- Nested drag zones can conflict between wrapper movement and list-card movement. Mitigation: make group drag start only from a dedicated section handle and keep existing list-card handles unchanged.
+- Updating one group's `sortOrder` at a time can leave sparse or duplicate order values. Mitigation: normalize the affected persisted groups during finalization, either in the frontend store with sequential `reorderListGroup` calls or by tightening backend behavior if needed.
+- Re-rendering grouped data after an optimistic reorder can disturb collapsed state. Mitigation: key collapsed state by list group ID and keep those keys unchanged during reordering.
+- Users may expect the virtual Ungrouped section to be sortable too. Mitigation: keep this change scoped to persisted list groups and leave Ungrouped fixed at the bottom.
