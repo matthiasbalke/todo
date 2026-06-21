@@ -155,10 +155,12 @@ test.describe('Category config dialog', () => {
 		await expect(dialog.getByRole('button', { name: 'Meat' })).toBeVisible();
 	});
 
-	test('▲ disabled on first item, ▼ disabled on last item', async ({ page }) => {
+	test('drag handles are shown instead of up and down reorder buttons', async ({ page }) => {
 		await openCategoryDialog(page);
-		await expect(page.getByRole('button', { name: 'Move up' }).first()).toBeDisabled();
-		await expect(page.getByRole('button', { name: 'Move down' }).last()).toBeDisabled();
+		const dialog = page.locator('[role="dialog"]');
+		await expect(dialog.locator('[aria-label="Drag to reorder category"]')).toHaveCount(4);
+		await expect(dialog.getByRole('button', { name: 'Move up' })).toHaveCount(0);
+		await expect(dialog.getByRole('button', { name: 'Move down' })).toHaveCount(0);
 	});
 
 	test('Add button disabled when input is empty', async ({ page }) => {
@@ -226,17 +228,26 @@ test.describe('Category config dialog', () => {
 		await expect(dialog.getByRole('button', { name: 'Meat' })).not.toBeVisible();
 	});
 
-	test('reorder — move Produce down', async ({ page }) => {
+	test('reorder — drag Produce below Dairy', async ({ page }) => {
 		await openCategoryDialog(page);
 		const dialog = page.locator('[role="dialog"]');
 		// Use span[role="button"] to target only category name spans (not action buttons)
 		const nameSpans = dialog.locator('span[role="button"]');
+		const handles = dialog.locator('[aria-label="Drag to reorder category"]');
 
 		// Verify initial order before moving
 		await expect(nameSpans.nth(0)).toHaveText('Produce');
 		await expect(nameSpans.nth(1)).toHaveText('Dairy');
 
-		await page.getByRole('button', { name: 'Move down' }).first().click();
+		const handleBox = await handles.nth(0).boundingBox();
+		const targetRow = nameSpans.nth(1).locator('xpath=ancestor::div[contains(@class,"rounded-lg")]');
+		const targetBox = await targetRow.boundingBox();
+		if (!handleBox || !targetBox) throw new Error('Missing drag geometry');
+
+		await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+		await page.mouse.down();
+		await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, { steps: 15 });
+		await page.mouse.up();
 
 		// Wait for re-render after API call completes (Playwright retries automatically)
 		await expect(nameSpans.nth(0)).toHaveText('Dairy');

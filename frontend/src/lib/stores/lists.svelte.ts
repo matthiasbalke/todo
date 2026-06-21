@@ -9,6 +9,7 @@ import {
 	createCategory as apiCreateCategory,
 	updateCategory as apiUpdateCategory,
 	deleteCategory as apiDeleteCategory,
+	reorderCategories as apiReorderCategories,
 	getListGroups as apiGetListGroups,
 	createListGroup as apiCreateListGroup,
 	renameListGroup as apiRenameListGroup,
@@ -184,18 +185,16 @@ export async function duplicateList(id: string): Promise<List> {
 }
 
 export function getCategoriesForList(listId: string): Category[] {
-  return categories.filter(c => c.listId === listId);
+  return categories.filter(c => c.listId === listId).sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+function dtoToCategory(dto: { id: string; listId: string; name: string; color: string | null; sortOrder: number }): Category {
+  return { id: dto.id, listId: dto.listId, name: dto.name, color: dto.color, sortOrder: dto.sortOrder };
 }
 
 export async function loadCategoriesForList(listId: string): Promise<void> {
   const dtos = await apiGetCategories(listId);
-  const loaded: Category[] = dtos.map(dto => ({
-    id: dto.id,
-    listId: dto.listId,
-    name: dto.name,
-    color: dto.color,
-    sortOrder: dto.sortOrder,
-  }));
+  const loaded: Category[] = dtos.map(dtoToCategory);
   // Replace all categories for this list with fresh data from the API
   const others = categories.filter(c => c.listId !== listId);
   categories = [...others, ...loaded];
@@ -210,14 +209,36 @@ export async function saveCategory(updated: Category): Promise<void> {
       sortOrder: updated.sortOrder,
     });
     const idx = categories.findIndex(c => c.id === updated.id);
-    if (idx >= 0) categories[idx] = { id: dto.id, listId: dto.listId, name: dto.name, color: dto.color, sortOrder: dto.sortOrder };
+    if (idx >= 0) categories[idx] = dtoToCategory(dto);
   } else {
     const dto = await apiCreateCategory(updated.listId, {
       name: updated.name,
       color: updated.color,
       sortOrder: updated.sortOrder,
     });
-    upsertCategoryInStore({ id: dto.id, listId: dto.listId, name: dto.name, color: dto.color, sortOrder: dto.sortOrder });
+    upsertCategoryInStore(dtoToCategory(dto));
+  }
+}
+
+export async function reorderCategoriesOptimistic(listId: string, categoryIds: string[]): Promise<void> {
+  const previous = categories.slice();
+  const listCategories = categories.filter(c => c.listId === listId);
+  const byId = new Map(listCategories.map(c => [c.id, c]));
+  const requested = new Set(categoryIds);
+  if (requested.size !== categoryIds.length || listCategories.length !== categoryIds.length || categoryIds.some(id => !byId.has(id))) {
+    throw new Error('Category order must include every category exactly once');
+  }
+
+  const reordered = categoryIds.map((id, index) => ({ ...byId.get(id)!, sortOrder: index }));
+  categories = [...categories.filter(c => c.listId !== listId), ...reordered];
+
+  try {
+    const dtos = await apiReorderCategories(listId, { categoryIds });
+    const persisted = dtos.map(dtoToCategory);
+    categories = [...categories.filter(c => c.listId !== listId), ...persisted];
+  } catch (e) {
+    categories = previous;
+    throw e;
   }
 }
 
