@@ -10,9 +10,11 @@
   let {
     group,
     lists,
+    showGroupDragHandle = false,
   }: {
     group: ListGroup | null;
     lists: List[];
+    showGroupDragHandle?: boolean;
   } = $props();
 
   let collapsed = $state(false);
@@ -21,9 +23,16 @@
   let newName = $state('');
   let error = $state<string | null>(null);
   let localDragging = $state(false);
+  let groupDragHandleElement = $state<HTMLButtonElement | null>(null);
 
   const sortedLists = $derived(lists.slice().sort((a, b) => a.sortOrderInGroup - b.sortOrderInGroup));
   let dndItems = $state<List[]>([]);
+
+  $effect(() => {
+    if (!groupDragHandleElement || !showGroupDragHandle || group === null) return;
+    const action = dragHandle(groupDragHandleElement);
+    return () => action?.destroy?.();
+  });
 
   $effect(() => {
     if (!localDragging) {
@@ -92,21 +101,40 @@
 
 <div class="mb-4">
   <div class="flex items-center justify-between px-1 mb-2">
-    <Button
-      tone="neutral" appearance="bare"
-      size="header"
-      align="start"
-      emphasis="muted"
-      onclick={() => { collapsed = !collapsed; }}
-      aria-expanded={!collapsed}
-    >
-      <span class="font-normal normal-case tracking-normal">{collapsed ? '▶' : '▼'}</span>
-      {#if group !== null && !renaming}
-        <span>{group.name}</span>
-      {:else if group === null}
-        <span>Ungrouped</span>
+    <div class="flex items-center min-w-0">
+      {#if showGroupDragHandle && group !== null}
+        <Button
+          bind:element={groupDragHandleElement}
+          tone="neutral"
+          appearance="bare"
+          size="icon"
+          emphasis="subtle"
+          class="flex-shrink-0 w-7 h-8"
+          aria-label="Drag to reorder list group"
+        >
+          <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">
+            <circle cx="3" cy="3" r="1.5"/><circle cx="7" cy="3" r="1.5"/>
+            <circle cx="3" cy="8" r="1.5"/><circle cx="7" cy="8" r="1.5"/>
+            <circle cx="3" cy="13" r="1.5"/><circle cx="7" cy="13" r="1.5"/>
+          </svg>
+        </Button>
       {/if}
-    </Button>
+      <Button
+        tone="neutral" appearance="bare"
+        size="header"
+        align="start"
+        emphasis="muted"
+        onclick={() => { collapsed = !collapsed; }}
+        aria-expanded={!collapsed}
+      >
+        <span class="font-normal normal-case tracking-normal">{collapsed ? '▶' : '▼'}</span>
+        {#if group !== null && !renaming}
+          <span>{group.name}</span>
+        {:else if group === null}
+          <span>Ungrouped</span>
+        {/if}
+      </Button>
+    </div>
 
     {#if group !== null}
       {#if renaming}

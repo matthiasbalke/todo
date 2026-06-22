@@ -37,6 +37,8 @@ class ListGroupController(
 
     data class ReorderGroupRequest(val sortOrder: Int)
 
+    data class ReorderGroupsRequest(val groupIds: kotlin.collections.List<UUID>)
+
     // ─── Endpoints ───────────────────────────────────────────────────────────
 
     @GetMapping
@@ -70,6 +72,13 @@ class ListGroupController(
         @PathVariable gid: UUID,
         @RequestBody body: ReorderGroupRequest,
     ): ListGroupDto = listGroupService.reorderGroup(gid, userId, body.sortOrder).toDto()
+
+    @PostMapping("/reorder")
+    fun reorderGroups(
+        @AuthenticationPrincipal userId: UUID,
+        @RequestBody body: ReorderGroupsRequest,
+    ): kotlin.collections.List<ListGroupDto> =
+        listGroupService.reorderGroups(userId, body.groupIds).map { it.toDto() }
 
     // ─── Mapping helpers ─────────────────────────────────────────────────────
 

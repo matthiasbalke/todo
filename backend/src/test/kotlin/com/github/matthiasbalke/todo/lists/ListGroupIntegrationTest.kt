@@ -198,6 +198,116 @@ class ListGroupIntegrationTest : AbstractIntegrationTest() {
         }
     }
 
+    // ─── POST /api/list-groups/reorder ───────────────────────────────────────
+
+    @Test
+    fun `POST list-groups reorder - reorders and normalizes sortOrder values`() {
+        val user = createUser()
+        val home = createGroupAsUser(user, "Home")
+        val work = createGroupAsUser(user, "Work")
+        val errands = createGroupAsUser(user, "Errands")
+
+        mockMvc.patch("/api/list-groups/$home/order") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"sortOrder":10}"""
+        }.andExpect { status { isOk() } }
+        mockMvc.patch("/api/list-groups/$work/order") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"sortOrder":20}"""
+        }.andExpect { status { isOk() } }
+        mockMvc.patch("/api/list-groups/$errands/order") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"sortOrder":30}"""
+        }.andExpect { status { isOk() } }
+
+        mockMvc.post("/api/list-groups/reorder") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"groupIds":["$errands","$home","$work"]}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$[0].id") { value(errands.toString()) }
+            jsonPath("$[0].sortOrder") { value(0) }
+            jsonPath("$[1].id") { value(home.toString()) }
+            jsonPath("$[1].sortOrder") { value(1) }
+            jsonPath("$[2].id") { value(work.toString()) }
+            jsonPath("$[2].sortOrder") { value(2) }
+        }
+
+        mockMvc.get("/api/list-groups") {
+            header("Authorization", bearerHeader(user))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$[0].id") { value(errands.toString()) }
+            jsonPath("$[1].id") { value(home.toString()) }
+            jsonPath("$[2].id") { value(work.toString()) }
+        }
+    }
+
+    @Test
+    fun `POST list-groups reorder - returns 400 for duplicate group IDs`() {
+        val user = createUser()
+        val home = createGroupAsUser(user, "Home")
+        createGroupAsUser(user, "Work")
+
+        mockMvc.post("/api/list-groups/reorder") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"groupIds":["$home","$home"]}"""
+        }.andExpect {
+            status { isBadRequest() }
+        }
+    }
+
+    @Test
+    fun `POST list-groups reorder - returns 400 for missing group IDs`() {
+        val user = createUser()
+        val home = createGroupAsUser(user, "Home")
+        createGroupAsUser(user, "Work")
+
+        mockMvc.post("/api/list-groups/reorder") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"groupIds":["$home"]}"""
+        }.andExpect {
+            status { isBadRequest() }
+        }
+    }
+
+    @Test
+    fun `POST list-groups reorder - returns 400 for unknown group IDs`() {
+        val user = createUser()
+        val home = createGroupAsUser(user, "Home")
+        val unknown = UUID.randomUUID()
+
+        mockMvc.post("/api/list-groups/reorder") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"groupIds":["$home","$unknown"]}"""
+        }.andExpect {
+            status { isBadRequest() }
+        }
+    }
+
+    @Test
+    fun `POST list-groups reorder - returns 403 for foreign group IDs`() {
+        val owner = createUser()
+        val other = createUser()
+        val ownerGroup = createGroupAsUser(owner, "Home")
+        val foreignGroup = createGroupAsUser(other, "Other")
+
+        mockMvc.post("/api/list-groups/reorder") {
+            header("Authorization", bearerHeader(owner))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"groupIds":["$ownerGroup","$foreignGroup"]}"""
+        }.andExpect {
+            status { isForbidden() }
+        }
+    }
+
     // ─── PATCH /api/lists/{id}/group ──────────────────────────────────────────
 
     @Test

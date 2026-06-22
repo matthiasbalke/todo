@@ -198,6 +198,10 @@ export interface ReorderGroupRequest {
 	sortOrder: number;
 }
 
+export interface ReorderGroupsRequest {
+	groupIds: string[];
+}
+
 export interface AssignGroupRequest {
 	groupId: string | null;
 }
@@ -231,6 +235,13 @@ export function deleteListGroup(id: string): Promise<void> {
 export function reorderListGroup(id: string, req: ReorderGroupRequest): Promise<ListGroupDto> {
 	return authedFetch(`/api/list-groups/${id}/order`, {
 		method: 'PATCH',
+		body: JSON.stringify(req),
+	});
+}
+
+export function reorderListGroups(req: ReorderGroupsRequest): Promise<ListGroupDto[]> {
+	return authedFetch('/api/list-groups/reorder', {
+		method: 'POST',
 		body: JSON.stringify(req),
 	});
 }

@@ -15,6 +15,7 @@ import {
 	renameListGroup as apiRenameListGroup,
 	deleteListGroup as apiDeleteListGroup,
 	reorderListGroup as apiReorderListGroup,
+	reorderListGroups as apiReorderListGroups,
 	assignListGroup as apiAssignListGroup,
 	reorderListInGroup as apiReorderListInGroup,
 	type CreateListRequest,
@@ -125,6 +126,29 @@ export async function reorderListGroup(id: string, sortOrder: number): Promise<v
   await apiReorderListGroup(id, { sortOrder });
   const idx = listGroups.findIndex(g => g.id === id);
   if (idx >= 0) listGroups[idx] = { ...listGroups[idx], sortOrder };
+}
+
+function dtoToListGroup(dto: { id: string; userId: string; name: string; sortOrder: number; createdAt: string }): ListGroup {
+  return { id: dto.id, userId: dto.userId, name: dto.name, sortOrder: dto.sortOrder, createdAt: dto.createdAt };
+}
+
+export async function reorderListGroupsOptimistic(groupIds: string[]): Promise<void> {
+  const previous = listGroups.slice();
+  const byId = new Map(listGroups.map(group => [group.id, group]));
+  const requested = new Set(groupIds);
+  if (requested.size !== groupIds.length || listGroups.length !== groupIds.length || groupIds.some(id => !byId.has(id))) {
+    throw new Error('Group order must include every group exactly once');
+  }
+
+  listGroups = groupIds.map((id, index) => ({ ...byId.get(id)!, sortOrder: index }));
+
+  try {
+    const dtos = await apiReorderListGroups({ groupIds });
+    listGroups = dtos.map(dtoToListGroup);
+  } catch (e) {
+    listGroups = previous;
+    throw e;
+  }
 }
 
 export async function assignListGroup(listId: string, groupId: string | null): Promise<void> {
