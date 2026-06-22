@@ -1,6 +1,6 @@
-export async function checkHealth(): Promise<boolean> {
+export async function checkHealth(fetchFn: typeof fetch = fetch): Promise<boolean> {
 	try {
-		const response = await fetch('/actuator/health');
+		const response = await fetchFn('/actuator/health');
 		return response.status === 200;
 	} catch {
 		return false;

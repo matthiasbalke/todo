@@ -36,4 +36,14 @@ describe('health API client', () => {
 
 		expect(result).toBe(false);
 	});
+
+	it('uses the provided fetch implementation', async () => {
+		const customFetch = vi.fn().mockResolvedValue({ status: 200 } as Response);
+
+		const result = await checkHealth(customFetch as unknown as typeof fetch);
+
+		expect(result).toBe(true);
+		expect(customFetch).toHaveBeenCalledWith('/actuator/health');
+		expect(fetchSpy).not.toHaveBeenCalled();
+	});
 });

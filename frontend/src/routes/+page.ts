@@ -1,9 +1,22 @@
+import { browser } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
-import { isAuthenticated, restoreSession } from '$lib/stores/auth.svelte';
-
-export const ssr = false;
+import { checkHealth } from '$lib/api/health';
+import { restoreSession } from '$lib/stores/auth.svelte';
 
 export async function load({ fetch }) {
-	await restoreSession(fetch);
-	throw redirect(307, isAuthenticated() ? '/lists' : '/auth');
+	if (!browser) {
+		return { startup: true };
+	}
+	if (!(await checkHealth(fetch))) {
+		return { startup: true };
+	}
+
+	const restoreStatus = await restoreSession(fetch);
+	if (restoreStatus === 'authenticated') {
+		throw redirect(307, '/lists');
+	}
+	if (restoreStatus === 'unauthenticated') {
+		throw redirect(307, '/auth');
+	}
+	return { startup: true };
 }
