@@ -90,6 +90,9 @@ EOF
 	cat > "${fixture}/bin/sudo" <<'EOF'
 #!/usr/bin/env zsh
 printf '%s\n' "$*" >> "${PWD}/sudo.log"
+if [[ "$1" == "-v" ]]; then
+	exit 0
+fi
 exec "$@"
 EOF
 	chmod +x "${fixture}/bin/bun" "${fixture}/bin/socat" "${fixture}/bin/sudo"
@@ -180,6 +183,7 @@ test_frontend_script() {
 	assert_contains "$(cat "${fixture}/frontend/bun.log")" "args=run dev:https"
 	assert_contains "$(cat "${fixture}/frontend/socat.log")" "socat cwd=${fixture}/frontend"
 	assert_contains "$(cat "${fixture}/frontend/socat.log")" "TCP-LISTEN:443,fork,reuseaddr TCP:127.0.0.1:5173"
+	assert_equals "$(head -n 1 "${fixture}/frontend/sudo.log")" "-v"
 	assert_contains "$(cat "${fixture}/frontend/sudo.log")" "${fixture}/bin/socat TCP-LISTEN:443,fork,reuseaddr TCP:127.0.0.1:5173"
 	[[ -f "${fixture}/frontend/socat.exit" ]] || fail "relay binary should be shut down when the launcher exits"
 	[[ "$(file_owner_uid "${fixture}/frontend/.svelte-kit/generated")" == "$(id -u)" ]] || fail "generated frontend artifacts should be owned by the invoking user"
@@ -213,6 +217,41 @@ EOF
 	pass "frontend launcher fails clearly when the relay binary is missing"
 }
 
+test_frontend_stops_when_sudo_auth_fails() {
+	local fixture output exit_status
+	fixture="$(new_fixture)"
+	printf 'frontend.example.test\n' > "${fixture}/.local-domain"
+	cat > "${fixture}/bin/bun" <<'EOF'
+#!/usr/bin/env zsh
+printf 'bun should not run\n'
+EOF
+	cat > "${fixture}/bin/socat" <<'EOF'
+#!/usr/bin/env zsh
+printf 'socat should not run\n'
+EOF
+	cat > "${fixture}/bin/sudo" <<'EOF'
+#!/usr/bin/env zsh
+printf '%s\n' "$*" >> "${PWD}/sudo.log"
+if [[ "$1" == "-v" ]]; then
+	printf 'sudo auth failed\n' >&2
+	exit 1
+fi
+exec "$@"
+EOF
+	chmod +x "${fixture}/bin/bun" "${fixture}/bin/socat" "${fixture}/bin/sudo"
+
+	set +e
+	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" "${fixture}/frontend/start-https-frontend.sh" 2>&1)"
+	exit_status=$?
+	set -e
+	[[ ${exit_status} -ne 0 ]] || fail "frontend should fail when sudo auth fails"
+	assert_contains "${output}" "sudo auth failed"
+	assert_not_contains "${output}" "bun should not run"
+	assert_not_contains "${output}" "socat should not run"
+	assert_equals "$(cat "${fixture}/frontend/sudo.log")" "-v"
+	pass "frontend launcher waits for sudo auth before starting child processes"
+}
+
 test_backend_script() {
 	local fixture output
 	fixture="$(new_fixture)"
@@ -241,6 +280,9 @@ touch "${marker}"
 EOF
 	cat > "${fixture}/bin/sudo" <<'EOF'
 #!/usr/bin/env zsh
+if [[ "$1" == "-v" ]]; then
+	exit 0
+fi
 exec "$@"
 EOF
 	cat > "${fixture}/backend/gradlew" <<EOF
@@ -322,6 +364,7 @@ test_invalid_domain "todo.example.com/path" "path-containing values"
 test_invalid_domain "todo example.com" "internal whitespace"
 test_frontend_script
 test_frontend_missing_relay
+test_frontend_stops_when_sudo_auth_fails
 test_backend_script
 test_scripts_stop_before_children
 test_extra_arguments

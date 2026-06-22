@@ -34,6 +34,7 @@ echo "Starting on https://${VITE_HMR_HOST}:${VITE_HMR_CLIENT_PORT}"
 echo
 
 cd "${SCRIPT_DIR}"
+sudo -v
 "$(command -v bun)" run dev:https &
 VITE_PID=$!
 
