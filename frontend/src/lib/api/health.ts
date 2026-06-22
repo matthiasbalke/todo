@@ -1,9 +1,18 @@
-export async function checkHealth(): Promise<boolean> {
+export const HEALTH_CHECK_TIMEOUT_MS = 3000;
+
+export async function checkHealth(
+	fetchFn: typeof fetch = fetch,
+	timeoutMs = HEALTH_CHECK_TIMEOUT_MS,
+): Promise<boolean> {
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), timeoutMs);
 	try {
-		const response = await fetch('/actuator/health');
+		const response = await fetchFn('/actuator/health', { signal: controller.signal });
 		return response.status === 200;
 	} catch {
 		return false;
+	} finally {
+		clearTimeout(timeout);
 	}
 }
 

@@ -8,7 +8,11 @@ vi.mock('$lib/stores/auth.svelte', () => ({
 	restoreSession: vi.fn(),
 	isAuthenticated: vi.fn(() => authState.authenticated),
 }));
+vi.mock('$lib/api/health', () => ({
+	checkHealth: vi.fn(),
+}));
 
+import { checkHealth } from '$lib/api/health';
 import { restoreSession } from '$lib/stores/auth.svelte';
 import { load, ssr } from './+page';
 
@@ -18,6 +22,7 @@ describe('auth page load guard', () => {
 	beforeEach(() => {
 		authState.authenticated = false;
 		vi.clearAllMocks();
+		vi.mocked(checkHealth).mockResolvedValue(true);
 		vi.mocked(restoreSession).mockResolvedValue('unauthenticated');
 	});
 
@@ -45,12 +50,24 @@ describe('auth page load guard', () => {
 		expect(restoreSession).toHaveBeenCalledWith(fetchFn);
 	});
 
-	it('returns unavailable when backend startup prevents session restoration', async () => {
+	it('routes backend-unavailable startup through / before auth controls render', async () => {
 		vi.mocked(restoreSession).mockResolvedValue('unavailable');
 
-		await expect(load({ fetch: fetchFn } as never)).resolves.toMatchObject({
-			restoreStatus: 'unavailable',
+		await expect(load({ fetch: fetchFn } as never)).rejects.toMatchObject({
+			status: 307,
+			location: '/',
 		});
 		expect(restoreSession).toHaveBeenCalledWith(fetchFn);
+	});
+
+	it('routes unavailable health through / without attempting session restoration', async () => {
+		vi.mocked(checkHealth).mockResolvedValue(false);
+
+		await expect(load({ fetch: fetchFn } as never)).rejects.toMatchObject({
+			status: 307,
+			location: '/',
+		});
+		expect(checkHealth).toHaveBeenCalledWith(fetchFn);
+		expect(restoreSession).not.toHaveBeenCalled();
 	});
 });
