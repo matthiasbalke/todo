@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { checkHealth } from './health';
+import { HEALTH_CHECK_TIMEOUT_MS, checkHealth } from './health';
 
 describe('health API client', () => {
 	let fetchSpy: ReturnType<typeof vi.fn>;
@@ -19,6 +19,10 @@ describe('health API client', () => {
 		const result = await checkHealth();
 
 		expect(result).toBe(true);
+		expect(fetchSpy).toHaveBeenCalledWith(
+			'/actuator/health',
+			expect.objectContaining({ signal: expect.any(AbortSignal) }),
+		);
 	});
 
 	it('returns false on status 503', async () => {
@@ -43,7 +47,30 @@ describe('health API client', () => {
 		const result = await checkHealth(customFetch as unknown as typeof fetch);
 
 		expect(result).toBe(true);
-		expect(customFetch).toHaveBeenCalledWith('/actuator/health');
+		expect(customFetch).toHaveBeenCalledWith(
+			'/actuator/health',
+			expect.objectContaining({ signal: expect.any(AbortSignal) }),
+		);
 		expect(fetchSpy).not.toHaveBeenCalled();
+	});
+
+	it('returns false after the health timeout aborts the request', async () => {
+		vi.useFakeTimers();
+		const hangingFetch = vi.fn(
+			(_url: string, init?: RequestInit) =>
+				new Promise<Response>((_resolve, reject) => {
+					init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+				}),
+		);
+
+		const resultPromise = checkHealth(hangingFetch as unknown as typeof fetch);
+		await vi.advanceTimersByTimeAsync(HEALTH_CHECK_TIMEOUT_MS);
+
+		await expect(resultPromise).resolves.toBe(false);
+		expect(hangingFetch).toHaveBeenCalledWith(
+			'/actuator/health',
+			expect.objectContaining({ signal: expect.any(AbortSignal) }),
+		);
+		vi.useRealTimers();
 	});
 });
