@@ -3,8 +3,8 @@ name: Release
 on:
   push:
     branches: [main]
-  release:
-    types: [published]
+    tags:
+      - '*.*.*'
 
 jobs:
   compute-version:
@@ -14,6 +14,7 @@ jobs:
       backend-version: ${{ steps.version.outputs.backend }}
       frontend-version: ${{ steps.version.outputs.frontend }}
       build-number: ${{ steps.version.outputs.build-number }}
+
     steps:
       - uses: actions/checkout@v7
       - name: Extract versions
@@ -25,6 +26,28 @@ jobs:
           echo "backend=${BACKEND_BASE}" >> $GITHUB_OUTPUT
           echo "frontend=${FRONTEND_BASE}" >> $GITHUB_OUTPUT
           echo "build-number=${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+      - name: Validate release tag versions
+        if: ${{ github.ref_type == 'tag' }}
+        env:
+          TAG_VERSION: ${{ github.ref_name }}
+          BACKEND_VERSION: ${{ steps.version.outputs.backend }}
+          FRONTEND_VERSION: ${{ steps.version.outputs.frontend }}
+        run: |
+          if [[ ! "$TAG_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tag must match MAJOR.MINOR.PATCH, got '$TAG_VERSION'."
+            exit 1
+          fi
+
+          if [ "$BACKEND_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Backend version '$BACKEND_VERSION' does not match release tag '$TAG_VERSION'."
+            exit 1
+          fi
+
+          if [ "$FRONTEND_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Frontend version '$FRONTEND_VERSION' does not match release tag '$TAG_VERSION'."
+            exit 1
+          fi
 
   build-backend:
     needs: [compute-version]
