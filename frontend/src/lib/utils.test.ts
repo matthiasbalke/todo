@@ -85,4 +85,12 @@ describe('groupByCategory', () => {
 
     expect(Array.from(groupByCategory(items, categories).keys())).toEqual(['cat-b', 'cat-a', null]);
   });
+
+  it('returns only the uncategorized group when no visible real category groups contain items', () => {
+    const items: TodoItem[] = [
+      { ...baseItem, id: 'item-uncategorized', categoryId: null },
+    ];
+
+    expect(Array.from(groupByCategory(items, categories).keys())).toEqual([null]);
+  });
 });
