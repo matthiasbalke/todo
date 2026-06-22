@@ -116,6 +116,11 @@ The `/lists` overview SHALL allow a signed-in user to reorder their persisted li
 - **THEN** no category order within any individual list is changed
 - **AND** no category reorder endpoint is invoked
 
+#### Scenario: Uncategorized category group remains last
+- **WHEN** a signed-in user reorders list group wrappers on `/lists`
+- **THEN** the uncategorized category group inside any individual list remains governed by the uncategorized-last category group requirement
+- **AND** list group sorting SHALL NOT create or persist a sortable position for the uncategorized category group
+
 ### Requirement: Uncategorized category group is displayed last
 The list UI SHALL display the virtual uncategorized category group after all real category groups whenever the uncategorized group is visible.
 
