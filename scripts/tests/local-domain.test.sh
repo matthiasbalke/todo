@@ -371,6 +371,55 @@ test_backend_script() {
 	pass "backend script exports configured domain and custom port"
 }
 
+test_backend_interrupt_cleans_up_continuous_build() {
+	local fixture launcher_pid waited output
+	fixture="$(new_fixture)"
+	printf 'backend.example.test\n' > "${fixture}/.local-domain"
+	cat > "${fixture}/backend/gradlew" <<'EOF'
+#!/usr/bin/env zsh
+if [[ "$*" == *"--continuous"* ]]; then
+	printf '%s\n' "$$" > "${PWD}/continuous.pid"
+	trap 'printf "terminated\n" > "${PWD}/continuous.exit"; exit 0' INT TERM
+	while true; do
+		sleep 1
+	done
+fi
+
+printf '%s\n' "$$" > "${PWD}/bootrun.pid"
+while true; do
+	sleep 1
+done
+EOF
+	chmod +x "${fixture}/backend/gradlew"
+
+	(
+		cd /tmp
+		"${fixture}/backend/start-https-backend.sh" > "${fixture}/backend/launcher.out" 2>&1
+	) &
+	launcher_pid=$!
+
+	waited=0
+	while [[ ! -s "${fixture}/backend/continuous.pid" || ! -s "${fixture}/backend/bootrun.pid" ]]; do
+		sleep 0.1
+		waited=$((waited + 1))
+		(( waited < 100 )) || fail "backend launcher did not start both gradle processes"
+	done
+
+	kill -INT "$(cat "${fixture}/backend/bootrun.pid")"
+	wait "${launcher_pid}" 2>/dev/null || true
+
+	waited=0
+	while [[ ! -e "${fixture}/backend/continuous.exit" ]]; do
+		sleep 0.1
+		waited=$((waited + 1))
+		(( waited < 100 )) || fail "continuous gradle process was not terminated"
+	done
+
+	output="$(cat "${fixture}/backend/continuous.exit")"
+	assert_equals "${output}" "terminated"
+	pass "backend launcher cleans up continuous build on interrupt"
+}
+
 test_scripts_stop_before_children() {
 	local fixture output exit_status marker
 	fixture="$(new_fixture)"
@@ -469,6 +518,7 @@ test_frontend_occupied_port
 test_frontend_occupied_port_uses_sudo_for_root_listener
 test_frontend_stops_when_sudo_auth_fails
 test_backend_script
+test_backend_interrupt_cleans_up_continuous_build
 test_scripts_stop_before_children
 test_extra_arguments
 test_domain_argument_as_port
