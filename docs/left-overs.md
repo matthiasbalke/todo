@@ -6,6 +6,7 @@ Tasks are small and independently verifiable (automated or manual). See `docs/re
 ---
 
 ## 1. Misc
+ * App version is not visible while logged in anymore, because it is hidden behind the + Add List / + Add Item overlay / where should we place it? End of account page?
  * Cursor-based pagination params (cursor, limit) are accepted but unused in the initial implementation — the response always returns all items in one page.
 
 

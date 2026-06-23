@@ -320,23 +320,23 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 ## 14. Push Notifications
 
 ### Database
-- [ ] Create Flyway migration `V8__create_push_subscriptions.sql`: `push_subscriptions` table
+- [x] Create Flyway migration `V7__create_push_subscriptions.sql`: `push_subscriptions` table
 
 ### Backend
-- [ ] Create `PushSubscription` JPA entity and repository
-- [ ] Implement `POST /api/push/subscribe`: stores Web Push subscription (endpoint, p256dh, auth); replaces existing for same user+endpoint
-- [ ] Implement `DELETE /api/push/subscribe`: removes subscription by endpoint
-- [ ] Configure `java-webpush` with VAPID keys from env vars (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`)
-- [ ] Implement `PushDispatchService.send(userId, title, body)` that sends to all subscriptions for the user
-- [ ] Implement `@Scheduled` daily job (configurable cron): sends push for items due today and overdue items
-- [ ] Wire `PushDispatchService` to fire on item assignment change (notify newly assigned user)
-- [ ] Write unit tests for `PushDispatchService` (mock the `java-webpush` client)
+- [x] Create `PushSubscription` JPA entity and repository
+- [x] Implement `POST /api/push/subscribe`: stores Web Push subscription (endpoint, p256dh, auth); idempotent on same user+endpoint
+- [x] Implement `DELETE /api/push/subscribe`: removes subscription by endpoint
+- [x] Configure `nl.martijndwars:web-push` with VAPID keys from env vars (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`)
+- [x] Implement `PushDispatchService.send(userId, title, body, url)` that sends to all subscriptions for the user
+- [x] Implement `@Scheduled` daily job (configurable cron): sends push for items due today and overdue items
+- [x] Wire `PushDispatchService` to fire on item assignment change (notify newly assigned user)
+- [x] Write integration tests for `PushController` and `PushScheduler`
 
 ### Frontend
-- [ ] Implement `service-worker.ts`: handles `push` event, shows notification via `self.registration.showNotification`
-- [ ] Implement `PushManager` helper in frontend: checks permission, subscribes via `PushManager.subscribe`, calls `POST /api/push/subscribe`
-- [ ] Add push permission prompt in account settings (not on page load)
-- [ ] Handle notification click: `notificationclick` event opens or focuses the relevant list/item URL
+- [x] Implement `service-worker.ts` (injectManifest strategy): handles `push` event, shows notification via `self.registration.showNotification`; `notificationclick` opens/focuses list URL
+- [x] Implement `push.svelte.ts` store: checks permission, subscribes via `PushManager.subscribe`, calls `POST /api/push/subscribe`
+- [x] Add Notifications section in account settings (not on page load)
+- [x] Handle notification click: `notificationclick` event opens or focuses the relevant list/item URL
 
 ---
 

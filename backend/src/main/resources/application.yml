@@ -37,6 +37,15 @@ app:
       capacity: ${RATE_LIMIT_CAPACITY:50}
       window-minutes: ${RATE_LIMIT_WINDOW_MINUTES:1}
 
+vapid:
+  public-key: ${VAPID_PUBLIC_KEY:BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U}
+  private-key: ${VAPID_PRIVATE_KEY:0ZmUSW6SHvJYuqe3NiNMEGYBPTrQMEw-Bco9SMg6bPc}
+  subject: ${VAPID_SUBJECT:mailto:admin@example.com}
+
+push:
+  schedule:
+    daily-cron: "0 0 8 * * *"
+
 management:
   info:
     build:

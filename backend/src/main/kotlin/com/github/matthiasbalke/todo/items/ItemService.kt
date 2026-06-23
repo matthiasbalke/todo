@@ -2,6 +2,7 @@ package com.github.matthiasbalke.todo.items
 
 import com.github.matthiasbalke.todo.lists.ListAccessService
 import com.github.matthiasbalke.todo.lists.ListRole
+import com.github.matthiasbalke.todo.push.PushDispatchService
 import com.github.matthiasbalke.todo.sse.ItemPayload
 import com.github.matthiasbalke.todo.sse.ListEvent
 import com.github.matthiasbalke.todo.sse.RecurrenceRulePayload
@@ -47,6 +48,7 @@ class ItemService(
     private val itemAssignmentRepository: ItemAssignmentRepository,
     private val listAccessService: ListAccessService,
     private val ssePublisher: SsePublisher,
+    private val pushDispatchService: PushDispatchService,
 ) {
 
     fun getItems(listId: UUID, userId: UUID): List<ItemWithAssignees> {
@@ -79,6 +81,9 @@ class ItemService(
             )
         )
         saveAssignments(item.id, req.assignedUserIds)
+        for (assigneeId in req.assignedUserIds) {
+            pushDispatchService.send(assigneeId, "Task assigned to you", item.title, "/lists/${listId}")
+        }
         return item.withAssignees().also { ssePublisher.publish(ListEvent.ItemCreated(listId, it.toPayload())) }
     }
 
@@ -87,6 +92,7 @@ class ItemService(
         listAccessService.requireMinRole(listId, userId, ListRole.EDITOR)
         val item = itemRepository.findByIdAndListId(itemId, listId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found")
+        val previousAssignees = itemAssignmentRepository.findAllByIdItemId(itemId).map { it.id.userId }.toSet()
         item.title = req.title
         item.notes = req.notes
         item.categoryId = req.categoryId
@@ -98,6 +104,10 @@ class ItemService(
         itemRepository.save(item)
         itemAssignmentRepository.deleteAllByIdItemId(itemId)
         saveAssignments(itemId, req.assignedUserIds)
+        val newlyAssigned = req.assignedUserIds.filter { it !in previousAssignees }
+        for (assigneeId in newlyAssigned) {
+            pushDispatchService.send(assigneeId, "Task assigned to you", item.title, "/lists/${listId}")
+        }
         return item.withAssignees().also { ssePublisher.publish(ListEvent.ItemUpdated(listId, it.toPayload())) }
     }
 

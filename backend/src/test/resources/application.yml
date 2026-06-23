@@ -21,3 +21,12 @@ app:
   security:
     rate-limit:
       capacity: 10000
+
+vapid:
+  public-key: BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U
+  private-key: 0ZmUSW6SHvJYuqe3NiNMEGYBPTrQMEw-Bco9SMg6bPc
+  subject: mailto:test@example.com
+
+push:
+  schedule:
+    daily-cron: "0 0 8 * * *"

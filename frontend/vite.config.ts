@@ -35,6 +35,9 @@ export default defineConfig({
     tailwindcss(),
     sveltekit(),
     SvelteKitPWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'service-worker.ts',
       registerType: 'autoUpdate',
       manifest: pwaManifest,
       workbox: {

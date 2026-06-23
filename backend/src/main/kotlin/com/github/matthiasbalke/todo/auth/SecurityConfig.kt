@@ -32,6 +32,7 @@ class SecurityConfig(
             .authorizeHttpRequests { auth ->
                 auth.dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                 auth.requestMatchers("/api/auth/**").permitAll()
+                auth.requestMatchers(HttpMethod.GET, "/api/push/vapid-public-key").permitAll()
                 auth.requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 auth.anyRequest().authenticated()
             }
