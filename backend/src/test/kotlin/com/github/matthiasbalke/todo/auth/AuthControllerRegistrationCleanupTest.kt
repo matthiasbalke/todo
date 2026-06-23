@@ -1,6 +1,7 @@
 package com.github.matthiasbalke.todo.auth
 
 import com.github.matthiasbalke.todo.AbstractIntegrationTest
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito
@@ -24,7 +25,13 @@ class AuthControllerRegistrationCleanupTest : AbstractIntegrationTest() {
 
     @Autowired private lateinit var mockMvc: MockMvc
     @Autowired private lateinit var userRepository: UserRepository
+    @Autowired private lateinit var appSettingsService: AppSettingsService
     @MockitoBean private lateinit var rpOperations: WebAuthnRelyingPartyOperations
+
+    @BeforeEach
+    fun enableRegistration() {
+        appSettingsService.setRegistrationEnabled(true)
+    }
 
     @Test
     fun `orphaned user is deleted when passkey registration fails`() {

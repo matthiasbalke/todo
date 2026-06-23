@@ -123,6 +123,42 @@ describe('AuthPage', () => {
 		});
 	});
 
+	it('shows blocked-account message on 403 with ACCOUNT_BLOCKED code', async () => {
+		const ApiErrorClass = vi.mocked(authApi).ApiError as typeof authApi.ApiError;
+		const error = new ApiErrorClass(403, 'Account is blocked', 'ACCOUNT_BLOCKED');
+		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
+
+		render(AuthPage);
+		await waitForIdle();
+		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText(/your account is blocked\. please contact the admin\./i)).toBeInTheDocument();
+		});
+		expect(screen.getByRole('button', { name: /sign in with passkey/i })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /register passkey/i })).not.toBeInTheDocument();
+		expect(screen.queryByLabelText(/display name/i)).not.toBeInTheDocument();
+	});
+
+	it('keeps failed sign-in on the login view when registration is disabled', async () => {
+		vi.mocked(authApi.getAuthConfig).mockResolvedValueOnce({ registrationEnabled: false });
+		const ApiErrorClass = vi.mocked(authApi).ApiError as typeof authApi.ApiError;
+		const error = new ApiErrorClass(404, 'This passkey is not registered. Please create an account first.');
+		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
+
+		render(AuthPage);
+		await waitForIdle();
+		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText('This passkey is not registered')).toBeInTheDocument();
+		});
+		expect(screen.getByRole('button', { name: /sign in with passkey/i })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /create account/i })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /register passkey/i })).not.toBeInTheDocument();
+		expect(screen.queryByLabelText(/display name/i)).not.toBeInTheDocument();
+	});
+
 	it('shows origin-not-allowed message on 403 without known code', async () => {
 		const ApiErrorClass = vi.mocked(authApi).ApiError as typeof authApi.ApiError;
 		const error = new ApiErrorClass(403, 'Forbidden');

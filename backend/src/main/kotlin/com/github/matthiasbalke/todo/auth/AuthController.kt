@@ -2,10 +2,7 @@ package com.github.matthiasbalke.todo.auth
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -40,10 +37,10 @@ class AuthController(
     private val revokedTokenRepository: RevokedTokenRepository,
     private val jwtTokenService: JwtTokenService,
     private val rpOperations: WebAuthnRelyingPartyOperations,
-    private val jwtProperties: JwtProperties,
     private val userCredentialRepository: org.springframework.security.web.webauthn.management.UserCredentialRepository,
     private val accountService: AccountService,
-    @Value("\${app.registration.enabled:true}") private val registrationEnabled: Boolean,
+    private val appSettingsService: AppSettingsService,
+    private val authSessionService: AuthSessionService,
 ) {
 
     private val creationOptionsRepository: PublicKeyCredentialCreationOptionsRepository =
@@ -52,24 +49,15 @@ class AuthController(
     private val requestOptionsRepository =
         org.springframework.security.web.webauthn.authentication.HttpSessionPublicKeyCredentialRequestOptionsRepository()
 
-    // ─── DTOs ────────────────────────────────────────────────────────────────
-
     data class RegisterOptionsRequest(val email: String, val displayName: String)
     data class RegisterRequest(
         val credential: PublicKeyCredential<AuthenticatorAttestationResponse>,
         val label: String?,
     )
-    data class UserDto(val id: String, val email: String, val displayName: String)
-    data class TokenResponse(val accessToken: String, val user: UserDto)
-    data class ErrorResponse(val code: String, val message: String)
     data class AuthConfigResponse(val registrationEnabled: Boolean)
 
-    // ─── Config ──────────────────────────────────────────────────────────────
-
     @GetMapping("/config")
-    fun config() = AuthConfigResponse(registrationEnabled)
-
-    // ─── Registration ────────────────────────────────────────────────────────
+    fun config() = AuthConfigResponse(appSettingsService.isRegistrationEnabled())
 
     @PostMapping("/webauthn/register-options")
     fun registerOptions(
@@ -77,7 +65,7 @@ class AuthController(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ResponseEntity<*> {
-        if (!registrationEnabled) {
+        if (!appSettingsService.isRegistrationEnabled()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ErrorResponse("REGISTRATION_DISABLED", "Registration is currently disabled"))
         }
@@ -88,12 +76,8 @@ class AuthController(
                 .isNotEmpty()
             if (hasCredentials) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(ErrorResponse("EMAIL_ALREADY_REGISTERED",
-                        "This email address is already registered."))
+                    .body(ErrorResponse("EMAIL_ALREADY_REGISTERED", "This email address is already registered."))
             }
-            // Orphaned user: register-options was called but the passkey ceremony
-            // never completed (e.g. browser dialog cancelled). Delete the orphan
-            // so the user can retry registration with the same email.
             userRepository.delete(existingUser)
         }
         val user = userRepository.save(User(email = body.email, displayName = body.displayName))
@@ -113,7 +97,7 @@ class AuthController(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ResponseEntity<*> {
-        if (!registrationEnabled) {
+        if (!appSettingsService.isRegistrationEnabled()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ErrorResponse("REGISTRATION_DISABLED", "Registration is currently disabled"))
         }
@@ -122,7 +106,10 @@ class AuthController(
 
         val credentialRecord = try {
             rpOperations.registerCredential(
-                ImmutableRelyingPartyRegistrationRequest(savedOptions, RelyingPartyPublicKey(body.credential, body.label ?: "Passkey"))
+                ImmutableRelyingPartyRegistrationRequest(
+                    savedOptions,
+                    RelyingPartyPublicKey(body.credential, body.label ?: "Passkey"),
+                )
             )
         } catch (e: Exception) {
             resolveUserFromUserHandle(savedOptions.user.id.bytes)?.let { userRepository.delete(it) }
@@ -135,19 +122,16 @@ class AuthController(
 
         val user = resolveUserFromUserHandle(credentialRecord.userEntityUserId.bytes)
             ?: return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build<Any>()
+        if (user.blockedAt != null) return blockedResponse(response)
 
-        return issueTokens(user, response)
+        return ResponseEntity.ok(authSessionService.issueTokens(user, response))
     }
-
-    // ─── Authentication ──────────────────────────────────────────────────────
 
     @PostMapping("/webauthn/login-options")
     fun loginOptions(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ResponseEntity<PublicKeyCredentialRequestOptions> {
-        // No email — discoverable credentials; browser shows credential picker.
-        // Empty allowCredentials prevents email enumeration (security.md A07).
         val options = rpOperations.createCredentialRequestOptions(
             ImmutablePublicKeyCredentialRequestOptionsRequest(null)
         )
@@ -166,8 +150,7 @@ class AuthController(
 
         if (userCredentialRepository.findByCredentialId(credential.rawId) == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ErrorResponse("PASSKEY_NOT_REGISTERED",
-                    "This passkey is not registered. Please create an account first."))
+                .body(ErrorResponse("PASSKEY_NOT_REGISTERED", "This passkey is not registered. Please create an account first."))
         }
 
         val auth = rpOperations.authenticate(
@@ -177,11 +160,10 @@ class AuthController(
 
         val user = resolveUserFromUserHandle(auth.id.bytes)
             ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build<Any>()
+        if (user.blockedAt != null) return blockedResponse(response)
 
-        return issueTokens(user, response)
+        return ResponseEntity.ok(authSessionService.issueTokens(user, response))
     }
-
-    // ─── Token management ────────────────────────────────────────────────────
 
     @PostMapping("/refresh")
     fun refresh(
@@ -199,10 +181,14 @@ class AuthController(
 
         val user = userRepository.findById(stored.userId).orElse(null)
             ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        if (user.blockedAt != null) {
+            refreshTokenRepository.delete(stored)
+            authSessionService.clearRefreshCookie(response)
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+        }
 
-        // Rotate: delete old, insert new
         refreshTokenRepository.delete(stored)
-        return issueTokens(user, response)
+        return ResponseEntity.ok(authSessionService.issueTokens(user, response))
     }
 
     @PostMapping("/logout")
@@ -211,7 +197,6 @@ class AuthController(
         response: HttpServletResponse,
         @AuthenticationPrincipal userId: UUID?,
     ): ResponseEntity<Void> {
-        // Revoke the access token jti so it cannot be replayed after logout
         val bearer = request.getHeader("Authorization")?.removePrefix("Bearer ")
         if (bearer != null) {
             try {
@@ -222,60 +207,26 @@ class AuthController(
                     revokedTokenRepository.save(RevokedToken(jti = jti, expiresAt = exp))
                 }
             } catch (_: Exception) {
-                // Token already invalid — still proceed with logout
+                // Token already invalid; logout should still clear refresh state.
             }
         }
 
-        // Delete the refresh token
         val rawRefresh = request.cookies?.find { it.name == "refreshToken" }?.value
         if (rawRefresh != null) {
             val hash = jwtTokenService.hashToken(rawRefresh)
             refreshTokenRepository.findByTokenHash(hash)?.let { refreshTokenRepository.delete(it) }
         }
 
-        response.setHeader(HttpHeaders.SET_COOKIE, clearRefreshCookie().toString())
+        authSessionService.clearRefreshCookie(response)
         return ResponseEntity.noContent().build()
     }
 
-    // ─── Helpers ─────────────────────────────────────────────────────────────
-
-    private fun issueTokens(user: User, response: HttpServletResponse): ResponseEntity<TokenResponse> {
-        val accessToken = jwtTokenService.generateAccessToken(user)
-        val rawRefresh = jwtTokenService.generateRefreshToken()
-        val hash = jwtTokenService.hashToken(rawRefresh)
-        val expiresAt = Instant.now().plus(jwtProperties.refreshTokenTtl)
-
-        refreshTokenRepository.save(
-            RefreshToken(userId = user.id, tokenHash = hash, expiresAt = expiresAt)
-        )
-        response.setHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie(rawRefresh).toString())
-
-        return ResponseEntity.ok(
-            TokenResponse(
-                accessToken = accessToken,
-                user = UserDto(user.id.toString(), user.email, user.displayName),
-            )
-        )
+    private fun blockedResponse(response: HttpServletResponse): ResponseEntity<ErrorResponse> {
+        authSessionService.clearRefreshCookie(response)
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(ErrorResponse("ACCOUNT_BLOCKED", "Account is blocked"))
     }
 
-    private fun refreshTokenCookie(value: String): ResponseCookie =
-        buildRefreshCookie(value, jwtProperties.refreshTokenTtl)
-
-    private fun clearRefreshCookie(): ResponseCookie =
-        buildRefreshCookie("", java.time.Duration.ZERO)
-
-    private fun buildRefreshCookie(value: String, maxAge: java.time.Duration): ResponseCookie =
-        ResponseCookie.from("refreshToken", value)
-            .httpOnly(true)
-            .secure(true)
-            .sameSite("Strict")
-            .path("/api/auth")
-            .maxAge(maxAge)
-            .build()
-
-    private fun resolveUserFromUserHandle(userHandle: ByteArray): User? {
-        val uuid = bytesToUuid(userHandle) ?: return null
-        return userRepository.findById(uuid).orElse(null)
-    }
-
+    private fun resolveUserFromUserHandle(userHandle: ByteArray): User? =
+        bytesToUuid(userHandle)?.let { userRepository.findById(it).orElse(null) }
 }

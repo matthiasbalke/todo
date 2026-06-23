@@ -85,6 +85,22 @@ describe('auth store', () => {
 		expect(getAccessToken()).toBeNull();
 	});
 
+	it('returns unauthenticated and clears state for a blocked refresh session', async () => {
+		fetchSpy.mockResolvedValue(
+			mockResponse(403, {
+				message: 'Account blocked',
+				code: 'ACCOUNT_BLOCKED',
+			}),
+		);
+
+		const result = await restoreSession();
+
+		expect(result).toBe('unauthenticated');
+		expect(isAuthenticated()).toBe(false);
+		expect(getCurrentUser()).toBeNull();
+		expect(getAccessToken()).toBeNull();
+	});
+
 	it('returns unavailable when backend startup prevents refresh', async () => {
 		fetchSpy.mockResolvedValue(
 			mockResponse(503, {

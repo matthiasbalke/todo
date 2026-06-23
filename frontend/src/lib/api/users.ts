@@ -8,6 +8,7 @@ export interface UserProfileDto {
 	timeZone: string;
 	timeZoneInitialized: boolean;
 	todayViewEnabled: boolean;
+	admin?: boolean;
 }
 
 export interface PasskeyDto {

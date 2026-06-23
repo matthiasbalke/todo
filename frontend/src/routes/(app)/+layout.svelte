@@ -115,6 +115,15 @@
             >
               Account
             </a>
+            {#if user?.admin}
+              <a
+                href="/admin"
+                onclick={() => (userMenuOpen = false)}
+                class="block w-full text-left px-4 py-2 text-sm font-normal text-red-700 hover:bg-red-50"
+              >
+                Admin
+              </a>
+            {/if}
             <div class="border-t border-gray-100 my-1"></div>
             <Button tone="neutral" appearance="bare"
               size="menu"

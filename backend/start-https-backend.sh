@@ -27,9 +27,12 @@ cd "${SCRIPT_DIR}"
 CONTINUOUS_PID=$!
 
 cleanup() {
+	local exit_status=$?
+	trap - EXIT INT TERM
 	kill "${CONTINUOUS_PID}" 2>/dev/null || true
 	wait "${CONTINUOUS_PID}" 2>/dev/null || true
+	exit "${exit_status}"
 }
-trap cleanup EXIT
+trap cleanup EXIT INT TERM
 
 ./gradlew bootRun #--args='--debug'

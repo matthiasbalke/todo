@@ -15,8 +15,12 @@ vi.mock('$lib/stores/auth.svelte', () => ({
 vi.mock('$lib/api/health', () => ({
 	checkHealth: vi.fn(),
 }));
+vi.mock('$lib/api/setup', () => ({
+	getSetupStatus: vi.fn(),
+}));
 
 import { checkHealth } from '$lib/api/health';
+import { getSetupStatus } from '$lib/api/setup';
 import { restoreSession } from '$lib/stores/auth.svelte';
 import { load } from './+page';
 
@@ -27,6 +31,7 @@ describe('root page load guard', () => {
 		browserState.browser = true;
 		vi.clearAllMocks();
 		vi.mocked(checkHealth).mockResolvedValue(true);
+		vi.mocked(getSetupStatus).mockResolvedValue({ setupRequired: false });
 		vi.mocked(restoreSession).mockResolvedValue('unauthenticated');
 	});
 
@@ -50,6 +55,16 @@ describe('root page load guard', () => {
 			location: '/auth',
 		});
 		expect(restoreSession).toHaveBeenCalledWith(fetchFn);
+	});
+
+	it('routes to setup before session restoration when setup is required', async () => {
+		vi.mocked(getSetupStatus).mockResolvedValue({ setupRequired: true });
+
+		await expect(load({ fetch: fetchFn } as never)).rejects.toMatchObject({
+			status: 307,
+			location: '/setup',
+		});
+		expect(restoreSession).not.toHaveBeenCalled();
 	});
 
 	it('returns startup state when the backend is unavailable during restoration', async () => {
