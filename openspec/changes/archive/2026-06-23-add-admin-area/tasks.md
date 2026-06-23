@@ -73,5 +73,5 @@
 - [x] 8.1 Run backend tests with `cd backend && ./gradlew test`.
 - [x] 8.2 Run frontend checks with `cd frontend && bun run check`.
 - [x] 8.3 Run frontend unit tests with `cd frontend && bun run test -- --run`.
-- [ ] 8.4 Run focused Playwright coverage for setup, admin menu, blocking, and recovery if the shared HTTPS deployment is reachable.
+- [x] 8.4 Run focused Playwright coverage for setup, admin menu, blocking, and recovery if the shared HTTPS deployment is reachable.
 - [x] 8.5 Run `openspec validate add-admin-area --strict` and confirm the change is apply-ready.
