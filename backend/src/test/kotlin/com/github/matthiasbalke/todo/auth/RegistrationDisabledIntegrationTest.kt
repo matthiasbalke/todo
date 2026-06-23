@@ -1,6 +1,7 @@
 package com.github.matthiasbalke.todo.auth
 
 import com.github.matthiasbalke.todo.AbstractIntegrationTest
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
@@ -16,6 +17,14 @@ class RegistrationDisabledIntegrationTest : AbstractIntegrationTest() {
 
     @Autowired
     private lateinit var mockMvc: MockMvc
+
+    @Autowired
+    private lateinit var appSettingsService: AppSettingsService
+
+    @BeforeEach
+    fun disableRegistration() {
+        appSettingsService.setRegistrationEnabled(false)
+    }
 
     @Test
     fun `config returns registrationEnabled false when disabled`() {

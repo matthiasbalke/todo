@@ -11,8 +11,12 @@ vi.mock('$lib/stores/auth.svelte', () => ({
 vi.mock('$lib/api/health', () => ({
 	checkHealth: vi.fn(),
 }));
+vi.mock('$lib/api/setup', () => ({
+	getSetupStatus: vi.fn(),
+}));
 
 import { checkHealth } from '$lib/api/health';
+import { getSetupStatus } from '$lib/api/setup';
 import { restoreSession } from '$lib/stores/auth.svelte';
 import { load, ssr } from './+page';
 
@@ -23,6 +27,7 @@ describe('auth page load guard', () => {
 		authState.authenticated = false;
 		vi.clearAllMocks();
 		vi.mocked(checkHealth).mockResolvedValue(true);
+		vi.mocked(getSetupStatus).mockResolvedValue({ setupRequired: false });
 		vi.mocked(restoreSession).mockResolvedValue('unauthenticated');
 	});
 
@@ -48,6 +53,16 @@ describe('auth page load guard', () => {
 			restoreStatus: 'unauthenticated',
 		});
 		expect(restoreSession).toHaveBeenCalledWith(fetchFn);
+	});
+
+	it('routes to setup before auth controls render when setup is required', async () => {
+		vi.mocked(getSetupStatus).mockResolvedValue({ setupRequired: true });
+
+		await expect(load({ fetch: fetchFn } as never)).rejects.toMatchObject({
+			status: 307,
+			location: '/setup',
+		});
+		expect(restoreSession).not.toHaveBeenCalled();
 	});
 
 	it('routes backend-unavailable startup through / before auth controls render', async () => {

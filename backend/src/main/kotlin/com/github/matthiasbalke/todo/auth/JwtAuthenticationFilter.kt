@@ -4,6 +4,7 @@ import io.jsonwebtoken.JwtException
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.http.MediaType
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
@@ -14,6 +15,7 @@ import java.util.UUID
 class JwtAuthenticationFilter(
     private val jwtTokenService: JwtTokenService,
     private val revokedTokenRepository: RevokedTokenRepository,
+    private val userRepository: UserRepository,
 ) : OncePerRequestFilter() {
 
     override fun doFilterInternal(
@@ -31,7 +33,23 @@ class JwtAuthenticationFilter(
                     return
                 }
                 val userId = UUID.fromString(claims.subject)
-                val auth = UsernamePasswordAuthenticationToken(userId, null, emptyList())
+                val user = userRepository.findById(userId).orElse(null)
+                if (user == null) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "User not found")
+                    return
+                }
+                if (user.blockedAt != null) {
+                    response.status = HttpServletResponse.SC_FORBIDDEN
+                    response.contentType = MediaType.APPLICATION_JSON_VALUE
+                    response.writer.write("""{"code":"ACCOUNT_BLOCKED","message":"Account is blocked"}""")
+                    return
+                }
+                val authorities = if (user.admin) {
+                    listOf(org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))
+                } else {
+                    emptyList()
+                }
+                val auth = UsernamePasswordAuthenticationToken(userId, null, authorities)
                 SecurityContextHolder.getContext().authentication = auth
             } catch (_: JwtException) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token")

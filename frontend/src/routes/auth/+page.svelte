@@ -8,7 +8,7 @@
   import EmailInput from '$lib/components/EmailInput.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
 
-  type Mode = 'idle' | 'register-form' | 'signing-in' | 'registering' | 'error';
+  type Mode = 'idle' | 'register-form' | 'signing-in' | 'registering' | 'sign-in-error' | 'register-error';
 
   let mode = $state<Mode>('idle');
   let errorMessage = $state('');
@@ -36,6 +36,7 @@
     if (err instanceof DOMException && err.name === 'NotAllowedError') return 'Cancelled — try again';
     if (err instanceof DOMException && err.name === 'SecurityError') return 'Passkey origin not allowed — check the server configuration';
     if (err instanceof ApiError && err.status === 403 && err.code === 'REGISTRATION_DISABLED') return 'Registration is currently disabled';
+    if (err instanceof ApiError && err.status === 403 && err.code === 'ACCOUNT_BLOCKED') return 'Your account is blocked. Please contact the admin.';
     if (err instanceof ApiError && err.status === 403) return 'Passkey origin not allowed — check the server configuration';
     if (err instanceof ApiError && err.status === 409) return err.message;
     if (err instanceof ApiError && err.status === 429) return 'Too many attempts — please wait a moment';
@@ -55,7 +56,7 @@
       setSession(result);
       await goto('/lists');
     } catch (err) {
-      mode = 'error';
+      mode = 'sign-in-error';
       errorMessage = passkeyErrorMessage(err);
     }
   }
@@ -70,7 +71,7 @@
       setSession(result);
       await goto('/lists');
     } catch (err) {
-      mode = 'error';
+      mode = 'register-error';
       errorMessage = passkeyErrorMessage(err);
     }
   }
@@ -97,7 +98,7 @@
       </div>
     {/if}
 
-    {#if mode === 'register-form' || mode === 'registering' || mode === 'error'}
+    {#if mode === 'register-form' || mode === 'registering' || mode === 'register-error'}
       <form onsubmit={handleRegister} class="space-y-4">
         <TextInput
           id="displayName"

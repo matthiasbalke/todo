@@ -73,7 +73,7 @@ export async function restoreSession(fetchFn: typeof fetch = fetch): Promise<Res
 		setSession(response);
 		return 'authenticated';
 	} catch (err) {
-		if (err instanceof ApiError && err.status === 401) {
+		if (err instanceof ApiError && (err.status === 401 || (err.status === 403 && err.code === 'ACCOUNT_BLOCKED'))) {
 			clearSession();
 			return 'unauthenticated';
 		}

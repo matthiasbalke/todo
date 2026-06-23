@@ -1,6 +1,7 @@
 package com.github.matthiasbalke.todo.auth
 
 import com.github.matthiasbalke.todo.AbstractIntegrationTest
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
@@ -31,6 +32,14 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
 
     @Autowired
     private lateinit var jwtTokenService: JwtTokenService
+
+    @Autowired
+    private lateinit var appSettingsService: AppSettingsService
+
+    @BeforeEach
+    fun enableRegistration() {
+        appSettingsService.setRegistrationEnabled(true)
+    }
 
     // ─── config ───────────────────────────────────────────────────────────────
 

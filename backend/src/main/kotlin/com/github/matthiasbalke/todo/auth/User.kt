@@ -28,6 +28,15 @@ class User(
     @Column(name = "today_view_enabled", nullable = false)
     var todayViewEnabled: Boolean = true,
 
+    @Column(nullable = false)
+    var admin: Boolean = false,
+
+    @Column(name = "blocked_at")
+    var blockedAt: Instant? = null,
+
+    @Column(name = "blocked_by_user_id")
+    var blockedByUserId: UUID? = null,
+
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now(),
 )
