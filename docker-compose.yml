@@ -25,6 +25,7 @@ services:
       # this is not secure for production, generate a unique one
       JWT_SECRET: ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50
       # this is set for e2e tests
+      SETUP_SECRET: e2e-setup-secret
       RATE_LIMIT_CAPACITY: 10000
       RATE_LIMIT_WINDOW_MINUTES: 1
       CORS_ALLOWED_ORIGINS: http://localhost:5173
@@ -71,4 +72,3 @@ services:
         condition: service_started
       backend-healthcheck:
         condition: service_healthy
-

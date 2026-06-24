@@ -162,6 +162,8 @@ jobs:
       - name: Run E2E tests
         run: bunx playwright test
         working-directory: e2e
+        env:
+          SETUP_SECRET: e2e-setup-secret
 
       - name: Upload Playwright report
         if: failure()

@@ -10,6 +10,7 @@
 
   let displayName = $state('');
   let email = $state('');
+  let setupSecret = $state('');
   let passkeyLabel = $state('');
   let saving = $state(false);
   let errorMessage = $state('');
@@ -25,11 +26,11 @@
 
   async function handleSubmit(event: Event) {
     event.preventDefault();
-    if (!displayName.trim() || !email.trim()) return;
+    if (!displayName.trim() || !email.trim() || !setupSecret.trim()) return;
     saving = true;
     errorMessage = '';
     try {
-      const result = await setupAdminWithPasskey(email.trim(), displayName.trim(), passkeyLabel.trim() || undefined);
+      const result = await setupAdminWithPasskey(email.trim(), displayName.trim(), setupSecret.trim(), passkeyLabel.trim() || undefined);
       setSession(result);
       await goto('/admin');
     } catch (err) {
@@ -53,6 +54,8 @@
 
     <TextInput id="setup-display-name" bind:value={displayName} label="Display name" required class="w-full" />
     <EmailInput id="setup-email" bind:value={email} label="Email" required class="w-full" />
+    <TextInput id="setup-secret" bind:value={setupSecret} label="Setup secret" required placeholder="Shown in backend logs" class="w-full" />
+    <p class="text-xs text-gray-500 -mt-2">Use the setup secret from the backend logs. This is only needed for first setup.</p>
     <TextInput id="setup-passkey-label" bind:value={passkeyLabel} label="Passkey name (optional)" placeholder="e.g. My laptop" class="w-full" />
 
     <Button type="submit" tone="primary" appearance="solid" size="large" class="w-full" disabled={saving}>
