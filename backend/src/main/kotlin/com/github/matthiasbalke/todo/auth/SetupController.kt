@@ -30,20 +30,25 @@ class SetupController(
     private val rpOperations: WebAuthnRelyingPartyOperations,
     private val accountService: AccountService,
     private val authSessionService: AuthSessionService,
+    private val setupSecretService: SetupSecretService,
 ) {
 
     private val creationOptionsRepository: PublicKeyCredentialCreationOptionsRepository =
         HttpSessionPublicKeyCredentialCreationOptionsRepository()
 
     data class SetupStatusResponse(val setupRequired: Boolean)
-    data class SetupOptionsRequest(val email: String, val displayName: String)
+    data class SetupOptionsRequest(val email: String, val displayName: String, val setupSecret: String?)
     data class SetupCompleteRequest(
         val credential: PublicKeyCredential<AuthenticatorAttestationResponse>,
         val label: String?,
+        val setupSecret: String?,
     )
 
     @GetMapping
-    fun status() = SetupStatusResponse(adminService.setupRequired())
+    fun status(): SetupStatusResponse {
+        setupSecretService.ensureReadyForSetup()
+        return SetupStatusResponse(adminService.setupRequired())
+    }
 
     @PostMapping("/webauthn/register-options")
     fun options(
@@ -54,6 +59,10 @@ class SetupController(
         if (!adminService.setupRequired()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ErrorResponse("SETUP_NOT_REQUIRED", "Setup is not required"))
+        }
+        if (!setupSecretService.isValid(body.setupSecret)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponse("SETUP_SECRET_INVALID", "Setup secret is invalid. Check the backend logs and try again."))
         }
         val existing = userRepository.findByEmail(body.email.trim())
         if (existing != null) {
@@ -84,6 +93,10 @@ class SetupController(
             return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ErrorResponse("SETUP_NOT_REQUIRED", "Setup is not required"))
         }
+        if (!setupSecretService.isValid(body.setupSecret)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponse("SETUP_SECRET_INVALID", "Setup secret is invalid. Check the backend logs and try again."))
+        }
         val savedOptions = creationOptionsRepository.load(request)
             ?: return ResponseEntity.badRequest()
                 .body(ErrorResponse("SESSION_EXPIRED", "Session expired, please try again"))
@@ -107,6 +120,7 @@ class SetupController(
             ?: return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build<Any>()
         user.admin = true
         userRepository.save(user)
+        setupSecretService.clear()
         return ResponseEntity.ok(authSessionService.issueTokens(user, response))
     }
 }

@@ -20,7 +20,7 @@ class AuthRateLimitFilter(
     private val buckets = ConcurrentHashMap<String, Bucket>()
 
     override fun shouldNotFilter(request: HttpServletRequest): Boolean =
-        !request.requestURI.startsWith("/api/auth")
+        !request.requestURI.startsWith("/api/auth") && !request.requestURI.startsWith("/api/setup")
 
     override fun doFilterInternal(
         request: HttpServletRequest,

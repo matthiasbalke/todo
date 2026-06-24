@@ -42,4 +42,30 @@ class AuthRateLimitIntegrationTest : AbstractIntegrationTest() {
             header { exists("Retry-After") }
         }
     }
+
+    @Test
+    fun `11th request to setup endpoint returns 429`() {
+        repeat(10) {
+            mockMvc.post("/api/setup/webauthn/register-options") {
+                contentType = MediaType.APPLICATION_JSON
+                content = "{}"
+                with { req ->
+                    req.remoteAddr = "10.0.0.43"
+                    req
+                }
+            }
+        }
+
+        mockMvc.post("/api/setup/webauthn/register-options") {
+            contentType = MediaType.APPLICATION_JSON
+            content = "{}"
+            with { req ->
+                req.remoteAddr = "10.0.0.43"
+                req
+            }
+        }.andExpect {
+            status { isEqualTo(429) }
+            header { exists("Retry-After") }
+        }
+    }
 }
