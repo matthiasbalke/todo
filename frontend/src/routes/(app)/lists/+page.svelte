@@ -11,7 +11,13 @@
   import TextInput from '$lib/components/TextInput.svelte';
   import { getProfile } from '$lib/stores/preferences.svelte';
   import { getTodayUnfinishedCount, loadTodayCount } from '$lib/stores/today.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
+  import {
+    deleteListGroupState,
+    loadListGroupState,
+    saveListGroupState,
+    UNGROUPED_LIST_GROUP_STATE_KEY,
+  } from '$lib/listGroupState';
 
   const lists = $derived(getLists());
   const groups = $derived(getListGroups());
@@ -45,11 +51,19 @@
   let groupInput = $state<HTMLInputElement | null>(null);
   let localGroupDragging = $state(false);
   let dndGroupWrappers = $state<{ id: string; group: ListGroup; lists: List[] }[]>([]);
+  const savedListGroupState = untrack(() => loadListGroupState());
+  let collapsedGroups = $state<Record<string, boolean>>(savedListGroupState?.collapsed ?? {});
 
   $effect(() => {
     if (!localGroupDragging) {
       dndGroupWrappers = groupWrappers.slice();
     }
+  });
+
+  $effect(() => {
+    const collapsed = Object.fromEntries(Object.entries(collapsedGroups).filter(([, value]) => value));
+    if (Object.keys(collapsed).length === 0) deleteListGroupState();
+    else saveListGroupState({ collapsed });
   });
 
   $effect(() => {
@@ -104,6 +118,13 @@
       dndGroupWrappers = groupWrappers.slice();
     }
   }
+
+  function setGroupCollapsed(groupKey: string, value: boolean) {
+    const next = { ...collapsedGroups };
+    if (value) next[groupKey] = true;
+    else delete next[groupKey];
+    collapsedGroups = next;
+  }
 </script>
 
 <div class="pb-20">
@@ -145,6 +166,8 @@
               group={wrapper.group}
               lists={wrapper.lists}
               showGroupDragHandle={true}
+              collapsed={collapsedGroups[wrapper.id] ?? false}
+              oncollapsedchange={(value) => setGroupCollapsed(wrapper.id, value)}
             />
           </div>
         {/each}
@@ -154,6 +177,8 @@
         <ListGroupSection
           group={null}
           lists={ungroupedLists}
+          collapsed={collapsedGroups[UNGROUPED_LIST_GROUP_STATE_KEY] ?? false}
+          oncollapsedchange={(value) => setGroupCollapsed(UNGROUPED_LIST_GROUP_STATE_KEY, value)}
         />
       {/if}
     </div>

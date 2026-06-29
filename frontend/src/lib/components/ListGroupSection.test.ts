@@ -148,4 +148,30 @@ describe('ListGroupSection', () => {
     await fireEvent.click(toggleBtn);
     expect(container.querySelectorAll('a[href]').length).toBe(0);
   });
+
+  it('uses controlled collapsed state when provided', () => {
+    const { container, getByRole } = render(ListGroupSection, { props: { group, lists, collapsed: true } });
+
+    expect(getByRole('button', { name: /home/i })).toHaveAttribute('aria-expanded', 'false');
+    expect(container.querySelectorAll('a[href]')).toHaveLength(0);
+  });
+
+  it('calls collapse change callback without mutating controlled state by itself', async () => {
+    const oncollapsedchange = vi.fn();
+    const { container, getByRole, rerender } = render(ListGroupSection, {
+      props: { group, lists, collapsed: false, oncollapsedchange },
+    });
+
+    const toggleBtn = getByRole('button', { name: /home/i });
+    await fireEvent.click(toggleBtn);
+
+    expect(oncollapsedchange).toHaveBeenCalledWith(true);
+    expect(toggleBtn).toHaveAttribute('aria-expanded', 'true');
+    expect(container.querySelectorAll('a[href]')).toHaveLength(lists.length);
+
+    await rerender({ group, lists, collapsed: true, oncollapsedchange });
+
+    expect(toggleBtn).toHaveAttribute('aria-expanded', 'false');
+    expect(container.querySelectorAll('a[href]')).toHaveLength(0);
+  });
 });
