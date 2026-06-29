@@ -47,6 +47,7 @@ vi.mock('svelte-dnd-action', () => ({
 
 import ListsPage from './+page.svelte';
 import { loadTodayCount } from '$lib/stores/today.svelte';
+import { saveListGroupState, UNGROUPED_LIST_GROUP_STATE_KEY } from '$lib/listGroupState';
 
 const groups: ListGroup[] = [
 	{ id: 'group-home', userId: 'user-1', name: 'Home', sortOrder: 0, createdAt: '2026-01-01T00:00:00Z' },
@@ -96,6 +97,7 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 	afterEach(() => {
 		cleanup();
 		vi.clearAllMocks();
+		localStorage.clear();
 		storeMocks.getLists.mockReturnValue([]);
 		storeMocks.getListGroups.mockReturnValue([]);
 		storeMocks.reorderListGroupsOptimistic.mockResolvedValue(undefined);
@@ -186,5 +188,60 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		expect(storeMocks.reorderListGroupsOptimistic).toHaveBeenCalledWith(['group-work', 'group-home']);
 		expect(container.querySelectorAll('[aria-label="Drag to reorder"]')).toHaveLength(3);
 		expect(container.querySelectorAll('[aria-label="Drag to reorder list group"]')).toHaveLength(2);
+	});
+
+	it('restores collapsed state for persisted list groups from local storage', () => {
+		storeMocks.getListGroups.mockReturnValue(groups);
+		storeMocks.getLists.mockReturnValue(lists);
+		saveListGroupState({ collapsed: { 'group-home': true } });
+
+		const { container } = render(ListsPage, { props: { } });
+		const labels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => ({
+			text: button.textContent,
+			expanded: button.getAttribute('aria-expanded'),
+		}));
+
+		expect(labels).toEqual([
+			{ text: '▶ Home', expanded: 'false' },
+			{ text: '▼ Work', expanded: 'true' },
+			{ text: '▼ Ungrouped', expanded: 'true' },
+		]);
+		expect(container.querySelector('a[href="/lists/list-home"]')).toBeNull();
+		expect(container.querySelector('a[href="/lists/list-work"]')).not.toBeNull();
+	});
+
+	it('restores collapsed state for the virtual Ungrouped section from local storage', () => {
+		storeMocks.getListGroups.mockReturnValue(groups);
+		storeMocks.getLists.mockReturnValue(lists);
+		saveListGroupState({ collapsed: { [UNGROUPED_LIST_GROUP_STATE_KEY]: true } });
+
+		const { container } = render(ListsPage, { props: { } });
+		const labels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => ({
+			text: button.textContent,
+			expanded: button.getAttribute('aria-expanded'),
+		}));
+
+		expect(labels).toEqual([
+			{ text: '▼ Home', expanded: 'true' },
+			{ text: '▼ Work', expanded: 'true' },
+			{ text: '▶ Ungrouped', expanded: 'false' },
+		]);
+		expect(container.querySelector('a[href="/lists/list-ungrouped"]')).toBeNull();
+	});
+
+	it('saves and clears list group collapsed state when toggled', async () => {
+		storeMocks.getListGroups.mockReturnValue(groups);
+		storeMocks.getLists.mockReturnValue(lists);
+
+		const { getByRole } = render(ListsPage, { props: { } });
+		await fireEvent.click(getByRole('button', { name: /home/i }));
+
+		expect(JSON.parse(localStorage.getItem('todo_list_group_state') ?? '{}')).toEqual({
+			collapsed: { 'group-home': true },
+		});
+
+		await fireEvent.click(getByRole('button', { name: /home/i }));
+
+		expect(localStorage.getItem('todo_list_group_state')).toBeNull();
 	});
 });

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { List, ListGroup } from '$lib/mock-data';
   import { renameListGroup, deleteListGroup, assignListGroup, reorderListInGroup } from '$lib/stores/lists.svelte';
   import { isDraggingAny, setDraggingAny } from '$lib/stores/drag.svelte';
@@ -11,13 +12,18 @@
     group,
     lists,
     showGroupDragHandle = false,
+    collapsed: collapsedProp,
+    oncollapsedchange,
   }: {
     group: ListGroup | null;
     lists: List[];
     showGroupDragHandle?: boolean;
+    collapsed?: boolean;
+    oncollapsedchange?: (value: boolean) => void;
   } = $props();
 
-  let collapsed = $state(false);
+  let internalCollapsed = $state(untrack(() => collapsedProp ?? false));
+  const collapsed = $derived(collapsedProp ?? internalCollapsed);
   let showMenu = $state(false);
   let renaming = $state(false);
   let newName = $state('');
@@ -97,6 +103,14 @@
       error = friendlyError(e, 'Failed to delete group');
     }
   }
+
+  function toggleCollapsed() {
+    const next = !collapsed;
+    if (collapsedProp === undefined) {
+      internalCollapsed = next;
+    }
+    oncollapsedchange?.(next);
+  }
 </script>
 
 <div class="mb-4">
@@ -124,7 +138,7 @@
         size="header"
         align="start"
         emphasis="muted"
-        onclick={() => { collapsed = !collapsed; }}
+        onclick={toggleCollapsed}
         aria-expanded={!collapsed}
       >
         <span class="font-normal normal-case tracking-normal">{collapsed ? '▶' : '▼'}</span>
