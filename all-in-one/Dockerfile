@@ -1,6 +1,6 @@
 # Stage 1: build backend
 # https://hub.docker.com/hardened-images/catalog/dhi/gradle/images
-FROM dhi.io/gradle:9.5.1-r3-jdk21-alpine3.23-dev AS backend-build
+FROM dhi.io/gradle:9.6.1-r6-jdk21-alpine3.24-dev AS backend-build
 WORKDIR /app
 COPY backend/ .
 
@@ -18,7 +18,7 @@ COPY frontend/ .
 RUN bun run build
 
 # Stage 3: runtime
-FROM dhi.io/eclipse-temurin:21-alpine3.23-dev
+FROM dhi.io/eclipse-temurin:21.0.12.8-alpine3.23-dev
 RUN apk add --no-cache nodejs=24.14.1-r0 nginx=1.29.8-r0 supervisor=4.3.0-r0
 
 WORKDIR /app
