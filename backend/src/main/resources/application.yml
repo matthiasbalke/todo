@@ -30,6 +30,8 @@ sse:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  setup:
+    secret: ${SETUP_SECRET:}
   registration:
     enabled: ${REGISTRATION_ENABLED:true}
   security:

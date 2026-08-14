@@ -1,15 +1,23 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { getLists, getListGroups, createList, createListGroup, isLoading } from '$lib/stores/lists.svelte';
+  import type { List, ListGroup } from '$lib/mock-data';
+  import { getLists, getListGroups, createList, createListGroup, isLoading, reorderListGroupsOptimistic } from '$lib/stores/lists.svelte';
   import { isDraggingAny } from '$lib/stores/drag.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
   import ListGroupSection from '$lib/components/ListGroupSection.svelte';
+  import { dragHandleZone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { friendlyError } from '$lib/api/errors';
   import Button from '$lib/components/Button.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
   import { getProfile } from '$lib/stores/preferences.svelte';
   import { getTodayUnfinishedCount, loadTodayCount } from '$lib/stores/today.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
+  import {
+    deleteListGroupState,
+    loadListGroupState,
+    saveListGroupState,
+    UNGROUPED_LIST_GROUP_STATE_KEY,
+  } from '$lib/listGroupState';
 
   const lists = $derived(getLists());
   const groups = $derived(getListGroups());
@@ -28,6 +36,11 @@
 
   const sortedGroups = $derived(groups.slice().sort((a, b) => a.sortOrder - b.sortOrder));
   const ungroupedLists = $derived(lists.filter(l => l.groupId === null));
+  const groupWrappers = $derived(sortedGroups.map(group => ({
+    id: group.id,
+    group,
+    lists: lists.filter(list => list.groupId === group.id),
+  })));
 
   let showAddForm = $state(false);
   let saving = $state(false);
@@ -36,6 +49,22 @@
   let newGroupName = $state('');
   let groupError = $state<string | null>(null);
   let groupInput = $state<HTMLInputElement | null>(null);
+  let localGroupDragging = $state(false);
+  let dndGroupWrappers = $state<{ id: string; group: ListGroup; lists: List[] }[]>([]);
+  const savedListGroupState = untrack(() => loadListGroupState());
+  let collapsedGroups = $state<Record<string, boolean>>(savedListGroupState?.collapsed ?? {});
+
+  $effect(() => {
+    if (!localGroupDragging) {
+      dndGroupWrappers = groupWrappers.slice();
+    }
+  });
+
+  $effect(() => {
+    const collapsed = Object.fromEntries(Object.entries(collapsedGroups).filter(([, value]) => value));
+    if (Object.keys(collapsed).length === 0) deleteListGroupState();
+    else saveListGroupState({ collapsed });
+  });
 
   $effect(() => {
     if (addingGroup) {
@@ -68,6 +97,34 @@
       groupError = friendlyError(e, 'Failed to create group');
     }
   }
+
+  function handleGroupConsider(e: CustomEvent<{ items: typeof dndGroupWrappers }>) {
+    localGroupDragging = true;
+    dndGroupWrappers = e.detail.items;
+  }
+
+  async function handleGroupFinalize(e: CustomEvent<{ items: typeof dndGroupWrappers }>) {
+    localGroupDragging = false;
+    const reordered = e.detail.items.filter(item => !(item as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME]);
+    dndGroupWrappers = reordered;
+    const reorderedIds = reordered.map(item => item.id);
+    if (reorderedIds.join('|') === sortedGroups.map(group => group.id).join('|')) return;
+
+    groupError = null;
+    try {
+      await reorderListGroupsOptimistic(reorderedIds);
+    } catch (e) {
+      groupError = friendlyError(e, 'Failed to reorder groups');
+      dndGroupWrappers = groupWrappers.slice();
+    }
+  }
+
+  function setGroupCollapsed(groupKey: string, value: boolean) {
+    const next = { ...collapsedGroups };
+    if (value) next[groupKey] = true;
+    else delete next[groupKey];
+    collapsedGroups = next;
+  }
 </script>
 
 <div class="pb-20">
@@ -92,17 +149,36 @@
           </a>
         </div>
       {/if}
-      {#each sortedGroups as group (group.id)}
-        <ListGroupSection
-          {group}
-          lists={lists.filter(l => l.groupId === group.id)}
-        />
-      {/each}
+      {#if groupError}
+        <p class="px-1 text-sm text-red-600">{groupError}</p>
+      {/if}
+
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div
+        use:dragHandleZone={{ items: dndGroupWrappers, type: 'list-group', flipDurationMs: 200, dropTargetStyle: {} }}
+        onconsider={handleGroupConsider}
+        onfinalize={handleGroupFinalize}
+        data-testid="list-group-reorder-zone"
+      >
+        {#each dndGroupWrappers as wrapper (wrapper.id)}
+          <div data-testid="list-group-wrapper">
+            <ListGroupSection
+              group={wrapper.group}
+              lists={wrapper.lists}
+              showGroupDragHandle={true}
+              collapsed={collapsedGroups[wrapper.id] ?? false}
+              oncollapsedchange={(value) => setGroupCollapsed(wrapper.id, value)}
+            />
+          </div>
+        {/each}
+      </div>
 
       {#if ungroupedLists.length > 0 || draggingAny}
         <ListGroupSection
           group={null}
           lists={ungroupedLists}
+          collapsed={collapsedGroups[UNGROUPED_LIST_GROUP_STATE_KEY] ?? false}
+          oncollapsedchange={(value) => setGroupCollapsed(UNGROUPED_LIST_GROUP_STATE_KEY, value)}
         />
       {/if}
     </div>

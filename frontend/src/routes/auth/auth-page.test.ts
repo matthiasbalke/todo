@@ -8,7 +8,6 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/stores/auth.svelte', () => ({
 	setSession: vi.fn(),
 	clearSession: vi.fn(),
-	restoreSession: vi.fn().mockResolvedValue('unauthenticated'),
 	isAuthenticated: vi.fn(() => false),
 	getCurrentUser: vi.fn(() => null),
 	getAccessToken: vi.fn(() => null),
@@ -26,15 +25,9 @@ vi.mock('$lib/api/auth', () => ({
 	},
 }));
 
-// Mock the health API — backend is healthy by default
-vi.mock('$lib/api/health', () => ({
-	checkHealth: vi.fn().mockResolvedValue(true),
-}));
-
 import { goto } from '$app/navigation';
 import * as authApi from '$lib/api/auth';
-import { checkHealth } from '$lib/api/health';
-import { restoreSession, setSession } from '$lib/stores/auth.svelte';
+import { setSession } from '$lib/stores/auth.svelte';
 import AuthPage from './+page.svelte';
 
 async function waitForIdle() {
@@ -44,8 +37,6 @@ async function waitForIdle() {
 describe('AuthPage', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
-		vi.mocked(checkHealth).mockResolvedValue(true);
-		vi.mocked(restoreSession).mockResolvedValue('unauthenticated');
 	});
 
 	afterEach(() => {
@@ -132,6 +123,42 @@ describe('AuthPage', () => {
 		});
 	});
 
+	it('shows blocked-account message on 403 with ACCOUNT_BLOCKED code', async () => {
+		const ApiErrorClass = vi.mocked(authApi).ApiError as typeof authApi.ApiError;
+		const error = new ApiErrorClass(403, 'Account is blocked', 'ACCOUNT_BLOCKED');
+		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
+
+		render(AuthPage);
+		await waitForIdle();
+		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText(/your account is blocked\. please contact the admin\./i)).toBeInTheDocument();
+		});
+		expect(screen.getByRole('button', { name: /sign in with passkey/i })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /register passkey/i })).not.toBeInTheDocument();
+		expect(screen.queryByLabelText(/display name/i)).not.toBeInTheDocument();
+	});
+
+	it('keeps failed sign-in on the login view when registration is disabled', async () => {
+		vi.mocked(authApi.getAuthConfig).mockResolvedValueOnce({ registrationEnabled: false });
+		const ApiErrorClass = vi.mocked(authApi).ApiError as typeof authApi.ApiError;
+		const error = new ApiErrorClass(404, 'This passkey is not registered. Please create an account first.');
+		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
+
+		render(AuthPage);
+		await waitForIdle();
+		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText('This passkey is not registered')).toBeInTheDocument();
+		});
+		expect(screen.getByRole('button', { name: /sign in with passkey/i })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /create account/i })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /register passkey/i })).not.toBeInTheDocument();
+		expect(screen.queryByLabelText(/display name/i)).not.toBeInTheDocument();
+	});
+
 	it('shows origin-not-allowed message on 403 without known code', async () => {
 		const ApiErrorClass = vi.mocked(authApi).ApiError as typeof authApi.ApiError;
 		const error = new ApiErrorClass(403, 'Forbidden');
@@ -213,50 +240,12 @@ describe('AuthPage', () => {
 		});
 	});
 
-	it('redirects to /lists when backend startup later restores a valid session', async () => {
-		vi.mocked(checkHealth).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
-		vi.mocked(restoreSession).mockResolvedValueOnce('authenticated');
-
-		render(AuthPage, { props: { data: { buildNumber: '0', restoreStatus: 'unavailable' } } });
+	it('shows auth controls for a confirmed unauthenticated session', async () => {
+		render(AuthPage);
 		await waitForIdle();
 
-		expect(screen.queryByRole('button', { name: /sign in with passkey/i })).not.toBeInTheDocument();
-
-		await vi.advanceTimersByTimeAsync(2000);
-
-		await waitFor(() => {
-			expect(restoreSession).toHaveBeenCalledTimes(1);
-			expect(goto).toHaveBeenCalledWith('/lists');
-		});
-	});
-
-	it('shows the auth controls when backend startup resolves to an unauthenticated session', async () => {
-		vi.mocked(checkHealth).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
-		vi.mocked(restoreSession).mockResolvedValueOnce('unauthenticated');
-
-		render(AuthPage, { props: { data: { buildNumber: '0', restoreStatus: 'unavailable' } } });
-		await waitForIdle();
-
-		expect(screen.queryByRole('button', { name: /sign in with passkey/i })).not.toBeInTheDocument();
-
-		await vi.advanceTimersByTimeAsync(2000);
-
-		await waitFor(() => {
-			expect(screen.getByRole('button', { name: /sign in with passkey/i })).toBeInTheDocument();
-			expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
-		});
-	});
-
-	it('shows the startup timeout when health never becomes available', async () => {
-		vi.mocked(checkHealth).mockResolvedValue(false);
-
-		render(AuthPage, { props: { data: { buildNumber: '0', restoreStatus: 'unavailable' } } });
-		await waitForIdle();
-
-		await vi.advanceTimersByTimeAsync(120_000);
-
-		expect(screen.getByText(/backend did not respond/i)).toBeInTheDocument();
-		expect(screen.queryByRole('button', { name: /sign in with passkey/i })).not.toBeInTheDocument();
-		expect(restoreSession).not.toHaveBeenCalled();
+		expect(screen.getByRole('button', { name: /sign in with passkey/i })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
+		expect(screen.queryByText(/Application is starting/i)).not.toBeInTheDocument();
 	});
 });

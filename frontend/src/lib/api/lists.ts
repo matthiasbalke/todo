@@ -83,6 +83,10 @@ export function deleteList(id: string): Promise<void> {
 	return authedFetch(`/api/lists/${id}`, { method: 'DELETE' });
 }
 
+export function duplicateList(id: string): Promise<ListDto> {
+	return authedFetch(`/api/lists/${id}/duplicate`, { method: 'POST' });
+}
+
 export function getMembers(listId: string): Promise<MemberDto[]> {
 	return authedFetch(`/api/lists/${listId}/members`);
 }
@@ -132,6 +136,10 @@ export interface UpdateCategoryRequest {
 	sortOrder: number;
 }
 
+export interface ReorderCategoriesRequest {
+	categoryIds: string[];
+}
+
 export function getCategories(listId: string): Promise<CategoryDto[]> {
 	return authedFetch(`/api/lists/${listId}/categories`);
 }
@@ -158,6 +166,16 @@ export function deleteCategory(listId: string, categoryId: string): Promise<void
 	return authedFetch(`/api/lists/${listId}/categories/${categoryId}`, { method: 'DELETE' });
 }
 
+export function reorderCategories(
+	listId: string,
+	req: ReorderCategoriesRequest,
+): Promise<CategoryDto[]> {
+	return authedFetch(`/api/lists/${listId}/categories/reorder`, {
+		method: 'POST',
+		body: JSON.stringify(req),
+	});
+}
+
 // ─── List Groups ──────────────────────────────────────────────────────────────
 
 export interface ListGroupDto {
@@ -178,6 +196,10 @@ export interface RenameGroupRequest {
 
 export interface ReorderGroupRequest {
 	sortOrder: number;
+}
+
+export interface ReorderGroupsRequest {
+	groupIds: string[];
 }
 
 export interface AssignGroupRequest {
@@ -213,6 +235,13 @@ export function deleteListGroup(id: string): Promise<void> {
 export function reorderListGroup(id: string, req: ReorderGroupRequest): Promise<ListGroupDto> {
 	return authedFetch(`/api/list-groups/${id}/order`, {
 		method: 'PATCH',
+		body: JSON.stringify(req),
+	});
+}
+
+export function reorderListGroups(req: ReorderGroupsRequest): Promise<ListGroupDto[]> {
+	return authedFetch('/api/list-groups/reorder', {
+		method: 'POST',
 		body: JSON.stringify(req),
 	});
 }

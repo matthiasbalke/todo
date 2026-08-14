@@ -51,6 +51,7 @@ class UserController(
         val timeZone: String,
         val timeZoneInitialized: Boolean,
         val todayViewEnabled: Boolean,
+        val admin: Boolean,
     )
     data class UpdateProfileRequest(val displayName: String, val email: String)
     data class UpdatePreferencesRequest(val timeZone: String, val todayViewEnabled: Boolean)
@@ -215,6 +216,7 @@ class UserController(
         timeZone = timeZone,
         timeZoneInitialized = timeZoneInitialized,
         todayViewEnabled = todayViewEnabled,
+        admin = admin,
     )
 
     private fun WebAuthnCredential.toDto() = PasskeyDto(id, label, createdAt)

@@ -87,12 +87,19 @@ while true; do
 	sleep 1
 done
 EOF
+	cat > "${fixture}/bin/python3" <<'EOF'
+#!/usr/bin/env zsh
+exit 0
+EOF
 	cat > "${fixture}/bin/sudo" <<'EOF'
 #!/usr/bin/env zsh
 printf '%s\n' "$*" >> "${PWD}/sudo.log"
+if [[ "$1" == "-v" ]]; then
+	exit 0
+fi
 exec "$@"
 EOF
-	chmod +x "${fixture}/bin/bun" "${fixture}/bin/socat" "${fixture}/bin/sudo"
+	chmod +x "${fixture}/bin/bun" "${fixture}/bin/socat" "${fixture}/bin/python3" "${fixture}/bin/sudo"
 }
 
 write_backend_stub() {
@@ -180,6 +187,7 @@ test_frontend_script() {
 	assert_contains "$(cat "${fixture}/frontend/bun.log")" "args=run dev:https"
 	assert_contains "$(cat "${fixture}/frontend/socat.log")" "socat cwd=${fixture}/frontend"
 	assert_contains "$(cat "${fixture}/frontend/socat.log")" "TCP-LISTEN:443,fork,reuseaddr TCP:127.0.0.1:5173"
+	assert_equals "$(head -n 1 "${fixture}/frontend/sudo.log")" "-v"
 	assert_contains "$(cat "${fixture}/frontend/sudo.log")" "${fixture}/bin/socat TCP-LISTEN:443,fork,reuseaddr TCP:127.0.0.1:5173"
 	[[ -f "${fixture}/frontend/socat.exit" ]] || fail "relay binary should be shut down when the launcher exits"
 	[[ "$(file_owner_uid "${fixture}/frontend/.svelte-kit/generated")" == "$(id -u)" ]] || fail "generated frontend artifacts should be owned by the invoking user"
@@ -199,8 +207,10 @@ printf 'bun should not run\n'
 EOF
 	cat > "${fixture}/bin/sudo" <<'EOF'
 #!/usr/bin/env zsh
-printf 'sudo should not run\n'
-exit 1
+if [[ "$1" == "-v" ]]; then
+	exit 0
+fi
+exec "$@"
 EOF
 	chmod +x "${fixture}/bin/bun" "${fixture}/bin/sudo"
 
@@ -211,6 +221,136 @@ EOF
 	[[ ${exit_status} -ne 0 ]] || fail "frontend should fail when socat is missing"
 	assert_contains "${output}" "Missing required relay binary: socat"
 	pass "frontend launcher fails clearly when the relay binary is missing"
+}
+
+test_frontend_occupied_port() {
+	local fixture output exit_status
+	fixture="$(new_fixture)"
+	printf 'frontend.example.test\n' > "${fixture}/.local-domain"
+	cat > "${fixture}/bin/bun" <<'EOF'
+#!/usr/bin/env zsh
+printf 'bun should not run\n'
+EOF
+	cat > "${fixture}/bin/socat" <<'EOF'
+#!/usr/bin/env zsh
+printf 'socat should not run\n'
+EOF
+	cat > "${fixture}/bin/python3" <<'EOF'
+#!/usr/bin/env zsh
+printf '[Errno 98] Address already in use\n' >&2
+exit 1
+EOF
+	cat > "${fixture}/bin/lsof" <<'EOF'
+#!/usr/bin/env zsh
+printf 'COMMAND   PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME\n'
+printf 'existing-server 1234 user 3u IPv4 12345 0t0 TCP *:443 (LISTEN)\n'
+EOF
+	cat > "${fixture}/bin/sudo" <<'EOF'
+#!/usr/bin/env zsh
+if [[ "$1" == "-v" ]]; then
+	exit 0
+fi
+exec "$@"
+EOF
+	chmod +x "${fixture}/bin/bun" "${fixture}/bin/socat" "${fixture}/bin/python3" "${fixture}/bin/lsof" "${fixture}/bin/sudo"
+
+	set +e
+	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" "${fixture}/frontend/start-https-frontend.sh" 2>&1)"
+	exit_status=$?
+	set -e
+	[[ ${exit_status} -ne 0 ]] || fail "frontend should fail when the exposed port is occupied"
+	assert_contains "${output}" "HTTPS port 443 is already in use"
+	assert_contains "${output}" "Bind probe error: [Errno 98] Address already in use"
+	assert_contains "${output}" "Listener details:"
+	assert_contains "${output}" "existing-server 1234 user"
+	assert_contains "${output}" "${fixture}/frontend/start-https-frontend.sh 4443"
+	assert_not_contains "${output}" "bun should not run"
+	assert_not_contains "${output}" "socat should not run"
+	pass "frontend launcher fails clearly when the exposed port is occupied"
+}
+
+test_frontend_occupied_port_uses_sudo_for_root_listener() {
+	local fixture output exit_status
+	fixture="$(new_fixture)"
+	printf 'frontend.example.test\n' > "${fixture}/.local-domain"
+	cat > "${fixture}/bin/bun" <<'EOF'
+#!/usr/bin/env zsh
+printf 'bun should not run\n'
+EOF
+	cat > "${fixture}/bin/socat" <<'EOF'
+#!/usr/bin/env zsh
+printf 'socat should not run\n'
+EOF
+	cat > "${fixture}/bin/python3" <<'EOF'
+#!/usr/bin/env zsh
+printf '[Errno 98] Address already in use\n' >&2
+exit 1
+EOF
+	cat > "${fixture}/bin/lsof" <<'EOF'
+#!/usr/bin/env zsh
+if [[ "${SUDO_WRAPPED:-}" == "1" ]]; then
+	printf 'COMMAND   PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME\n'
+	printf 'root-server 4321 root 3u IPv4 12345 0t0 TCP *:443 (LISTEN)\n'
+fi
+EOF
+	cat > "${fixture}/bin/sudo" <<EOF
+#!/usr/bin/env zsh
+printf '%s\n' "\$*" >> "${fixture}/sudo.log"
+if [[ "\$1" == "-v" ]]; then
+	exit 0
+fi
+SUDO_WRAPPED=1 exec "\$@"
+EOF
+	chmod +x "${fixture}/bin/bun" "${fixture}/bin/socat" "${fixture}/bin/python3" "${fixture}/bin/lsof" "${fixture}/bin/sudo"
+
+	set +e
+	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" "${fixture}/frontend/start-https-frontend.sh" 2>&1)"
+	exit_status=$?
+	set -e
+	[[ ${exit_status} -ne 0 ]] || fail "frontend should fail when the exposed port is occupied by a root listener"
+	assert_contains "${output}" "HTTPS port 443 is already in use"
+	assert_contains "${output}" "Listener details:"
+	assert_contains "${output}" "root-server 4321 root"
+	assert_contains "$(cat "${fixture}/sudo.log")" "-v"
+	assert_contains "$(cat "${fixture}/sudo.log")" "${fixture}/bin/lsof -nP -iTCP:443 -sTCP:LISTEN"
+	assert_not_contains "${output}" "bun should not run"
+	assert_not_contains "${output}" "socat should not run"
+	pass "frontend launcher uses sudo to identify root-owned occupied ports"
+}
+
+test_frontend_stops_when_sudo_auth_fails() {
+	local fixture output exit_status
+	fixture="$(new_fixture)"
+	printf 'frontend.example.test\n' > "${fixture}/.local-domain"
+	cat > "${fixture}/bin/bun" <<'EOF'
+#!/usr/bin/env zsh
+printf 'bun should not run\n'
+EOF
+	cat > "${fixture}/bin/socat" <<'EOF'
+#!/usr/bin/env zsh
+printf 'socat should not run\n'
+EOF
+	cat > "${fixture}/bin/sudo" <<'EOF'
+#!/usr/bin/env zsh
+printf '%s\n' "$*" >> "${PWD}/sudo.log"
+if [[ "$1" == "-v" ]]; then
+	printf 'sudo auth failed\n' >&2
+	exit 1
+fi
+exec "$@"
+EOF
+	chmod +x "${fixture}/bin/bun" "${fixture}/bin/socat" "${fixture}/bin/sudo"
+
+	set +e
+	output="$(cd /tmp && PATH="${fixture}/bin:${PATH}" "${fixture}/frontend/start-https-frontend.sh" 2>&1)"
+	exit_status=$?
+	set -e
+	[[ ${exit_status} -ne 0 ]] || fail "frontend should fail when sudo auth fails"
+	assert_contains "${output}" "sudo auth failed"
+	assert_not_contains "${output}" "bun should not run"
+	assert_not_contains "${output}" "socat should not run"
+	assert_equals "$(cat "${fixture}/frontend/sudo.log")" "-v"
+	pass "frontend launcher waits for sudo auth before starting child processes"
 }
 
 test_backend_script() {
@@ -231,6 +371,55 @@ test_backend_script() {
 	pass "backend script exports configured domain and custom port"
 }
 
+test_backend_interrupt_cleans_up_continuous_build() {
+	local fixture launcher_pid waited output
+	fixture="$(new_fixture)"
+	printf 'backend.example.test\n' > "${fixture}/.local-domain"
+	cat > "${fixture}/backend/gradlew" <<'EOF'
+#!/usr/bin/env zsh
+if [[ "$*" == *"--continuous"* ]]; then
+	printf '%s\n' "$$" > "${PWD}/continuous.pid"
+	trap 'printf "terminated\n" > "${PWD}/continuous.exit"; exit 0' INT TERM
+	while true; do
+		sleep 1
+	done
+fi
+
+printf '%s\n' "$$" > "${PWD}/bootrun.pid"
+while true; do
+	sleep 1
+done
+EOF
+	chmod +x "${fixture}/backend/gradlew"
+
+	(
+		cd /tmp
+		"${fixture}/backend/start-https-backend.sh" > "${fixture}/backend/launcher.out" 2>&1
+	) &
+	launcher_pid=$!
+
+	waited=0
+	while [[ ! -s "${fixture}/backend/continuous.pid" || ! -s "${fixture}/backend/bootrun.pid" ]]; do
+		sleep 0.1
+		waited=$((waited + 1))
+		(( waited < 100 )) || fail "backend launcher did not start both gradle processes"
+	done
+
+	kill -INT "$(cat "${fixture}/backend/bootrun.pid")"
+	wait "${launcher_pid}" 2>/dev/null || true
+
+	waited=0
+	while [[ ! -e "${fixture}/backend/continuous.exit" ]]; do
+		sleep 0.1
+		waited=$((waited + 1))
+		(( waited < 100 )) || fail "continuous gradle process was not terminated"
+	done
+
+	output="$(cat "${fixture}/backend/continuous.exit")"
+	assert_equals "${output}" "terminated"
+	pass "backend launcher cleans up continuous build on interrupt"
+}
+
 test_scripts_stop_before_children() {
 	local fixture output exit_status marker
 	fixture="$(new_fixture)"
@@ -241,6 +430,9 @@ touch "${marker}"
 EOF
 	cat > "${fixture}/bin/sudo" <<'EOF'
 #!/usr/bin/env zsh
+if [[ "$1" == "-v" ]]; then
+	exit 0
+fi
 exec "$@"
 EOF
 	cat > "${fixture}/backend/gradlew" <<EOF
@@ -322,7 +514,11 @@ test_invalid_domain "todo.example.com/path" "path-containing values"
 test_invalid_domain "todo example.com" "internal whitespace"
 test_frontend_script
 test_frontend_missing_relay
+test_frontend_occupied_port
+test_frontend_occupied_port_uses_sudo_for_root_listener
+test_frontend_stops_when_sudo_auth_fails
 test_backend_script
+test_backend_interrupt_cleans_up_continuous_build
 test_scripts_stop_before_children
 test_extra_arguments
 test_domain_argument_as_port

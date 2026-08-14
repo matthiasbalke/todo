@@ -73,6 +73,15 @@ describe('ListGroupSection', () => {
     expect(container.querySelector('a[href="/lists/grocery"]')).not.toBeNull();
   });
 
+  it('renders a separate list group drag handle only when requested', () => {
+    const grouped = render(ListGroupSection, { props: { group, lists, showGroupDragHandle: true } });
+    expect(grouped.container.querySelectorAll('[aria-label="Drag to reorder list group"]')).toHaveLength(1);
+    expect(grouped.container.querySelectorAll('[aria-label="Drag to reorder"]')).toHaveLength(lists.length);
+
+    const ungrouped = render(ListGroupSection, { props: { group: null, lists, showGroupDragHandle: true } });
+    expect(ungrouped.container.querySelector('[aria-label="Drag to reorder list group"]')).toBeNull();
+  });
+
   it('long-press on list card anchor does not show browser link preview (contextmenu suppressed)', () => {
     const { container } = render(ListGroupSection, { props: { group, lists } });
     const anchor = container.querySelector('a[href]') as HTMLAnchorElement;
@@ -138,5 +147,31 @@ describe('ListGroupSection', () => {
     const toggleBtn = getByRole('button', { name: /home/i });
     await fireEvent.click(toggleBtn);
     expect(container.querySelectorAll('a[href]').length).toBe(0);
+  });
+
+  it('uses controlled collapsed state when provided', () => {
+    const { container, getByRole } = render(ListGroupSection, { props: { group, lists, collapsed: true } });
+
+    expect(getByRole('button', { name: /home/i })).toHaveAttribute('aria-expanded', 'false');
+    expect(container.querySelectorAll('a[href]')).toHaveLength(0);
+  });
+
+  it('calls collapse change callback without mutating controlled state by itself', async () => {
+    const oncollapsedchange = vi.fn();
+    const { container, getByRole, rerender } = render(ListGroupSection, {
+      props: { group, lists, collapsed: false, oncollapsedchange },
+    });
+
+    const toggleBtn = getByRole('button', { name: /home/i });
+    await fireEvent.click(toggleBtn);
+
+    expect(oncollapsedchange).toHaveBeenCalledWith(true);
+    expect(toggleBtn).toHaveAttribute('aria-expanded', 'true');
+    expect(container.querySelectorAll('a[href]')).toHaveLength(lists.length);
+
+    await rerender({ group, lists, collapsed: true, oncollapsedchange });
+
+    expect(toggleBtn).toHaveAttribute('aria-expanded', 'false');
+    expect(container.querySelectorAll('a[href]')).toHaveLength(0);
   });
 });

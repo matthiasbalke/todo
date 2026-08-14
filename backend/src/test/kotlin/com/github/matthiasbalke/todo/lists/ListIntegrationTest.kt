@@ -4,6 +4,13 @@ import com.github.matthiasbalke.todo.AbstractIntegrationTest
 import com.github.matthiasbalke.todo.auth.JwtTokenService
 import com.github.matthiasbalke.todo.auth.User
 import com.github.matthiasbalke.todo.auth.UserRepository
+import com.github.matthiasbalke.todo.items.IntervalUnit
+import com.github.matthiasbalke.todo.items.ItemAssignment
+import com.github.matthiasbalke.todo.items.ItemAssignmentId
+import com.github.matthiasbalke.todo.items.ItemAssignmentRepository
+import com.github.matthiasbalke.todo.items.ItemRepository
+import com.github.matthiasbalke.todo.items.RecurrenceRule
+import com.github.matthiasbalke.todo.items.TodoItem
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
@@ -14,7 +21,10 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
+import java.time.LocalDate
 import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -26,6 +36,10 @@ class ListIntegrationTest : AbstractIntegrationTest() {
     @Autowired private lateinit var userRepository: UserRepository
     @Autowired private lateinit var listRepository: ListRepository
     @Autowired private lateinit var listMembershipRepository: ListMembershipRepository
+    @Autowired private lateinit var listGroupAssignmentRepository: ListGroupAssignmentRepository
+    @Autowired private lateinit var categoryRepository: CategoryRepository
+    @Autowired private lateinit var itemRepository: ItemRepository
+    @Autowired private lateinit var itemAssignmentRepository: ItemAssignmentRepository
     @Autowired private lateinit var jwtTokenService: JwtTokenService
 
     private fun createUser(email: String = "user-${UUID.randomUUID()}@example.com"): User =
@@ -326,6 +340,166 @@ class ListIntegrationTest : AbstractIntegrationTest() {
         assertNull(listMembershipRepository.findByListIdAndUserId(listId, member.id))
     }
 
+    // ─── POST /api/lists/{id}/duplicate ──────────────────────────────────────
+
+    @Test
+    fun `POST lists - id - duplicate creates owner copy with next suffix`() {
+        val owner = createUser()
+        val listId = createListAsUser(owner, "Groceries")
+
+        val duplicateId = duplicateListAsUser(listId, owner)
+
+        mockMvc.get("/api/lists/$duplicateId") {
+            header("Authorization", bearerHeader(owner))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.name") { value("Groceries (1)") }
+            jsonPath("$.role") { value("OWNER") }
+        }
+
+        val membership = listMembershipRepository.findByListIdAndUserId(duplicateId, owner.id)
+        assertNotNull(membership)
+        assertEquals(ListRole.OWNER, membership.role)
+    }
+
+    @Test
+    fun `POST lists - id - duplicate rejects non owners and non members`() {
+        val owner = createUser()
+        val editor = createUser()
+        val viewer = createUser()
+        val stranger = createUser()
+        val listId = createListAsUser(owner, "Private")
+        addMemberToList(listId, owner, editor.email, "EDITOR")
+        addMemberToList(listId, owner, viewer.email, "VIEWER")
+
+        listOf(editor, viewer, stranger).forEach { user ->
+            mockMvc.post("/api/lists/$listId/duplicate") {
+                header("Authorization", bearerHeader(user))
+            }.andExpect {
+                status { isForbidden() }
+            }
+        }
+    }
+
+    @Test
+    fun `POST lists - id - duplicate copies categories items assignments and parent links`() {
+        val owner = createUser()
+        val assignee = createUser()
+        val listId = createListAsUser(owner, "Template")
+        addMemberToList(listId, owner, assignee.email, "EDITOR")
+
+        val sourceList = listRepository.findById(listId).orElseThrow()
+        sourceList.emoji = "🏠"
+        sourceList.description = "Household template"
+        sourceList.defaultSortField = "DUE_DATE"
+        sourceList.defaultSortDirection = "DESC"
+        listRepository.save(sourceList)
+
+        val groupId = createGroupAsUser(owner, "Home")
+        listGroupAssignmentRepository.findByListIdAndUserId(listId, owner.id)!!.apply {
+            this.groupId = groupId
+            this.sortOrder = 7
+        }.also { listGroupAssignmentRepository.save(it) }
+
+        val category = categoryRepository.save(
+            Category(listId = listId, name = "Cleaning", color = "#00ff00", sortOrder = 3)
+        )
+        val parent = itemRepository.save(
+            TodoItem(
+                listId = listId,
+                categoryId = category.id,
+                title = "Clean bathroom",
+                notes = "Use vinegar",
+                done = true,
+                starred = true,
+                dueDate = LocalDate.of(2026, 6, 20),
+                recurrenceRule = RecurrenceRule(IntervalUnit.WEEKS, 2),
+                createdByUserId = owner.id,
+                sortOrder = 4,
+            )
+        )
+        val child = itemRepository.save(
+            TodoItem(
+                listId = listId,
+                categoryId = category.id,
+                title = "Restock cleaner",
+                notes = "Buy refill",
+                done = false,
+                starred = false,
+                dueDate = LocalDate.of(2026, 6, 21),
+                parentItemId = parent.id,
+                createdByUserId = assignee.id,
+                sortOrder = 5,
+            )
+        )
+        itemAssignmentRepository.save(ItemAssignment(ItemAssignmentId(parent.id, owner.id)))
+        itemAssignmentRepository.save(ItemAssignment(ItemAssignmentId(child.id, assignee.id)))
+
+        val duplicateId = duplicateListAsUser(listId, owner)
+        val duplicateList = listRepository.findById(duplicateId).orElseThrow()
+
+        assertEquals("Template (1)", duplicateList.name)
+        assertEquals("🏠", duplicateList.emoji)
+        assertEquals("Household template", duplicateList.description)
+        assertEquals("DUE_DATE", duplicateList.defaultSortField)
+        assertEquals("DESC", duplicateList.defaultSortDirection)
+        assertEquals(ListRole.OWNER, listMembershipRepository.findByListIdAndUserId(duplicateId, owner.id)?.role)
+        assertEquals(ListRole.EDITOR, listMembershipRepository.findByListIdAndUserId(duplicateId, assignee.id)?.role)
+
+        val duplicateAssignment = listGroupAssignmentRepository.findByListIdAndUserId(duplicateId, owner.id)
+        assertNotNull(duplicateAssignment)
+        assertEquals(groupId, duplicateAssignment.groupId)
+        assertEquals(7, duplicateAssignment.sortOrder)
+
+        val duplicateCategory = categoryRepository.findAllByListIdOrderBySortOrder(duplicateId).single()
+        assertFalse(duplicateCategory.id == category.id)
+        assertEquals("Cleaning", duplicateCategory.name)
+        assertEquals("#00ff00", duplicateCategory.color)
+        assertEquals(3, duplicateCategory.sortOrder)
+
+        val duplicateItems = itemRepository.findAllByListId(duplicateId).associateBy { it.title }
+        val duplicateParent = duplicateItems.getValue("Clean bathroom")
+        val duplicateChild = duplicateItems.getValue("Restock cleaner")
+        assertFalse(duplicateParent.id == parent.id)
+        assertFalse(duplicateChild.id == child.id)
+        assertEquals(duplicateCategory.id, duplicateParent.categoryId)
+        assertEquals(duplicateCategory.id, duplicateChild.categoryId)
+        assertEquals("Use vinegar", duplicateParent.notes)
+        assertTrue(duplicateParent.done)
+        assertTrue(duplicateParent.starred)
+        assertEquals(LocalDate.of(2026, 6, 20), duplicateParent.dueDate)
+        assertEquals(RecurrenceRule(IntervalUnit.WEEKS, 2), duplicateParent.recurrenceRule)
+        assertEquals(owner.id, duplicateParent.createdByUserId)
+        assertEquals(4, duplicateParent.sortOrder)
+        assertEquals(duplicateParent.id, duplicateChild.parentItemId)
+        assertEquals(assignee.id, duplicateChild.createdByUserId)
+        assertEquals(listOf(owner.id), itemAssignmentRepository.findAllByIdItemId(duplicateParent.id).map { it.id.userId })
+        assertEquals(listOf(assignee.id), itemAssignmentRepository.findAllByIdItemId(duplicateChild.id).map { it.id.userId })
+    }
+
+    @Test
+    fun `POST lists - id - duplicate increments suffix past existing copies`() {
+        val owner = createUser()
+        val listId = createListAsUser(owner, "Groceries")
+        createListAsUser(owner, "Groceries (1)")
+        createListAsUser(owner, "Groceries (2)")
+
+        val duplicateId = duplicateListAsUser(listId, owner)
+
+        assertEquals("Groceries (3)", listRepository.findById(duplicateId).orElseThrow().name)
+    }
+
+    @Test
+    fun `POST lists - id - duplicate increments existing copy suffix`() {
+        val owner = createUser()
+        createListAsUser(owner, "Groceries")
+        val copiedListId = createListAsUser(owner, "Groceries (1)")
+
+        val duplicateId = duplicateListAsUser(copiedListId, owner)
+
+        assertEquals("Groceries (2)", listRepository.findById(duplicateId).orElseThrow().name)
+    }
+
     // ─── POST /api/lists/{id}/members ─────────────────────────────────────────
 
     @Test
@@ -467,5 +641,17 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             contentType = MediaType.APPLICATION_JSON
             content = """{"email":"$email","role":"$role"}"""
         }.andExpect { status { isCreated() } }
+    }
+
+    private fun duplicateListAsUser(listId: UUID, user: User): UUID {
+        val result = mockMvc.post("/api/lists/$listId/duplicate") {
+            header("Authorization", bearerHeader(user))
+        }.andExpect {
+            status { isCreated() }
+        }.andReturn()
+
+        val idStr = com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(result.response.contentAsString)["id"].asText()
+        return UUID.fromString(idStr)
     }
 }

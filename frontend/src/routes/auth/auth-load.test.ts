@@ -8,7 +8,15 @@ vi.mock('$lib/stores/auth.svelte', () => ({
 	restoreSession: vi.fn(),
 	isAuthenticated: vi.fn(() => authState.authenticated),
 }));
+vi.mock('$lib/api/health', () => ({
+	checkHealth: vi.fn(),
+}));
+vi.mock('$lib/api/setup', () => ({
+	getSetupStatus: vi.fn(),
+}));
 
+import { checkHealth } from '$lib/api/health';
+import { getSetupStatus } from '$lib/api/setup';
 import { restoreSession } from '$lib/stores/auth.svelte';
 import { load, ssr } from './+page';
 
@@ -18,6 +26,8 @@ describe('auth page load guard', () => {
 	beforeEach(() => {
 		authState.authenticated = false;
 		vi.clearAllMocks();
+		vi.mocked(checkHealth).mockResolvedValue(true);
+		vi.mocked(getSetupStatus).mockResolvedValue({ setupRequired: false });
 		vi.mocked(restoreSession).mockResolvedValue('unauthenticated');
 	});
 
@@ -45,12 +55,34 @@ describe('auth page load guard', () => {
 		expect(restoreSession).toHaveBeenCalledWith(fetchFn);
 	});
 
-	it('returns unavailable when backend startup prevents session restoration', async () => {
+	it('routes to setup before auth controls render when setup is required', async () => {
+		vi.mocked(getSetupStatus).mockResolvedValue({ setupRequired: true });
+
+		await expect(load({ fetch: fetchFn } as never)).rejects.toMatchObject({
+			status: 307,
+			location: '/setup',
+		});
+		expect(restoreSession).not.toHaveBeenCalled();
+	});
+
+	it('routes backend-unavailable startup through / before auth controls render', async () => {
 		vi.mocked(restoreSession).mockResolvedValue('unavailable');
 
-		await expect(load({ fetch: fetchFn } as never)).resolves.toMatchObject({
-			restoreStatus: 'unavailable',
+		await expect(load({ fetch: fetchFn } as never)).rejects.toMatchObject({
+			status: 307,
+			location: '/',
 		});
 		expect(restoreSession).toHaveBeenCalledWith(fetchFn);
+	});
+
+	it('routes unavailable health through / without attempting session restoration', async () => {
+		vi.mocked(checkHealth).mockResolvedValue(false);
+
+		await expect(load({ fetch: fetchFn } as never)).rejects.toMatchObject({
+			status: 307,
+			location: '/',
+		});
+		expect(checkHealth).toHaveBeenCalledWith(fetchFn);
+		expect(restoreSession).not.toHaveBeenCalled();
 	});
 });

@@ -134,6 +134,13 @@ class ListController(
         @PathVariable id: UUID,
     ) = listService.deleteList(id, userId)
 
+    @PostMapping("/{id}/duplicate")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun duplicateList(
+        @AuthenticationPrincipal userId: UUID,
+        @PathVariable id: UUID,
+    ): ListDto = listService.duplicateList(id, userId).toDto(ListRole.OWNER)
+
     @PatchMapping("/{id}/group")
     fun assignGroup(
         @AuthenticationPrincipal userId: UUID,
