@@ -6,7 +6,7 @@ RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
 COPY . .
 RUN bun run build
 
-FROM dhi.io/node:24-alpine3.23 AS runtime
+FROM dhi.io/node:24.19.0-alpine3.23 AS runtime
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
