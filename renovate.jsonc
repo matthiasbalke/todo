@@ -24,6 +24,13 @@
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-r(?<build>\\d)-jdk21-alpine3.24-dev$"
     },
     {
+      "description": "Docker: Curl: Pin Curl to dev images",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["dhi.io/curl"],
+
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-dev$"
+    },
+    {
       "description": "Docker: Eclipse-Temurin: Pin JDK Alpine 3.23 dev images. No major updates.",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["dhi.io/eclipse-temurin"],
