@@ -31,12 +31,20 @@
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-dev$"
     },
     {
-      "description": "Docker: Eclipse-Temurin: Pin JDK Alpine 3.23 dev images. No major updates.",
+      "description": "Docker: Eclipse-Temurin: Pin JRE Alpine 3.23 dev images. No major updates.",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["dhi.io/eclipse-temurin"],
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-alpine3.23-dev$",
       
       "allowedVersions": "/^21.+$/"
+    },
+    {
+      "description": "Docker: Node: Pin Node to runtime images.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["dhi.io/node"],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-alpine3.23$"
+            
+      // "allowedVersions": "/^24.+$/"
     }
   ]
 }
