@@ -17,19 +17,31 @@
 
   "packageRules": [
     {
-      "description": "Pin Gradle to JDK21, Alpine 3.24 dev images",
+      "description": "Docker: Gradle: Pin Gradle to JDK21, Alpine 3.24 dev images",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["dhi.io/gradle"],
 
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-r(?<build>\\d)-jdk21-alpine3.24-dev$"
     },
     {
-      "description": "Pin JDK Alpine 3.23 dev images. No major updates.",
+      "description": "Docker: Gradle: Use long version format only",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["dhi.io/gradle"],
+      "allowedVersions": "/^[0-9]+\\.[0-9]+\\.[0-9]+-r(\\.[0-9]+)-jdk21-alpine3.24-dev?$/"
+    },
+    {
+      "description": "Docker: Eclipse-Temurin: Pin JDK Alpine 3.23 dev images. No major updates.",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["dhi.io/eclipse-temurin"],
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+).(?<build>\\d)-alpine3.23-dev$",
       
       "allowedVersions": "<{{add major 1}}"
+    },
+    {
+      "description": "Docker: Eclipse-Temurin: Use long version format only",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["dhi.io/eclipse-temurin"],
+      "allowedVersions": "/^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+-alpine3.23-dev?$/"
     }
   ]
 }
