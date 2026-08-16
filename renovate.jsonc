@@ -36,7 +36,7 @@
       "matchPackageNames": ["dhi.io/eclipse-temurin"],
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+).(?<build>\\d+)-alpine3.23-dev$",
       
-      "allowedVersions": "< 22.0.0.0-alpine3.23-dev"
+      "allowedVersions": "< 22.0.0.0"
     }
   ]
 }
