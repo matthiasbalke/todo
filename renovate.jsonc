@@ -21,10 +21,7 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["dhi.io/gradle"],
 
-      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-r(?<build>\\d)-jdk21-alpine3.24-dev$",
-      
-      "matchUpdateTypes": ["major", "minor", "patch"]
-      
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-r(?<build>\\d)-jdk21-alpine3.24-dev$"
     },
     {
       "description": "Pin JDK Alpine 3.23 dev images. No major updates.",
@@ -32,7 +29,7 @@
       "matchPackageNames": ["dhi.io/eclipse-temurin"],
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+).(?<build>\\d)-alpine3.23-dev$",
       
-      "matchUpdateTypes": ["minor", "patch"]
+      "allowedVersions": "<{{add major 1}}"
     }
   ]
 }
