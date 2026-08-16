@@ -34,9 +34,9 @@
       "description": "Docker: Eclipse-Temurin: Pin JDK Alpine 3.23 dev images. No major updates.",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["dhi.io/eclipse-temurin"],
-      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+).(?<build>\\d+)-alpine3.23-dev$",
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-alpine3.23-dev$",
       
-      "allowedVersions": "/^21\\.[\\d\\.]+-alpine3.23-dev$/"
+      "allowedVersions": "/^21.+$/"
     }
   ]
 }
