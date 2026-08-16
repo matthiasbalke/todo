@@ -3,8 +3,36 @@
   "extends": [
     "config:recommended"
   ],
+  // https://github.com/homeassistant-apps/app-cloudflared/blob/main/.github/renovate.json
+  "rebaseWhen": "behind-base-branch",
+  "dependencyDashboard": true,
+  "labels": ["dependencies", "no-stale"],
+  "commitMessagePrefix": "⬆️",
+  //"commitMessageTopic": "{{depName}}",
+
   // https://github.com/renovatebot/renovate/discussions/40077#discussioncomment-15300800
   "registryAliases": {
     "dhi.io": "dhi.io"
-  }
+  },
+
+  "packageRules": [
+    {
+      "description": "Pin Gradle to JDK21, Alpine 3.24 dev images",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["dhi.io/gradle"],
+
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-r(?<build>\\d)-jdk21-alpine3.24-dev$",
+      
+      "matchUpdateTypes": ["major", "minor", "patch"]
+      
+    },
+    {
+      "description": "Pin JDK Alpine 3.23 dev images. No major updates.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["dhi.io/eclipse-temurin"],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+).(?<build>\\d)-alpine3.23-dev$",
+      
+      "matchUpdateTypes": ["minor", "patch"]
+    }
+  ]
 }
