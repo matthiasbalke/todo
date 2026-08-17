@@ -21,7 +21,14 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["dhi.io/gradle"],
 
+      "groupName": "gradle",
+
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-r(?<build>\\d)-jdk21-alpine3.24-dev$"
+    },
+    {
+      "matchDatasources": ["gradle-version"],
+
+      "groupName": "gradle"
     },
     {
       "description": "Docker: Curl: Pin to dev images",
