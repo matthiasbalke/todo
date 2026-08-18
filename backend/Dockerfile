@@ -9,7 +9,7 @@ RUN --mount=type=cache,id=gradle,target=/root/.gradle \
 RUN mkdir -p build/dependency && (cd build/dependency; jar -xf ../libs/*.jar)
 
 
-FROM dhi.io/eclipse-temurin:21-alpine3.23
+FROM dhi.io/eclipse-temurin:21.0.12.8-alpine3.23-dev
 
 # user: nonroot 65532
 # user: nobody  65534

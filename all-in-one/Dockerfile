@@ -10,7 +10,7 @@ RUN mkdir -p build/dependency && (cd build/dependency; jar -xf ../libs/*.jar)
 
 
 # Stage 2: build frontend
-FROM dhi.io/bun:1.3-alpine3.22-dev AS frontend-build
+FROM dhi.io/bun:1.3.14-alpine3.22-dev AS frontend-build
 WORKDIR /app
 COPY frontend/package.json frontend/bun.lockb ./
 RUN bun install --frozen-lockfile
