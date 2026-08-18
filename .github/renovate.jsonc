@@ -1,11 +1,15 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    // always update kotlin gradle plugins at the same time, in one PR branch
+    "group:kotlinMonorepo"
   ],
   // https://github.com/homeassistant-apps/app-cloudflared/blob/main/.github/renovate.json
-  // "rebaseWhen": "behind-base-branch",
+  // rebasing is required to merge PRs into main
+  "rebaseWhen": "behind-base-branch",
   "dependencyDashboard": true,
+  // label dependency updates nicely
   "labels": ["dependencies", "no-stale"],
   "commitMessagePrefix": "⬆️",
   //"commitMessageTopic": "{{depName}}",
