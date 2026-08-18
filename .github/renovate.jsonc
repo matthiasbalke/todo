@@ -3,7 +3,9 @@
   "extends": [
     "config:recommended",
     // always update kotlin gradle plugins at the same time, in one PR branch
-    "group:kotlinMonorepo"
+    "group:kotlinMonorepo",
+    // support for apk versioning annotations
+    "customManagers:dockerfileVersions"
   ],
   // https://github.com/homeassistant-apps/app-cloudflared/blob/main/.github/renovate.json
   // rebasing is required to merge PRs into main
@@ -165,33 +167,6 @@
         "major"
       ],
       "enabled": false
-    }
-  ],
-
-  "customManagers": [
-    {
-      "customType": "regex",
-      "description": "Update Alpine 3.23 APK packages",
-      "managerFilePatterns": [
-        "/(^|/)Dockerfile$/"
-      ],
-      "matchStrings": [
-        "#\\s*renovate:\\s*datasource=repology\\s+depName=(?<depName>alpine_3_23/[^\\s]+)\\s+versioning=apk\\s+ARG\\s+[A-Z0-9_]+_VERSION=(?<currentValue>[^\\s]+)"
-      ],
-      "datasourceTemplate": "repology",
-      "versioningTemplate": "apk"
-    },
-    {
-      "customType": "regex",
-      "description": "Update Alpine 3.24 APK packages",
-      "managerFilePatterns": [
-        "/(^|/)Dockerfile$/"
-      ],
-      "matchStrings": [
-        "#\\s*renovate:\\s*datasource=repology\\s+depName=(?<depName>alpine_3_24/[^\\s]+)\\s+versioning=apk\\s+ARG\\s+[A-Z0-9_]+_VERSION=(?<currentValue>[^\\s]+)"
-      ],
-      "datasourceTemplate": "repology",
-      "versioningTemplate": "apk"
     }
   ]
 }
