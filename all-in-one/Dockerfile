@@ -21,7 +21,7 @@ RUN bun run build
 FROM dhi.io/eclipse-temurin:21.0.12.8-alpine3.23-dev
 
 # renovate: datasource=repology depName=nodejs packageName=alpine_3_23/nodejs versioning=loose
-ARG NODEJS_VERSION="24.14.1-r0"
+ARG NODEJS_VERSION="24.18.1-r0"
 
 # renovate: datasource=repology depName=nginx packageName=alpine_3_23/nginx versioning=loose
 ARG NGINX_VERSION="1.29.8-r0"
