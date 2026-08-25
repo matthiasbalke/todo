@@ -114,8 +114,12 @@ jobs:
       - uses: actions/checkout@v7
 
       # otherwise we get an authentication error when pulling using docker-compose
-      - name: Pre-pull backend-healthcheck image
+      - name: rebuild backend-healthcheck image
         run: echo 'FROM dhi.io/curl:8.14.1-dev' | docker build -t dhi.io/curl:8.14.1-dev -
+
+      # otherwise we get an authentication error when pulling using docker-compose
+      - name: rebuild postgres image
+        run: echo 'FROM dhi.io/postgres:17.11-alpine3.24' | docker build -t dhi.io/postgres:17.11-alpine3.24 -
 
       - name: Download backend image
         uses: actions/download-artifact@v8
