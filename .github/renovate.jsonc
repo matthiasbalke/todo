@@ -5,7 +5,9 @@
     // always update kotlin gradle plugins at the same time, in one PR branch
     "group:kotlinMonorepo",
     // support for apk versioning annotations
-    "customManagers:dockerfileVersions"
+    "customManagers:dockerfileVersions",
+    // support for _VERSION variables in GitHub Actions workflow/action YAML files
+    "customManagers:githubActionsVersions"
   ],
   // https://github.com/homeassistant-apps/app-cloudflared/blob/main/.github/renovate.json
   // rebasing is required to merge PRs into main
