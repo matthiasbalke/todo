@@ -17,8 +17,6 @@
   "dependencyDashboard": true,
   // label dependency updates nicely
   "labels": ["dependencies", "no-stale"],
-  "commitMessagePrefix": "⬆️",
-  //"commitMessageTopic": "{{depName}}",
 
   // https://github.com/renovatebot/renovate/discussions/40077#discussioncomment-15300800
   "registryAliases": {
