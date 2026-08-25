@@ -28,7 +28,7 @@ ARG SUPERVISOR_VERSION=4.3.0-r0
 
 RUN apk add --no-cache \
     nodejs=24.18.1-r0 \
-    nginx=1.29.8-r0 \
+    nginx=1.27.0-r0 \
     supervisor=4.3.0-r0
 
 WORKDIR /app

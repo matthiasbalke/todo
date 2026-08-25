@@ -13,18 +13,18 @@
   ],
 
   "customDatasources": {
-    "alpine": {
-      "defaultRegistryUrlTemplate": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/",
-      "format": "html"
-    }
-//    "alpine3_23": {
-//      "defaultRegistryUrlTemplate": "https://dl-cdn.alpinelinux.org/alpine/v3.23/main/x86_64/",
-//      "format": "html"
-//    },
-//    "alpine3_24": {
+//    "alpine": {
 //      "defaultRegistryUrlTemplate": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/",
 //      "format": "html"
 //    }
+    "alpine323": {
+      "defaultRegistryUrlTemplate": "https://dl-cdn.alpinelinux.org/alpine/v3.23/main/x86_64/",
+      "format": "html"
+    },
+    "alpine324": {
+      "defaultRegistryUrlTemplate": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/",
+      "format": "html"
+    }
 },
 
   "customManagers": [
@@ -36,8 +36,8 @@
         "\\s\\s(?<package>[a-z0-9][a-z0-9-_]+)=(?<currentValue>[a-z0-9-_.]+)\\s+"
       ],
       "versioningTemplate": "loose",
-      "datasourceTemplate": "custom.alpine",
-      "depNameTemplate": "alpine_3_24/{{package}}",
+      "datasourceTemplate": "custom.alpine323",
+      "depNameTemplate": "alpine_3_23/{{package}}",
       "extractVersionTemplate": "^{{{package}}}-(?<version>\\d.*)\\.apk$"
     }
 //    {
