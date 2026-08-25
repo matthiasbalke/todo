@@ -12,6 +12,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    volumes:
+      # IMPORTANT: The PGDATA path is now version-specific in the official image
+      - postgres-db:/var/lib/postgresql
 
   all-in-one:
     build: ./
@@ -26,3 +29,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+volumes:
+  # IMPORTANT: The PGDATA path is now version-specific in the official image
+  postgres-db:
