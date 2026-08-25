@@ -4,7 +4,7 @@
     "config:recommended",
     // use conventional commits
     ":semanticCommits",
-    // always update kotlin gradle plugins at the same time, in one PR branch
+    // always update kotlin Gradle plugins at the same time, in one PR branch
     "group:kotlinMonorepo",
     // support for apk versioning annotations
     "customManagers:dockerfileVersions",
@@ -27,7 +27,7 @@
     {
       "matchDatasources": ["gradle-version"],
 
-      // always update gradle wrapper together with the gradle build image
+      // always update Gradle wrapper together with the Gradle build image
       "groupName": "gradle"
     },
     // -------------------------------------------------------------------------
@@ -53,7 +53,7 @@
         "dhi.io/gradle"
       ],
 
-      // always update gradle wrapper together with the gradle build image
+      // always update Gradle wrapper together with the Gradle build image
       "groupName": "gradle",
 
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-r(?<build>\\d+)-(?<compatibility>jdk21-alpine3\\.24-dev)$"
