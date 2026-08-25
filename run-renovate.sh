@@ -3,7 +3,7 @@
 # ensure that we have GitHub authentication at least, so we can fetch changelogs, and access GitHub-only dependencies
 export RENOVATE_GITHUB_COM_TOKEN=$(gh auth token)
   # make sure we have the right level of information
-export LOG_LEVEL=debug
+export LOG_LEVEL=info
   # also capture the logs in JSONL (newline-delimited JSON) format
 export RENOVATE_LOG_FILE=debug-$(date +%s).jsonl
   # use our Open Telemetry support (https://docs.renovatebot.com/opentelemetry/) to get additional insight into time taken / the flow of function calls

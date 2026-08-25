@@ -4,8 +4,11 @@
 
 const fs = require('fs')
 
-// NOTE that filename would need to be changed based on the repo's config filename, or adapted to handle JSONC or JSON5
-let repoConfig = JSON.parse(fs.readFileSync('.github/renovate.jsonc'))
+const { parse } = require('jsonc-parser');
+
+const repoConfig = parse(
+    fs.readFileSync('.github/renovate.jsonc', 'utf8')
+);
 
 /** @type {AllConfig} */
 let globalConfig = {
@@ -13,6 +16,10 @@ let globalConfig = {
     allowedUnsafeExecutions: [
         'gradleWrapper',
     ],
+
+    enabledManagers: [
+        'custom.regex',
+    ]
 }
 
 /** @type {AllConfig} */
