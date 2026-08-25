@@ -13,10 +13,6 @@
   ],
 
   "customDatasources": {
-//    "alpine": {
-//      "defaultRegistryUrlTemplate": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/",
-//      "format": "html"
-//    }
     "alpine323": {
       "defaultRegistryUrlTemplate": "https://dl-cdn.alpinelinux.org/alpine/v3.23/main/x86_64/",
       "format": "html"
@@ -30,46 +26,16 @@
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": ["//Dockerfile$/"],
-      "matchStringsStrategy": "any",
-      "matchStrings": [
-        "\\s\\s(?<package>[a-z0-9][a-z0-9-_]+)=(?<currentValue>[a-z0-9-_.]+)\\s+"
+      "description": "Update annotated _VERSION ENV and ARG variables with alpine apk package versions in Dockerfiles",
+      "managerFilePatterns": [
+        "/(^|/|\\.)Dockerfile$/",
+        "/(^|/)Dockerfile\\.[^/]*$/"
       ],
-      "versioningTemplate": "loose",
-      "datasourceTemplate": "custom.alpine323",
-      "depNameTemplate": "alpine_3_23/{{package}}",
-      "extractVersionTemplate": "^{{{package}}}-(?<version>\\d.*)\\.apk$"
+      "matchStrings": [
+        "# renovate: alpine:\\s+datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\s+packageName=(?<packageName>[^\\s]+)(?:\\s+versioning=(?<versioning>[^\\s]+))?\\s+(?:ENV|ARG)\\s+[^\\s=]+_VERSION=(?<currentValue>[^\\s]+)"
+      ],
+      "extractVersionTemplate": "^{{{packageName}}}-(?<version>.+)\\.apk$"
     }
-//    {
-//      "customType": "regex",
-//      "managerFilePatterns": [
-//        "//Dockerfile$/"
-//      ],
-//      "matchStringsStrategy": "any",
-//      "matchStrings": [
-//        //"\\s\\s(?<package>[a-z0-9][a-z0-9-_]+)="(?<currentValue>[a-z0-9-_.]+)"\\s+"
-//        "ARG\\s+(?<package>[a-zA-Z0-9][a-zA-Z0-9-_]+)_VERSION=\"(?<currentValue>[a-z0-9-_.]+)\"\\s+"
-//      ],
-//      "versioningTemplate": "loose",
-//      "datasourceTemplate": "custom.alpine3_23",
-//      "depNameTemplate": "alpine_3_23/{{package}}",
-//      "extractVersionTemplate": "^{{{package}}}-(?<version>\\d.*)\\.apk$"
-//    }
-//    {
-//      "customType": "regex",
-//      "description": "Update _VERSION ENV and ARG variables in Dockerfiles",
-//      "managerFilePatterns": [
-//        "/(^|/|\\.)Dockerfile$/",
-//        "/(^|/)Dockerfile\\.[^/]*$/"
-//      ],
-//      "matchStrings": [
-//        "# renovate: datasource=(?<datasource>[a-z-]+?)(?: depName=(?<depName>.+?))? packageName=(?<packageName>.+?)(?: versioning=(?<versioning>[a-z-]+?))?\\s(?:ENV|ARG) .+?_VERSION=(?<currentValue>.+?)\\s"
-//      ],
-//      "versioningTemplate": "loose",
-//      "datasourceTemplate": "custom.alpine3_23",
-//      //"depNameTemplate": "alpine_3_23/{{package}}",
-//      "extractVersionTemplate": "^{{{package}}}-(?<version>\\d.*)\\.apk$"
-//    }
   ],
 
   // https://github.com/homeassistant-apps/app-cloudflared/blob/main/.github/renovate.json
@@ -85,14 +51,22 @@
   },    
 
   "packageRules": [
-//    {
-//      "description": "Packages that live in the Alpine community repository",
-//      "matchDatasources": ["custom.alpine3_24"],
-//      "matchPackageNames": [],
-//      "registryUrls": [
-//        "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/x86_64/"
-//      ]
-//    },
+    {
+      "description": "Packages that live in the Alpine 3.23 community repository",
+      "matchDatasources": ["custom.alpine323"],
+      "matchPackageNames": [],
+      "registryUrls": [
+        "https://dl-cdn.alpinelinux.org/alpine/v3.23/community/x86_64/"
+      ]
+    },
+    {
+      "description": "Packages that live in the Alpine 3.24 community repository",
+      "matchDatasources": ["custom.alpine324"],
+      "matchPackageNames": [],
+      "registryUrls": [
+        "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/x86_64/"
+      ]
+    },
 
     {
       "matchDatasources": ["gradle-version"],
