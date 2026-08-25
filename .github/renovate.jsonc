@@ -79,6 +79,30 @@
     },
 
     // -------------------------------------------------------------------------
+    // DHI: PostgreSQL
+    //
+    // Only Alpine 3.24 runtime images.
+    //
+    // Examples:
+    //   17.11-alpine3.24
+    //   17.12-alpine3.24   <- minor
+    //   18.0-alpine3.24    <- major
+    //
+    // Alpine 3.24 is part of "compatibility" and therefore Renovate will never
+    // switch to a different Alpine variant.
+    // -------------------------------------------------------------------------
+    {
+      "description": "DHI PostgreSQL: Alpine 3.24 runtime only",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "dhi.io/postgres"
+      ],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)-(?<compatibility>alpine3\\.24)$"
+    },
+
+    // -------------------------------------------------------------------------
     // DHI: Eclipse Temurin
     //
     // Only Alpine 3.23 development images.
