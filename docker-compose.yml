@@ -12,6 +12,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    volumes:
+      # IMPORTANT: The PGDATA path is now version-specific in the official image
+      - postgres-db:/var/lib/postgresql
 
   backend:
     image: todo/backend:ci
@@ -72,3 +75,7 @@ services:
         condition: service_started
       backend-healthcheck:
         condition: service_healthy
+
+volumes:
+  # IMPORTANT: The PGDATA path is now version-specific in the official image
+  postgres-db:
