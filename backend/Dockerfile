@@ -1,5 +1,5 @@
 # https://hub.docker.com/hardened-images/catalog/dhi/gradle/images
-FROM dhi.io/gradle:9.7.0-r1-jdk21-alpine3.24-dev AS backend-build
+FROM dhi.io/gradle:9.7.1-r0-jdk21-alpine3.24-dev AS backend-build
 
 WORKDIR /app
 COPY . .
