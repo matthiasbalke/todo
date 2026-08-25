@@ -2,6 +2,8 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
+    // use conventional commits
+    ":semanticCommits",
     // always update kotlin gradle plugins at the same time, in one PR branch
     "group:kotlinMonorepo",
     // support for apk versioning annotations
