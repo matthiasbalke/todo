@@ -21,15 +21,12 @@
     },
     "dhi_alpine_3_23": {
       "defaultRegistryUrlTemplate": "https://dhi.io/apk/alpine/v3.23/main/index.html",
-//      "defaultRegistryUrlTemplate": "https://dhi.io/apk/alpine/v3.23/main/index.html?q={{packageName}}&channel=v3.23&arch=x86_64",
       "format": "plain",
       "transformTemplates": [
-//        "{ \"releases\": $map($eval($match($join(releases.version, \"\\n\"), /<script id=\"data\" type=\"application\\/json\">(\\[.*\\])<\\/script>/).groups[0])[n = \"{{{packageName}}}\" and ch = \"v3.23\" and co = \"main\" and a = \"x86_64\"], function($p) { { \"version\": $p.v } }) }"
         "( $html := $join(releases.version, \"\\n\"); $json := $match($html, /<script id=\"data\" type=\"application\\/json\">(\\[[\\s\\S]*?\\])<\\/script>/).groups[0]; $data := $json ? $eval($json) : []; { \"releases\": [ $data[n = \"{{{packageName}}}\" and ch = \"v3.23\" and co = \"main\"].{ \"version\": v } ] } )"
       ]
     },
     "dhi_alpine_3_24": {
-//      "defaultRegistryUrlTemplate": "https://dhi.io/apk/alpine/v3.24/main/index.html?q={{packageName}}&channel=v3.24&arch=x86_64",
       "defaultRegistryUrlTemplate": "https://dhi.io/apk/alpine/v3.24/main/index.html",
       "format": "plain",
       "transformTemplates": [
@@ -81,7 +78,7 @@
   "packageRules": [
     {
       "description": "Packages that live in the Alpine 3.23 community repository",
-      "matchDatasources": ["custom.alpine323"],
+      "matchDatasources": ["custom.alpine_3_23"],
       "matchPackageNames": [],
       "registryUrls": [
         "https://dl-cdn.alpinelinux.org/alpine/v3.23/community/x86_64/"
@@ -89,7 +86,7 @@
     },
     {
       "description": "Packages that live in the Alpine 3.24 community repository",
-      "matchDatasources": ["custom.alpine324"],
+      "matchDatasources": ["custom.alpine_3_24"],
       "matchPackageNames": [],
       "registryUrls": [
         "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/x86_64/"
@@ -265,7 +262,21 @@
         "major"
       ],
       "enabled": false
+    },
+    {
+      "description": "DHI Alpine apk packages: disable major updates",
+      "matchDatasources": [
+        "custom.dhi_alpine_3_23",
+        "custom.dhi_alpine_3_24"
+      ],
+      "matchPackageNames": [
+        // stay on Node 24 until further tested
+        "nodejs"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
     }
   ]
 }
-
