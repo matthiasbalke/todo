@@ -18,6 +18,20 @@
     "alpine_3_24": {
       "defaultRegistryUrlTemplate": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/",
       "format": "html"
+    },
+    "dhi_alpine_3_23": {
+      "defaultRegistryUrlTemplate": "https://dhi.io/apk/alpine/v3.23/main/index.html",
+      "format": "plain",
+      "transformTemplates": [
+        "( $html := $join(releases.version, \"\\n\"); $json := $match($html, /<script id=\"data\" type=\"application\\/json\">(\\[[\\s\\S]*?\\])<\\/script>/).groups[0]; $data := $json ? $eval($json) : []; { \"releases\": [ $data[n = \"{{{packageName}}}\" and ch = \"v3.23\" and co = \"main\"].{ \"version\": v } ] } )"
+      ]
+    },
+    "dhi_alpine_3_24": {
+      "defaultRegistryUrlTemplate": "https://dhi.io/apk/alpine/v3.24/main/index.html",
+      "format": "plain",
+      "transformTemplates": [
+        "( $html := $join(releases.version, \"\\n\"); $json := $match($html, /<script id=\"data\" type=\"application\\/json\">(\\[[\\s\\S]*?\\])<\\/script>/).groups[0]; $data := $json ? $eval($json) : []; { \"releases\": [ $data[n = \"{{{packageName}}}\" and ch = \"v3.24\" and co = \"main\"].{ \"version\": v } ] } )"
+      ]
     }
 },
 
@@ -34,6 +48,18 @@
       ],
       "versioningTemplate": "loose",
       "extractVersionTemplate": "^{{{packageName}}}-(?<version>.+)\\.apk$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update annotated _VERSION ENV and ARG variables with DHI Alpine apk package versions in Dockerfiles",
+      "managerFilePatterns": [
+        "/(^|/|\\.)Dockerfile$/",
+        "/(^|/)Dockerfile\\.[^/]*$/"
+      ],
+      "matchStrings": [
+        "# renovate: dhi_alpine:\\s+datasource=(?<datasource>[^\\s]+)\\s+packageName=(?<packageName>[^\\s]+)\\s+(?:ENV|ARG)\\s+[^\\s=]+_VERSION=(?<currentValue>[^\\s]+)"
+      ],
+      "versioningTemplate": "loose"
     }
   ],
 
@@ -52,7 +78,7 @@
   "packageRules": [
     {
       "description": "Packages that live in the Alpine 3.23 community repository",
-      "matchDatasources": ["custom.alpine323"],
+      "matchDatasources": ["custom.alpine_3_23"],
       "matchPackageNames": [],
       "registryUrls": [
         "https://dl-cdn.alpinelinux.org/alpine/v3.23/community/x86_64/"
@@ -60,7 +86,7 @@
     },
     {
       "description": "Packages that live in the Alpine 3.24 community repository",
-      "matchDatasources": ["custom.alpine324"],
+      "matchDatasources": ["custom.alpine_3_24"],
       "matchPackageNames": [],
       "registryUrls": [
         "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/x86_64/"
@@ -236,7 +262,21 @@
         "major"
       ],
       "enabled": false
+    },
+    {
+      "description": "DHI Alpine apk packages: disable major updates",
+      "matchDatasources": [
+        "custom.dhi_alpine_3_23",
+        "custom.dhi_alpine_3_24"
+      ],
+      "matchPackageNames": [
+        // stay on Node 24 until further tested
+        "nodejs"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
     }
   ]
 }
-
