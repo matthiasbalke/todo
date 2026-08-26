@@ -20,13 +20,13 @@ RUN bun run build
 # Stage 3: runtime
 FROM dhi.io/eclipse-temurin:21.0.12.8-alpine3.23-dev
 
-# renovate: alpine: datasource=custom.alpine323 depName=nodejs packageName=nodejs versioning=loose
+# renovate: alpine: datasource=custom.alpine323 packageName=nodejs
 ARG NODEJS_VERSION=24.18.1-r0
 
-# renovate: alpine: datasource=custom.alpine323 depName=nginx packageName=nginx versioning=loose
+# renovate: alpine: datasource=custom.alpine323 packageName=nginx
 ARG NGINX_VERSION=1.29.8-r0
 
-# renovate: alpine: datasource=custom.alpine323 depName=supervisor packageName=supervisor versioning=loose
+# renovate: alpine: datasource=custom.alpine323 packageName=supervisor
 ARG SUPERVISOR_VERSION=4.3.0-r0
 
 RUN apk add --no-cache \

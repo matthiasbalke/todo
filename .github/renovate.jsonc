@@ -6,8 +6,6 @@
     ":semanticCommits",
     // always update kotlin Gradle plugins at the same time, in one PR branch
     "group:kotlinMonorepo",
-    // support for apk versioning annotations
-    "customManagers:dockerfileVersions",
     // support for _VERSION variables in GitHub Actions workflow/action YAML files
     "customManagers:githubActionsVersions"
   ],
@@ -32,8 +30,9 @@
         "/(^|/)Dockerfile\\.[^/]*$/"
       ],
       "matchStrings": [
-        "# renovate: alpine:\\s+datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\s+packageName=(?<packageName>[^\\s]+)(?:\\s+versioning=(?<versioning>[^\\s]+))?\\s+(?:ENV|ARG)\\s+[^\\s=]+_VERSION=(?<currentValue>[^\\s]+)"
+        "# renovate: alpine:\\s+datasource=(?<datasource>[^\\s]+)\\s+packageName=(?<packageName>[^\\s]+)\\s+(?:ENV|ARG)\\s+[^\\s=]+_VERSION=(?<currentValue>[^\\s]+)"
       ],
+      "versioningTemplate": "loose",
       "extractVersionTemplate": "^{{{packageName}}}-(?<version>.+)\\.apk$"
     }
   ],
