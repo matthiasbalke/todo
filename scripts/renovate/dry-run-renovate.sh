@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# source: https://www.jvt.me/posts/2026/03/08/renovate-test-config/
+
 # ensure that we have GitHub authentication at least, so we can fetch changelogs, and access GitHub-only dependencies
 export RENOVATE_GITHUB_COM_TOKEN=$(gh auth token)
   # make sure we have the right level of information
@@ -11,5 +13,5 @@ export RENOVATE_LOG_FILE=debug-$(date +%s).jsonl
   # if I'm running from source code
   ## node lib/renovate.ts
   # or, more likely, running for a given version:
-bunx renovate --platform local
 # a lot of the time, I'll use the local platform for ease, but often will run against a real Platform
+bunx renovate --platform local

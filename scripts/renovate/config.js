@@ -3,11 +3,10 @@
  */
 
 const fs = require('fs')
-
 const { parse } = require('jsonc-parser');
 
 const repoConfig = parse(
-    fs.readFileSync('.github/renovate.jsonc', 'utf8')
+    fs.readFileSync('../../.github/renovate.jsonc', 'utf8')
 );
 
 /** @type {AllConfig} */
@@ -16,10 +15,6 @@ let globalConfig = {
     allowedUnsafeExecutions: [
         'gradleWrapper',
     ],
-
-    enabledManagers: [
-        'custom.regex',
-    ]
 }
 
 /** @type {AllConfig} */
