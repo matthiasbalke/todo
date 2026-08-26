@@ -11,11 +11,11 @@
   ],
 
   "customDatasources": {
-    "alpine323": {
+    "alpine_3_23": {
       "defaultRegistryUrlTemplate": "https://dl-cdn.alpinelinux.org/alpine/v3.23/main/x86_64/",
       "format": "html"
     },
-    "alpine324": {
+    "alpine_3_24": {
       "defaultRegistryUrlTemplate": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/",
       "format": "html"
     }
