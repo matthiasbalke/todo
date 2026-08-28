@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>matthiasbalke/renovate-defaults:default.jsonc"],
+  "extends": ["github>matthiasbalke/renovate-defaults:default.jsonc#0.1.0"],
 
   "packageRules": [
     {
