@@ -1,4 +1,5 @@
 include-pre-releases: true
+no-new-contributor-template: '* No new contributors'
 name-template: 'v$RESOLVED_VERSION'
 tag-template: '$RESOLVED_VERSION'
 template: |
