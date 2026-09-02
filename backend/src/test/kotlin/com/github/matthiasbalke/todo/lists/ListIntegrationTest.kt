@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
+import tools.jackson.databind.ObjectMapper
 import java.time.LocalDate
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -67,7 +68,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             jsonPath("$.role") { value("OWNER") }
         }.andReturn()
 
-        val listId = com.fasterxml.jackson.databind.ObjectMapper()
+        val listId = ObjectMapper()
             .readTree(result.response.contentAsString)["id"].asText()
 
         // Verify membership
@@ -618,7 +619,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             content = """{"name":"$name"}"""
         }.andExpect { status { isCreated() } }.andReturn()
 
-        val idStr = com.fasterxml.jackson.databind.ObjectMapper()
+        val idStr = ObjectMapper()
             .readTree(result.response.contentAsString)["id"].asText()
         return UUID.fromString(idStr)
     }
@@ -630,7 +631,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             content = """{"name":"$name"}"""
         }.andExpect { status { isCreated() } }.andReturn()
 
-        val idStr = com.fasterxml.jackson.databind.ObjectMapper()
+        val idStr = ObjectMapper()
             .readTree(result.response.contentAsString)["id"].asText()
         return UUID.fromString(idStr)
     }
@@ -650,7 +651,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             status { isCreated() }
         }.andReturn()
 
-        val idStr = com.fasterxml.jackson.databind.ObjectMapper()
+        val idStr = ObjectMapper()
             .readTree(result.response.contentAsString)["id"].asText()
         return UUID.fromString(idStr)
     }

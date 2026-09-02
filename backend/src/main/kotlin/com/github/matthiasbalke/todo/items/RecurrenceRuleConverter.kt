@@ -1,15 +1,13 @@
 package com.github.matthiasbalke.todo.items
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
+import tools.jackson.databind.json.JsonMapper
 
 @Converter
 class RecurrenceRuleConverter : AttributeConverter<RecurrenceRule?, String?> {
 
-    private val mapper = ObjectMapper().apply {
-        findAndRegisterModules()
-    }
+    private val mapper = JsonMapper()
 
     override fun convertToDatabaseColumn(attribute: RecurrenceRule?): String? =
         attribute?.let { mapper.writeValueAsString(it) }

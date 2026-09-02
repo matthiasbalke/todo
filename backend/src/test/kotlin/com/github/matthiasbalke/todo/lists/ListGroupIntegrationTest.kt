@@ -1,6 +1,6 @@
 package com.github.matthiasbalke.todo.lists
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import com.github.matthiasbalke.todo.AbstractIntegrationTest
 import com.github.matthiasbalke.todo.auth.JwtTokenService
 import com.github.matthiasbalke.todo.auth.User
