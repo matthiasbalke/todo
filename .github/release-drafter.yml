@@ -1,4 +1,5 @@
 include-pre-releases: true
+new-contributor-template: '* $AUTHOR_MENTION made their first contribution in #$NUMBER'
 no-new-contributor-template: '* No new contributors'
 name-template: 'v$RESOLVED_VERSION'
 tag-template: '$RESOLVED_VERSION'
