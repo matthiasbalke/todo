@@ -1,0 +1,49 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: '$RESOLVED_VERSION'
+template: |
+  # What's Changed
+
+  $CHANGES
+
+  ## New Contributors
+
+  $NEW_CONTRIBUTORS
+
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+
+categories:
+  - title: '🚨 Breaking Changes'
+    semver-increment: 'major'
+    exclusive: true
+    when:
+      label: breaking-change
+  - title: '✨ Features'
+    semver-increment: 'minor'
+    exclusive: true
+    when:
+      label: 'enhancement'
+  - title: '⬆️ Dependency Updates'
+    semver-increment: 'patch'
+    exclusive: true
+    when:
+      label: 'dependencies'
+    collapse-after: 5
+  - title: '🐛 Bug Fixes'
+    semver-increment: 'patch'
+    exclusive: true
+    when:
+      label: 'bug'
+  - title: '🧰 Maintenance'
+    semver-increment: 'patch'
+    exclusive: true
+    when:
+      label: 'chore'
+  - title: '📚 Documentation'
+    semver-increment: 'patch'
+    exclusive: true
+    when:
+      label: 'docs'
+  - title: 'Other changes'
+  - type: 'pre-exclude'
+    when:
+      label: 'skip-changelog'
