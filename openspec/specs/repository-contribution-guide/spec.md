@@ -52,6 +52,16 @@ The contribution guide SHALL explain how contributors should branch, plan, imple
 - **WHEN** a contributor plans a typo, comment, or narrow documentation correction
 - **THEN** the guide allows the change without requiring OpenSpec artifacts
 
+### Requirement: Contribution guide documents conventional commits
+The contribution guide SHALL explain that the repository uses Conventional Commits.
+
+#### Scenario: Contributor writes commit messages
+- **WHEN** a contributor reads the guide before committing changes
+- **THEN** the guide links to `https://www.conventionalcommits.org/en/v1.0.0/`
+- **THEN** the guide documents the `<type>[optional scope]: <description>` commit message shape
+- **THEN** the guide gives repository-relevant examples for docs, fixes, and features
+- **THEN** the guide explains that breaking changes are marked with `!` before the colon or a `BREAKING CHANGE:` footer
+
 ### Requirement: Contribution guide documents validation commands
 The contribution guide SHALL list the key validation commands contributors should run before opening a pull request.
 
@@ -101,6 +111,7 @@ The contribution guide SHALL document what pull requests should include.
 #### Scenario: Contributor opens a pull request
 - **WHEN** a contributor prepares a pull request
 - **THEN** the guide asks for a concise summary, linked OpenSpec change when applicable, validation results, screenshots or recordings for visible UI changes, migration notes when relevant, and security notes when relevant
+- **THEN** the guide asks contributors to use Conventional Commits for commit messages and pull request titles
 
 ### Requirement: Contribution guide uses maintainer-oriented tone
 The contribution guide SHALL use a practical, maintainer-oriented tone instead of corporate contribution boilerplate.

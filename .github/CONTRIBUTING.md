@@ -103,6 +103,32 @@ openspec status --change "your-change-name"
 
 Keep the proposal, design, specs, and tasks aligned with what you actually implement.
 
+## Commit Messages
+
+This repository uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+
+Use this shape:
+
+```text
+<type>[optional scope]: <description>
+```
+
+Good examples:
+
+```text
+docs: update contribution guide
+fix(auth): reject expired recovery tokens
+feat(lists): add group collapse persistence
+```
+
+Use `feat` for user-facing features and `fix` for bug fixes. Other useful types include `docs`, `test`, `refactor`, `build`, `ci`, and `chore`.
+
+For breaking changes, mark the commit with `!` before the colon or add a `BREAKING CHANGE:` footer:
+
+```text
+feat(api)!: rename list membership role field
+```
+
 ## Validation
 
 Run the checks that match the files you touched. Include the results in the pull request.
@@ -167,6 +193,7 @@ Keep pull requests reviewable:
 
 - Explain what changed and why.
 - Link the OpenSpec change when one exists.
+- Use Conventional Commits for commit messages and PR titles.
 - List the validation commands you ran and their results.
 - Include screenshots or recordings for visible UI changes.
 - Call out migrations, config changes, deployment changes, or security-sensitive changes.
