@@ -16,14 +16,14 @@ A personal/household app for managing todos, grocery shopping, and recurring hou
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Backend | Kotlin + Spring Boot, Java 25 |
-| Frontend | SvelteKit + TailwindCSS (PWA) |
-| Database | PostgreSQL |
+| Layer | Technology                                        |
+|---|---------------------------------------------------|
+| Backend | Kotlin (JRE 21) + Spring Boot                     |
+| Frontend | SvelteKit + TailwindCSS (PWA)                     |
+| Database | PostgreSQL                                        |
 | Auth | Passkey (WebAuthn) + Google OAuth2 — no passwords |
-| Real-time | Server-Sent Events (SSE) |
-| Deployment | Docker Compose |
+| Real-time | Server-Sent Events (SSE)                          |
+| Deployment | Docker Compose                                    |
 
 ## Running Locally
 
@@ -64,30 +64,7 @@ docker run \
 
 ## Development
 
-**Backend**
-```bash
-cd backend
-./gradlew bootRun        # start dev server
-./gradlew test           # run tests
-```
-
-**Frontend**
-```bash
-cd frontend
-bun install
-bun run dev              # start Vite dev server
-bun run test -- --run    # run unit tests
-```
-
-**E2E tests**
-```bash
-cd backend
-./gradlew bootrun
-
-cd e2e
-bun install
-bunx playwright test
-```
+See [Contributing](.github/CONTRIBUTING.md) for setup details, validation commands, and pull request expectations.
 
 ## Architecture
 
