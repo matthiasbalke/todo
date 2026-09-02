@@ -1,3 +1,4 @@
+include-pre-releases: true
 name-template: 'v$RESOLVED_VERSION'
 tag-template: '$RESOLVED_VERSION'
 template: |
