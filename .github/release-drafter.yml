@@ -18,12 +18,16 @@ categories:
     when:
       conventional:
         breaking: true
+      labels:
+        - 'breaking-change'
   - title: '✨ Features'
     semver-increment: 'minor'
     exclusive: true
     when:
       conventional:
         type: 'feat'
+      labels:
+        - 'feature'
   - title: '⬆️ Dependency Updates'
     semver-increment: 'patch'
     exclusive: true
@@ -37,6 +41,8 @@ categories:
           - 'chore'
           - 'ci'
           - 'fix'
+      labels:
+        - 'dependencies'
     collapse-after: 5
   - title: '🐛 Bug Fixes'
     semver-increment: 'patch'
@@ -44,6 +50,8 @@ categories:
     when:
       conventional:
         type: 'fix'
+      labels:
+        - 'bug'
   - title: '🧰 Maintenance'
     semver-increment: 'patch'
     exclusive: true
@@ -58,12 +66,16 @@ categories:
           - 'revert'
           - 'style'
           - 'test'
+      labels:
+        - 'maintenance'
   - title: '📚 Documentation'
     semver-increment: 'patch'
     exclusive: true
     when:
       conventional:
         type: 'docs'
+      labels:
+        - 'documentation'
   - title: 'Other changes'
   - type: 'pre-exclude'
     when:
