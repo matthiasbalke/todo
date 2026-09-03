@@ -5,9 +5,13 @@ import com.github.matthiasbalke.todo.auth.JwtTokenService
 import com.github.matthiasbalke.todo.auth.User
 import com.github.matthiasbalke.todo.auth.UserRepository
 import com.github.matthiasbalke.todo.lists.ListMembership
+import com.github.matthiasbalke.todo.lists.ListMembershipId
 import com.github.matthiasbalke.todo.lists.ListMembershipRepository
 import com.github.matthiasbalke.todo.lists.ListRepository
 import com.github.matthiasbalke.todo.lists.ListRole
+import com.jayway.jsonpath.JsonPath
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import com.github.matthiasbalke.todo.lists.List as TodoList
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -36,8 +40,8 @@ class TodayIntegrationTest : AbstractIntegrationTest() {
             membershipRepository.save(ListMembership(it.id, user.id, role))
         }
 
-    private fun item(list: TodoList, user: User?, dueDate: LocalDate?, done: Boolean = false): TodoItem =
-        itemRepository.save(TodoItem(listId = list.id, title = UUID.randomUUID().toString(), dueDate = dueDate, done = done)).also {
+    private fun item(list: TodoList, user: User?, dueDate: LocalDate?, done: Boolean = false, title: String = UUID.randomUUID().toString()): TodoItem =
+        itemRepository.save(TodoItem(listId = list.id, title = title, dueDate = dueDate, done = done)).also {
             if (user != null) assignmentRepository.save(ItemAssignment(ItemAssignmentId(it.id, user.id)))
         }
 
@@ -49,6 +53,7 @@ class TodayIntegrationTest : AbstractIntegrationTest() {
         val other = user()
         val today = LocalDate.now(ZoneId.of(user.timeZone))
         val editable = list(user)
+        membershipRepository.save(ListMembership(editable.id, other.id, ListRole.EDITOR))
         val viewer = list(user, ListRole.VIEWER)
         item(editable, user, today)
         item(editable, user, today.minusDays(1), done = true)
@@ -75,7 +80,7 @@ class TodayIntegrationTest : AbstractIntegrationTest() {
         val user = user()
         val source = list(user)
         item(source, user, LocalDate.now(ZoneId.of(user.timeZone)))
-        membershipRepository.deleteById(com.github.matthiasbalke.todo.lists.ListMembershipId(source.id, user.id))
+        membershipRepository.deleteById(ListMembershipId(source.id, user.id))
 
         mockMvc.get("/api/today") { header("Authorization", auth(user)) }.andExpect {
             status { isOk() }
@@ -85,5 +90,61 @@ class TodayIntegrationTest : AbstractIntegrationTest() {
             status { isOk() }
             jsonPath("$.count") { value(0) }
         }
+    }
+
+    @Test
+    fun `Today includes unassigned due today item from single-member list`() {
+        val user = user()
+        val today = LocalDate.now(ZoneId.of(user.timeZone))
+        val source = list(user)
+        item(source, null, today, title = "Unassigned due today")
+
+        val response = mockMvc.get("/api/today") { header("Authorization", auth(user)) }.andExpect {
+            status { isOk() }
+            jsonPath("$.length()") { value(1) }
+        }.andReturn().response.contentAsString
+
+        val assignedUsers: List<Any> = JsonPath.read(response, "$[0].assignedUsers")
+        assertTrue(assignedUsers.isEmpty())
+        mockMvc.get("/api/today/count") { header("Authorization", auth(user)) }.andExpect {
+            status { isOk() }
+            jsonPath("$.count") { value(1) }
+        }
+    }
+
+    @Test
+    fun `Today includes unassigned overdue item from single-member list`() {
+        val user = user()
+        val today = LocalDate.now(ZoneId.of(user.timeZone))
+        val source = list(user)
+        item(source, null, today.minusDays(1), title = "Unassigned overdue")
+
+        mockMvc.get("/api/today") { header("Authorization", auth(user)) }.andExpect {
+            status { isOk() }
+            jsonPath("$.length()") { value(1) }
+            jsonPath("$[0].title") { value("Unassigned overdue") }
+        }
+    }
+
+    @Test
+    fun `Today excludes unassigned due item from multi-member list for all members`() {
+        val user = user()
+        val other = user()
+        val today = LocalDate.now(ZoneId.of(user.timeZone))
+        val source = list(user)
+        membershipRepository.save(ListMembership(source.id, other.id, ListRole.EDITOR))
+        item(source, null, today)
+
+        listOf(user, other).forEach { member ->
+            mockMvc.get("/api/today") { header("Authorization", auth(member)) }.andExpect {
+                status { isOk() }
+                jsonPath("$.length()") { value(0) }
+            }
+            mockMvc.get("/api/today/count") { header("Authorization", auth(member)) }.andExpect {
+                status { isOk() }
+                jsonPath("$.count") { value(0) }
+            }
+        }
+        assertEquals(2, membershipRepository.findAllByListId(source.id).size)
     }
 }

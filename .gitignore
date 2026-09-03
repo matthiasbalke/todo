@@ -1,6 +1,14 @@
+# OS specific
+.DS_Store
+
+# app specific
 .certs
 .local-domain
+
+# agent
 .claude/settings.local.json
+
+# backend
 .gradle
 **/build/
 !**/src/**/build/

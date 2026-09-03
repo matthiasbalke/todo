@@ -59,15 +59,29 @@ interface TodayRepository : Repository<TodoItem, UUID> {
                    c.name AS "sourceCategoryName",
                    c.color AS "sourceCategoryColor",
                    c.sort_order AS "sourceCategoryOrder"
-              FROM item_assignments ia
-              JOIN todo_items i ON i.id = ia.item_id
-              JOIN list_memberships m ON m.list_id = i.list_id AND m.user_id = ia.user_id
+              FROM todo_items i
+              JOIN list_memberships m ON m.list_id = i.list_id AND m.user_id = :userId
               JOIN lists l ON l.id = i.list_id
+              LEFT JOIN item_assignments current_assignment ON current_assignment.item_id = i.id AND current_assignment.user_id = :userId
               LEFT JOIN categories c ON c.id = i.category_id
-              LEFT JOIN list_group_assignments a ON a.list_id = i.list_id AND a.user_id = ia.user_id
-              LEFT JOIN list_groups g ON g.id = a.group_id AND g.user_id = ia.user_id
-             WHERE ia.user_id = :userId
-               AND i.due_date <= :today
+              LEFT JOIN list_group_assignments a ON a.list_id = i.list_id AND a.user_id = :userId
+              LEFT JOIN list_groups g ON g.id = a.group_id AND g.user_id = :userId
+             WHERE i.due_date <= :today
+               AND (
+                   current_assignment.item_id IS NOT NULL
+                   OR (
+                       NOT EXISTS (
+                           SELECT 1
+                             FROM item_assignments any_assignment
+                            WHERE any_assignment.item_id = i.id
+                       )
+                       AND (
+                           SELECT COUNT(*)
+                             FROM list_memberships list_member_count
+                            WHERE list_member_count.list_id = i.list_id
+                       ) = 1
+                   )
+               )
              ORDER BY g.sort_order NULLS LAST, a.sort_order NULLS LAST, l.name, c.sort_order NULLS LAST, i.sort_order, i.created_at
         """,
         nativeQuery = true,
@@ -77,12 +91,26 @@ interface TodayRepository : Repository<TodoItem, UUID> {
     @Query(
         value = """
             SELECT COUNT(*)
-              FROM item_assignments ia
-              JOIN todo_items i ON i.id = ia.item_id
-              JOIN list_memberships m ON m.list_id = i.list_id AND m.user_id = ia.user_id
-             WHERE ia.user_id = :userId
-               AND i.due_date <= :today
+              FROM todo_items i
+              JOIN list_memberships m ON m.list_id = i.list_id AND m.user_id = :userId
+              LEFT JOIN item_assignments current_assignment ON current_assignment.item_id = i.id AND current_assignment.user_id = :userId
+             WHERE i.due_date <= :today
                AND i.done = FALSE
+               AND (
+                   current_assignment.item_id IS NOT NULL
+                   OR (
+                       NOT EXISTS (
+                           SELECT 1
+                             FROM item_assignments any_assignment
+                            WHERE any_assignment.item_id = i.id
+                       )
+                       AND (
+                           SELECT COUNT(*)
+                             FROM list_memberships list_member_count
+                            WHERE list_member_count.list_id = i.list_id
+                       ) = 1
+                   )
+               )
         """,
         nativeQuery = true,
     )
