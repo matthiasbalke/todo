@@ -1,13 +1,71 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
+  detect-changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+      e2e: ${{ steps.changes.outputs.e2e }}
+      docs_only: ${{ steps.changes.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Detect relevant changed files
+        id: changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+
+          git diff --name-only "$BASE_SHA...HEAD" > changed-files.txt
+          echo "Changed files:"
+          cat changed-files.txt
+
+          backend=false
+          frontend=false
+          e2e=false
+
+          while IFS= read -r file; do
+            case "$file" in
+              .github/workflows/ci.yml)
+                backend=true
+                frontend=true
+                e2e=true
+                ;;
+              backend/*)
+                backend=true
+                e2e=true
+                ;;
+              frontend/*)
+                frontend=true
+                e2e=true
+                ;;
+              e2e/*|docker-compose.yml|nginx.conf)
+                e2e=true
+                ;;
+            esac
+          done < changed-files.txt
+
+          echo "backend=${backend}" >> "$GITHUB_OUTPUT"
+          echo "frontend=${frontend}" >> "$GITHUB_OUTPUT"
+          echo "e2e=${e2e}" >> "$GITHUB_OUTPUT"
+          if [ "$backend" != true ] && [ "$frontend" != true ] && [ "$e2e" != true ]; then
+            echo "docs_only=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build-backend:
+    needs: [detect-changes]
+    if: ${{ needs.detect-changes.outputs.e2e == 'true' }}
     name: Build backend image
     runs-on: ubuntu-latest
     steps:
@@ -24,7 +82,6 @@ jobs:
           build-args: |
             BUILD_NUMBER=${{ github.run_number }}
           cache-from: type=gha,scope=backend
-          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=min,scope=backend' || '' }}
 
       - name: Upload backend image artifact
         uses: actions/upload-artifact@v7
@@ -34,6 +91,8 @@ jobs:
           retention-days: 1
 
   build-frontend:
+    needs: [detect-changes]
+    if: ${{ needs.detect-changes.outputs.e2e == 'true' }}
     name: Build frontend image
     runs-on: ubuntu-latest
     steps:
@@ -50,7 +109,6 @@ jobs:
           build-args: |
             BUILD_NUMBER=${{ github.run_number }}
           cache-from: type=gha,scope=frontend
-          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=min,scope=frontend' || '' }}
 
       - name: Upload frontend image artifact
         uses: actions/upload-artifact@v7
@@ -60,6 +118,8 @@ jobs:
           retention-days: 1
 
   test-backend:
+    needs: [detect-changes]
+    if: ${{ needs.detect-changes.outputs.backend == 'true' }}
     name: Test backend
     runs-on: ubuntu-latest
     steps:
@@ -88,6 +148,8 @@ jobs:
           path: backend/build/reports/tests/
 
   test-frontend:
+    needs: [detect-changes]
+    if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
     name: Test frontend
     runs-on: ubuntu-latest
     steps:
@@ -107,7 +169,8 @@ jobs:
         working-directory: frontend
 
   e2e:
-    needs: [build-backend, build-frontend]
+    needs: [detect-changes, build-backend, build-frontend]
+    if: ${{ needs.detect-changes.outputs.e2e == 'true' }}
     name: Playwright
     runs-on: ubuntu-latest
     steps:
@@ -190,3 +253,73 @@ jobs:
       - name: Stop services
         if: always()
         run: docker compose down
+
+  ci-result:
+    needs: [detect-changes, build-backend, build-frontend, test-backend, test-frontend, e2e]
+    if: always()
+    name: CI result
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check CI result
+        env:
+          DETECT_RESULT: ${{ needs.detect-changes.result }}
+          BUILD_BACKEND_RESULT: ${{ needs.build-backend.result }}
+          BUILD_FRONTEND_RESULT: ${{ needs.build-frontend.result }}
+          TEST_BACKEND_RESULT: ${{ needs.test-backend.result }}
+          TEST_FRONTEND_RESULT: ${{ needs.test-frontend.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+          BACKEND_CHANGED: ${{ needs.detect-changes.outputs.backend }}
+          FRONTEND_CHANGED: ${{ needs.detect-changes.outputs.frontend }}
+          E2E_CHANGED: ${{ needs.detect-changes.outputs.e2e }}
+          DOCS_ONLY: ${{ needs.detect-changes.outputs.docs_only }}
+        run: |
+          set -euo pipefail
+
+          failed=false
+          for result in \
+            "$DETECT_RESULT" \
+            "$BUILD_BACKEND_RESULT" \
+            "$BUILD_FRONTEND_RESULT" \
+            "$TEST_BACKEND_RESULT" \
+            "$TEST_FRONTEND_RESULT" \
+            "$E2E_RESULT"; do
+            case "$result" in
+              failure|cancelled)
+                failed=true
+                ;;
+            esac
+          done
+
+          require_success() {
+            local job_name="$1"
+            local result="$2"
+            if [ "$result" != success ]; then
+              echo "::error::${job_name} was expected to run, got '${result}'."
+              failed=true
+            fi
+          }
+
+          if [ "$BACKEND_CHANGED" = true ]; then
+            require_success "Backend tests" "$TEST_BACKEND_RESULT"
+          fi
+
+          if [ "$FRONTEND_CHANGED" = true ]; then
+            require_success "Frontend tests" "$TEST_FRONTEND_RESULT"
+          fi
+
+          if [ "$E2E_CHANGED" = true ]; then
+            require_success "Backend image build" "$BUILD_BACKEND_RESULT"
+            require_success "Frontend image build" "$BUILD_FRONTEND_RESULT"
+            require_success "Playwright" "$E2E_RESULT"
+          fi
+
+          if [ "$failed" = true ]; then
+            echo "::error::One or more relevant CI jobs failed or were cancelled."
+            exit 1
+          fi
+
+          if [ "$DOCS_ONLY" = true ]; then
+            echo "No backend, frontend, or E2E relevant changes detected."
+          else
+            echo "Relevant CI checks completed successfully."
+          fi

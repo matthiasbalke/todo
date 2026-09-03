@@ -18,7 +18,8 @@ ADDRESS="https://${LOCAL_HTTPS_DOMAIN}:${PORT}"
 export CORS_ALLOWED_ORIGINS="${ADDRESS}"
 export WEBAUTHN_RP_ID="${LOCAL_HTTPS_DOMAIN}"
 
-echo "Starting on ${ADDRESS}"
+echo "Starting backend on http://0.0.0.0:8080"
+echo "Configured to be accessed on ${ADDRESS}"
 echo
 
 cd "${SCRIPT_DIR}"
