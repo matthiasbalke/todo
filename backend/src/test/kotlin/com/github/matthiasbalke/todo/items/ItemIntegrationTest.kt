@@ -38,7 +38,7 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
             contentType = MediaType.APPLICATION_JSON
             content = """{"name":"$name"}"""
         }.andExpect { status { isCreated() } }.andReturn()
-        return UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asText())
+        return UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asString())
     }
 
     private fun addMemberToList(listId: UUID, owner: User, email: String, role: String) {
@@ -55,7 +55,7 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
             contentType = MediaType.APPLICATION_JSON
             content = """{"title":"$title"}"""
         }.andExpect { status { isCreated() } }.andReturn()
-        return UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asText())
+        return UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asString())
     }
 
     // ─── GET /api/lists/{id}/items ────────────────────────────────────────────
@@ -297,7 +297,7 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
                 "recurrenceRule": {"intervalUnit": "WEEKS", "intervalValue": 2}
             }"""
         }.andExpect { status { isCreated() } }.andReturn()
-        val itemId = UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asText())
+        val itemId = UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asString())
 
         mockMvc.patch("/api/lists/$listId/items/$itemId/done") {
             header("Authorization", bearerHeader(owner))
@@ -316,10 +316,10 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
             header("Authorization", bearerHeader(owner))
         }.andReturn().response.contentAsString)
         val newItem = items.first { !it["done"].asBoolean() }
-        assert(newItem["dueDate"].asText() == "2025-06-15") {
-            "Expected 2025-06-15 but got ${newItem["dueDate"].asText()}"
+        assert(newItem["dueDate"].asString() == "2025-06-15") {
+            "Expected 2025-06-15 but got ${newItem["dueDate"].asString()}"
         }
-        assert(newItem["parentItemId"].asText() == itemId.toString()) {
+        assert(newItem["parentItemId"].asString() == itemId.toString()) {
             "Expected parentItemId to be $itemId"
         }
     }
@@ -337,7 +337,7 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
                 "recurrenceRule": {"intervalUnit": "DAYS", "intervalValue": 1}
             }"""
         }.andExpect { status { isCreated() } }.andReturn()
-        val itemId = UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asText())
+        val itemId = UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asString())
 
         mockMvc.patch("/api/lists/$listId/items/$itemId/done") {
             header("Authorization", bearerHeader(owner))
@@ -348,8 +348,8 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
         }.andReturn().response.contentAsString)
         val newItem = items.first { !it["done"].asBoolean() }
         val expectedDueDate = LocalDate.now().plusDays(1).toString()
-        assert(newItem["dueDate"].asText() == expectedDueDate) {
-            "Expected $expectedDueDate but got ${newItem["dueDate"].asText()}"
+        assert(newItem["dueDate"].asString() == expectedDueDate) {
+            "Expected $expectedDueDate but got ${newItem["dueDate"].asString()}"
         }
     }
 
@@ -390,7 +390,7 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
             header("Authorization", bearerHeader(owner))
         }.andReturn().response.contentAsString)
 
-        val orderById = items.associate { it["id"].asText() to it["sortOrder"].asInt() }
+        val orderById = items.associate { it["id"].asString() to it["sortOrder"].asInt() }
         assert(orderById[item3.toString()] == 0) { "item3 should have sortOrder 0" }
         assert(orderById[item1.toString()] == 1) { "item1 should have sortOrder 1" }
         assert(orderById[item2.toString()] == 2) { "item2 should have sortOrder 2" }

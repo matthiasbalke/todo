@@ -39,7 +39,7 @@ class ListGroupIntegrationTest : AbstractIntegrationTest() {
             contentType = MediaType.APPLICATION_JSON
             content = """{"name":"$name"}"""
         }.andExpect { status { isCreated() } }.andReturn()
-        return UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asText())
+        return UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asString())
     }
 
     private fun createListAsUser(user: User, name: String): UUID {
@@ -48,7 +48,7 @@ class ListGroupIntegrationTest : AbstractIntegrationTest() {
             contentType = MediaType.APPLICATION_JSON
             content = """{"name":"$name"}"""
         }.andExpect { status { isCreated() } }.andReturn()
-        return UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asText())
+        return UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asString())
     }
 
     // ─── POST /api/list-groups ────────────────────────────────────────────────

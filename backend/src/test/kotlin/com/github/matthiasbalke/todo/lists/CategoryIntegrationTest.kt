@@ -36,7 +36,7 @@ class CategoryIntegrationTest : AbstractIntegrationTest() {
             contentType = MediaType.APPLICATION_JSON
             content = """{"name":"$name"}"""
         }.andExpect { status { isCreated() } }.andReturn()
-        return UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asText())
+        return UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asString())
     }
 
     private fun addMemberToList(listId: UUID, owner: User, email: String, role: String) {
@@ -53,7 +53,7 @@ class CategoryIntegrationTest : AbstractIntegrationTest() {
             contentType = MediaType.APPLICATION_JSON
             content = """{"name":"$name","sortOrder":$sortOrder}"""
         }.andExpect { status { isCreated() } }.andReturn()
-        return UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asText())
+        return UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asString())
     }
 
     // ─── GET /api/lists/{id}/categories ──────────────────────────────────────
