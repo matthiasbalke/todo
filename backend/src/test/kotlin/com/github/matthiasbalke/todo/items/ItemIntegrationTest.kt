@@ -1,6 +1,6 @@
 package com.github.matthiasbalke.todo.items
 
-import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
 import com.github.matthiasbalke.todo.AbstractIntegrationTest
 import com.github.matthiasbalke.todo.auth.JwtTokenService
 import com.github.matthiasbalke.todo.auth.User
@@ -25,7 +25,7 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
     @Autowired private lateinit var userRepository: UserRepository
     @Autowired private lateinit var jwtTokenService: JwtTokenService
 
-    private val mapper = ObjectMapper()
+    private val mapper = JsonMapper()
 
     private fun createUser(): User =
         userRepository.save(User(email = "user-${UUID.randomUUID()}@example.com", displayName = "Test User"))

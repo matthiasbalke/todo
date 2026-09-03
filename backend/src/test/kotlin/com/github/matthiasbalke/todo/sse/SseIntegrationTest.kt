@@ -1,6 +1,6 @@
 package com.github.matthiasbalke.todo.sse
 
-import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
 import com.github.matthiasbalke.todo.TestcontainersConfiguration
 import com.github.matthiasbalke.todo.auth.JwtTokenService
 import com.github.matthiasbalke.todo.auth.User
@@ -31,7 +31,7 @@ class SseIntegrationTest {
     @Autowired
     private lateinit var jwtTokenService: JwtTokenService
 
-    private val mapper = ObjectMapper()
+    private val mapper = JsonMapper()
 
     @Test
     fun `SSE emits item_created event when item is created`() {
