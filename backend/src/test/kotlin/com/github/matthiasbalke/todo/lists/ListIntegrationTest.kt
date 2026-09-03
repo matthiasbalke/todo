@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
-import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
 import java.time.LocalDate
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -68,7 +68,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             jsonPath("$.role") { value("OWNER") }
         }.andReturn()
 
-        val listId = ObjectMapper()
+        val listId = JsonMapper()
             .readTree(result.response.contentAsString)["id"].asString()
 
         // Verify membership
@@ -619,7 +619,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             content = """{"name":"$name"}"""
         }.andExpect { status { isCreated() } }.andReturn()
 
-        val idStr = ObjectMapper()
+        val idStr = JsonMapper()
             .readTree(result.response.contentAsString)["id"].asString()
         return UUID.fromString(idStr)
     }
@@ -631,7 +631,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             content = """{"name":"$name"}"""
         }.andExpect { status { isCreated() } }.andReturn()
 
-        val idStr = ObjectMapper()
+        val idStr = JsonMapper()
             .readTree(result.response.contentAsString)["id"].asString()
         return UUID.fromString(idStr)
     }
@@ -651,7 +651,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             status { isCreated() }
         }.andReturn()
 
-        val idStr = ObjectMapper()
+        val idStr = JsonMapper()
             .readTree(result.response.contentAsString)["id"].asString()
         return UUID.fromString(idStr)
     }

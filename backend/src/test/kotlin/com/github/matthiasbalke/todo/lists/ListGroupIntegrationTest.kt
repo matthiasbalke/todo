@@ -1,6 +1,6 @@
 package com.github.matthiasbalke.todo.lists
 
-import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
 import com.github.matthiasbalke.todo.AbstractIntegrationTest
 import com.github.matthiasbalke.todo.auth.JwtTokenService
 import com.github.matthiasbalke.todo.auth.User
@@ -29,7 +29,7 @@ class ListGroupIntegrationTest : AbstractIntegrationTest() {
 
     private fun bearerHeader(user: User) = "Bearer ${jwtTokenService.generateAccessToken(user)}"
 
-    private val mapper = ObjectMapper()
+    private val mapper = JsonMapper()
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
