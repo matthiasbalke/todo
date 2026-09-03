@@ -40,7 +40,7 @@ class SseIntegrationTest {
 
         // Create a list via REST
         val listId = post("/api/lists", """{"name":"SSE Test List"}""", token)
-            .let { mapper.readTree(it)["id"].asText() }
+            .let { mapper.readTree(it)["id"].asString() }
 
         // Connect to SSE stream; server sends `: connected` comment immediately to flush headers
         val connected = CountDownLatch(1)
@@ -103,7 +103,7 @@ class SseIntegrationTest {
         val user = userRepository.save(User(email = "sse-buf-${UUID.randomUUID()}@example.com", displayName = "SSE Buf Test"))
         val token = jwtTokenService.generateAccessToken(user)
         val listId = post("/api/lists", """{"name":"SSE Buf Test List"}""", token)
-            .let { mapper.readTree(it)["id"].asText() }
+            .let { mapper.readTree(it)["id"].asString() }
 
         val conn = openConnection("/api/lists/$listId/events?token=$token")
         conn.setRequestProperty("Accept", "text/event-stream")
@@ -120,7 +120,7 @@ class SseIntegrationTest {
         val user = userRepository.save(User(email = "sse-hb-${UUID.randomUUID()}@example.com", displayName = "SSE HB Test"))
         val token = jwtTokenService.generateAccessToken(user)
         val listId = post("/api/lists", """{"name":"SSE HB Test List"}""", token)
-            .let { mapper.readTree(it)["id"].asText() }
+            .let { mapper.readTree(it)["id"].asString() }
 
         val commentCount = AtomicInteger(0)
         val secondComment = CountDownLatch(2)

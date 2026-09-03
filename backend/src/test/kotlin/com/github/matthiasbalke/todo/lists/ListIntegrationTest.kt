@@ -69,7 +69,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
         }.andReturn()
 
         val listId = ObjectMapper()
-            .readTree(result.response.contentAsString)["id"].asText()
+            .readTree(result.response.contentAsString)["id"].asString()
 
         // Verify membership
         val membership = listMembershipRepository.findByListIdAndUserId(UUID.fromString(listId), user.id)
@@ -620,7 +620,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
         }.andExpect { status { isCreated() } }.andReturn()
 
         val idStr = ObjectMapper()
-            .readTree(result.response.contentAsString)["id"].asText()
+            .readTree(result.response.contentAsString)["id"].asString()
         return UUID.fromString(idStr)
     }
 
@@ -632,7 +632,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
         }.andExpect { status { isCreated() } }.andReturn()
 
         val idStr = ObjectMapper()
-            .readTree(result.response.contentAsString)["id"].asText()
+            .readTree(result.response.contentAsString)["id"].asString()
         return UUID.fromString(idStr)
     }
 
@@ -652,7 +652,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
         }.andReturn()
 
         val idStr = ObjectMapper()
-            .readTree(result.response.contentAsString)["id"].asText()
+            .readTree(result.response.contentAsString)["id"].asString()
         return UUID.fromString(idStr)
     }
 }
