@@ -404,4 +404,87 @@ describe('ListPage menu presentation', () => {
 
 		expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({ categoryId: null }));
 	});
+
+	it('restores an add-item draft after focus loss minimizes the form', async () => {
+		render(ListPage, { props: { data: mockData } });
+		const externalElement = document.createElement('button');
+		document.body.appendChild(externalElement);
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+			target: { value: 'Preserved title' },
+		});
+		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
+			target: { value: 'Preserved notes' },
+		});
+		await fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
+			relatedTarget: externalElement,
+		});
+
+		expect(screen.queryByPlaceholderText('Item title')).not.toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+
+		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Preserved title');
+		expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Preserved notes');
+		externalElement.remove();
+	});
+
+	it('clears an add-item draft after explicit cancellation', async () => {
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+			target: { value: 'Discarded title' },
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+
+		expect(screen.getByPlaceholderText('Item title')).toHaveValue('');
+	});
+
+	it('clears an add-item draft after successful submission', async () => {
+		const { createItem } = await import('$lib/stores/items.svelte');
+		render(ListPage, { props: { data: mockData } });
+		const externalElement = document.createElement('button');
+		document.body.appendChild(externalElement);
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+			target: { value: 'Submitted title' },
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+		await waitFor(() => expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({
+			title: 'Submitted title',
+		})));
+		await fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
+			relatedTarget: externalElement,
+		});
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+
+		expect(screen.getByPlaceholderText('Item title')).toHaveValue('');
+		externalElement.remove();
+	});
+
+	it('keeps an add-item draft available after failed submission', async () => {
+		const alert = vi.fn();
+		vi.stubGlobal('alert', alert);
+		const { createItem } = await import('$lib/stores/items.svelte');
+		vi.mocked(createItem).mockRejectedValueOnce(new Error('boom'));
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+			target: { value: 'Retry title' },
+		});
+		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
+			target: { value: 'Retry notes' },
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+		await waitFor(() => expect(alert).toHaveBeenCalledWith('Error: boom'));
+		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Retry title');
+		expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Retry notes');
+		vi.unstubAllGlobals();
+	});
 });
