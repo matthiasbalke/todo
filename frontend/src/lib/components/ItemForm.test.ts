@@ -481,71 +481,6 @@ describe('ItemForm', () => {
 	});
 
 	describe('focusout and cancellation', () => {
-		it('initializes a new-item form from a draft', () => {
-			render(ItemForm, {
-				props: {
-					...defaultProps,
-					categories,
-					users: [{ id: 'u1', name: 'Alice', email: 'alice@example.com' }],
-					draft: {
-						title: 'Draft title',
-						notes: 'Draft notes',
-						dueDate: '2026-06-15',
-						categoryId: 'category-1',
-						assignedUserIds: ['u1'],
-						recurrencePreset: '1_WEEKS'
-					}
-				}
-			});
-
-			expect(screen.getByPlaceholderText('Item title')).toHaveValue('Draft title');
-			expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Draft notes');
-			expect(screen.getByRole('button', { name: 'Due Date' })).toHaveTextContent('Jun 15, 2026');
-			expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Groceries');
-			expect(screen.getByRole('button', { name: 'Alice' })).toHaveClass('bg-blue-100');
-			expect(screen.getByRole('combobox', { name: 'Recurrence' })).toHaveValue('Every week');
-		});
-
-		it('emits cloned draft changes for new-item fields', async () => {
-			const onDraftChange = vi.fn();
-			render(ItemForm, {
-				props: {
-					...defaultProps,
-					categories,
-					users: [{ id: 'u1', name: 'Alice', email: 'alice@example.com' }],
-					onDraftChange
-				}
-			});
-			onDraftChange.mockClear();
-
-			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
-				target: { value: 'Draft item' }
-			});
-			await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
-				target: { value: 'Remember this' }
-			});
-			await fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
-			await fireEvent.click(screen.getByRole('option', { name: 'Household' }));
-			await fireEvent.click(screen.getByRole('button', { name: 'Due Date' }));
-			await fireEvent.click(
-				screen.getByRole('gridcell', { name: 'Monday, June 15, 2026' })
-			);
-			await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
-			await fireEvent.click(screen.getByRole('option', { name: 'Every month' }));
-			await fireEvent.click(screen.getByRole('button', { name: 'Alice' }));
-
-			const lastDraft = onDraftChange.mock.calls.at(-1)?.[0];
-			expect(lastDraft).toEqual({
-				title: 'Draft item',
-				notes: 'Remember this',
-				dueDate: '2026-06-15',
-				categoryId: 'category-2',
-				assignedUserIds: ['u1'],
-				recurrencePreset: '1_MONTHS'
-			});
-			expect(lastDraft.assignedUserIds).not.toBe(onDraftChange.mock.calls.at(-2)?.[0].assignedUserIds);
-		});
-
 		it('does not cancel when mousedown within the form is followed by a null focus target', () => {
 			const oncancel = vi.fn();
 			const { container } = render(ItemForm, { props: { ...defaultProps, oncancel } });
@@ -558,7 +493,7 @@ describe('ItemForm', () => {
 			expect(oncancel).not.toHaveBeenCalled();
 		});
 
-		it('cancels with a focusout reason when focus moves outside the form', () => {
+		it('cancels when focus moves outside the form', () => {
 			const oncancel = vi.fn();
 			render(ItemForm, { props: { ...defaultProps, oncancel } });
 			const externalElement = document.createElement('button');
@@ -569,34 +504,7 @@ describe('ItemForm', () => {
 			});
 
 			expect(oncancel).toHaveBeenCalledOnce();
-			expect(oncancel).toHaveBeenCalledWith({ reason: 'focusout' });
 			externalElement.remove();
-		});
-
-		it('cancels with an explicit reason when Cancel is activated', async () => {
-			const oncancel = vi.fn();
-			render(ItemForm, { props: { ...defaultProps, oncancel } });
-
-			await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-
-			expect(oncancel).toHaveBeenCalledOnce();
-			expect(oncancel).toHaveBeenCalledWith({ reason: 'explicit' });
-		});
-
-		it('keeps draft values visible when new-item submission fails', async () => {
-			const onsubmit = vi.fn().mockRejectedValue(new Error('boom'));
-			render(ItemForm, { props: { ...defaultProps, onsubmit } });
-
-			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
-				target: { value: 'Retry this item' }
-			});
-			await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
-				target: { value: 'Still needed' }
-			});
-			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
-
-			expect(screen.getByPlaceholderText('Item title')).toHaveValue('Retry this item');
-			expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Still needed');
 		});
 
 		it('does not cancel when focus moves between form controls', () => {

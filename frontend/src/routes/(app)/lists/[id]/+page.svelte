@@ -13,7 +13,6 @@
   import { deleteListItemDefaults, loadListItemDefaults, saveListItemDefaults } from '$lib/listItemDefaults';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
   import ItemForm from '$lib/components/ItemForm.svelte';
-  import type { ItemFormCancelContext, ItemFormDraft } from '$lib/components/ItemForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
   import MembersDialog from '$lib/components/MembersDialog.svelte';
   import ListStateSummary from '$lib/components/ListStateSummary.svelte';
@@ -78,7 +77,6 @@
     else saveListCategoryState(data.id, { collapsed: collapsedMap, doneCollapsed: doneCollapsedMap });
   });
   let showAddForm = $state(false);
-  let addItemDraft = $state<ItemFormDraft | null>(null);
   let editingTitle = $state(false);
   let titleEditValue = $state('');
   let showCategoryDialog = $state(false);
@@ -174,6 +172,8 @@
   });
 
   async function handleAddItem(item: TodoItem) {
+    lastCategoryId = item.categoryId ?? null;
+    saveListItemDefaults(data.id, { lastCategoryId });
     try {
       await createItem(data.id, {
         title: item.title,
@@ -185,19 +185,9 @@
         assignedUserIds: item.assignedUserIds,
         sortOrder: item.sortOrder,
       });
-      lastCategoryId = item.categoryId ?? null;
-      saveListItemDefaults(data.id, { lastCategoryId });
-      addItemDraft = null;
     } catch (e) {
       alert(friendlyError(e, 'Failed to add item'));
       throw e;
-    }
-  }
-
-  function handleAddItemCancel(context?: ItemFormCancelContext) {
-    showAddForm = false;
-    if (context?.reason === 'explicit') {
-      addItemDraft = null;
     }
   }
 
@@ -530,9 +520,7 @@
             {categories}
             users={members}
             onsubmit={handleAddItem}
-            oncancel={handleAddItemCancel}
-            draft={addItemDraft}
-            onDraftChange={(draft) => { addItemDraft = draft; }}
+            oncancel={() => { showAddForm = false; }}
             {defaultCategoryId}
           />
         </div>
