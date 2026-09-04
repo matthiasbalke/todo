@@ -13,7 +13,7 @@ const entries = [
 	{
 		id: 'editable', listId: 'l1', categoryId: 'c1', title: 'Editable item', notes: null,
 		done: false, starred: false, dueDate: '2026-06-13', recurrenceRule: null,
-		parentItemId: null, createdByUserId: 'u1', assignedUsers: [{ id: 'u1', displayName: 'User' }],
+		parentItemId: null, createdByUserId: 'u1', updatedByUserId: 'u1', assignedUsers: [{ id: 'u1', displayName: 'User' }],
 		sortOrder: 0, createdAt: '2026-06-01T00:00:00Z', updatedAt: '2026-06-01T00:00:00Z',
 		sourceListName: 'Editable list', sourceListEmoji: null, sourceListRole: 'OWNER' as const,
 		sourceListGroupOrder: 0, sourceListOrder: 0, sourceCategoryName: 'Work',
@@ -22,7 +22,7 @@ const entries = [
 	{
 		id: 'earlier', listId: 'l1', categoryId: 'c1', title: 'Earlier item', notes: null,
 		done: false, starred: true, dueDate: '2026-06-12', recurrenceRule: null,
-		parentItemId: null, createdByUserId: 'u1', assignedUsers: [{ id: 'u1', displayName: 'User' }],
+		parentItemId: null, createdByUserId: 'u1', updatedByUserId: 'u1', assignedUsers: [{ id: 'u1', displayName: 'User' }],
 		sortOrder: 99, createdAt: '2026-06-02T00:00:00Z', updatedAt: '2026-06-02T00:00:00Z',
 		sourceListName: 'Editable list', sourceListEmoji: null, sourceListRole: 'OWNER' as const,
 		sourceListGroupOrder: 0, sourceListOrder: 0, sourceCategoryName: 'Work',
@@ -31,7 +31,7 @@ const entries = [
 	{
 		id: 'viewer', listId: 'l2', categoryId: null, title: 'Viewer item', notes: null,
 		done: true, starred: true, dueDate: '2026-06-12', recurrenceRule: null,
-		parentItemId: null, createdByUserId: 'u2', assignedUsers: [{ id: 'u1', displayName: 'User' }],
+		parentItemId: null, createdByUserId: 'u2', updatedByUserId: 'u2', assignedUsers: [{ id: 'u1', displayName: 'User' }],
 		sortOrder: 0, createdAt: '2026-06-01T00:00:00Z', updatedAt: '2026-06-01T00:00:00Z',
 		sourceListName: 'Viewer list', sourceListEmoji: null, sourceListRole: 'VIEWER' as const,
 		sourceListGroupOrder: 1, sourceListOrder: 0, sourceCategoryName: null,

@@ -11,6 +11,8 @@ A personal/household todo app that covers three use cases in one place:
 
 Accessible from any browser and installable as a PWA on iPhone. Must be performant with >100 lists and lists containing hundreds of items.
 
+User-facing display text is English until a dedicated localization feature is introduced. Localization is not currently planned. Locale-sensitive values such as dates and times should use English display words while still respecting user preferences such as timezone where applicable.
+
 ---
 
 ## Tech Stack

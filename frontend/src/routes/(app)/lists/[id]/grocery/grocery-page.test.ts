@@ -14,12 +14,14 @@ const listStoreState = vi.hoisted(() => ({
 		starred: boolean;
 		dueDate: string | null;
 		assignedUserIds: string[];
-		recurrenceRule: null;
-		parentItemId: string | null;
-		createdByUserId: string | null;
-		sortOrder: number;
-		createdAt: string;
-	}[],
+			recurrenceRule: null;
+			parentItemId: string | null;
+			createdByUserId: string | null;
+			updatedByUserId: string | null;
+			sortOrder: number;
+			createdAt: string;
+			updatedAt: string;
+		}[],
 }));
 
 vi.mock('$lib/stores/items.svelte', () => ({

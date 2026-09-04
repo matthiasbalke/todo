@@ -21,8 +21,10 @@ export function dtoToItem(dto: ItemDto): TodoItem {
 			: null,
 		parentItemId: dto.parentItemId,
 		createdByUserId: dto.createdByUserId,
+		updatedByUserId: dto.updatedByUserId,
 		sortOrder: dto.sortOrder,
 		createdAt: dto.createdAt,
+		updatedAt: dto.updatedAt,
 	};
 }
 

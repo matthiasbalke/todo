@@ -135,6 +135,9 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
             jsonPath("$.sortOrder") { value(5) }
             jsonPath("$.assignedUserIds") { isArray() }
             jsonPath("$.createdByUserId") { value(owner.id.toString()) }
+            jsonPath("$.updatedByUserId") { value(owner.id.toString()) }
+            jsonPath("$.createdAt") { exists() }
+            jsonPath("$.updatedAt") { exists() }
         }
     }
 
@@ -188,6 +191,27 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
             jsonPath("$.title") { value("Updated") }
             jsonPath("$.notes") { value("New note") }
             jsonPath("$.sortOrder") { value(10) }
+        }
+    }
+
+    @Test
+    fun `PUT items - records updating user without changing creator`() {
+        val owner = createUser()
+        val editor = createUser()
+        val listId = createListAsUser(owner)
+        addMemberToList(listId, owner, editor.email, "EDITOR")
+        val itemId = createItemInList(listId, owner, "Original")
+
+        mockMvc.put("/api/lists/$listId/items/$itemId") {
+            header("Authorization", bearerHeader(editor))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"title":"Updated by editor"}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.createdByUserId") { value(owner.id.toString()) }
+            jsonPath("$.updatedByUserId") { value(editor.id.toString()) }
+            jsonPath("$.createdAt") { exists() }
+            jsonPath("$.updatedAt") { exists() }
         }
     }
 
@@ -273,6 +297,7 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
         }.andExpect {
             status { isOk() }
             jsonPath("$.done") { value(true) }
+            jsonPath("$.updatedByUserId") { value(owner.id.toString()) }
         }
 
         mockMvc.patch("/api/lists/$listId/items/$itemId/done") {
@@ -394,6 +419,10 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
         assert(orderById[item3.toString()] == 0) { "item3 should have sortOrder 0" }
         assert(orderById[item1.toString()] == 1) { "item1 should have sortOrder 1" }
         assert(orderById[item2.toString()] == 2) { "item2 should have sortOrder 2" }
+        val updaterById = items.associate { it["id"].asString() to it["updatedByUserId"].asString() }
+        assert(updaterById[item3.toString()] == owner.id.toString()) { "item3 should record updater" }
+        assert(updaterById[item1.toString()] == owner.id.toString()) { "item1 should record updater" }
+        assert(updaterById[item2.toString()] == owner.id.toString()) { "item2 should record updater" }
     }
 
     @Test
@@ -438,6 +467,26 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
         }
     }
 
+    @Test
+    fun `PATCH order - records updating user`() {
+        val owner = createUser()
+        val editor = createUser()
+        val listId = createListAsUser(owner)
+        addMemberToList(listId, owner, editor.email, "EDITOR")
+        val itemId = createItemInList(listId, owner)
+
+        mockMvc.patch("/api/lists/$listId/items/$itemId/order") {
+            header("Authorization", bearerHeader(editor))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"sortOrder":42}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.sortOrder") { value(42) }
+            jsonPath("$.createdByUserId") { value(owner.id.toString()) }
+            jsonPath("$.updatedByUserId") { value(editor.id.toString()) }
+        }
+    }
+
     // ─── PATCH /starred ───────────────────────────────────────────────────────
 
     @Test
@@ -451,6 +500,7 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
         }.andExpect {
             status { isOk() }
             jsonPath("$.starred") { value(true) }
+            jsonPath("$.updatedByUserId") { value(owner.id.toString()) }
         }
 
         mockMvc.patch("/api/lists/$listId/items/$itemId/starred") {
