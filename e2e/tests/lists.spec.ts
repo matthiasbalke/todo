@@ -92,6 +92,19 @@ test.describe('List detail — add item form', () => {
 
 		await expect(page.getByText('Test Item E2E')).toBeVisible();
 	});
+
+	test('preserves the draft when focus loss minimizes the form', async ({ page }) => {
+		await page.getByRole('button', { name: '+ Add item' }).click();
+		await page.getByPlaceholder('Item title').fill('Draft Item E2E');
+		await page.getByPlaceholder('Notes (optional)').fill('Draft note E2E');
+		await page.getByRole('button', { name: 'List options' }).click();
+
+		await expect(page.getByPlaceholder('Item title')).not.toBeVisible();
+		await page.getByRole('button', { name: '+ Add item' }).click();
+
+		await expect(page.getByPlaceholder('Item title')).toHaveValue('Draft Item E2E');
+		await expect(page.getByPlaceholder('Notes (optional)')).toHaveValue('Draft note E2E');
+	});
 });
 
 // ---------------------------------------------------------------------------
