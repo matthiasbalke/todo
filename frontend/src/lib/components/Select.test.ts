@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Select from './Select.svelte';
+import SelectSnippetFixture from './test/SelectSnippetFixture.svelte';
 import SelectTransformedFixture from './test/SelectTransformedFixture.svelte';
 
 afterEach(cleanup);
@@ -88,6 +89,25 @@ describe('Select Component', () => {
 
 			expect(trigger).toHaveValue('Household');
 			expect(onSelect).toHaveBeenCalledWith('category-2');
+		});
+
+		it('renders optional snippet content while preserving label values', async () => {
+			render(SelectSnippetFixture);
+
+			const trigger = screen.getByRole('combobox', { name: 'Snippet select' });
+			expect(trigger).toHaveValue('Groceries');
+			expect(screen.getByTestId('selected-prefix')).toHaveTextContent('category-1');
+
+			await fireEvent.click(trigger);
+			expect(screen.getByRole('option', { name: 'Groceries' })).toBeInTheDocument();
+			expect(screen.getByTestId('option-content-category-2')).toHaveTextContent('Household');
+
+			await fireEvent.input(trigger, { target: { value: 'house' } });
+			expect(screen.queryByTestId('selected-prefix')).not.toBeInTheDocument();
+			await fireEvent.keyDown(trigger, { key: 'Enter' });
+
+			expect(trigger).toHaveValue('Household');
+			expect(screen.getByTestId('selected-prefix')).toHaveTextContent('category-2');
 		});
 
 		it('is disabled when disabled prop is true', () => {

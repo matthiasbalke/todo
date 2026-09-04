@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Category, TodoItem } from '$lib/mock-data';
 import ItemForm from './ItemForm.svelte';
@@ -45,7 +45,7 @@ function itemWithRecurrence(
 }
 
 const categories: Category[] = [
-	{ id: 'category-1', listId: 'list-1', name: 'Groceries', color: null, sortOrder: 1 },
+	{ id: 'category-1', listId: 'list-1', name: 'Groceries', color: '#60a5fa', sortOrder: 1 },
 	{ id: 'category-2', listId: 'list-1', name: 'Household', color: null, sortOrder: 2 }
 ];
 
@@ -62,7 +62,7 @@ describe('ItemForm', () => {
 	});
 
 	describe('category', () => {
-		it('renders the shared Select with category labels instead of a native category select', async () => {
+		it('renders CategorySelect with category labels and color state instead of a native category select', async () => {
 			const { container } = render(ItemForm, {
 				props: { ...defaultProps, categories }
 			});
@@ -72,9 +72,20 @@ describe('ItemForm', () => {
 			expect(container.querySelector('select#categoryId')).not.toBeInTheDocument();
 
 			await fireEvent.click(trigger);
-			expect(screen.getByRole('option', { name: 'Uncategorized' })).toBeInTheDocument();
-			expect(screen.getByRole('option', { name: 'Groceries' })).toBeInTheDocument();
-			expect(screen.getByRole('option', { name: 'Household' })).toBeInTheDocument();
+			const uncategorized = screen.getByRole('option', { name: 'Uncategorized' });
+			const groceries = screen.getByRole('option', { name: 'Groceries' });
+			const household = screen.getByRole('option', { name: 'Household' });
+			expect(within(uncategorized).getByTestId('category-select-swatch-uncategorized')).toHaveClass(
+				'h-3',
+				'w-3'
+			);
+			expect(within(groceries).getByTestId('category-select-swatch-category-1')).toHaveClass(
+				'rounded-full'
+			);
+			expect(within(household).getByTestId('category-select-swatch-category-2')).toHaveClass(
+				'h-3',
+				'w-3'
+			);
 		});
 
 		it.each([

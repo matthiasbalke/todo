@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack, onMount } from 'svelte';
   import type { TodoItem, Category, User, RecurrenceRule } from '$lib/mock-data';
+  import CategorySelect from './CategorySelect.svelte';
   import DatePicker from './DatePicker.svelte';
   import Select from './Select.svelte';
   import Textarea from './Textarea.svelte';
@@ -41,26 +42,19 @@
   let title = $state(untrack(() => item?.title ?? ''));
   let notes = $state(untrack(() => item?.notes ?? ''));
   let dueDate = $state<string | null>(untrack(() => item?.dueDate ?? null));
-  let categoryId = $state<string>(untrack(() => item?.categoryId ?? getEffectiveDefaultCategoryId()));
+  let categoryId = $state<string | null>(untrack(() => item?.categoryId ?? getEffectiveDefaultCategoryId()));
   let assignedUserIds = $state(new Set<string>(untrack(() => item?.assignedUserIds ?? [])));
   let recurrencePreset = $state<string>(untrack(() => getInitialRecurrencePreset(item?.recurrenceRule ?? null)));
   let titleInput = $state<HTMLInputElement | null>(null);
   let submitting = $state(false);
   let ignoreNextFocusOut = false;
 
-  const categoryOptions = $derived(['', ...categories.map((category) => category.id)]);
-
   onMount(() => titleInput?.focus());
 
-  function getCategoryLabel(id: string): string {
-    if (!id) return 'Uncategorized';
-    return categories.find((category) => category.id === id)?.name ?? id;
-  }
-
-  function getEffectiveDefaultCategoryId(): string {
+  function getEffectiveDefaultCategoryId(): string | null {
     return defaultCategoryId && categories.some((category) => category.id === defaultCategoryId)
       ? defaultCategoryId
-      : '';
+      : null;
   }
 
   function getRecurrenceLabel(preset: string): string {
@@ -88,7 +82,7 @@
       const submitted: TodoItem = {
         id: item?.id ?? (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)),
         listId,
-        categoryId: categoryId || null,
+        categoryId,
         title,
         notes: notes || null,
         done: item?.done ?? false,
@@ -142,13 +136,11 @@
     />
   </div>
 
-    <Select
-      options={categoryOptions}
-      selected={categoryId}
+    <CategorySelect
+      categories={categories}
+      bind:selectedCategoryId={categoryId}
       label="Category"
       labelId="categoryId"
-      getOptionLabel={getCategoryLabel}
-      onSelect={(value) => { categoryId = value; }}
     />
 
     <DatePicker bind:value={dueDate} label="Due Date" />
