@@ -159,9 +159,32 @@ A custom single-date calendar popover for nullable ISO calendar dates.
 
 Select renders an input-backed combobox and listbox options with unique IDs, type-to-find filtering, keyboard navigation, validation, and typed option values. Search text filters by the displayed option label and remains transient; selecting still emits only an option from the provided list.
 
+Consumers can provide optional Svelte snippet props for advanced selected-value and option-content rendering. `getOptionLabel` remains the canonical source for input text, filtering, and accessible option labels even when snippets render additional visual content.
+
 The trigger and listbox share a trigger-local positioning wrapper. An open listbox is placed directly below the trigger at the same width, including inside transformed dialogs such as MembersDialog. Consumers must not provide positioning offsets or listbox visual styles.
 
 Select currently does not perform viewport collision detection, upward opening, or edge shifting. Those behaviors require a separate popover positioning capability if a future overflow-constrained consumer needs them.
+
+### CategorySelect
+
+CategorySelect composes `Select` for list category selection. It prepends `Uncategorized`, exposes selected real categories as category IDs, exposes `Uncategorized` as `null`, and uses the shared Select behavior for filtering, keyboard navigation, focus handling, and listbox semantics.
+
+- `categories` (`Category[]`, default: `[]`): available categories with IDs, names, and optional colors
+- `selectedCategoryId` (`string | null`, bindable, default: `null`): selected category ID; `null` represents `Uncategorized`
+- `label` (string, default: `'Category'`): visible Select label
+- `placeholder` (string, default: `'Select a category'`): placeholder text
+- `disabled` (boolean, default: false): disable selection
+- `onSelect` (`(categoryId: string | null) => void`, optional): receives the selected category ID or `null`
+
+```svelte
+<CategorySelect
+	categories={categories}
+	bind:selectedCategoryId={categoryId}
+	label="Category"
+/>
+```
+
+Colored real categories display a circular color indicator before their names. Colorless real categories and `Uncategorized` reserve the same leading swatch space without displaying a dot, so all labels stay aligned.
 
 ### TimezonePicker
 
