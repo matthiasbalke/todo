@@ -15,6 +15,8 @@
   import ItemForm from '$lib/components/ItemForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
   import MembersDialog from '$lib/components/MembersDialog.svelte';
+  import ListStateSummary from '$lib/components/ListStateSummary.svelte';
+  import type { FilterChip } from '$lib/components/ListStateSummary.svelte';
   import { getCurrentUser } from '$lib/stores/auth.svelte';
   import { connectToList, disconnectFromList } from '$lib/stores/sse.svelte';
   import { getMembers } from '$lib/api/lists';
@@ -45,6 +47,7 @@
 
   const _savedPrefs = untrack(() => loadListPrefs(data.id));
   untrack(() => setHideDone(data.id, _savedPrefs?.hideDone ?? false));
+  let hideDone = $state(untrack(() => isHideDone(data.id)));
   const _savedCategoryState = untrack(() => loadListCategoryState(data.id));
   const _savedItemDefaults = untrack(() => loadListItemDefaults(data.id));
   let lastCategoryId = $state<string | null>(_savedItemDefaults?.lastCategoryId ?? null);
@@ -60,7 +63,7 @@
   let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => list?.defaultSortDirection ?? 'ASC'));
 
   $effect(() => {
-    const prefs = { sortField, sortDirection, ...filters, hideDone: isHideDone(data.id) };
+    const prefs = { sortField, sortDirection, ...filters, hideDone };
     const isDefault =
       prefs.sortField === (list?.defaultSortField ?? 'MANUAL') &&
       prefs.sortDirection === (list?.defaultSortDirection ?? 'ASC') &&
@@ -111,7 +114,8 @@
   const activeFilterCount = $derived(
     (filters.starredOnly ? 1 : 0) +
     (filters.hideFuture || filters.hideUndated ? 1 : 0) +
-    (filters.assigneeFilter !== 'all' ? 1 : 0)
+    (filters.assigneeFilter !== 'all' ? 1 : 0) +
+    (hideDone ? 1 : 0)
   );
 
   const sortFields: { value: SortField; label: string }[] = [
@@ -126,6 +130,34 @@
   const filtered = $derived(applyFilters(allItems, filters, getCurrentUser()?.id));
   const sorted = $derived(applySort(filtered, sortField, sortDirection));
   const grouped = $derived(groupByCategory(sorted, categories));
+  const visibleItemCount = $derived(
+    hideDone ? filtered.filter((item) => !item.done).length : filtered.length
+  );
+  const sortLabel = $derived(`${sortFields.find(f => f.value === sortField)?.label} ${sortDirection === 'ASC' ? '↑' : '↓'}`);
+  const activeFilterChips = $derived.by((): FilterChip[] => {
+    const chips: FilterChip[] = [];
+    if (filters.starredOnly) {
+      chips.push({ id: 'starred', label: 'Starred only', onreset: () => { filters = { ...filters, starredOnly: false }; } });
+    }
+    if (filters.hideFuture) {
+      chips.push({ id: 'hideFuture', label: 'Hide future', onreset: () => { filters = { ...filters, hideFuture: false }; } });
+    } else if (filters.hideUndated) {
+      chips.push({ id: 'hideUndated', label: 'Has due date', onreset: () => { filters = { ...filters, hideUndated: false }; } });
+    }
+    if (filters.assigneeFilter !== 'all') {
+      const assigneeLabels: Record<Filters['assigneeFilter'], string> = {
+        all: 'All assignees',
+        none: 'Not assigned',
+        me: 'Assigned to me',
+        others: 'Assigned to others',
+      };
+      chips.push({ id: 'assignee', label: assigneeLabels[filters.assigneeFilter], onreset: () => { filters = { ...filters, assigneeFilter: 'all' }; } });
+    }
+    if (hideDone) {
+      chips.push({ id: 'hideDone', label: 'Hide checked', onreset: () => { updateHideDone(false); } });
+    }
+    return chips;
+  });
   const defaultCategoryId = $derived(
     categoriesLoaded && lastCategoryId && categories.some((category) => category.id === lastCategoryId)
       ? lastCategoryId
@@ -193,6 +225,11 @@
       alert(friendlyError(e, 'Failed to duplicate list'));
       duplicating = false;
     }
+  }
+
+  function updateHideDone(value: boolean) {
+    hideDone = value;
+    setHideDone(data.id, value);
   }
 </script>
 
@@ -328,6 +365,27 @@
                       {#if filters.assigneeFilter === opt.value}<span>✓</span>{/if}
                     </Button>
                   {/each}
+                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Checked</p>
+                  <Button tone="neutral" appearance="bare"
+                    size="menu-indented"
+                    align="between"
+                    weight="normal"
+                    selected={!hideDone}
+                    onclick={() => { updateHideDone(false); }}
+                  >
+                    Show checked
+                    {#if !hideDone}<span>✓</span>{/if}
+                  </Button>
+                  <Button tone="neutral" appearance="bare"
+                    size="menu-indented"
+                    align="between"
+                    weight="normal"
+                    selected={hideDone}
+                    onclick={() => { updateHideDone(true); }}
+                  >
+                    Hide checked
+                    {#if hideDone}<span>✓</span>{/if}
+                  </Button>
                 </div>
               {/if}
             </div>
@@ -369,18 +427,6 @@
                 </div>
               {/if}
             </div>
-            <div class="border-t border-gray-100 mt-1 pt-1">
-              <Button tone="neutral" appearance="bare"
-                size="menu"
-                align="between"
-                weight="normal"
-                selected={isHideDone(data.id)}
-                onclick={() => { setHideDone(data.id, !isHideDone(data.id)); menuOpen = false; }}
-              >
-                <span>Hide checked</span>
-                {#if isHideDone(data.id)}<span>✓</span>{/if}
-              </Button>
-            </div>
             {#if capabilities.canDuplicateList || capabilities.canEditList}
               <div class="border-t border-gray-100 mt-1 pt-1">
                 {#if capabilities.canDuplicateList}
@@ -412,9 +458,16 @@
       </div>
   </div>
 
-  <div class="flex justify-end mb-4">
-    <span class="text-sm text-gray-400">{filtered.length} items</span>
-  </div>
+  <ListStateSummary
+    filters={activeFilterChips}
+    {sortLabel}
+    sortOptions={sortFields}
+    {sortField}
+    {sortDirection}
+    visibleCount={visibleItemCount}
+    onSortFieldChange={(value) => { sortField = value as SortField; }}
+    onSortDirectionChange={(value) => { sortDirection = value; }}
+  />
 
   <div class="space-y-1">
     {#each [...grouped] as [key, { category, items }]}
@@ -424,7 +477,7 @@
         {items}
         allCategories={categories}
         users={members}
-        hideDone={isHideDone(data.id)}
+        {hideDone}
         collapsed={collapsedMap[key ?? '__null__'] ?? false}
         doneCollapsed={doneCollapsedMap[key ?? '__null__'] ?? true}
         listId={data.id}

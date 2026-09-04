@@ -13,6 +13,7 @@ export const primitiveExclusions = [
 	'lib/components/DatePicker.svelte',
 	'lib/components/EditableLabel.svelte',
 	'lib/components/EmailInput.svelte',
+	'lib/components/ListStateSummary.svelte',
 	'lib/components/Select.svelte',
 	'lib/components/StarToggle.svelte',
 	'lib/components/Textarea.svelte',
