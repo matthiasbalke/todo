@@ -15,12 +15,14 @@ const listStoreState = vi.hoisted(() => ({
 		starred: boolean;
 		dueDate: string | null;
 		assignedUserIds: string[];
-		recurrenceRule: null;
-		parentItemId: string | null;
-		createdByUserId: string | null;
-		sortOrder: number;
-		createdAt: string;
-	}[],
+			recurrenceRule: null;
+			parentItemId: string | null;
+			createdByUserId: string | null;
+			updatedByUserId: string | null;
+			sortOrder: number;
+			createdAt: string;
+			updatedAt: string;
+		}[],
 }));
 
 const listItemDefaultsMocks = vi.hoisted(() => ({
@@ -207,12 +209,14 @@ describe('ListPage menu presentation', () => {
 				starred: false,
 				dueDate: null,
 				assignedUserIds: [],
-				recurrenceRule: null,
-				parentItemId: null,
-				createdByUserId: 'user-1',
-				sortOrder: 0,
-				createdAt: '2026-01-01T00:00:00Z',
-			},
+					recurrenceRule: null,
+					parentItemId: null,
+					createdByUserId: 'user-1',
+					updatedByUserId: 'user-1',
+					sortOrder: 0,
+					createdAt: '2026-01-01T00:00:00Z',
+					updatedAt: '2026-01-01T00:00:00Z',
+				},
 		];
 
 		const { container } = render(ListPage, { props: { data: mockData } });

@@ -47,6 +47,9 @@ class TodoItem(
     @Column(name = "created_by_user_id")
     val createdByUserId: UUID? = null,
 
+    @Column(name = "updated_by_user_id")
+    var updatedByUserId: UUID? = null,
+
     @Column(name = "sort_order", nullable = false)
     var sortOrder: Int = 0,
 

@@ -107,12 +107,13 @@ describe('deleteCategory', () => {
 			starred: false,
 			dueDate: null,
 			assignedUserIds: [],
-			recurrenceRule: null,
-			parentItemId: null,
-			createdByUserId: 'user-1',
-			sortOrder: 0,
-			createdAt: '2026-01-01T00:00:00Z',
-			updatedAt: '2026-01-01T00:00:00Z',
+				recurrenceRule: null,
+				parentItemId: null,
+				createdByUserId: 'user-1',
+				updatedByUserId: 'user-1',
+				sortOrder: 0,
+				createdAt: '2026-01-01T00:00:00Z',
+				updatedAt: '2026-01-01T00:00:00Z',
 		}));
 
 		await deleteCategory('list-1', 'cat-1');

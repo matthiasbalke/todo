@@ -254,6 +254,7 @@ class ListService(
                 recurrenceRule = sourceItem.recurrenceRule,
                 parentItemId = null,
                 createdByUserId = sourceItem.createdByUserId,
+                updatedByUserId = sourceItem.updatedByUserId,
                 sortOrder = sourceItem.sortOrder,
                 createdAt = sourceItem.createdAt,
                 updatedAt = sourceItem.updatedAt,

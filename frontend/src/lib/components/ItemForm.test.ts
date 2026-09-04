@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Category, TodoItem } from '$lib/mock-data';
+import type { Category, TodoItem, User } from '$lib/mock-data';
+import { setProfile } from '$lib/stores/preferences.svelte';
 import ItemForm from './ItemForm.svelte';
 
 const defaultProps = {
@@ -25,8 +26,10 @@ function itemWithDueDate(dueDate: string | null): TodoItem {
 		recurrenceRule: null,
 		parentItemId: null,
 		createdByUserId: null,
+		updatedByUserId: null,
 		sortOrder: 1,
-		createdAt: '2026-06-01'
+		createdAt: '2026-06-01T00:00:00Z',
+		updatedAt: '2026-06-01T00:00:00Z'
 	};
 }
 
@@ -53,6 +56,14 @@ describe('ItemForm', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date(2026, 5, 9, 12));
+		setProfile({
+			id: 'user-1',
+			email: 'alice@example.com',
+			displayName: 'Alice',
+			timeZone: 'UTC',
+			timeZoneInitialized: true,
+			todayViewEnabled: true
+		});
 	});
 
 	afterEach(() => {
@@ -62,6 +73,31 @@ describe('ItemForm', () => {
 	});
 
 	describe('category', () => {
+		it('renders audit rows below the notes field for existing items', () => {
+			const users: User[] = [{ id: 'user-1', name: 'Alice', email: 'alice@example.com' }];
+			const item = {
+				...itemWithDueDate(null),
+				notes: 'Existing note',
+				createdByUserId: 'missing-user-id',
+				updatedByUserId: 'user-1',
+				createdAt: '2026-01-01T10:01:02Z',
+				updatedAt: '2026-02-01T15:31:02Z'
+			};
+			const { container } = render(ItemForm, {
+				props: { ...defaultProps, item, users }
+			});
+
+			const notesField = screen.getByRole('textbox', { name: 'Notes' });
+			const audit = screen.getByTestId('item-audit-metadata');
+			expect(audit).toHaveTextContent(/Sun\. 1\. Feb 26 at 15:31\s*updated by Alice/);
+			expect(audit).toHaveTextContent(/Thu\. 1\. Jan 26 at 10:01\s*created by Deleted user/);
+			expect(audit).not.toHaveTextContent('missing-user-id');
+			expect(audit).toHaveClass('text-center');
+			expect(audit.querySelectorAll('p.grid-cols-\\[3\\.75rem_1fr\\]')).toHaveLength(0);
+			expect(notesField.compareDocumentPosition(audit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+			expect(container.textContent).toMatch(/Sun\. 1\. Feb 26 at 15:31\s*updated by Alice\s*Thu\. 1\. Jan 26 at 10:01\s*created by Deleted user/);
+		});
+
 		it('renders CategorySelect with category labels and color state instead of a native category select', async () => {
 			const { container } = render(ItemForm, {
 				props: { ...defaultProps, categories }

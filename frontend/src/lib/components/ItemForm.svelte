@@ -19,6 +19,7 @@
   import type { TodoItem, Category, User, RecurrenceRule } from '$lib/mock-data';
   import CategorySelect from './CategorySelect.svelte';
   import DatePicker from './DatePicker.svelte';
+  import ItemAuditMetadata from './ItemAuditMetadata.svelte';
   import Select from './Select.svelte';
   import Textarea from './Textarea.svelte';
   import Button from './Button.svelte';
@@ -153,8 +154,10 @@
         recurrenceRule: parseRecurrencePreset(recurrencePreset),
         parentItemId: item?.parentItemId ?? null,
         createdByUserId: item?.createdByUserId ?? null,
+        updatedByUserId: item?.updatedByUserId ?? null,
         sortOrder: item?.sortOrder ?? 999,
-        createdAt: item?.createdAt ?? now
+        createdAt: item?.createdAt ?? now,
+        updatedAt: item?.updatedAt ?? now
       };
       await onsubmit(submitted);
       if (isNew) {
@@ -240,6 +243,10 @@
     rows={2}
     resize="none"
   />
+
+  {#if item}
+    <ItemAuditMetadata {item} {users} />
+  {/if}
 
   <div class="flex justify-end gap-2 pt-1">
     <Button

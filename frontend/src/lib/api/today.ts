@@ -13,6 +13,7 @@ export interface TodayItemDto {
 	recurrenceRule: RecurrenceRuleDto | null;
 	parentItemId: string | null;
 	createdByUserId: string | null;
+	updatedByUserId: string | null;
 	assignedUsers: { id: string; displayName: string }[];
 	sortOrder: number;
 	createdAt: string;

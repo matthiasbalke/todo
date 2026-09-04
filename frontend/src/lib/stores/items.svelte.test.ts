@@ -30,6 +30,7 @@ function makeDto(id: string, categoryId: string | null = null): ItemDto {
 		recurrenceRule: null,
 		parentItemId: null,
 		createdByUserId: 'user-1',
+		updatedByUserId: 'user-1',
 		sortOrder: 0,
 		createdAt: '2026-01-01T00:00:00Z',
 		updatedAt: '2026-01-01T00:00:00Z',

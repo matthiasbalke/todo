@@ -24,12 +24,14 @@ const baseItem: TodoItem = {
   dueDate: null,
   categoryId: null,
   assignedUserIds: [],
-  recurrenceRule: null,
-  parentItemId: null,
-  createdByUserId: null,
-  sortOrder: 1,
-  createdAt: '2024-01-01',
-};
+	  recurrenceRule: null,
+	  parentItemId: null,
+	  createdByUserId: null,
+	  updatedByUserId: null,
+	  sortOrder: 1,
+	  createdAt: '2024-01-01T00:00:00Z',
+	  updatedAt: '2024-01-01T00:00:00Z',
+	};
 
 describe('ItemCard avatar alignment', () => {
   it('avatar icons should not use self-center (parent items-center handles alignment)', () => {

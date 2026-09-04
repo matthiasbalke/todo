@@ -54,6 +54,7 @@ data class ItemPayload(
     val recurrenceRule: RecurrenceRulePayload?,
     val parentItemId: UUID?,
     val createdByUserId: UUID?,
+    val updatedByUserId: UUID?,
     val assignedUserIds: List<UUID>,
     val sortOrder: Int,
     val createdAt: Instant,

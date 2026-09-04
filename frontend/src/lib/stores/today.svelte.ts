@@ -30,12 +30,14 @@ export function todayDtoToItem(dto: TodayItemDto): TodoItem {
 		dueDate: dto.dueDate,
 		recurrenceRule: dto.recurrenceRule
 			? { intervalUnit: dto.recurrenceRule.intervalUnit as IntervalUnit, intervalValue: dto.recurrenceRule.intervalValue }
-			: null,
+		: null,
 		parentItemId: dto.parentItemId,
 		createdByUserId: dto.createdByUserId,
+		updatedByUserId: dto.updatedByUserId,
 		assignedUserIds: dto.assignedUsers.map((user) => user.id),
 		sortOrder: dto.sortOrder,
 		createdAt: dto.createdAt,
+		updatedAt: dto.updatedAt,
 	};
 }
 

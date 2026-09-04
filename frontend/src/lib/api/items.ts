@@ -17,6 +17,7 @@ export interface ItemDto {
 	recurrenceRule: RecurrenceRuleDto | null;
 	parentItemId: string | null;
 	createdByUserId: string | null;
+	updatedByUserId: string | null;
 	assignedUserIds: string[];
 	sortOrder: number;
 	createdAt: string;

@@ -75,6 +75,7 @@ class ItemService(
                 dueDate = req.dueDate,
                 recurrenceRule = req.recurrenceRule,
                 createdByUserId = userId,
+                updatedByUserId = userId,
                 sortOrder = req.sortOrder,
             )
         )
@@ -95,6 +96,7 @@ class ItemService(
         item.recurrenceRule = req.recurrenceRule
         item.sortOrder = req.sortOrder
         item.updatedAt = Instant.now()
+        item.updatedByUserId = userId
         itemRepository.save(item)
         itemAssignmentRepository.deleteAllByIdItemId(itemId)
         saveAssignments(itemId, req.assignedUserIds)
@@ -117,6 +119,7 @@ class ItemService(
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found")
         item.done = !item.done
         item.updatedAt = Instant.now()
+        item.updatedByUserId = userId
         itemRepository.save(item)
 
         if (item.done && item.recurrenceRule != null) {
@@ -138,6 +141,7 @@ class ItemService(
                     recurrenceRule = item.recurrenceRule,
                     parentItemId = itemId,
                     createdByUserId = item.createdByUserId,
+                    updatedByUserId = userId,
                     dueDate = nextDue,
                     sortOrder = item.sortOrder,
                 )
@@ -156,6 +160,7 @@ class ItemService(
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found")
         item.starred = !item.starred
         item.updatedAt = Instant.now()
+        item.updatedByUserId = userId
         itemRepository.save(item)
         return item.withAssignees().also { ssePublisher.publish(ListEvent.ItemUpdated(listId, it.toPayload())) }
     }
@@ -167,6 +172,7 @@ class ItemService(
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found")
         item.sortOrder = sortOrder
         item.updatedAt = Instant.now()
+        item.updatedByUserId = userId
         itemRepository.save(item)
         return item.withAssignees().also { ssePublisher.publish(ListEvent.ItemUpdated(listId, it.toPayload())) }
     }
@@ -181,6 +187,7 @@ class ItemService(
         items.forEach { item ->
             item.sortOrder = orderMap[item.id] ?: item.sortOrder
             item.updatedAt = now
+            item.updatedByUserId = userId
         }
         itemRepository.saveAll(items)
         items.forEach { item ->
@@ -212,6 +219,7 @@ class ItemService(
         recurrenceRule = item.recurrenceRule?.let { RecurrenceRulePayload(it.intervalUnit.name, it.intervalValue) },
         parentItemId = item.parentItemId,
         createdByUserId = item.createdByUserId,
+        updatedByUserId = item.updatedByUserId,
         assignedUserIds = assignedUserIds,
         sortOrder = item.sortOrder,
         createdAt = item.createdAt,

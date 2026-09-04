@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Category, TodoItem, User } from '$lib/mock-data';
   import DueDateChip from './DueDateChip.svelte';
+  import ItemAuditMetadata from './ItemAuditMetadata.svelte';
   import RecurrenceIndicator from './RecurrenceIndicator.svelte';
 
   let { item, categories, users }: {
@@ -52,4 +53,6 @@
     <p class="text-xs font-medium text-gray-500">Notes</p>
     <p class="text-sm text-gray-900 whitespace-pre-wrap">{item.notes ?? 'None'}</p>
   </div>
+
+  <ItemAuditMetadata {item} {users} />
 </article>

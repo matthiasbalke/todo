@@ -16,6 +16,8 @@ describe('applyFilters — assigneeFilter', () => {
     createdAt: '2024-01-01T00:00:00Z', sortOrder: 0,
     categoryId: null, dueDate: null, notes: null, recurrenceRule: null, parentItemId: null,
     createdByUserId: null,
+    updatedByUserId: null,
+    updatedAt: '2024-01-01T00:00:00Z',
   };
   const noAssignees: TodoItem = { ...base, id: 'a', assignedUserIds: [] };
   const assignedToMe: TodoItem = { ...base, id: 'b', assignedUserIds: ['user1'] };
@@ -68,6 +70,8 @@ describe('groupByCategory', () => {
     recurrenceRule: null,
     parentItemId: null,
     createdByUserId: null,
+    updatedByUserId: null,
+    updatedAt: '2024-01-01T00:00:00Z',
     assignedUserIds: [],
   };
 

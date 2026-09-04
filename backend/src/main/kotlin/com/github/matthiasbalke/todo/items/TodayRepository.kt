@@ -20,6 +20,7 @@ interface TodayItemProjection {
     val recurrenceIntervalValue: Int?
     val parentItemId: UUID?
     val createdByUserId: UUID?
+    val updatedByUserId: UUID?
     val sortOrder: Int
     val createdAt: Instant
     val updatedAt: Instant
@@ -48,6 +49,7 @@ interface TodayRepository : Repository<TodoItem, UUID> {
                    CAST(i.recurrence_rule ->> 'intervalValue' AS integer) AS "recurrenceIntervalValue",
                    i.parent_item_id AS "parentItemId",
                    i.created_by_user_id AS "createdByUserId",
+                   i.updated_by_user_id AS "updatedByUserId",
                    i.sort_order AS "sortOrder",
                    i.created_at AS "createdAt",
                    i.updated_at AS "updatedAt",

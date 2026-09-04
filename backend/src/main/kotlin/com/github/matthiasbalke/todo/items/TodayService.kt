@@ -54,6 +54,7 @@ class TodayService(
                     },
                     parentItemId = row.parentItemId,
                     createdByUserId = row.createdByUserId,
+                    updatedByUserId = row.updatedByUserId,
                     sortOrder = row.sortOrder,
                     createdAt = row.createdAt,
                     updatedAt = row.updatedAt,

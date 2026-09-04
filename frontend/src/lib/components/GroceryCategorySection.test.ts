@@ -34,8 +34,10 @@ const baseItem: TodoItem = {
 	recurrenceRule: null,
 	parentItemId: null,
 	createdByUserId: null,
+	updatedByUserId: null,
 	sortOrder: 0,
-	createdAt: '2026-06-10'
+	createdAt: '2026-06-10T00:00:00Z',
+	updatedAt: '2026-06-10T00:00:00Z'
 };
 
 afterEach(cleanup);
