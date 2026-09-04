@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { goto } from '$app/navigation';
-  import { getItems, loadItemsForList, createItem } from '$lib/stores/items.svelte';
+  import { getItems, loadItemsForList, createItem, deleteFinishedItems } from '$lib/stores/items.svelte';
   import { getList, updateList, deleteList, duplicateList, getCategoriesForList, loadCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
   import { applyFilters, applySort, groupByCategory } from '$lib/utils';
   import { extractEmoji } from '$lib/utils/emoji';
@@ -26,6 +26,7 @@
   import type { User } from '$lib/mock-data';
   import Button from '$lib/components/Button.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
+  import DeleteCheckedItemsDialog from '$lib/components/DeleteCheckedItemsDialog.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -88,6 +89,9 @@
   let filterSubmenuOpen = $state(false);
   let deleting = $state(false);
   let duplicating = $state(false);
+  let deletingFinished = $state(false);
+  let showDeleteCheckedDialog = $state(false);
+  let deleteCheckedError = $state('');
   let titleInput = $state<HTMLInputElement | null>(null);
   $effect(() => {
     if (editingTitle && titleInput) titleInput.focus();
@@ -129,6 +133,7 @@
   ];
 
   const allItems = $derived(getItems().filter(i => i.listId === data.id));
+  const checkedItemCount = $derived(allItems.filter((item) => item.done).length);
   const filtered = $derived(applyFilters(allItems, filters, getCurrentUser()?.id));
   const sorted = $derived(applySort(filtered, sortField, sortDirection));
   const grouped = $derived(groupByCategory(sorted, categories));
@@ -234,6 +239,33 @@
     } catch (e) {
       alert(friendlyError(e, 'Failed to duplicate list'));
       duplicating = false;
+    }
+  }
+
+  function openDeleteCheckedDialog() {
+    deleteCheckedError = '';
+    showDeleteCheckedDialog = true;
+    menuOpen = false;
+    sortSubmenuOpen = false;
+    filterSubmenuOpen = false;
+  }
+
+  function closeDeleteCheckedDialog() {
+    if (deletingFinished) return;
+    deleteCheckedError = '';
+    showDeleteCheckedDialog = false;
+  }
+
+  async function handleDeleteCheckedItems() {
+    deletingFinished = true;
+    deleteCheckedError = '';
+    try {
+      await deleteFinishedItems(data.id);
+      showDeleteCheckedDialog = false;
+    } catch (e) {
+      deleteCheckedError = friendlyError(e, 'Failed to delete checked items');
+    } finally {
+      deletingFinished = false;
     }
   }
 
@@ -437,6 +469,19 @@
                 </div>
               {/if}
             </div>
+            {#if capabilities.canEditItems}
+              <div class="border-t border-gray-100 mt-1 pt-1">
+                <Button tone="danger" appearance="ghost"
+                  size="menu"
+                  align="start"
+                  weight="normal"
+                  onclick={openDeleteCheckedDialog}
+                  disabled={deletingFinished || checkedItemCount === 0}
+                >
+                  Delete checked items
+                </Button>
+              </div>
+            {/if}
             {#if capabilities.canDuplicateList || capabilities.canEditList}
               <div class="border-t border-gray-100 mt-1 pt-1">
                 {#if capabilities.canDuplicateList}
@@ -519,6 +564,16 @@
     />
   {/if}
 </div>
+
+{#if showDeleteCheckedDialog}
+  <DeleteCheckedItemsDialog
+    count={checkedItemCount}
+    deleting={deletingFinished}
+    error={deleteCheckedError}
+    onconfirm={handleDeleteCheckedItems}
+    oncancel={closeDeleteCheckedDialog}
+  />
+{/if}
 
 {#if capabilities.canEditItems}
   <div class="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gray-100 shadow-lg">

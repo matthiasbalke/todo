@@ -37,6 +37,7 @@ vi.mock('$lib/stores/items.svelte', () => ({
 	getItems: vi.fn(() => listStoreState.items),
 	loadItemsForList: vi.fn(),
 	createItem: vi.fn(),
+	deleteFinishedItems: vi.fn(),
 	moveItemsToCategoryOptimistic: vi.fn(),
 }));
 
@@ -110,6 +111,27 @@ import ListPage from './+page.svelte';
 
 const mockData = { id: 'list-1', users: [], buildNumber: '0' };
 
+function makeItem(id: string, title: string, done = false, starred = false) {
+	return {
+		id,
+		listId: 'list-1',
+		categoryId: null,
+		title,
+		notes: null,
+		done,
+		starred,
+		dueDate: null,
+		assignedUserIds: [],
+		recurrenceRule: null,
+		parentItemId: null,
+		createdByUserId: 'user-1',
+		updatedByUserId: 'user-1',
+		sortOrder: 0,
+		createdAt: '2026-01-01T00:00:00Z',
+		updatedAt: '2026-01-01T00:00:00Z',
+	};
+}
+
 describe('ListPage title emoji extraction', () => {
 	afterEach(() => {
 		cleanup();
@@ -174,6 +196,7 @@ describe('ListPage menu presentation', () => {
 
 	it('hides shared mutation controls for viewers while preserving presentation and navigation controls', async () => {
 		listStoreState.role = 'VIEWER';
+		listStoreState.items = [makeItem('item-1', 'Checked item', true)];
 		render(ListPage, { props: { data: mockData } });
 
 		expect(screen.getByRole('heading', { name: /Groceries/i })).toBeInTheDocument();
@@ -190,6 +213,7 @@ describe('ListPage menu presentation', () => {
 		expect(screen.getByRole('button', { name: 'Members' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Configure categories' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Duplicate list' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Delete checked items' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Delete list' })).not.toBeInTheDocument();
 	});
 
@@ -250,6 +274,68 @@ describe('ListPage menu presentation', () => {
 		expect(duplicateIndex).toBeGreaterThan(-1);
 		expect(deleteIndex).toBeGreaterThan(-1);
 		expect(duplicateIndex).toBe(deleteIndex - 1);
+	});
+
+	it('displays the delete checked action disabled when the list has no checked items', async () => {
+		listStoreState.items = [makeItem('item-1', 'Unchecked item')];
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+
+		expect(screen.getByRole('button', { name: 'Delete checked items' })).toBeDisabled();
+	});
+
+	it('deletes checked items after modal confirmation using the full unfiltered list count', async () => {
+		const { deleteFinishedItems } = await import('$lib/stores/items.svelte');
+		vi.mocked(deleteFinishedItems).mockResolvedValueOnce(undefined);
+		listStoreState.items = [
+			makeItem('checked-hidden-by-starred', 'Hidden checked item', true, false),
+			makeItem('checked-visible', 'Visible checked item', true, true),
+			makeItem('unchecked-visible', 'Visible unchecked item', false, true),
+		];
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: /^Filter/ }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Starred only' }));
+		expect(screen.queryByText('Hidden checked item')).not.toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked items' }));
+
+		expect(screen.getByRole('dialog', { name: 'Delete all checked items?' })).toBeInTheDocument();
+		expect(screen.getByText(/permanently delete 2 checked items/)).toHaveClass('font-semibold', 'text-red-600');
+		expect(screen.getByText('Checked items hidden by filters will also be deleted.')).toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked' }));
+
+		await waitFor(() => expect(deleteFinishedItems).toHaveBeenCalledWith('list-1'));
+		expect(screen.queryByRole('dialog', { name: 'Delete all checked items?' })).not.toBeInTheDocument();
+	});
+
+	it('does not delete checked items when the confirmation modal is canceled', async () => {
+		const { deleteFinishedItems } = await import('$lib/stores/items.svelte');
+		listStoreState.items = [makeItem('checked-1', 'Checked item', true)];
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked items' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+		expect(deleteFinishedItems).not.toHaveBeenCalled();
+		expect(screen.queryByRole('dialog', { name: 'Delete all checked items?' })).not.toBeInTheDocument();
+	});
+
+	it('keeps the delete checked modal open and reports errors when cleanup fails', async () => {
+		const { deleteFinishedItems } = await import('$lib/stores/items.svelte');
+		vi.mocked(deleteFinishedItems).mockRejectedValueOnce(new Error('boom'));
+		listStoreState.items = [makeItem('checked-1', 'Checked item', true)];
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked items' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked' }));
+
+		await waitFor(() => expect(screen.getByText('Error: boom')).toBeInTheDocument());
+		expect(screen.getByRole('dialog', { name: 'Delete all checked items?' })).toBeInTheDocument();
 	});
 
 	it('duplicates the list and navigates to the copy', async () => {

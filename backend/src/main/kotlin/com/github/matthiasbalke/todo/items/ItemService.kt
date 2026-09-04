@@ -113,6 +113,18 @@ class ItemService(
     }
 
     @Transactional
+    fun deleteFinishedItems(listId: UUID, userId: UUID) {
+        listAccessService.requireMinRole(listId, userId, ListRole.EDITOR)
+        val deletedItemIds = itemRepository.findAllByListIdAndDone(listId, true).map { it.id }
+        if (deletedItemIds.isEmpty()) return
+
+        itemRepository.deleteAllByListIdAndDone(listId, true)
+        deletedItemIds.forEach { itemId ->
+            ssePublisher.publish(ListEvent.ItemDeleted(listId, itemId))
+        }
+    }
+
+    @Transactional
     fun toggleDone(listId: UUID, itemId: UUID, userId: UUID): ItemWithAssignees {
         listAccessService.requireMinRole(listId, userId, ListRole.EDITOR)
         val item = itemRepository.findByIdAndListId(itemId, listId)

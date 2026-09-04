@@ -73,6 +73,10 @@ export function deleteItem(listId: string, itemId: string): Promise<void> {
 	return authedFetch(`/api/lists/${listId}/items/${itemId}`, { method: 'DELETE' });
 }
 
+export function deleteFinishedItems(listId: string): Promise<void> {
+	return authedFetch(`/api/lists/${listId}/items/finished`, { method: 'DELETE' });
+}
+
 export function toggleItemDone(listId: string, itemId: string): Promise<ItemDto> {
 	return authedFetch(`/api/lists/${listId}/items/${itemId}/done`, { method: 'PATCH' });
 }

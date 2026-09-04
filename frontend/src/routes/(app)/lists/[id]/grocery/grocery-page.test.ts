@@ -26,7 +26,8 @@ const listStoreState = vi.hoisted(() => ({
 
 vi.mock('$lib/stores/items.svelte', () => ({
 	getItems: vi.fn(() => listStoreState.items),
-	loadItemsForList: vi.fn()
+	loadItemsForList: vi.fn(),
+	deleteFinishedItems: vi.fn()
 }));
 vi.mock('$lib/stores/lists.svelte', () => ({
 	getList: vi.fn(() => ({
@@ -65,6 +66,27 @@ vi.mock('$lib/api/errors', () => ({
 
 import GroceryPage from './+page.svelte';
 
+function makeItem(id: string, title: string, done = false, starred = false) {
+	return {
+		id,
+		listId: 'list-1',
+		categoryId: null,
+		title,
+		notes: null,
+		done,
+		starred,
+		dueDate: null,
+		assignedUserIds: [],
+		recurrenceRule: null,
+		parentItemId: null,
+		createdByUserId: 'user-1',
+		updatedByUserId: 'user-1',
+		sortOrder: 0,
+		createdAt: '2026-01-01T00:00:00Z',
+		updatedAt: '2026-01-01T00:00:00Z',
+	};
+}
+
 afterEach(() => {
 	cleanup();
 	listStoreState.hideDone = false;
@@ -76,6 +98,7 @@ afterEach(() => {
 describe('Grocery page capabilities', () => {
 	it('keeps navigation and presentation controls but hides mutation controls for viewers', async () => {
 		listStoreState.role = 'VIEWER';
+		listStoreState.items = [makeItem('checked-1', 'Checked item', true)];
 		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
 
 		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
@@ -88,6 +111,7 @@ describe('Grocery page capabilities', () => {
 		expect(screen.getByRole('button', { name: 'Hide checked' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Edit list' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Configure categories' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Delete checked items' })).not.toBeInTheDocument();
 	});
 
 	it('allows editors to configure categories but not edit the list', async () => {
@@ -188,5 +212,64 @@ describe('Grocery page menu presentation', () => {
 		expect(screen.getByRole('button', { name: 'Clear Starred only filter' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Clear Hide checked filter' })).not.toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Filter 1 active' })).toBeInTheDocument();
+	});
+
+	it('displays the delete checked action disabled when the list has no checked items', async () => {
+		listStoreState.items = [makeItem('item-1', 'Unchecked item')];
+		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+
+		expect(screen.getByRole('button', { name: 'Delete checked items' })).toBeDisabled();
+	});
+
+	it('deletes checked items after modal confirmation using the full list count when Hide checked is active', async () => {
+		const { deleteFinishedItems } = await import('$lib/stores/items.svelte');
+		vi.mocked(deleteFinishedItems).mockResolvedValueOnce(undefined);
+		listStoreState.items = [
+			makeItem('checked-hidden', 'Hidden checked item', true),
+			makeItem('unchecked-visible', 'Visible unchecked item', false),
+		];
+		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: /^Filter/ }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Hide checked' }));
+		expect(screen.queryByRole('button', { name: /Hidden checked item/ })).not.toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked items' }));
+
+		expect(screen.getByRole('dialog', { name: 'Delete all checked items?' })).toBeInTheDocument();
+		expect(screen.getByText(/permanently delete 1 checked item/)).toHaveClass('font-semibold', 'text-red-600');
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked' }));
+
+		expect(deleteFinishedItems).toHaveBeenCalledWith('list-1');
+	});
+
+	it('does not delete checked items when the modal is canceled', async () => {
+		const { deleteFinishedItems } = await import('$lib/stores/items.svelte');
+		listStoreState.items = [makeItem('checked-1', 'Checked item', true)];
+		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked items' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+		expect(deleteFinishedItems).not.toHaveBeenCalled();
+		expect(screen.queryByRole('dialog', { name: 'Delete all checked items?' })).not.toBeInTheDocument();
+	});
+
+	it('keeps the modal open and reports errors when cleanup fails', async () => {
+		const { deleteFinishedItems } = await import('$lib/stores/items.svelte');
+		vi.mocked(deleteFinishedItems).mockRejectedValueOnce(new Error('boom'));
+		listStoreState.items = [makeItem('checked-1', 'Checked item', true)];
+		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked items' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked' }));
+
+		expect(await screen.findByText('Error: boom')).toBeInTheDocument();
+		expect(screen.getByRole('dialog', { name: 'Delete all checked items?' })).toBeInTheDocument();
 	});
 });

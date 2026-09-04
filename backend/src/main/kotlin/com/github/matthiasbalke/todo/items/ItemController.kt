@@ -101,6 +101,13 @@ class ItemController(private val itemService: ItemService) {
         @RequestBody body: UpdateItemRequest,
     ): ItemDto = itemService.updateItem(id, iid, userId, body.toServiceRequest()).toDto()
 
+    @DeleteMapping("/finished")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteFinishedItems(
+        @AuthenticationPrincipal userId: UUID,
+        @PathVariable id: UUID,
+    ) = itemService.deleteFinishedItems(id, userId)
+
     @DeleteMapping("/{iid}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteItem(

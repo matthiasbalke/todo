@@ -4,9 +4,11 @@ import type { ItemDto } from '$lib/api/items';
 const mockCreateItem = vi.fn<() => Promise<ItemDto>>();
 const mockUpdateItem = vi.fn();
 const mockReorderItems = vi.fn();
+const mockDeleteFinishedItems = vi.fn();
 
 vi.mock('$lib/api/items', () => ({
 	createItem: mockCreateItem,
+	deleteFinishedItems: mockDeleteFinishedItems,
 	getItems: vi.fn(),
 	updateItem: mockUpdateItem,
 	reorderItems: mockReorderItems,
@@ -34,6 +36,14 @@ function makeDto(id: string, categoryId: string | null = null): ItemDto {
 		sortOrder: 0,
 		createdAt: '2026-01-01T00:00:00Z',
 		updatedAt: '2026-01-01T00:00:00Z',
+	};
+}
+
+function makeDoneDto(id: string, listId = 'list-1'): ItemDto {
+	return {
+		...makeDto(id),
+		listId,
+		done: true,
 	};
 }
 
@@ -108,6 +118,32 @@ describe('clearCategoryFromItems', () => {
 		expect(getItems().find((item) => item.id === 'item-1')?.categoryId).toBeNull();
 		expect(getItems().find((item) => item.id === 'item-2')?.categoryId).toBe('category-2');
 		expect(getItems().find((item) => item.id === 'item-3')?.categoryId).toBeNull();
+	});
+});
+
+describe('deleteFinishedItems', () => {
+	it('removes checked items from the target list after the API succeeds', async () => {
+		mockDeleteFinishedItems.mockResolvedValue(undefined);
+		const { deleteFinishedItems, dtoToItem, getItems, saveItem } = await getStore();
+		saveItem(dtoToItem(makeDoneDto('checked-1')));
+		saveItem(dtoToItem(makeDto('unchecked-1')));
+		saveItem(dtoToItem(makeDoneDto('other-list-checked', 'list-2')));
+
+		await deleteFinishedItems('list-1');
+
+		expect(mockDeleteFinishedItems).toHaveBeenCalledWith('list-1');
+		expect(getItems().map((item) => item.id)).toEqual(['unchecked-1', 'other-list-checked']);
+	});
+
+	it('keeps local state when the API fails', async () => {
+		mockDeleteFinishedItems.mockRejectedValue(new Error('boom'));
+		const { deleteFinishedItems, dtoToItem, getItems, saveItem } = await getStore();
+		saveItem(dtoToItem(makeDoneDto('checked-1')));
+		saveItem(dtoToItem(makeDto('unchecked-1')));
+
+		await expect(deleteFinishedItems('list-1')).rejects.toThrow('boom');
+
+		expect(getItems().map((item) => item.id)).toEqual(['checked-1', 'unchecked-1']);
 	});
 });
 
