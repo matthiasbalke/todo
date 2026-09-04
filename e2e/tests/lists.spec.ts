@@ -239,8 +239,9 @@ test.describe('Grocery mode', () => {
 			page.getByRole('button', { name: /Apples/i }).locator('span').filter({ hasText: 'Apples' }),
 		).toHaveClass(/line-through/);
 
-		// Open kebab menu → Hide checked
+		// Open kebab menu -> Filter -> Hide checked
 		await page.getByRole('button', { name: 'List options' }).click();
+		await page.getByRole('button', { name: /Filter/ }).click();
 		await page.getByRole('button', { name: 'Hide checked' }).click();
 
 		// Apples (now done) should no longer be visible

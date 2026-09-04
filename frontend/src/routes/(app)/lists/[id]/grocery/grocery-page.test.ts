@@ -1,10 +1,29 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const listStoreState = vi.hoisted(() => ({ hideDone: false, role: 'OWNER' as 'OWNER' | 'EDITOR' | 'VIEWER' }));
+const listStoreState = vi.hoisted(() => ({
+	hideDone: false,
+	role: 'OWNER' as 'OWNER' | 'EDITOR' | 'VIEWER',
+	items: [] as {
+		id: string;
+		listId: string;
+		categoryId: string | null;
+		title: string;
+		notes: string | null;
+		done: boolean;
+		starred: boolean;
+		dueDate: string | null;
+		assignedUserIds: string[];
+		recurrenceRule: null;
+		parentItemId: string | null;
+		createdByUserId: string | null;
+		sortOrder: number;
+		createdAt: string;
+	}[],
+}));
 
 vi.mock('$lib/stores/items.svelte', () => ({
-	getItems: vi.fn(() => []),
+	getItems: vi.fn(() => listStoreState.items),
 	loadItemsForList: vi.fn()
 }));
 vi.mock('$lib/stores/lists.svelte', () => ({
@@ -48,6 +67,7 @@ afterEach(() => {
 	cleanup();
 	listStoreState.hideDone = false;
 	listStoreState.role = 'OWNER';
+	listStoreState.items = [];
 	vi.clearAllMocks();
 });
 
@@ -58,8 +78,11 @@ describe('Grocery page capabilities', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
 		expect(screen.getByRole('link', { name: 'Standard mode' })).toBeInTheDocument();
-		expect(screen.getByRole('button', { name: /Filter/ })).toBeInTheDocument();
+		const filterButton = screen.getByRole('button', { name: /Filter/ });
+		expect(filterButton).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: /Sort/ })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Hide checked' })).not.toBeInTheDocument();
+		await fireEvent.click(filterButton);
 		expect(screen.getByRole('button', { name: 'Hide checked' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Edit list' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Configure categories' })).not.toBeInTheDocument();
@@ -116,17 +139,52 @@ describe('Grocery page menu presentation', () => {
 		expect(selectedFilter.querySelector('span:last-child')).toHaveTextContent('✓');
 		expect(screen.getByRole('button', { name: 'Starred only' })).toHaveClass('text-gray-700');
 
-		await fireEvent.click(filterButton);
 		const inactiveHideChecked = screen.getByRole('button', { name: 'Hide checked' });
 		expect(inactiveHideChecked).toHaveClass('text-gray-700');
 		expect(inactiveHideChecked).not.toHaveClass('text-menu-selected');
 
 		await fireEvent.click(inactiveHideChecked);
-		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
 
 		const activeHideChecked = screen.getByRole('button', { name: 'Hide checked ✓' });
 		expect(activeHideChecked).toHaveClass('text-menu-selected');
 		expect(activeHideChecked.querySelector('span:last-child')).toHaveTextContent('✓');
 		expect(activeHideChecked.querySelector('span:last-child')).not.toHaveAttribute('class');
+	});
+
+	it('shows summary state and opens sort controls from the summary', async () => {
+		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
+
+		expect(screen.getByText('0 items')).toBeInTheDocument();
+		const summarySort = screen.getByRole('button', { name: 'Change sort order: Manual ↑' });
+		expect(summarySort).toHaveTextContent('Sort: Manual ↑');
+		expect(screen.queryByRole('button', { name: /Clear .* filter/ })).not.toBeInTheDocument();
+
+		await fireEvent.click(summarySort);
+		expect(screen.queryByRole('button', { name: 'Filter' })).not.toBeInTheDocument();
+		expect(screen.getByText('Sort by')).toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: 'Created' }));
+		expect(screen.getByRole('button', { name: 'Change sort order: Created ↑' })).toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('button', { name: '↑ Ascending' }));
+		expect(screen.getByRole('button', { name: 'Change sort order: Created ↓' })).toBeInTheDocument();
+	});
+
+	it('shows supported filter chips and resets one filter at a time', async () => {
+		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: /Filter/ }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Starred only' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Hide checked' }));
+
+		expect(screen.getByRole('button', { name: 'Clear Starred only filter' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Clear Hide checked filter' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /Assigned to/ })).not.toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Clear Hide checked filter' }));
+
+		expect(screen.getByRole('button', { name: 'Clear Starred only filter' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Clear Hide checked filter' })).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Filter 1 active' })).toBeInTheDocument();
 	});
 });

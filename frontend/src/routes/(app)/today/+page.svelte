@@ -3,12 +3,13 @@
   import { goto } from '$app/navigation';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
   import Button from '$lib/components/Button.svelte';
+  import ListStateSummary from '$lib/components/ListStateSummary.svelte';
+  import type { FilterChip } from '$lib/components/ListStateSummary.svelte';
   import { getProfile } from '$lib/stores/preferences.svelte';
   import { getTodayEntries, isTodayLoading, loadToday, refreshToday, todayDtoToItem } from '$lib/stores/today.svelte';
   import { getListCapabilities } from '$lib/listCapabilities';
   import { getCurrentUser } from '$lib/stores/auth.svelte';
-  import { applySort } from '$lib/utils';
-  import type { Category, SortDirection, SortField, User } from '$lib/mock-data';
+  import type { Category, SortDirection, SortField, TodoItem, User } from '$lib/mock-data';
   import { loadTodayPrefs, saveTodayPrefs } from '$lib/todayPrefs';
 
   const profile = $derived(getProfile());
@@ -68,7 +69,7 @@
         .map(([categoryId, categoryEntries]) => ({
           categoryId,
           category: categories.find(c => c.id === categoryId) ?? null,
-          items: applySort(categoryEntries.map(todayDtoToItem), sortField, sortDirection),
+          items: applyTodaySort(categoryEntries.map(todayDtoToItem)),
         }))
         .sort((a, b) => (a.category?.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.category?.sortOrder ?? Number.MAX_SAFE_INTEGER));
       return { listId, first, categories, users, categoryGroups };
@@ -85,7 +86,49 @@
     { value: 'STARRED', label: 'Starred' },
     { value: 'CREATED', label: 'Created' },
   ];
-  const activeFilterCount = $derived(starredOnly ? 1 : 0);
+  const activeFilterCount = $derived((starredOnly ? 1 : 0) + (hideDone ? 1 : 0));
+  const visibleItemCount = $derived(
+    entries.filter((entry) => (!starredOnly || entry.starred) && (!hideDone || !entry.done)).length
+  );
+  const sortLabel = $derived(`${sortFields.find(field => field.value === sortField)?.label} ${sortDirection === 'ASC' ? '↑' : '↓'}`);
+  const activeFilterChips = $derived.by((): FilterChip[] => {
+    const chips: FilterChip[] = [];
+    if (starredOnly) {
+      chips.push({ id: 'starred', label: 'Starred only', onreset: () => { starredOnly = false; } });
+    }
+    if (hideDone) {
+      chips.push({ id: 'hideDone', label: 'Hide checked', onreset: () => { hideDone = false; } });
+    }
+    return chips;
+  });
+
+  function compareTodayItems(a: TodoItem, b: TodoItem): number {
+    let cmp = 0;
+    switch (sortField) {
+      case 'ALPHA':
+        cmp = a.title.localeCompare(b.title);
+        break;
+      case 'DUE_DATE': {
+        const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+        const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+        cmp = da - db;
+        break;
+      }
+      case 'STARRED':
+        cmp = (b.starred ? 1 : 0) - (a.starred ? 1 : 0);
+        break;
+      case 'CREATED':
+        cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        break;
+    }
+    if (cmp !== 0) return sortDirection === 'DESC' ? -cmp : cmp;
+    return a.title.localeCompare(b.title) || a.id.localeCompare(b.id);
+  }
+
+  function applyTodaySort(items: TodoItem[]): TodoItem[] {
+    return [...items].sort(compareTodayItems);
+  }
+
 </script>
 
 <div class="space-y-5">
@@ -150,6 +193,31 @@
                     {#if starredOnly === option.value}<span>✓</span>{/if}
                   </Button>
                 {/each}
+                <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Checked</p>
+                <Button
+                  tone="neutral"
+                  appearance="bare"
+                  size="menu-indented"
+                  align="between"
+                  weight="normal"
+                  selected={!hideDone}
+                  onclick={() => { hideDone = false; }}
+                >
+                  Show checked
+                  {#if !hideDone}<span>✓</span>{/if}
+                </Button>
+                <Button
+                  tone="neutral"
+                  appearance="bare"
+                  size="menu-indented"
+                  align="between"
+                  weight="normal"
+                  selected={hideDone}
+                  onclick={() => { hideDone = true; }}
+                >
+                  Hide checked
+                  {#if hideDone}<span>✓</span>{/if}
+                </Button>
               </div>
             {/if}
           </div>
@@ -198,27 +266,21 @@
               </div>
             {/if}
           </div>
-          <div class="border-t border-gray-100 mt-1 pt-1">
-            <Button
-              tone="neutral"
-              appearance="bare"
-              size="menu"
-              align="between"
-              weight="normal"
-              selected={hideDone}
-              onclick={() => {
-                hideDone = !hideDone;
-                menuOpen = false;
-              }}
-            >
-              <span>Hide checked</span>
-              {#if hideDone}<span>✓</span>{/if}
-            </Button>
-          </div>
         </div>
       {/if}
     </div>
   </div>
+
+  <ListStateSummary
+    filters={activeFilterChips}
+    {sortLabel}
+    sortOptions={sortFields}
+    {sortField}
+    {sortDirection}
+    visibleCount={visibleItemCount}
+    onSortFieldChange={(value) => { sortField = value as Exclude<SortField, 'MANUAL'>; }}
+    onSortDirectionChange={(value) => { sortDirection = value; }}
+  />
 
   {#if isTodayLoading() && entries.length === 0}
     <p class="text-center py-12 text-gray-400">Loading…</p>
