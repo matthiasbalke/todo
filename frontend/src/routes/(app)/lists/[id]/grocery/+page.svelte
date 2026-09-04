@@ -11,6 +11,8 @@
   import GroceryCategorySection from '$lib/components/GroceryCategorySection.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
+  import ListStateSummary from '$lib/components/ListStateSummary.svelte';
+  import type { FilterChip } from '$lib/components/ListStateSummary.svelte';
   import { friendlyError } from '$lib/api/errors';
   import Button from '$lib/components/Button.svelte';
   import { getListCapabilities } from '$lib/listCapabilities';
@@ -36,6 +38,7 @@
 
   const _savedPrefs = untrack(() => loadListPrefs(data.id));
   untrack(() => setHideDone(data.id, _savedPrefs?.hideDone ?? false));
+  let hideDone = $state(untrack(() => isHideDone(data.id)));
   let filters = $state<Filters>({
     starredOnly: _savedPrefs?.starredOnly ?? false,
     hideFuture: _savedPrefs?.hideFuture ?? false,
@@ -46,7 +49,7 @@
   let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => list?.defaultSortDirection ?? 'ASC'));
 
   $effect(() => {
-    const prefs = { sortField, sortDirection, ...filters, hideDone: isHideDone(data.id) };
+    const prefs = { sortField, sortDirection, ...filters, hideDone };
     const isDefault =
       prefs.sortField === (list?.defaultSortField ?? 'MANUAL') &&
       prefs.sortDirection === (list?.defaultSortDirection ?? 'ASC') &&
@@ -74,7 +77,7 @@
   );
 
   const activeFilterCount = $derived(
-    (filters.starredOnly ? 1 : 0) + (filters.hideFuture || filters.hideUndated ? 1 : 0)
+    (filters.starredOnly ? 1 : 0) + (filters.hideFuture || filters.hideUndated ? 1 : 0) + (hideDone ? 1 : 0)
   );
 
   const sortFields: { value: SortField; label: string }[] = [
@@ -88,11 +91,28 @@
   const allItems = $derived(
     getItems()
       .filter(i => i.listId === data.id)
-      .filter(i => !isHideDone(data.id) || !i.done)
+      .filter(i => !hideDone || !i.done)
   );
   const filtered = $derived(applyFilters(allItems, filters));
   const sorted = $derived(applySort(filtered, sortField, sortDirection));
   const grouped = $derived(groupByCategory(sorted, categories));
+  const visibleItemCount = $derived(filtered.length);
+  const sortLabel = $derived(`${sortFields.find(f => f.value === sortField)?.label} ${sortDirection === 'ASC' ? '↑' : '↓'}`);
+  const activeFilterChips = $derived.by((): FilterChip[] => {
+    const chips: FilterChip[] = [];
+    if (filters.starredOnly) {
+      chips.push({ id: 'starred', label: 'Starred only', onreset: () => { filters = { ...filters, starredOnly: false }; } });
+    }
+    if (filters.hideFuture) {
+      chips.push({ id: 'hideFuture', label: 'Hide future', onreset: () => { filters = { ...filters, hideFuture: false }; } });
+    } else if (filters.hideUndated) {
+      chips.push({ id: 'hideUndated', label: 'Has due date', onreset: () => { filters = { ...filters, hideUndated: false }; } });
+    }
+    if (hideDone) {
+      chips.push({ id: 'hideDone', label: 'Hide checked', onreset: () => { updateHideDone(false); } });
+    }
+    return chips;
+  });
 
   async function handleEditList({ name, emoji }: { name: string; emoji: string }) {
     try {
@@ -112,6 +132,11 @@
       next.add(strKey);
     }
     collapsedSections = next;
+  }
+
+  function updateHideDone(value: boolean) {
+    hideDone = value;
+    setHideDone(data.id, value);
   }
 </script>
 
@@ -213,6 +238,27 @@
                       {#if dueDateValue === opt.value}<span>✓</span>{/if}
                     </Button>
                   {/each}
+                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Checked</p>
+                  <Button tone="neutral" appearance="bare"
+                    size="menu-indented"
+                    align="between"
+                    weight="normal"
+                    selected={!hideDone}
+                    onclick={() => { updateHideDone(false); }}
+                  >
+                    Show checked
+                    {#if !hideDone}<span>✓</span>{/if}
+                  </Button>
+                  <Button tone="neutral" appearance="bare"
+                    size="menu-indented"
+                    align="between"
+                    weight="normal"
+                    selected={hideDone}
+                    onclick={() => { updateHideDone(true); }}
+                  >
+                    Hide checked
+                    {#if hideDone}<span>✓</span>{/if}
+                  </Button>
                 </div>
               {/if}
             </div>
@@ -252,18 +298,6 @@
                 </div>
               {/if}
             </div>
-            <div class="border-t border-gray-100 mt-1 pt-1">
-              <Button tone="neutral" appearance="bare"
-                size="menu"
-                align="between"
-                weight="normal"
-                selected={isHideDone(data.id)}
-                onclick={() => { setHideDone(data.id, !isHideDone(data.id)); menuOpen = false; }}
-              >
-                <span>Hide checked</span>
-                {#if isHideDone(data.id)}<span>✓</span>{/if}
-              </Button>
-            </div>
           </div>
         {/if}
       </div>
@@ -271,6 +305,16 @@
   </div>
 
   <div>
+    <ListStateSummary
+      filters={activeFilterChips}
+      {sortLabel}
+      sortOptions={sortFields}
+      {sortField}
+      {sortDirection}
+      visibleCount={visibleItemCount}
+      onSortFieldChange={(value) => { sortField = value as SortField; }}
+      onSortDirectionChange={(value) => { sortDirection = value; }}
+    />
     {#each [...grouped] as [key, { category, items }]}
       <GroceryCategorySection
         {category}
