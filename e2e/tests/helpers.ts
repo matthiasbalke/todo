@@ -51,6 +51,7 @@ export interface ItemInput {
 	starred?: boolean;
 	notes?: string | null;
 	categoryId?: string | null;
+	assignedUserIds?: string[];
 }
 
 // ---------------------------------------------------------------------------

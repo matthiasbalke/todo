@@ -172,6 +172,87 @@ test.describe('List detail — filter and sort', () => {
 		await expect(page.getByText('Spinach')).not.toBeVisible();
 	});
 
+	test('combining Assigned to me and Not assigned excludes items assigned only to others', async ({
+		page,
+		browser,
+	}, testInfo) => {
+		const otherEmail = uniqueEmail('e2e-filter-other');
+		const otherContext = await browser.newContext({
+			baseURL: testInfo.project.use.baseURL as string,
+			ignoreHTTPSErrors: true,
+		});
+		const otherPage = await otherContext.newPage();
+
+		try {
+			await registerPasskey(otherPage, otherContext, 'Filter Other User', otherEmail);
+			const otherUserId = await otherPage.evaluate(async () => {
+				const { accessToken } = await fetch('/api/auth/refresh', {
+					method: 'POST',
+					credentials: 'include',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({}),
+				}).then((r) => r.json());
+				return fetch('/api/users/me', {
+					headers: { Authorization: `Bearer ${accessToken}` },
+				}).then((r) => r.json()).then((user) => user.id as string);
+			});
+
+			await page.evaluate(
+				async ({ listId, otherEmail, otherUserId }) => {
+					const { accessToken } = await fetch('/api/auth/refresh', {
+						method: 'POST',
+						credentials: 'include',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({}),
+					}).then((r) => r.json());
+					const headers = {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${accessToken}`,
+					};
+					const me = await fetch('/api/users/me', { headers }).then((r) => r.json());
+					await fetch(`/api/lists/${listId}/members`, {
+						method: 'POST',
+						credentials: 'include',
+						headers,
+						body: JSON.stringify({ email: otherEmail, role: 'EDITOR' }),
+					});
+					for (const body of [
+						{ title: 'Assignment unclaimed item', assignedUserIds: [] },
+						{ title: 'Assignment mine item', assignedUserIds: [me.id] },
+						{ title: 'Assignment other item', assignedUserIds: [otherUserId] },
+					]) {
+						await fetch(`/api/lists/${listId}/items`, {
+							method: 'POST',
+							credentials: 'include',
+							headers,
+							body: JSON.stringify(body),
+						});
+					}
+				},
+				{ listId, otherEmail, otherUserId },
+			);
+		} finally {
+			await otherContext.close();
+		}
+
+		await page.goto(`/lists/${listId}`);
+		await waitForHydration(page);
+		await expect(page.getByText('Assignment unclaimed item')).toBeVisible();
+		await expect(page.getByText('Assignment mine item')).toBeVisible();
+		await expect(page.getByText('Assignment other item')).toBeVisible();
+
+		await page.getByRole('button', { name: 'List options' }).click();
+		await page.getByRole('button', { name: /^Filter/ }).click();
+		await page.getByRole('button', { name: 'Assigned to me' }).click();
+		await page.getByRole('button', { name: 'Not assigned' }).click();
+		await page.keyboard.press('Escape');
+
+		await expect(page.getByText('Assignment unclaimed item')).toBeVisible();
+		await expect(page.getByText('Assignment mine item')).toBeVisible();
+		await expect(page.getByText('Assignment other item')).not.toBeVisible();
+		await expect(page.getByRole('button', { name: 'Clear Assigned to me or not assigned filter' })).toBeVisible();
+	});
+
 	test('changing sort to Alphabetical reorders items', async ({ page }) => {
 		// Items were created in order: Cherry, Apple, Banana, Spinach
 		// After alphabetical sort: Apple, Banana, Cherry, Spinach

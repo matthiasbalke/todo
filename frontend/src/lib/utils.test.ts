@@ -25,35 +25,59 @@ describe('applyFilters — assigneeFilter', () => {
   const assignedToMeAndOther: TodoItem = { ...base, id: 'd', assignedUserIds: ['user1', 'user2'] };
 
   const items = [noAssignees, assignedToMe, assignedToOther, assignedToMeAndOther];
-  const baseFilters: Filters = { starredOnly: false, hideFuture: false, hideUndated: false, assigneeFilter: 'all' };
+  const baseFilters: Filters = { starredOnly: false, hideFuture: false, hideUndated: false, assigneeFilters: [] };
 
   it("'all' returns all items regardless of assignment", () => {
-    expect(applyFilters(items, { ...baseFilters, assigneeFilter: 'all' }, 'user1')).toHaveLength(4);
+    expect(applyFilters(items, { ...baseFilters, assigneeFilters: [] }, 'user1')).toHaveLength(4);
   });
 
   it("'none' returns only unassigned items", () => {
-    const result = applyFilters(items, { ...baseFilters, assigneeFilter: 'none' }, 'user1');
+    const result = applyFilters(items, { ...baseFilters, assigneeFilters: ['none'] }, 'user1');
     expect(result).toEqual([noAssignees]);
   });
 
   it("'me' returns items that include currentUserId", () => {
-    const result = applyFilters(items, { ...baseFilters, assigneeFilter: 'me' }, 'user1');
+    const result = applyFilters(items, { ...baseFilters, assigneeFilters: ['me'] }, 'user1');
     expect(result.map(i => i.id)).toEqual(['b', 'd']);
   });
 
   it("'me' with no currentUserId returns no items", () => {
-    const result = applyFilters(items, { ...baseFilters, assigneeFilter: 'me' });
+    const result = applyFilters(items, { ...baseFilters, assigneeFilters: ['me'] });
     expect(result).toHaveLength(0);
   });
 
   it("'others' returns items assigned but not to current user", () => {
-    const result = applyFilters(items, { ...baseFilters, assigneeFilter: 'others' }, 'user1');
+    const result = applyFilters(items, { ...baseFilters, assigneeFilters: ['others'] }, 'user1');
     expect(result).toEqual([assignedToOther]);
   });
 
   it("'others' excludes items where current user is one of multiple assignees", () => {
-    const result = applyFilters([assignedToMeAndOther], { ...baseFilters, assigneeFilter: 'others' }, 'user1');
+    const result = applyFilters([assignedToMeAndOther], { ...baseFilters, assigneeFilters: ['others'] }, 'user1');
     expect(result).toHaveLength(0);
+  });
+
+  it("'none' plus 'me' returns unassigned and current-user items", () => {
+    const result = applyFilters(items, { ...baseFilters, assigneeFilters: ['none', 'me'] }, 'user1');
+    expect(result.map(i => i.id)).toEqual(['a', 'b', 'd']);
+  });
+
+  it('normalizes all selected assignee criteria to all-assignee matching', () => {
+    const result = applyFilters(items, { ...baseFilters, assigneeFilters: ['none', 'me', 'others'] }, 'user1');
+    expect(result).toEqual(items);
+  });
+
+  it('narrows combined assignment criteria with other filters', () => {
+    const result = applyFilters(
+      [
+        { ...noAssignees, starred: true },
+        { ...assignedToMe, starred: false },
+        { ...assignedToOther, starred: true },
+      ],
+      { ...baseFilters, starredOnly: true, assigneeFilters: ['none', 'me'] },
+      'user1'
+    );
+
+    expect(result).toEqual([{ ...noAssignees, starred: true }]);
   });
 });
 

@@ -3,9 +3,9 @@
   import { goto } from '$app/navigation';
   import { getItems, loadItemsForList, createItem, deleteFinishedItems } from '$lib/stores/items.svelte';
   import { getList, updateList, deleteList, duplicateList, getCategoriesForList, loadCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
-  import { applyFilters, applySort, groupByCategory } from '$lib/utils';
+  import { applyFilters, applySort, groupByCategory, normalizeAssigneeFilters } from '$lib/utils';
   import { extractEmoji } from '$lib/utils/emoji';
-  import type { Filters } from '$lib/utils';
+  import type { AssigneeFilterCriterion, Filters } from '$lib/utils';
   import { untrack } from 'svelte';
   import type { SortField, SortDirection, TodoItem } from '$lib/mock-data';
   import { loadListPrefs, saveListPrefs, deleteListPrefs } from '$lib/listPrefs';
@@ -59,7 +59,7 @@
     starredOnly: _savedPrefs?.starredOnly ?? false,
     hideFuture: _savedPrefs?.hideFuture ?? false,
     hideUndated: _savedPrefs?.hideUndated ?? false,
-    assigneeFilter: _savedPrefs?.assigneeFilter ?? 'all',
+    assigneeFilters: _savedPrefs?.assigneeFilters ?? [],
   });
   let sortField = $state<SortField>(_savedPrefs?.sortField ?? untrack(() => list?.defaultSortField ?? 'MANUAL'));
   let sortDirection = $state<SortDirection>(_savedPrefs?.sortDirection ?? untrack(() => list?.defaultSortDirection ?? 'ASC'));
@@ -70,7 +70,7 @@
       prefs.sortField === (list?.defaultSortField ?? 'MANUAL') &&
       prefs.sortDirection === (list?.defaultSortDirection ?? 'ASC') &&
       !prefs.starredOnly && !prefs.hideFuture && !prefs.hideUndated && !prefs.hideDone &&
-      (prefs.assigneeFilter ?? 'all') === 'all';
+      prefs.assigneeFilters.length === 0;
     if (isDefault) deleteListPrefs(data.id); else saveListPrefs(data.id, prefs);
   });
   $effect(() => {
@@ -113,6 +113,12 @@
     { value: 'hideUndated', label: 'Has due date' }
   ] as const;
 
+  const assigneeFilterOptions: { value: AssigneeFilterCriterion; label: string }[] = [
+    { value: 'none', label: 'Not assigned' },
+    { value: 'me', label: 'Assigned to me' },
+    { value: 'others', label: 'Assigned to others' },
+  ];
+
   const dueDateValue = $derived(
     filters.hideFuture ? 'hideFuture' : filters.hideUndated ? 'hideUndated' : 'all'
   );
@@ -120,7 +126,7 @@
   const activeFilterCount = $derived(
     (filters.starredOnly ? 1 : 0) +
     (filters.hideFuture || filters.hideUndated ? 1 : 0) +
-    (filters.assigneeFilter !== 'all' ? 1 : 0) +
+    (filters.assigneeFilters.length > 0 ? 1 : 0) +
     (hideDone ? 1 : 0)
   );
 
@@ -151,14 +157,20 @@
     } else if (filters.hideUndated) {
       chips.push({ id: 'hideUndated', label: 'Has due date', onreset: () => { filters = { ...filters, hideUndated: false }; } });
     }
-    if (filters.assigneeFilter !== 'all') {
-      const assigneeLabels: Record<Filters['assigneeFilter'], string> = {
-        all: 'All assignees',
+    if (filters.assigneeFilters.length > 0) {
+      const assigneeLabels: Record<AssigneeFilterCriterion, string> = {
         none: 'Not assigned',
         me: 'Assigned to me',
         others: 'Assigned to others',
       };
-      chips.push({ id: 'assignee', label: assigneeLabels[filters.assigneeFilter], onreset: () => { filters = { ...filters, assigneeFilter: 'all' }; } });
+      const labelOrder: AssigneeFilterCriterion[] = ['me', 'none', 'others'];
+      const labels = labelOrder
+        .filter((criterion) => filters.assigneeFilters.includes(criterion))
+        .map((criterion) => assigneeLabels[criterion]);
+      const displayLabel = labels
+        .map((label, index) => index === 0 ? label : label.charAt(0).toLowerCase() + label.slice(1))
+        .join(' or ');
+      chips.push({ id: 'assignee', label: displayLabel, onreset: () => { filters = { ...filters, assigneeFilters: [] }; } });
     }
     if (hideDone) {
       chips.push({ id: 'hideDone', label: 'Hide checked', onreset: () => { updateHideDone(false); } });
@@ -272,6 +284,13 @@
   function updateHideDone(value: boolean) {
     hideDone = value;
     setHideDone(data.id, value);
+  }
+
+  function toggleAssigneeFilter(criterion: AssigneeFilterCriterion) {
+    const selected = new Set(filters.assigneeFilters);
+    if (selected.has(criterion)) selected.delete(criterion);
+    else selected.add(criterion);
+    filters = { ...filters, assigneeFilters: normalizeAssigneeFilters([...selected]) };
   }
 </script>
 
@@ -390,21 +409,26 @@
                     </Button>
                   {/each}
                   <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Assigned</p>
-                  {#each [
-                    { value: 'all',    label: 'All items' },
-                    { value: 'none',   label: 'Not assigned' },
-                    { value: 'me',     label: 'Assigned to me' },
-                    { value: 'others', label: 'Assigned to others' },
-                  ] as opt}
+                  <Button tone="neutral" appearance="bare"
+                    size="menu-indented"
+                    align="between"
+                    weight="normal"
+                    selected={filters.assigneeFilters.length === 0}
+                    onclick={() => { filters = { ...filters, assigneeFilters: [] }; }}
+                  >
+                    All items
+                    {#if filters.assigneeFilters.length === 0}<span>✓</span>{/if}
+                  </Button>
+                  {#each assigneeFilterOptions as opt}
                     <Button tone="neutral" appearance="bare"
                       size="menu-indented"
                       align="between"
                       weight="normal"
-                      selected={filters.assigneeFilter === opt.value}
-                      onclick={() => { filters = { ...filters, assigneeFilter: opt.value as Filters['assigneeFilter'] }; }}
+                      selected={filters.assigneeFilters.includes(opt.value)}
+                      onclick={() => { toggleAssigneeFilter(opt.value); }}
                     >
                       {opt.label}
-                      {#if filters.assigneeFilter === opt.value}<span>✓</span>{/if}
+                      {#if filters.assigneeFilters.includes(opt.value)}<span>✓</span>{/if}
                     </Button>
                   {/each}
                   <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Checked</p>
