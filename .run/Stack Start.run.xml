@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Stack Start" type="CompoundRunConfigurationType">
+    <toRun name="Backend: Start" type="ShConfigurationType" />
+    <toRun name="Frontend: Start" type="ShConfigurationType" />
+    <toRun name="Postgres: Start" type="ShConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>

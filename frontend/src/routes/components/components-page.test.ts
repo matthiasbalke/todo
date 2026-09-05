@@ -373,6 +373,46 @@ describe('ComponentsPage Select showcase', () => {
 	});
 });
 
+describe('ComponentsPage MemberInviteEmailInput showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('demonstrates suggested contacts and arbitrary email entry', async () => {
+		render(ComponentsPage);
+		const section = screen
+			.getByRole('heading', { name: 'MemberInviteEmailInput Component' })
+			.closest('section')!;
+		const showcase = within(section);
+		const input = showcase.getByRole('combobox', { name: 'Invite member' });
+
+		expect(input).toHaveAttribute('list');
+		const suggestionList = document.getElementById(input.getAttribute('list')!);
+		expect(suggestionList?.querySelectorAll('option')).toHaveLength(3);
+		expect(suggestionList?.querySelector('option[value="casey@example.com"]')).not.toBeNull();
+		expect(showcase.getByRole('combobox', { name: 'Invite unsuggested account' })).toHaveValue(
+			'outside@example.com'
+		);
+
+		await fireEvent.input(input, { target: { value: 'riley@example.com' } });
+		expect(showcase.getByText('Value:').parentElement).toHaveTextContent('riley@example.com');
+	});
+
+	it('documents props and EmailInput forwarding', () => {
+		render(ComponentsPage);
+		const section = screen
+			.getByRole('heading', { name: 'MemberInviteEmailInput Component' })
+			.closest('section')!;
+		const showcase = within(section);
+
+		for (const prop of ['value', 'suggestions', 'label', 'placeholder', 'required', 'customValidate']) {
+			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
+		}
+		expect(showcase.getByText(/standard native input attributes and handlers/i)).toBeInTheDocument();
+		expect(showcase.getByText('Usage Example')).toBeInTheDocument();
+	});
+});
+
 describe('ComponentsPage CategorySelect showcase', () => {
 	afterEach(() => {
 		cleanup();

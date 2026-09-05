@@ -6,6 +6,7 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
 import java.time.Duration
@@ -20,7 +21,7 @@ class AuthRateLimitFilter(
     private val buckets = ConcurrentHashMap<String, Bucket>()
 
     override fun shouldNotFilter(request: HttpServletRequest): Boolean =
-        !request.requestURI.startsWith("/api/auth") && !request.requestURI.startsWith("/api/setup")
+        !isSensitiveEndpoint(request)
 
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -42,4 +43,15 @@ class AuthRateLimitFilter(
         Bucket.builder()
             .addLimit(Bandwidth.builder().capacity(capacity).refillGreedy(capacity, Duration.ofMinutes(windowMinutes)).build())
             .build()
+
+    private fun isSensitiveEndpoint(request: HttpServletRequest): Boolean {
+        if (request.requestURI.startsWith("/api/auth")) return true
+        if (request.requestURI.startsWith("/api/setup")) return true
+        return request.method == HttpMethod.POST.name() &&
+            MEMBER_INVITE_PATH.matches(request.requestURI)
+    }
+
+    companion object {
+        private val MEMBER_INVITE_PATH = Regex("""^/api/lists/[^/]+/members$""")
+    }
 }

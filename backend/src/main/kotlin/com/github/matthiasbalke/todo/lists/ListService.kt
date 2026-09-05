@@ -1,5 +1,6 @@
 package com.github.matthiasbalke.todo.lists
 
+import com.github.matthiasbalke.todo.auth.User
 import com.github.matthiasbalke.todo.auth.UserRepository
 import com.github.matthiasbalke.todo.items.ItemAssignment
 import com.github.matthiasbalke.todo.items.ItemAssignmentId
@@ -127,20 +128,24 @@ class ListService(
         return listMembershipRepository.findAllByListId(listId)
     }
 
+    fun getMemberSuggestions(listId: UUID, userId: UUID): kotlin.collections.List<User> {
+        listAccessService.requireMinRole(listId, userId, ListRole.OWNER)
+        return listMembershipRepository.findSuggestedUsersForList(listId, userId)
+            .sortedBy { it.email.lowercase() }
+    }
+
     @Transactional
     fun addMember(listId: UUID, requestingUserId: UUID, email: String, role: ListRole): ListMembership {
         listAccessService.requireMinRole(listId, requestingUserId, ListRole.OWNER)
         val target = userRepository.findByEmail(email)
-            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "No user found with email: $email")
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Could not add member")
         if (listMembershipRepository.findByListIdAndUserId(listId, target.id) != null) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "User is already a member of this list")
         }
         val membership = listMembershipRepository.save(
             ListMembership(listId = listId, userId = target.id, role = role)
         )
-        listGroupAssignmentRepository.save(
-            ListGroupAssignment(listId = listId, userId = target.id)
-        )
+        ensureGroupAssignment(listId, target.id)
         ssePublisher.publish(ListEvent.MemberAdded(listId, membership.toPayload()))
         return membership
     }
@@ -182,8 +187,17 @@ class ListService(
         }
         val membership = listMembershipRepository.findByListIdAndUserId(listId, targetUserId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Target user is not a member of this list")
+        listGroupAssignmentRepository.deleteByListIdAndUserId(listId, targetUserId)
         listMembershipRepository.delete(membership)
         ssePublisher.publish(ListEvent.MemberRemoved(listId, targetUserId))
+    }
+
+    private fun ensureGroupAssignment(listId: UUID, userId: UUID) {
+        if (listGroupAssignmentRepository.findByListIdAndUserId(listId, userId) == null) {
+            listGroupAssignmentRepository.save(
+                ListGroupAssignment(listId = listId, userId = userId)
+            )
+        }
     }
 
     private fun ListMembership.toPayload() = MemberPayload(
