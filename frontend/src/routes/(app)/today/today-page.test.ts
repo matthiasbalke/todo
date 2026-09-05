@@ -77,6 +77,7 @@ describe('Today page', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Today options' }));
 		expect(screen.getByRole('button', { name: /Filter/ })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: /Sort/ })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Delete checked items' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Starred only' })).not.toBeInTheDocument();
 
 		await fireEvent.click(screen.getByRole('button', { name: /Filter/ }));

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { getItems, loadItemsForList } from '$lib/stores/items.svelte';
+  import { getItems, loadItemsForList, deleteFinishedItems } from '$lib/stores/items.svelte';
   import { getList, updateList, getCategoriesForList, loadCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
   import { applyFilters, applySort, groupByCategory } from '$lib/utils';
   import type { Filters } from '$lib/utils';
@@ -16,6 +16,7 @@
   import { friendlyError } from '$lib/api/errors';
   import Button from '$lib/components/Button.svelte';
   import { getListCapabilities } from '$lib/listCapabilities';
+  import DeleteCheckedItemsDialog from '$lib/components/DeleteCheckedItemsDialog.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -28,6 +29,9 @@
   let filterSubmenuOpen = $state(false);
   let showEditForm = $state(false);
   let showCategoryDialog = $state(false);
+  let deletingFinished = $state(false);
+  let showDeleteCheckedDialog = $state(false);
+  let deleteCheckedError = $state('');
 
   const list = $derived(getList(data.id));
   const categories = $derived(getCategoriesForList(data.id));
@@ -88,11 +92,9 @@
     { value: 'CREATED', label: 'Created' }
   ];
 
-  const allItems = $derived(
-    getItems()
-      .filter(i => i.listId === data.id)
-      .filter(i => !hideDone || !i.done)
-  );
+  const currentListItems = $derived(getItems().filter(i => i.listId === data.id));
+  const checkedItemCount = $derived(currentListItems.filter((item) => item.done).length);
+  const allItems = $derived(currentListItems.filter(i => !hideDone || !i.done));
   const filtered = $derived(applyFilters(allItems, filters));
   const sorted = $derived(applySort(filtered, sortField, sortDirection));
   const grouped = $derived(groupByCategory(sorted, categories));
@@ -137,6 +139,33 @@
   function updateHideDone(value: boolean) {
     hideDone = value;
     setHideDone(data.id, value);
+  }
+
+  function openDeleteCheckedDialog() {
+    deleteCheckedError = '';
+    showDeleteCheckedDialog = true;
+    menuOpen = false;
+    sortSubmenuOpen = false;
+    filterSubmenuOpen = false;
+  }
+
+  function closeDeleteCheckedDialog() {
+    if (deletingFinished) return;
+    deleteCheckedError = '';
+    showDeleteCheckedDialog = false;
+  }
+
+  async function handleDeleteCheckedItems() {
+    deletingFinished = true;
+    deleteCheckedError = '';
+    try {
+      await deleteFinishedItems(data.id);
+      showDeleteCheckedDialog = false;
+    } catch (e) {
+      deleteCheckedError = friendlyError(e, 'Failed to delete checked items');
+    } finally {
+      deletingFinished = false;
+    }
   }
 </script>
 
@@ -298,6 +327,19 @@
                 </div>
               {/if}
             </div>
+            {#if capabilities.canEditItems}
+              <div class="border-t border-gray-100 mt-1 pt-1">
+                <Button tone="danger" appearance="ghost"
+                  size="menu"
+                  align="start"
+                  weight="normal"
+                  onclick={openDeleteCheckedDialog}
+                  disabled={deletingFinished || checkedItemCount === 0}
+                >
+                  Delete checked items
+                </Button>
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
@@ -330,3 +372,13 @@
     <CategoryConfigDialog {categories} listId={data.id} onclose={() => { showCategoryDialog = false; }} />
   {/if}
 </div>
+
+{#if showDeleteCheckedDialog}
+  <DeleteCheckedItemsDialog
+    count={checkedItemCount}
+    deleting={deletingFinished}
+    error={deleteCheckedError}
+    onconfirm={handleDeleteCheckedItems}
+    oncancel={closeDeleteCheckedDialog}
+  />
+{/if}

@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.BASE_URL ?? 'http://localhost:5173';
+const chromiumHostResolverRules = process.env.CHROMIUM_HOST_RESOLVER_RULES;
 
 export default defineConfig({
   testDir: './tests',
@@ -19,7 +20,12 @@ export default defineConfig({
     },
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: chromiumHostResolverRules
+          ? { args: [`--host-resolver-rules=${chromiumHostResolverRules}`] }
+          : undefined,
+      },
       dependencies: ['setup'],
     },
   ],

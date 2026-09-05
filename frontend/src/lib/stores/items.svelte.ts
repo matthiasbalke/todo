@@ -58,6 +58,11 @@ export async function deleteItem(listId: string, itemId: string): Promise<void> 
 	items = items.filter(i => i.id !== itemId);
 }
 
+export async function deleteFinishedItems(listId: string): Promise<void> {
+	await itemsApi.deleteFinishedItems(listId);
+	items = items.filter(i => i.listId !== listId || !i.done);
+}
+
 export async function toggleDone(listId: string, itemId: string): Promise<void> {
 	// Optimistic update
 	const idx = items.findIndex(i => i.id === itemId);

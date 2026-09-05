@@ -501,6 +501,103 @@ class ListIntegrationTest : AbstractIntegrationTest() {
         assertEquals("Groceries (2)", listRepository.findById(duplicateId).orElseThrow().name)
     }
 
+    // ─── DELETE /api/lists/{id}/items/finished ───────────────────────────────
+
+    @Test
+    fun `DELETE items - finished - owner deletes checked items and preserves unchecked items`() {
+        val owner = createUser()
+        val assignee = createUser()
+        val listId = createListAsUser(owner, "Cleanup")
+        val checked = itemRepository.save(TodoItem(listId = listId, title = "Checked", done = true))
+        val unchecked = itemRepository.save(TodoItem(listId = listId, title = "Unchecked", done = false))
+        itemAssignmentRepository.save(ItemAssignment(ItemAssignmentId(checked.id, assignee.id)))
+        itemAssignmentRepository.save(ItemAssignment(ItemAssignmentId(unchecked.id, assignee.id)))
+
+        mockMvc.delete("/api/lists/$listId/items/finished") {
+            header("Authorization", bearerHeader(owner))
+        }.andExpect {
+            status { isNoContent() }
+        }
+
+        assertFalse(itemRepository.existsById(checked.id))
+        assertTrue(itemRepository.existsById(unchecked.id))
+        assertTrue(itemAssignmentRepository.findAllByIdItemId(checked.id).isEmpty())
+        assertEquals(listOf(assignee.id), itemAssignmentRepository.findAllByIdItemId(unchecked.id).map { it.id.userId })
+    }
+
+    @Test
+    fun `DELETE items - finished - editor can delete checked items`() {
+        val owner = createUser()
+        val editor = createUser()
+        val listId = createListAsUser(owner, "Shared Cleanup")
+        addMemberToList(listId, owner, editor.email, "EDITOR")
+        val checked = itemRepository.save(TodoItem(listId = listId, title = "Checked", done = true))
+
+        mockMvc.delete("/api/lists/$listId/items/finished") {
+            header("Authorization", bearerHeader(editor))
+        }.andExpect {
+            status { isNoContent() }
+        }
+
+        assertFalse(itemRepository.existsById(checked.id))
+    }
+
+    @Test
+    fun `DELETE items - finished - rejects viewer and non-member without deleting`() {
+        val owner = createUser()
+        val viewer = createUser()
+        val stranger = createUser()
+        val listId = createListAsUser(owner, "Protected Cleanup")
+        addMemberToList(listId, owner, viewer.email, "VIEWER")
+        val checked = itemRepository.save(TodoItem(listId = listId, title = "Checked", done = true))
+
+        listOf(viewer, stranger).forEach { user ->
+            mockMvc.delete("/api/lists/$listId/items/finished") {
+                header("Authorization", bearerHeader(user))
+            }.andExpect {
+                status { isForbidden() }
+            }
+        }
+
+        assertTrue(itemRepository.existsById(checked.id))
+    }
+
+    @Test
+    fun `DELETE items - finished - removes checked recurring occurrence and preserves unchecked follow-up`() {
+        val owner = createUser()
+        val listId = createListAsUser(owner, "Recurring Cleanup")
+        val checkedOccurrence = itemRepository.save(
+            TodoItem(
+                listId = listId,
+                title = "Water plants",
+                done = true,
+                dueDate = LocalDate.of(2026, 6, 20),
+                recurrenceRule = RecurrenceRule(IntervalUnit.WEEKS, 1),
+            )
+        )
+        val uncheckedFollowUp = itemRepository.save(
+            TodoItem(
+                listId = listId,
+                title = "Water plants",
+                done = false,
+                dueDate = LocalDate.of(2026, 6, 27),
+                recurrenceRule = RecurrenceRule(IntervalUnit.WEEKS, 1),
+                parentItemId = checkedOccurrence.id,
+            )
+        )
+
+        mockMvc.delete("/api/lists/$listId/items/finished") {
+            header("Authorization", bearerHeader(owner))
+        }.andExpect {
+            status { isNoContent() }
+        }
+
+        assertFalse(itemRepository.existsById(checkedOccurrence.id))
+        val preserved = itemRepository.findById(uncheckedFollowUp.id).orElseThrow()
+        assertFalse(preserved.done)
+        assertNull(preserved.parentItemId)
+    }
+
     // ─── POST /api/lists/{id}/members ─────────────────────────────────────────
 
     @Test

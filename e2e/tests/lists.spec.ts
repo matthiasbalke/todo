@@ -143,10 +143,11 @@ test.describe('List detail — category headings', () => {
 
 test.describe('List detail — filter and sort', () => {
 	let listId: string;
+	let itemIds: string[];
 
 	test.beforeEach(async ({ page, context }) => {
 		await registerPasskey(page, context, 'Filter Sort User', uniqueEmail('e2e-lists'));
-		({ listId } = await setupListWithItems(page, 'My List', [
+		({ listId, itemIds } = await setupListWithItems(page, 'My List', [
 			{ title: 'Cherry' },
 			{ title: 'Apple', starred: true },
 			{ title: 'Banana', starred: true },
@@ -197,6 +198,54 @@ test.describe('List detail — filter and sort', () => {
 			.boundingBox()
 			.then((b) => b?.y ?? 0);
 		expect(appleY).toBeLessThan(cherryY);
+	});
+
+	test('delete checked items removes hidden checked items from a real list', async ({ page }) => {
+		await page.evaluate(
+			async ({ listId, itemIds }) => {
+				const { accessToken } = await fetch('/api/auth/refresh', {
+					method: 'POST',
+					credentials: 'include',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({}),
+				}).then((r) => r.json());
+				const headers = {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${accessToken}`,
+				};
+				await fetch(`/api/lists/${listId}/items/${itemIds[0]}/done`, {
+					method: 'PATCH',
+					credentials: 'include',
+					headers,
+				});
+				await fetch(`/api/lists/${listId}/items/${itemIds[1]}/done`, {
+					method: 'PATCH',
+					credentials: 'include',
+					headers,
+				});
+			},
+			{ listId, itemIds },
+		);
+		await page.goto(`/lists/${listId}`);
+		await waitForHydration(page);
+
+		await page.getByRole('button', { name: 'List options' }).click();
+		await page.getByRole('button', { name: /^Filter/ }).click();
+		await page.getByRole('button', { name: 'Hide checked' }).click();
+		await expect(page.getByText('Cherry')).not.toBeVisible();
+		await expect(page.getByText('Apple')).not.toBeVisible();
+
+		await page.getByRole('button', { name: 'Delete checked items' }).click();
+		await expect(page.getByRole('dialog', { name: 'Delete all checked items?' })).toBeVisible();
+		await expect(page.getByText(/permanently delete 2 checked items/)).toBeVisible();
+		await page.getByRole('button', { name: 'Delete checked' }).click();
+
+		await expect(page.getByRole('dialog', { name: 'Delete all checked items?' })).not.toBeVisible();
+		await page.getByRole('button', { name: 'Clear Hide checked filter' }).click();
+		await expect(page.getByText('Cherry')).not.toBeVisible();
+		await expect(page.getByText('Apple')).not.toBeVisible();
+		await expect(page.getByText('Banana')).toBeVisible();
+		await expect(page.getByText('Spinach')).toBeVisible();
 	});
 });
 
