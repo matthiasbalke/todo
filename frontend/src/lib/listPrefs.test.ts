@@ -8,6 +8,7 @@ const defaultPrefs: ListPrefs = {
   starredOnly: true,
   hideFuture: false,
   hideUndated: true,
+  assigneeFilters: [],
 };
 
 function makeLocalStorage() {
@@ -31,6 +32,31 @@ describe('loadListPrefs', () => {
     vi.stubGlobal('localStorage', makeLocalStorage());
     saveListPrefs('list-1', defaultPrefs);
     expect(loadListPrefs('list-1')).toEqual(defaultPrefs);
+  });
+
+  it('normalizes legacy single assigneeFilter values', () => {
+    const ls = makeLocalStorage();
+    vi.stubGlobal('localStorage', ls);
+    const { assigneeFilters: _assigneeFilters, ...legacyPrefs } = defaultPrefs;
+    ls.setItem('todo_list_prefs_list-1', JSON.stringify({ ...legacyPrefs, assigneeFilter: 'me' }));
+
+    expect(loadListPrefs('list-1')?.assigneeFilters).toEqual(['me']);
+  });
+
+  it('normalizes malformed assignee values to inactive', () => {
+    const ls = makeLocalStorage();
+    vi.stubGlobal('localStorage', ls);
+    ls.setItem('todo_list_prefs_list-1', JSON.stringify({ ...defaultPrefs, assigneeFilters: ['invalid'] }));
+
+    expect(loadListPrefs('list-1')?.assigneeFilters).toEqual([]);
+  });
+
+  it('normalizes all assignee criteria to inactive', () => {
+    const ls = makeLocalStorage();
+    vi.stubGlobal('localStorage', ls);
+    ls.setItem('todo_list_prefs_list-1', JSON.stringify({ ...defaultPrefs, assigneeFilters: ['none', 'me', 'others'] }));
+
+    expect(loadListPrefs('list-1')?.assigneeFilters).toEqual([]);
   });
 
   it('returns null (not throw) when localStorage.getItem throws', () => {

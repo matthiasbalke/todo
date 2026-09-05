@@ -31,6 +31,10 @@ const listItemDefaultsMocks = vi.hoisted(() => ({
 	deleteListItemDefaults: vi.fn(),
 }));
 
+const authStoreState = vi.hoisted(() => ({
+	currentUserId: null as string | null,
+}));
+
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 vi.mock('$lib/stores/items.svelte', () => ({
@@ -77,7 +81,7 @@ vi.mock('$lib/stores/lists.svelte', () => ({
 }));
 
 vi.mock('$lib/stores/auth.svelte', () => ({
-	getCurrentUser: vi.fn(() => null),
+	getCurrentUser: vi.fn(() => authStoreState.currentUserId ? { id: authStoreState.currentUserId, email: 'user@example.com' } : null),
 	setSession: vi.fn(),
 	clearSession: vi.fn(),
 	restoreSession: vi.fn(),
@@ -139,6 +143,7 @@ describe('ListPage title emoji extraction', () => {
 		listStoreState.role = 'OWNER';
 		listStoreState.categories = [];
 		listStoreState.items = [];
+		authStoreState.currentUserId = null;
 		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
@@ -163,6 +168,7 @@ describe('ListPage accessibility', () => {
 		listStoreState.role = 'OWNER';
 		listStoreState.categories = [];
 		listStoreState.items = [];
+		authStoreState.currentUserId = null;
 		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
@@ -190,6 +196,7 @@ describe('ListPage menu presentation', () => {
 		listStoreState.role = 'OWNER';
 		listStoreState.categories = [];
 		listStoreState.items = [];
+		authStoreState.currentUserId = null;
 		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
@@ -461,6 +468,79 @@ describe('ListPage menu presentation', () => {
 		expect(screen.queryByRole('button', { name: 'Clear Starred only filter' })).not.toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Clear Hide checked filter' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Filter 1 active' })).toBeInTheDocument();
+	});
+
+	it('combines assigned-to-me and unassigned filters while excluding items assigned only to others', async () => {
+		authStoreState.currentUserId = 'user-1';
+		listStoreState.items = [
+			{ ...makeItem('unassigned', 'Unassigned item'), assignedUserIds: [] },
+			{ ...makeItem('mine', 'Mine item'), assignedUserIds: ['user-1'] },
+			{ ...makeItem('other', 'Other item'), assignedUserIds: ['user-2'] },
+			{ ...makeItem('shared', 'Shared item'), assignedUserIds: ['user-1', 'user-2'] },
+		];
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: /Filter/ }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Assigned to me' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Not assigned' }));
+
+		expect(screen.getByText('Unassigned item')).toBeInTheDocument();
+		expect(screen.getByText('Mine item')).toBeInTheDocument();
+		expect(screen.getByText('Shared item')).toBeInTheDocument();
+		expect(screen.queryByText('Other item')).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Clear Assigned to me or not assigned filter' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Filter 1 active' })).toBeInTheDocument();
+	});
+
+	it('clears assignment criteria as one filter group without resetting other filters', async () => {
+		authStoreState.currentUserId = 'user-1';
+		listStoreState.items = [
+			{ ...makeItem('unassigned', 'Unassigned item', false, true), assignedUserIds: [] },
+			{ ...makeItem('mine', 'Mine item', false, true), assignedUserIds: ['user-1'] },
+			{ ...makeItem('other', 'Other item', false, true), assignedUserIds: ['user-2'] },
+			{ ...makeItem('plain', 'Plain item', false, false), assignedUserIds: [] },
+		];
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: /Filter/ }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Starred only' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Assigned to me' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Not assigned' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Clear Assigned to me or not assigned filter' }));
+
+		expect(screen.getByText('Unassigned item')).toBeInTheDocument();
+		expect(screen.getByText('Mine item')).toBeInTheDocument();
+		expect(screen.getByText('Other item')).toBeInTheDocument();
+		expect(screen.queryByText('Plain item')).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Clear Starred only filter' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Filter 1 active' })).toBeInTheDocument();
+	});
+
+	it('restores combined assignment filters from list preferences', async () => {
+		const { loadListPrefs } = await import('$lib/listPrefs');
+		authStoreState.currentUserId = 'user-1';
+		vi.mocked(loadListPrefs).mockReturnValueOnce({
+			sortField: 'MANUAL',
+			sortDirection: 'ASC',
+			starredOnly: false,
+			hideFuture: false,
+			hideUndated: false,
+			assigneeFilters: ['none', 'me'],
+		});
+		listStoreState.items = [
+			{ ...makeItem('unassigned', 'Unassigned item'), assignedUserIds: [] },
+			{ ...makeItem('mine', 'Mine item'), assignedUserIds: ['user-1'] },
+			{ ...makeItem('other', 'Other item'), assignedUserIds: ['user-2'] },
+		];
+
+		render(ListPage, { props: { data: mockData } });
+
+		expect(screen.getByText('Unassigned item')).toBeInTheDocument();
+		expect(screen.getByText('Mine item')).toBeInTheDocument();
+		expect(screen.queryByText('Other item')).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Clear Assigned to me or not assigned filter' })).toBeInTheDocument();
 	});
 
 	it('navigates to grocery mode and closes the menu', async () => {
