@@ -26,7 +26,8 @@ function itemWithDueDate(dueDate: string | null): TodoItem {
 		parentItemId: null,
 		createdByUserId: null,
 		sortOrder: 1,
-		createdAt: '2026-06-01'
+		createdAt: '2026-06-01',
+		updatedAt: '2026-06-02'
 	};
 }
 

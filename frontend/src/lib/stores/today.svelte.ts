@@ -36,6 +36,7 @@ export function todayDtoToItem(dto: TodayItemDto): TodoItem {
 		assignedUserIds: dto.assignedUsers.map((user) => user.id),
 		sortOrder: dto.sortOrder,
 		createdAt: dto.createdAt,
+		updatedAt: dto.updatedAt,
 	};
 }
 

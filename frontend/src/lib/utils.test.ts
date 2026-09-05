@@ -13,7 +13,7 @@ describe('recurrenceRuleToHuman', () => {
 describe('applyFilters — assigneeFilter', () => {
   const base: Omit<TodoItem, 'assignedUserIds'> = {
     id: '1', listId: 'l1', title: 'Test', starred: false, done: false,
-    createdAt: '2024-01-01T00:00:00Z', sortOrder: 0,
+    createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-02T00:00:00Z', sortOrder: 0,
     categoryId: null, dueDate: null, notes: null, recurrenceRule: null, parentItemId: null,
     createdByUserId: null,
   };
@@ -62,6 +62,7 @@ describe('groupByCategory', () => {
     starred: false,
     done: false,
     createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-02T00:00:00Z',
     sortOrder: 0,
     dueDate: null,
     notes: null,

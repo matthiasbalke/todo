@@ -99,7 +99,8 @@
         parentItemId: item?.parentItemId ?? null,
         createdByUserId: item?.createdByUserId ?? null,
         sortOrder: item?.sortOrder ?? 999,
-        createdAt: item?.createdAt ?? now
+        createdAt: item?.createdAt ?? now,
+        updatedAt: item?.updatedAt ?? now
       };
       await onsubmit(submitted);
       if (isNew) {

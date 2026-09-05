@@ -23,6 +23,7 @@ export function dtoToItem(dto: ItemDto): TodoItem {
 		createdByUserId: dto.createdByUserId,
 		sortOrder: dto.sortOrder,
 		createdAt: dto.createdAt,
+		updatedAt: dto.updatedAt,
 	};
 }
 

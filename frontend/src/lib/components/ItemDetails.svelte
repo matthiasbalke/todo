@@ -11,6 +11,17 @@
 
   const category = $derived(categories.find((entry) => entry.id === item.categoryId));
   const assignedUsers = $derived(users.filter((user) => item.assignedUserIds.includes(user.id)));
+  const createdBy = $derived(users.find((user) => user.id === item.createdByUserId));
+
+  function formatAuditDate(iso: string): string {
+    const date = new Date(iso);
+    const weekday = date.toLocaleDateString('en-GB', { weekday: 'short' });
+    const day = date.getDate();
+    const month = date.toLocaleDateString('en-GB', { month: 'short' });
+    const year = String(date.getFullYear()).slice(-2);
+    const time = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return `${weekday} ${day}. ${month} ${year} at ${time}`;
+  }
 </script>
 
 <article class="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
@@ -51,5 +62,10 @@
   <div>
     <p class="text-xs font-medium text-gray-500">Notes</p>
     <p class="text-sm text-gray-900 whitespace-pre-wrap">{item.notes ?? 'None'}</p>
+  </div>
+
+  <div class="pt-3 border-t border-gray-100 text-xs text-gray-500 space-y-1">
+    <p>{formatAuditDate(item.updatedAt)} updated</p>
+    <p>{formatAuditDate(item.createdAt)} created by {createdBy?.name ?? 'Unknown'}</p>
   </div>
 </article>

@@ -35,7 +35,8 @@ const baseItem: TodoItem = {
 	parentItemId: null,
 	createdByUserId: null,
 	sortOrder: 0,
-	createdAt: '2026-06-10'
+	createdAt: '2026-06-10',
+	updatedAt: '2026-06-11'
 };
 
 afterEach(cleanup);

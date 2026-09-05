@@ -21,6 +21,7 @@ const item: TodoItem = {
 	createdByUserId: 'user-1',
 	sortOrder: 0,
 	createdAt: '2026-06-01',
+	updatedAt: '2026-06-13',
 };
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));

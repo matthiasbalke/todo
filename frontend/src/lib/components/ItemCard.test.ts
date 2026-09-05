@@ -29,6 +29,7 @@ const baseItem: TodoItem = {
   createdByUserId: null,
   sortOrder: 1,
   createdAt: '2024-01-01',
+  updatedAt: '2024-01-02',
 };
 
 describe('ItemCard avatar alignment', () => {
