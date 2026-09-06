@@ -598,10 +598,67 @@ class ListIntegrationTest : AbstractIntegrationTest() {
         assertNull(preserved.parentItemId)
     }
 
+    // ─── GET /api/lists/{id}/members/suggestions ─────────────────────────────
+
+    @Test
+    fun `GET member suggestions - requires authentication`() {
+        val owner = createUser()
+        val listId = createListAsUser(owner, "Private")
+
+        mockMvc.get("/api/lists/$listId/members/suggestions")
+            .andExpect {
+                status { isForbidden() }
+            }
+    }
+
+    @Test
+    fun `GET member suggestions - returns direct shared-list contacts excluding current list members`() {
+        val owner = createUser("owner-${UUID.randomUUID()}@example.com")
+        val directShared = createUser("direct-${UUID.randomUUID()}@example.com")
+        val currentMember = createUser("current-${UUID.randomUUID()}@example.com")
+        val indirectContact = createUser("indirect-${UUID.randomUUID()}@example.com")
+        val targetListId = createListAsUser(owner, "Target")
+        val sharedListId = createListAsUser(owner, "Shared elsewhere")
+        val indirectListId = createListAsUser(directShared, "Not owner's list")
+
+        addMemberToList(sharedListId, owner, directShared.email, "VIEWER")
+        addMemberToList(targetListId, owner, currentMember.email, "VIEWER")
+        addMemberToList(indirectListId, directShared, indirectContact.email, "VIEWER")
+
+        mockMvc.get("/api/lists/$targetListId/members/suggestions") {
+            header("Authorization", bearerHeader(owner))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.length()") { value(1) }
+            jsonPath("$[0].userId") { value(directShared.id.toString()) }
+            jsonPath("$[0].email") { value(directShared.email) }
+            jsonPath("$[0].displayName") { value(directShared.displayName) }
+        }
+    }
+
+    @Test
+    fun `GET member suggestions - rejects editors viewers and non members`() {
+        val owner = createUser()
+        val editor = createUser()
+        val viewer = createUser()
+        val stranger = createUser()
+        val listId = createListAsUser(owner, "Owner managed")
+        addMemberToList(listId, owner, editor.email, "EDITOR")
+        addMemberToList(listId, owner, viewer.email, "VIEWER")
+
+        listOf(editor, viewer, stranger).forEach { user ->
+            mockMvc.get("/api/lists/$listId/members/suggestions") {
+                header("Authorization", bearerHeader(user))
+            }.andExpect {
+                status { isForbidden() }
+            }
+        }
+    }
+
     // ─── POST /api/lists/{id}/members ─────────────────────────────────────────
 
     @Test
-    fun `POST members - unknown email returns 404`() {
+    fun `POST members - unknown email returns non-enumerating 404`() {
         val owner = createUser()
         val listId = createListAsUser(owner, "My List")
 
@@ -611,6 +668,7 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             content = """{"email":"nonexistent@example.com","role":"VIEWER"}"""
         }.andExpect {
             status { isNotFound() }
+            jsonPath("$.message") { value("Could not add member") }
         }
     }
 
@@ -627,6 +685,32 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             content = """{"email":"${member.email}","role":"EDITOR"}"""
         }.andExpect {
             status { isEqualTo(409) }
+        }
+    }
+
+    @Test
+    fun `POST members - can re-add a removed member`() {
+        val owner = createUser()
+        val member = createUser()
+        val listId = createListAsUser(owner, "My List")
+        addMemberToList(listId, owner, member.email, "VIEWER")
+
+        mockMvc.delete("/api/lists/$listId/members/${member.id}") {
+            header("Authorization", bearerHeader(owner))
+        }.andExpect {
+            status { isNoContent() }
+        }
+
+        assertNull(listGroupAssignmentRepository.findByListIdAndUserId(listId, member.id))
+
+        mockMvc.post("/api/lists/$listId/members") {
+            header("Authorization", bearerHeader(owner))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"email":"${member.email}","role":"EDITOR"}"""
+        }.andExpect {
+            status { isCreated() }
+            jsonPath("$.userId") { value(member.id.toString()) }
+            jsonPath("$.role") { value("EDITOR") }
         }
     }
 

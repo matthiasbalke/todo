@@ -137,6 +137,16 @@ The admin area SHALL allow admins to list users and edit account-level user deta
 - **THEN** the request is rejected
 - **AND** the target account remains unchanged
 
+#### Scenario: Admin changes email to an existing email with different formatting
+- **WHEN** an admin changes a user's email address to one already used by another account after trimming and lower-case comparison
+- **THEN** the request is rejected
+- **AND** the target account remains unchanged
+
+#### Scenario: Admin changes only formatting of target user's email
+- **WHEN** an admin changes a user's email address and the new value differs from that user's current email only by surrounding whitespace or casing
+- **THEN** the request is allowed
+- **AND** future token issuance and profile responses use the updated casing after trimming
+
 ### Requirement: Admin users can manage admin status safely
 The admin area SHALL allow admins to grant or revoke admin status without allowing zero-admin lockout.
 

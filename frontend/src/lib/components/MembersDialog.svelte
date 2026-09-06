@@ -2,16 +2,19 @@
   import { getCurrentUser } from '$lib/stores/auth.svelte';
   import {
     getMembers,
+    getMemberSuggestions,
     addMember,
     changeMemberRole,
     removeMember,
     type MemberDto,
+    type MemberSuggestionDto,
     type ListRole,
   } from '$lib/api/lists';
   import { ApiError } from '$lib/api/client';
   import { friendlyError } from '$lib/api/errors';
+  import { formatListRole } from '$lib/listRoles';
   import Button from './Button.svelte';
-  import EmailInput from './EmailInput.svelte';
+  import MemberInviteEmailInput from './MemberInviteEmailInput.svelte';
   import Select from './Select.svelte';
 
   let { listId, canManageMembers, onclose }: {
@@ -21,7 +24,9 @@
   } = $props();
 
   let members = $state<MemberDto[]>([]);
+  let suggestions = $state<MemberSuggestionDto[]>([]);
   let loadError = $state<string | null>(null);
+  let suggestionsError = $state<string | null>(null);
   let actionError = $state<string | null>(null);
 
   let inviteEmail = $state('');
@@ -30,12 +35,26 @@
   const currentUser = getCurrentUser();
 
   const roles: ListRole[] = ['OWNER', 'EDITOR', 'VIEWER'];
+  const inviteSuggestions = $derived.by(() => {
+    const memberEmails = new Set(members.map((member) => member.email.toLocaleLowerCase()));
+    return suggestions.filter((suggestion) => !memberEmails.has(suggestion.email.toLocaleLowerCase()));
+  });
 
   async function load() {
     try {
       members = await getMembers(listId);
     } catch (e) {
       loadError = friendlyError(e, 'Failed to load members');
+      return;
+    }
+
+    if (canManageMembers) {
+      try {
+        suggestions = await getMemberSuggestions(listId);
+      } catch (e) {
+        suggestions = [];
+        suggestionsError = `Suggestions unavailable. ${friendlyError(e, 'Type an email address to invite manually')}`;
+      }
     }
   }
 
@@ -53,7 +72,9 @@
       if (e instanceof ApiError && e.status === 409) {
         actionError = 'This user is already a member.';
       } else if (e instanceof ApiError && e.status === 404) {
-        actionError = 'No account found with that email address.';
+        actionError = "We couldn't add that member. Check the email address and try again.";
+      } else if (e instanceof ApiError && e.status === 429) {
+        actionError = 'Too many invite attempts. Please wait before trying again.';
       } else {
         actionError = friendlyError(e, 'Failed to invite member');
       }
@@ -125,6 +146,7 @@
             <Select
               options={roles}
               selected={member.role}
+              getOptionLabel={formatListRole}
               onSelect={(role) => handleRoleChange(member.userId, role)}
               size="dense"
             />
@@ -138,7 +160,7 @@
             </Button>
           {:else}
             <span class="text-xs font-medium px-2 py-0.5 rounded-full {roleColors[member.role]}">
-              {member.role}
+              {formatListRole(member.role)}
             </span>
           {/if}
         </li>
@@ -152,8 +174,12 @@
     {#if canManageMembers}
       <form onsubmit={handleInvite} class="border-t border-gray-100 pt-4 space-y-3">
         <p class="text-sm font-medium text-gray-700">Invite member</p>
-        <EmailInput
+        {#if suggestionsError}
+          <p class="text-xs text-amber-700">{suggestionsError}</p>
+        {/if}
+        <MemberInviteEmailInput
           bind:value={inviteEmail}
+          suggestions={inviteSuggestions}
           placeholder="Email address"
           required
           label=""
@@ -163,6 +189,7 @@
           <Select
             options={roles}
             selected={inviteRole}
+            getOptionLabel={formatListRole}
             onSelect={(role) => { inviteRole = role; }}
             size="default"
           />

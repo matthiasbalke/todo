@@ -26,17 +26,31 @@ vi.mock('$lib/stores/auth.svelte', () => ({
 
 vi.mock('$lib/api/lists', () => ({
 	getMembers: vi.fn(),
+	getMemberSuggestions: vi.fn(),
 	addMember: vi.fn(),
 	changeMemberRole: vi.fn(),
 	removeMember: vi.fn()
 }));
 
 import * as listsApi from '$lib/api/lists';
+import { ApiError } from '$lib/api/client';
 import MembersDialog from './MembersDialog.svelte';
 
 describe('MembersDialog Select positioning', () => {
 	beforeEach(() => {
 		vi.mocked(listsApi.getMembers).mockResolvedValue([owner, editor]);
+		vi.mocked(listsApi.getMemberSuggestions).mockResolvedValue([
+			{
+				userId: 'viewer-1',
+				email: 'viewer@example.com',
+				displayName: 'Viewer'
+			},
+			{
+				userId: 'editor-1',
+				email: 'editor@example.com',
+				displayName: 'Editor'
+			}
+		]);
 		vi.mocked(listsApi.changeMemberRole).mockImplementation(async (_listId, userId, { role }) => ({
 			...(userId === owner.userId ? owner : editor),
 			role
@@ -88,16 +102,17 @@ describe('MembersDialog Select positioning', () => {
 		});
 
 		await screen.findByText('editor@example.com');
-		expect(screen.getByText('OWNER')).toBeInTheDocument();
-		expect(screen.getByText('EDITOR')).toBeInTheDocument();
+		expect(screen.getAllByText('Owner')).toHaveLength(2);
+		expect(screen.getAllByText('Editor')).toHaveLength(2);
 		expect(screen.queryByPlaceholderText('Email address')).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: /Remove/ })).not.toBeInTheDocument();
+		expect(listsApi.getMemberSuggestions).not.toHaveBeenCalled();
 	});
 
 	it('preserves existing-member role changes', async () => {
 		const [memberRole] = await renderOwnerDialog();
 		await fireEvent.click(memberRole);
-		await fireEvent.click(screen.getByRole('option', { name: 'VIEWER' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'Viewer' }));
 
 		await waitFor(() => {
 			expect(listsApi.changeMemberRole).toHaveBeenCalledWith('list-1', 'editor-1', {
@@ -109,7 +124,7 @@ describe('MembersDialog Select positioning', () => {
 	it('preserves invitation role selection', async () => {
 		const [, invitationRole] = await renderOwnerDialog();
 		await fireEvent.click(invitationRole);
-		await fireEvent.click(screen.getByRole('option', { name: 'VIEWER' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'Viewer' }));
 		await fireEvent.input(screen.getByPlaceholderText('Email address'), {
 			target: { value: 'viewer@example.com' }
 		});
@@ -121,5 +136,92 @@ describe('MembersDialog Select positioning', () => {
 				role: 'VIEWER'
 			});
 		});
+	});
+
+	it('loads suggestions and invites a suggested member by email', async () => {
+		await renderOwnerDialog();
+
+		expect(listsApi.getMemberSuggestions).toHaveBeenCalledWith('list-1');
+		const renderedSuggestions = Array.from(document.querySelectorAll('datalist option'));
+		expect(renderedSuggestions).toHaveLength(1);
+		expect(renderedSuggestions[0]).toHaveAttribute('value', 'viewer@example.com');
+		expect(renderedSuggestions[0]).toHaveAttribute('label', 'Viewer (viewer@example.com)');
+
+		await fireEvent.input(screen.getByPlaceholderText('Email address'), {
+			target: { value: 'viewer@example.com' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+		await waitFor(() => {
+			expect(listsApi.addMember).toHaveBeenCalledWith('list-1', {
+				email: 'viewer@example.com',
+				role: 'EDITOR'
+			});
+		});
+	});
+
+	it('keeps member management available when suggestions fail to load', async () => {
+		vi.mocked(listsApi.getMemberSuggestions).mockRejectedValueOnce(
+			new ApiError(500, 'Suggestions failed')
+		);
+		await renderOwnerDialog();
+
+		expect(screen.getByText('editor@example.com')).toBeInTheDocument();
+		expect(
+			screen.getByText('Suggestions unavailable. Something went wrong — please try again.')
+		).toBeInTheDocument();
+		expect(document.querySelectorAll('datalist option')).toHaveLength(0);
+
+		await fireEvent.input(screen.getByPlaceholderText('Email address'), {
+			target: { value: 'outside@example.com' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+		await waitFor(() => {
+			expect(listsApi.addMember).toHaveBeenCalledWith('list-1', {
+				email: 'outside@example.com',
+				role: 'EDITOR'
+			});
+		});
+	});
+
+	it('preserves typed unsuggested invite emails', async () => {
+		await renderOwnerDialog();
+
+		await fireEvent.input(screen.getByPlaceholderText('Email address'), {
+			target: { value: 'outside@example.com' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+		await waitFor(() => {
+			expect(listsApi.addMember).toHaveBeenCalledWith('list-1', {
+				email: 'outside@example.com',
+				role: 'EDITOR'
+			});
+		});
+	});
+
+	it('shows a non-enumerating invite failure for missing accounts', async () => {
+		vi.mocked(listsApi.addMember).mockRejectedValueOnce(new ApiError(404, 'Could not add member'));
+		await renderOwnerDialog();
+
+		await fireEvent.input(screen.getByPlaceholderText('Email address'), {
+			target: { value: 'missing@example.com' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+		expect(await screen.findByText("We couldn't add that member. Check the email address and try again.")).toBeInTheDocument();
+	});
+
+	it('shows retry guidance for rate-limited invites', async () => {
+		vi.mocked(listsApi.addMember).mockRejectedValueOnce(new ApiError(429, 'Too many requests'));
+		await renderOwnerDialog();
+
+		await fireEvent.input(screen.getByPlaceholderText('Email address'), {
+			target: { value: 'later@example.com' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+		expect(await screen.findByText('Too many invite attempts. Please wait before trying again.')).toBeInTheDocument();
 	});
 });

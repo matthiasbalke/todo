@@ -1,9 +1,11 @@
 package com.github.matthiasbalke.todo.lists
 
 import com.github.matthiasbalke.todo.auth.UserRepository
+import org.springframework.http.ResponseEntity
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 import java.util.UUID
 
@@ -75,6 +78,12 @@ class ListController(
         val createdAt: Instant,
     )
 
+    data class MemberSuggestionDto(
+        val userId: UUID,
+        val email: String,
+        val displayName: String,
+    )
+
     data class InviteMemberRequest(
         val email: String,
         val role: ListRole = ListRole.VIEWER,
@@ -83,6 +92,15 @@ class ListController(
     data class ChangeRoleRequest(
         val role: ListRole,
     )
+
+    data class ErrorResponse(
+        val message: String,
+    )
+
+    @ExceptionHandler(ResponseStatusException::class)
+    fun listError(error: ResponseStatusException): ResponseEntity<ErrorResponse> =
+        ResponseEntity.status(error.statusCode)
+            .body(ErrorResponse(error.reason ?: "Request failed"))
 
     // ─── List CRUD ───────────────────────────────────────────────────────────
 
@@ -163,6 +181,19 @@ class ListController(
         @PathVariable id: UUID,
     ): kotlin.collections.List<MemberDto> =
         listService.getMembers(id, userId).map { it.toMemberDto() }
+
+    @GetMapping("/{id}/members/suggestions")
+    fun getMemberSuggestions(
+        @AuthenticationPrincipal userId: UUID,
+        @PathVariable id: UUID,
+    ): kotlin.collections.List<MemberSuggestionDto> =
+        listService.getMemberSuggestions(id, userId).map {
+            MemberSuggestionDto(
+                userId = it.id,
+                email = it.email,
+                displayName = it.displayName,
+            )
+        }
 
     @PostMapping("/{id}/members")
     @ResponseStatus(HttpStatus.CREATED)
