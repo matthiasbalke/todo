@@ -15,12 +15,14 @@ const listStoreState = vi.hoisted(() => ({
 		starred: boolean;
 		dueDate: string | null;
 		assignedUserIds: string[];
-		recurrenceRule: null;
-		parentItemId: string | null;
-		createdByUserId: string | null;
-		sortOrder: number;
-		createdAt: string;
-	}[],
+			recurrenceRule: null;
+			parentItemId: string | null;
+			createdByUserId: string | null;
+			updatedByUserId: string | null;
+			sortOrder: number;
+			createdAt: string;
+			updatedAt: string;
+		}[],
 }));
 
 const listItemDefaultsMocks = vi.hoisted(() => ({
@@ -29,12 +31,17 @@ const listItemDefaultsMocks = vi.hoisted(() => ({
 	deleteListItemDefaults: vi.fn(),
 }));
 
+const authStoreState = vi.hoisted(() => ({
+	currentUserId: null as string | null,
+}));
+
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 vi.mock('$lib/stores/items.svelte', () => ({
 	getItems: vi.fn(() => listStoreState.items),
 	loadItemsForList: vi.fn(),
 	createItem: vi.fn(),
+	deleteFinishedItems: vi.fn(),
 	moveItemsToCategoryOptimistic: vi.fn(),
 }));
 
@@ -74,7 +81,7 @@ vi.mock('$lib/stores/lists.svelte', () => ({
 }));
 
 vi.mock('$lib/stores/auth.svelte', () => ({
-	getCurrentUser: vi.fn(() => null),
+	getCurrentUser: vi.fn(() => authStoreState.currentUserId ? { id: authStoreState.currentUserId, email: 'user@example.com' } : null),
 	setSession: vi.fn(),
 	clearSession: vi.fn(),
 	restoreSession: vi.fn(),
@@ -108,6 +115,27 @@ import ListPage from './+page.svelte';
 
 const mockData = { id: 'list-1', users: [], buildNumber: '0' };
 
+function makeItem(id: string, title: string, done = false, starred = false) {
+	return {
+		id,
+		listId: 'list-1',
+		categoryId: null,
+		title,
+		notes: null,
+		done,
+		starred,
+		dueDate: null,
+		assignedUserIds: [],
+		recurrenceRule: null,
+		parentItemId: null,
+		createdByUserId: 'user-1',
+		updatedByUserId: 'user-1',
+		sortOrder: 0,
+		createdAt: '2026-01-01T00:00:00Z',
+		updatedAt: '2026-01-01T00:00:00Z',
+	};
+}
+
 describe('ListPage title emoji extraction', () => {
 	afterEach(() => {
 		cleanup();
@@ -115,6 +143,7 @@ describe('ListPage title emoji extraction', () => {
 		listStoreState.role = 'OWNER';
 		listStoreState.categories = [];
 		listStoreState.items = [];
+		authStoreState.currentUserId = null;
 		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
@@ -139,6 +168,7 @@ describe('ListPage accessibility', () => {
 		listStoreState.role = 'OWNER';
 		listStoreState.categories = [];
 		listStoreState.items = [];
+		authStoreState.currentUserId = null;
 		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
@@ -166,12 +196,14 @@ describe('ListPage menu presentation', () => {
 		listStoreState.role = 'OWNER';
 		listStoreState.categories = [];
 		listStoreState.items = [];
+		authStoreState.currentUserId = null;
 		listItemDefaultsMocks.loadListItemDefaults.mockReturnValue(null);
 		vi.clearAllMocks();
 	});
 
 	it('hides shared mutation controls for viewers while preserving presentation and navigation controls', async () => {
 		listStoreState.role = 'VIEWER';
+		listStoreState.items = [makeItem('item-1', 'Checked item', true)];
 		render(ListPage, { props: { data: mockData } });
 
 		expect(screen.getByRole('heading', { name: /Groceries/i })).toBeInTheDocument();
@@ -179,12 +211,16 @@ describe('ListPage menu presentation', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
 		expect(screen.getByRole('button', { name: 'Grocery mode' })).toBeInTheDocument();
-		expect(screen.getByRole('button', { name: /Filter/ })).toBeInTheDocument();
+		const filterButton = screen.getByRole('button', { name: /Filter/ });
+		expect(filterButton).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: /Sort/ })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Hide checked' })).not.toBeInTheDocument();
+		await fireEvent.click(filterButton);
 		expect(screen.getByRole('button', { name: 'Hide checked' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Members' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Configure categories' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Duplicate list' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Delete checked items' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Delete list' })).not.toBeInTheDocument();
 	});
 
@@ -204,12 +240,14 @@ describe('ListPage menu presentation', () => {
 				starred: false,
 				dueDate: null,
 				assignedUserIds: [],
-				recurrenceRule: null,
-				parentItemId: null,
-				createdByUserId: 'user-1',
-				sortOrder: 0,
-				createdAt: '2026-01-01T00:00:00Z',
-			},
+					recurrenceRule: null,
+					parentItemId: null,
+					createdByUserId: 'user-1',
+					updatedByUserId: 'user-1',
+					sortOrder: 0,
+					createdAt: '2026-01-01T00:00:00Z',
+					updatedAt: '2026-01-01T00:00:00Z',
+				},
 		];
 
 		const { container } = render(ListPage, { props: { data: mockData } });
@@ -243,6 +281,68 @@ describe('ListPage menu presentation', () => {
 		expect(duplicateIndex).toBeGreaterThan(-1);
 		expect(deleteIndex).toBeGreaterThan(-1);
 		expect(duplicateIndex).toBe(deleteIndex - 1);
+	});
+
+	it('displays the delete checked action disabled when the list has no checked items', async () => {
+		listStoreState.items = [makeItem('item-1', 'Unchecked item')];
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+
+		expect(screen.getByRole('button', { name: 'Delete checked items' })).toBeDisabled();
+	});
+
+	it('deletes checked items after modal confirmation using the full unfiltered list count', async () => {
+		const { deleteFinishedItems } = await import('$lib/stores/items.svelte');
+		vi.mocked(deleteFinishedItems).mockResolvedValueOnce(undefined);
+		listStoreState.items = [
+			makeItem('checked-hidden-by-starred', 'Hidden checked item', true, false),
+			makeItem('checked-visible', 'Visible checked item', true, true),
+			makeItem('unchecked-visible', 'Visible unchecked item', false, true),
+		];
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: /^Filter/ }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Starred only' }));
+		expect(screen.queryByText('Hidden checked item')).not.toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked items' }));
+
+		expect(screen.getByRole('dialog', { name: 'Delete all checked items?' })).toBeInTheDocument();
+		expect(screen.getByText(/permanently delete 2 checked items/)).toHaveClass('font-semibold', 'text-red-600');
+		expect(screen.getByText('Checked items hidden by filters will also be deleted.')).toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked' }));
+
+		await waitFor(() => expect(deleteFinishedItems).toHaveBeenCalledWith('list-1'));
+		expect(screen.queryByRole('dialog', { name: 'Delete all checked items?' })).not.toBeInTheDocument();
+	});
+
+	it('does not delete checked items when the confirmation modal is canceled', async () => {
+		const { deleteFinishedItems } = await import('$lib/stores/items.svelte');
+		listStoreState.items = [makeItem('checked-1', 'Checked item', true)];
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked items' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+		expect(deleteFinishedItems).not.toHaveBeenCalled();
+		expect(screen.queryByRole('dialog', { name: 'Delete all checked items?' })).not.toBeInTheDocument();
+	});
+
+	it('keeps the delete checked modal open and reports errors when cleanup fails', async () => {
+		const { deleteFinishedItems } = await import('$lib/stores/items.svelte');
+		vi.mocked(deleteFinishedItems).mockRejectedValueOnce(new Error('boom'));
+		listStoreState.items = [makeItem('checked-1', 'Checked item', true)];
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked items' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked' }));
+
+		await waitFor(() => expect(screen.getByText('Error: boom')).toBeInTheDocument());
+		expect(screen.getByRole('dialog', { name: 'Delete all checked items?' })).toBeInTheDocument();
 	});
 
 	it('duplicates the list and navigates to the copy', async () => {
@@ -320,17 +420,127 @@ describe('ListPage menu presentation', () => {
 		expect(screen.getByRole('button', { name: 'Created' })).toHaveClass('text-gray-700');
 
 		await fireEvent.click(sortButton);
+		await fireEvent.click(filterButton);
 		const inactiveHideChecked = screen.getByRole('button', { name: 'Hide checked' });
 		expect(inactiveHideChecked).toHaveClass('text-gray-700');
 		expect(inactiveHideChecked).not.toHaveClass('text-menu-selected');
 
 		await fireEvent.click(inactiveHideChecked);
-		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
 
 		const activeHideChecked = screen.getByRole('button', { name: 'Hide checked ✓' });
 		expect(activeHideChecked).toHaveClass('text-menu-selected');
 		expect(activeHideChecked.querySelector('span:last-child')).toHaveTextContent('✓');
 		expect(activeHideChecked.querySelector('span:last-child')).not.toHaveAttribute('class');
+	});
+
+	it('shows summary state and opens sort controls from the summary', async () => {
+		render(ListPage, { props: { data: mockData } });
+
+		expect(screen.getByText('0 items')).toBeInTheDocument();
+		const summarySort = screen.getByRole('button', { name: 'Change sort order: Manual ↑' });
+		expect(summarySort).toHaveTextContent('Sort: Manual ↑');
+		expect(screen.queryByRole('button', { name: /Clear .* filter/ })).not.toBeInTheDocument();
+
+		await fireEvent.click(summarySort);
+		expect(screen.queryByRole('button', { name: 'Filter' })).not.toBeInTheDocument();
+		expect(screen.getByText('Sort by')).toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: 'Created' }));
+		expect(screen.getByRole('button', { name: 'Change sort order: Created ↑' })).toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('button', { name: '↑ Ascending' }));
+		expect(screen.getByRole('button', { name: 'Change sort order: Created ↓' })).toBeInTheDocument();
+	});
+
+	it('shows active filter chips and resets only the selected filter', async () => {
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: /Filter/ }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Starred only' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Hide checked' }));
+
+		expect(screen.getByRole('button', { name: 'Clear Starred only filter' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Clear Hide checked filter' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Filter 2 active' })).toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Clear Starred only filter' }));
+
+		expect(screen.queryByRole('button', { name: 'Clear Starred only filter' })).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Clear Hide checked filter' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Filter 1 active' })).toBeInTheDocument();
+	});
+
+	it('combines assigned-to-me and unassigned filters while excluding items assigned only to others', async () => {
+		authStoreState.currentUserId = 'user-1';
+		listStoreState.items = [
+			{ ...makeItem('unassigned', 'Unassigned item'), assignedUserIds: [] },
+			{ ...makeItem('mine', 'Mine item'), assignedUserIds: ['user-1'] },
+			{ ...makeItem('other', 'Other item'), assignedUserIds: ['user-2'] },
+			{ ...makeItem('shared', 'Shared item'), assignedUserIds: ['user-1', 'user-2'] },
+		];
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: /Filter/ }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Assigned to me' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Not assigned' }));
+
+		expect(screen.getByText('Unassigned item')).toBeInTheDocument();
+		expect(screen.getByText('Mine item')).toBeInTheDocument();
+		expect(screen.getByText('Shared item')).toBeInTheDocument();
+		expect(screen.queryByText('Other item')).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Clear Assigned to me or not assigned filter' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Filter 1 active' })).toBeInTheDocument();
+	});
+
+	it('clears assignment criteria as one filter group without resetting other filters', async () => {
+		authStoreState.currentUserId = 'user-1';
+		listStoreState.items = [
+			{ ...makeItem('unassigned', 'Unassigned item', false, true), assignedUserIds: [] },
+			{ ...makeItem('mine', 'Mine item', false, true), assignedUserIds: ['user-1'] },
+			{ ...makeItem('other', 'Other item', false, true), assignedUserIds: ['user-2'] },
+			{ ...makeItem('plain', 'Plain item', false, false), assignedUserIds: [] },
+		];
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: /Filter/ }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Starred only' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Assigned to me' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Not assigned' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Clear Assigned to me or not assigned filter' }));
+
+		expect(screen.getByText('Unassigned item')).toBeInTheDocument();
+		expect(screen.getByText('Mine item')).toBeInTheDocument();
+		expect(screen.getByText('Other item')).toBeInTheDocument();
+		expect(screen.queryByText('Plain item')).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Clear Starred only filter' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Filter 1 active' })).toBeInTheDocument();
+	});
+
+	it('restores combined assignment filters from list preferences', async () => {
+		const { loadListPrefs } = await import('$lib/listPrefs');
+		authStoreState.currentUserId = 'user-1';
+		vi.mocked(loadListPrefs).mockReturnValueOnce({
+			sortField: 'MANUAL',
+			sortDirection: 'ASC',
+			starredOnly: false,
+			hideFuture: false,
+			hideUndated: false,
+			assigneeFilters: ['none', 'me'],
+		});
+		listStoreState.items = [
+			{ ...makeItem('unassigned', 'Unassigned item'), assignedUserIds: [] },
+			{ ...makeItem('mine', 'Mine item'), assignedUserIds: ['user-1'] },
+			{ ...makeItem('other', 'Other item'), assignedUserIds: ['user-2'] },
+		];
+
+		render(ListPage, { props: { data: mockData } });
+
+		expect(screen.getByText('Unassigned item')).toBeInTheDocument();
+		expect(screen.getByText('Mine item')).toBeInTheDocument();
+		expect(screen.queryByText('Other item')).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Clear Assigned to me or not assigned filter' })).toBeInTheDocument();
 	});
 
 	it('navigates to grocery mode and closes the menu', async () => {
@@ -363,5 +573,88 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
 		expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({ categoryId: null }));
+	});
+
+	it('restores an add-item draft after focus loss minimizes the form', async () => {
+		render(ListPage, { props: { data: mockData } });
+		const externalElement = document.createElement('button');
+		document.body.appendChild(externalElement);
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+			target: { value: 'Preserved title' },
+		});
+		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
+			target: { value: 'Preserved notes' },
+		});
+		await fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
+			relatedTarget: externalElement,
+		});
+
+		expect(screen.queryByPlaceholderText('Item title')).not.toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+
+		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Preserved title');
+		expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Preserved notes');
+		externalElement.remove();
+	});
+
+	it('clears an add-item draft after explicit cancellation', async () => {
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+			target: { value: 'Discarded title' },
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+
+		expect(screen.getByPlaceholderText('Item title')).toHaveValue('');
+	});
+
+	it('clears an add-item draft after successful submission', async () => {
+		const { createItem } = await import('$lib/stores/items.svelte');
+		render(ListPage, { props: { data: mockData } });
+		const externalElement = document.createElement('button');
+		document.body.appendChild(externalElement);
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+			target: { value: 'Submitted title' },
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+		await waitFor(() => expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({
+			title: 'Submitted title',
+		})));
+		await fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
+			relatedTarget: externalElement,
+		});
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+
+		expect(screen.getByPlaceholderText('Item title')).toHaveValue('');
+		externalElement.remove();
+	});
+
+	it('keeps an add-item draft available after failed submission', async () => {
+		const alert = vi.fn();
+		vi.stubGlobal('alert', alert);
+		const { createItem } = await import('$lib/stores/items.svelte');
+		vi.mocked(createItem).mockRejectedValueOnce(new Error('boom'));
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+			target: { value: 'Retry title' },
+		});
+		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
+			target: { value: 'Retry notes' },
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+		await waitFor(() => expect(alert).toHaveBeenCalledWith('Error: boom'));
+		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Retry title');
+		expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Retry notes');
+		vi.unstubAllGlobals();
 	});
 });

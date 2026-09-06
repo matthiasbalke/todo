@@ -36,6 +36,7 @@ class ItemController(private val itemService: ItemService) {
         val recurrenceRule: RecurrenceRuleDto?,
         val parentItemId: UUID?,
         val createdByUserId: UUID?,
+        val updatedByUserId: UUID?,
         val assignedUserIds: List<UUID>,
         val sortOrder: Int,
         val createdAt: Instant,
@@ -100,6 +101,13 @@ class ItemController(private val itemService: ItemService) {
         @RequestBody body: UpdateItemRequest,
     ): ItemDto = itemService.updateItem(id, iid, userId, body.toServiceRequest()).toDto()
 
+    @DeleteMapping("/finished")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteFinishedItems(
+        @AuthenticationPrincipal userId: UUID,
+        @PathVariable id: UUID,
+    ) = itemService.deleteFinishedItems(id, userId)
+
     @DeleteMapping("/{iid}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteItem(
@@ -152,6 +160,7 @@ class ItemController(private val itemService: ItemService) {
         recurrenceRule = item.recurrenceRule?.let { RecurrenceRuleDto(it.intervalUnit.name, it.intervalValue) },
         parentItemId = item.parentItemId,
         createdByUserId = item.createdByUserId,
+        updatedByUserId = item.updatedByUserId,
         assignedUserIds = assignedUserIds,
         sortOrder = item.sortOrder,
         createdAt = item.createdAt,

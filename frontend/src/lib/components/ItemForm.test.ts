@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Category, TodoItem } from '$lib/mock-data';
+import type { Category, TodoItem, User } from '$lib/mock-data';
+import { setProfile } from '$lib/stores/preferences.svelte';
 import ItemForm from './ItemForm.svelte';
 
 const defaultProps = {
@@ -25,8 +26,10 @@ function itemWithDueDate(dueDate: string | null): TodoItem {
 		recurrenceRule: null,
 		parentItemId: null,
 		createdByUserId: null,
+		updatedByUserId: null,
 		sortOrder: 1,
-		createdAt: '2026-06-01'
+		createdAt: '2026-06-01T00:00:00Z',
+		updatedAt: '2026-06-01T00:00:00Z'
 	};
 }
 
@@ -45,7 +48,7 @@ function itemWithRecurrence(
 }
 
 const categories: Category[] = [
-	{ id: 'category-1', listId: 'list-1', name: 'Groceries', color: null, sortOrder: 1 },
+	{ id: 'category-1', listId: 'list-1', name: 'Groceries', color: '#60a5fa', sortOrder: 1 },
 	{ id: 'category-2', listId: 'list-1', name: 'Household', color: null, sortOrder: 2 }
 ];
 
@@ -53,6 +56,14 @@ describe('ItemForm', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date(2026, 5, 9, 12));
+		setProfile({
+			id: 'user-1',
+			email: 'alice@example.com',
+			displayName: 'Alice',
+			timeZone: 'UTC',
+			timeZoneInitialized: true,
+			todayViewEnabled: true
+		});
 	});
 
 	afterEach(() => {
@@ -62,7 +73,32 @@ describe('ItemForm', () => {
 	});
 
 	describe('category', () => {
-		it('renders the shared Select with category labels instead of a native category select', async () => {
+		it('renders audit rows below the notes field for existing items', () => {
+			const users: User[] = [{ id: 'user-1', name: 'Alice', email: 'alice@example.com' }];
+			const item = {
+				...itemWithDueDate(null),
+				notes: 'Existing note',
+				createdByUserId: 'missing-user-id',
+				updatedByUserId: 'user-1',
+				createdAt: '2026-01-01T10:01:02Z',
+				updatedAt: '2026-02-01T15:31:02Z'
+			};
+			const { container } = render(ItemForm, {
+				props: { ...defaultProps, item, users }
+			});
+
+			const notesField = screen.getByRole('textbox', { name: 'Notes' });
+			const audit = screen.getByTestId('item-audit-metadata');
+			expect(audit).toHaveTextContent(/Sun\. 1\. Feb 26 at 15:31\s*updated by Alice/);
+			expect(audit).toHaveTextContent(/Thu\. 1\. Jan 26 at 10:01\s*created by Deleted user/);
+			expect(audit).not.toHaveTextContent('missing-user-id');
+			expect(audit).toHaveClass('text-center');
+			expect(audit.querySelectorAll('p.grid-cols-\\[3\\.75rem_1fr\\]')).toHaveLength(0);
+			expect(notesField.compareDocumentPosition(audit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+			expect(container.textContent).toMatch(/Sun\. 1\. Feb 26 at 15:31\s*updated by Alice\s*Thu\. 1\. Jan 26 at 10:01\s*created by Deleted user/);
+		});
+
+		it('renders CategorySelect with category labels and color state instead of a native category select', async () => {
 			const { container } = render(ItemForm, {
 				props: { ...defaultProps, categories }
 			});
@@ -72,9 +108,20 @@ describe('ItemForm', () => {
 			expect(container.querySelector('select#categoryId')).not.toBeInTheDocument();
 
 			await fireEvent.click(trigger);
-			expect(screen.getByRole('option', { name: 'Uncategorized' })).toBeInTheDocument();
-			expect(screen.getByRole('option', { name: 'Groceries' })).toBeInTheDocument();
-			expect(screen.getByRole('option', { name: 'Household' })).toBeInTheDocument();
+			const uncategorized = screen.getByRole('option', { name: 'Uncategorized' });
+			const groceries = screen.getByRole('option', { name: 'Groceries' });
+			const household = screen.getByRole('option', { name: 'Household' });
+			expect(within(uncategorized).getByTestId('category-select-swatch-uncategorized')).toHaveClass(
+				'h-3',
+				'w-3'
+			);
+			expect(within(groceries).getByTestId('category-select-swatch-category-1')).toHaveClass(
+				'rounded-full'
+			);
+			expect(within(household).getByTestId('category-select-swatch-category-2')).toHaveClass(
+				'h-3',
+				'w-3'
+			);
 		});
 
 		it.each([
@@ -470,6 +517,71 @@ describe('ItemForm', () => {
 	});
 
 	describe('focusout and cancellation', () => {
+		it('initializes a new-item form from a draft', () => {
+			render(ItemForm, {
+				props: {
+					...defaultProps,
+					categories,
+					users: [{ id: 'u1', name: 'Alice', email: 'alice@example.com' }],
+					draft: {
+						title: 'Draft title',
+						notes: 'Draft notes',
+						dueDate: '2026-06-15',
+						categoryId: 'category-1',
+						assignedUserIds: ['u1'],
+						recurrencePreset: '1_WEEKS'
+					}
+				}
+			});
+
+			expect(screen.getByPlaceholderText('Item title')).toHaveValue('Draft title');
+			expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Draft notes');
+			expect(screen.getByRole('button', { name: 'Due Date' })).toHaveTextContent('Jun 15, 2026');
+			expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Groceries');
+			expect(screen.getByRole('button', { name: 'Alice' })).toHaveClass('bg-blue-100');
+			expect(screen.getByRole('combobox', { name: 'Recurrence' })).toHaveValue('Every week');
+		});
+
+		it('emits cloned draft changes for new-item fields', async () => {
+			const onDraftChange = vi.fn();
+			render(ItemForm, {
+				props: {
+					...defaultProps,
+					categories,
+					users: [{ id: 'u1', name: 'Alice', email: 'alice@example.com' }],
+					onDraftChange
+				}
+			});
+			onDraftChange.mockClear();
+
+			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+				target: { value: 'Draft item' }
+			});
+			await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
+				target: { value: 'Remember this' }
+			});
+			await fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
+			await fireEvent.click(screen.getByRole('option', { name: 'Household' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Due Date' }));
+			await fireEvent.click(
+				screen.getByRole('gridcell', { name: 'Monday, June 15, 2026' })
+			);
+			await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
+			await fireEvent.click(screen.getByRole('option', { name: 'Every month' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Alice' }));
+
+			const lastDraft = onDraftChange.mock.calls.at(-1)?.[0];
+			expect(lastDraft).toEqual({
+				title: 'Draft item',
+				notes: 'Remember this',
+				dueDate: '2026-06-15',
+				categoryId: 'category-2',
+				assignedUserIds: ['u1'],
+				recurrencePreset: '1_MONTHS'
+			});
+			expect(lastDraft.assignedUserIds).not.toBe(onDraftChange.mock.calls.at(-2)?.[0].assignedUserIds);
+		});
+
 		it('does not cancel when mousedown within the form is followed by a null focus target', () => {
 			const oncancel = vi.fn();
 			const { container } = render(ItemForm, { props: { ...defaultProps, oncancel } });
@@ -482,7 +594,7 @@ describe('ItemForm', () => {
 			expect(oncancel).not.toHaveBeenCalled();
 		});
 
-		it('cancels when focus moves outside the form', () => {
+		it('cancels with a focusout reason when focus moves outside the form', () => {
 			const oncancel = vi.fn();
 			render(ItemForm, { props: { ...defaultProps, oncancel } });
 			const externalElement = document.createElement('button');
@@ -493,7 +605,34 @@ describe('ItemForm', () => {
 			});
 
 			expect(oncancel).toHaveBeenCalledOnce();
+			expect(oncancel).toHaveBeenCalledWith({ reason: 'focusout' });
 			externalElement.remove();
+		});
+
+		it('cancels with an explicit reason when Cancel is activated', async () => {
+			const oncancel = vi.fn();
+			render(ItemForm, { props: { ...defaultProps, oncancel } });
+
+			await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+			expect(oncancel).toHaveBeenCalledOnce();
+			expect(oncancel).toHaveBeenCalledWith({ reason: 'explicit' });
+		});
+
+		it('keeps draft values visible when new-item submission fails', async () => {
+			const onsubmit = vi.fn().mockRejectedValue(new Error('boom'));
+			render(ItemForm, { props: { ...defaultProps, onsubmit } });
+
+			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+				target: { value: 'Retry this item' }
+			});
+			await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
+				target: { value: 'Still needed' }
+			});
+			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+			expect(screen.getByPlaceholderText('Item title')).toHaveValue('Retry this item');
+			expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Still needed');
 		});
 
 		it('does not cancel when focus moves between form controls', () => {

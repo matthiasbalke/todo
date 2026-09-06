@@ -373,6 +373,94 @@ describe('ComponentsPage Select showcase', () => {
 	});
 });
 
+describe('ComponentsPage MemberInviteEmailInput showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('demonstrates suggested contacts and arbitrary email entry', async () => {
+		render(ComponentsPage);
+		const section = screen
+			.getByRole('heading', { name: 'MemberInviteEmailInput Component' })
+			.closest('section')!;
+		const showcase = within(section);
+		const input = showcase.getByRole('combobox', { name: 'Invite member' });
+
+		expect(input).toHaveAttribute('list');
+		const suggestionList = document.getElementById(input.getAttribute('list')!);
+		expect(suggestionList?.querySelectorAll('option')).toHaveLength(3);
+		expect(suggestionList?.querySelector('option[value="casey@example.com"]')).not.toBeNull();
+		expect(showcase.getByRole('combobox', { name: 'Invite unsuggested account' })).toHaveValue(
+			'outside@example.com'
+		);
+
+		await fireEvent.input(input, { target: { value: 'riley@example.com' } });
+		expect(showcase.getByText('Value:').parentElement).toHaveTextContent('riley@example.com');
+	});
+
+	it('documents props and EmailInput forwarding', () => {
+		render(ComponentsPage);
+		const section = screen
+			.getByRole('heading', { name: 'MemberInviteEmailInput Component' })
+			.closest('section')!;
+		const showcase = within(section);
+
+		for (const prop of ['value', 'suggestions', 'label', 'placeholder', 'required', 'customValidate']) {
+			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
+		}
+		expect(showcase.getByText(/standard native input attributes and handlers/i)).toBeInTheDocument();
+		expect(showcase.getByText('Usage Example')).toBeInTheDocument();
+	});
+});
+
+describe('ComponentsPage CategorySelect showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('demonstrates category binding, color indicators, disabled state, usage, and API guidance', async () => {
+		render(ComponentsPage);
+		const section = screen
+			.getByRole('heading', { name: 'CategorySelect Component' })
+			.closest('section')!;
+		const showcase = within(section);
+		const trigger = showcase.getByRole('combobox', { name: 'Showcase category' });
+
+		expect(trigger).toHaveValue('Produce');
+		expect(showcase.getByText('Selected category ID:').parentElement).toHaveTextContent(
+			'showcase-produce'
+		);
+		expect(showcase.getByRole('combobox', { name: 'Locked category' })).toBeDisabled();
+
+		await fireEvent.click(trigger);
+		const uncategorized = showcase.getByRole('option', { name: 'Uncategorized' });
+		const uncategorizedSwatch = within(uncategorized).getByTestId(
+			'category-select-swatch-uncategorized'
+		);
+		expect(uncategorizedSwatch).toHaveClass('h-3', 'w-3');
+		expect(uncategorizedSwatch).not.toHaveClass('rounded-full');
+		expect(
+			within(showcase.getByRole('option', { name: 'Produce' })).getByTestId(
+				'category-select-swatch-showcase-produce'
+			)
+		).toHaveClass('rounded-full');
+		const colorlessSwatch = within(showcase.getByRole('option', { name: 'Household' })).getByTestId(
+			'category-select-swatch-showcase-household'
+		);
+		expect(colorlessSwatch).toHaveClass('h-3', 'w-3');
+		expect(colorlessSwatch).not.toHaveClass('rounded-full');
+
+		await fireEvent.click(showcase.getByRole('option', { name: 'Uncategorized' }));
+		expect(showcase.getByText('Selected category ID:').parentElement).toHaveTextContent('null');
+
+		expect(showcase.getByText('Nullable category identifier:')).toBeInTheDocument();
+		expect(showcase.getByText(/composes the shared Select behavior/i)).toBeInTheDocument();
+		for (const prop of ['categories', 'selectedCategoryId', 'label', 'placeholder', 'disabled', 'onSelect']) {
+			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
+		}
+	});
+});
+
 describe('ComponentsPage TimezonePicker showcase', () => {
 	afterEach(() => {
 		cleanup();

@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import java.util.Base64
 import java.util.UUID
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -23,6 +24,10 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
 
     @Autowired
     private lateinit var userRepository: UserRepository
+
+    @Autowired
+    private lateinit var publicKeyCredentialUserEntityRepository:
+        org.springframework.security.web.webauthn.management.PublicKeyCredentialUserEntityRepository
 
     @Autowired
     private lateinit var webAuthnCredentialRepository: WebAuthnCredentialRepository
@@ -73,7 +78,7 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
             jsonPath("$.authenticatorSelection.userVerification") { value("required") }
         }
 
-        assertNotNull(userRepository.findByEmail(email), "User must be created in DB")
+        assertNotNull(userRepository.findByEmailIdentity(email), "User must be created in DB")
     }
 
     @Test
@@ -103,6 +108,33 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
+    fun `register-options rejects duplicate email with different casing and whitespace`() {
+        val email = "Existing-${UUID.randomUUID()}@Example.com"
+        val user = userRepository.save(User(email = email, displayName = "Existing"))
+        val credId = Base64.getUrlEncoder().withoutPadding().encodeToString(UUID.randomUUID().toString().toByteArray())
+        webAuthnCredentialRepository.save(
+            WebAuthnCredential(
+                userId = user.id,
+                credentialId = credId,
+                publicKey = ByteArray(32),
+                attestationObject = ByteArray(32),
+            )
+        )
+        val requestedEmail = "  ${email.lowercase()}  "
+        val body = """{"email":"$requestedEmail","displayName":"Different Name"}"""
+
+        mockMvc.post("/api/auth/webauthn/register-options") {
+            contentType = MediaType.APPLICATION_JSON
+            content = body
+        }.andExpect {
+            status { isEqualTo(409) }
+            jsonPath("$.code") { value("EMAIL_ALREADY_REGISTERED") }
+        }
+
+        assertEquals(1, userRepository.findAll().count { it.email.equals(email, ignoreCase = true) })
+    }
+
+    @Test
     fun `register-options deletes orphaned user and returns 200 when email exists but has no credential`() {
         // Simulate a previous registration attempt that saved the user but the
         // passkey ceremony was never completed (e.g. the browser dialog was cancelled).
@@ -120,7 +152,17 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
 
         // Orphan is gone; a fresh user row was created
         assertNull(userRepository.findById(orphan.id).orElse(null), "Orphaned user must be deleted")
-        assertNotNull(userRepository.findByEmail(email), "Fresh user must be created for the retry")
+        assertNotNull(userRepository.findByEmailIdentity(email), "Fresh user must be created for the retry")
+    }
+
+    @Test
+    fun `passkey user lookup resolves email with different casing and whitespace`() {
+        val user = userRepository.save(User(email = "Passkey-${UUID.randomUUID()}@Example.com", displayName = "Passkey User"))
+
+        val resolved = publicKeyCredentialUserEntityRepository.findByUsername("  ${user.email.lowercase()}  ")
+
+        assertNotNull(resolved)
+        assertEquals(user.email, resolved.name)
     }
 
     // ─── login ────────────────────────────────────────────────────────────────

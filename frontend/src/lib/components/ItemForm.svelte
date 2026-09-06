@@ -1,7 +1,25 @@
+<script module lang="ts">
+  export interface ItemFormDraft {
+    title: string;
+    notes: string;
+    dueDate: string | null;
+    categoryId: string | null;
+    assignedUserIds: string[];
+    recurrencePreset: string;
+  }
+
+  export type ItemFormCancelReason = 'explicit' | 'focusout';
+  export interface ItemFormCancelContext {
+    reason: ItemFormCancelReason;
+  }
+</script>
+
 <script lang="ts">
   import { untrack, onMount } from 'svelte';
   import type { TodoItem, Category, User, RecurrenceRule } from '$lib/mock-data';
+  import CategorySelect from './CategorySelect.svelte';
   import DatePicker from './DatePicker.svelte';
+  import ItemAuditMetadata from './ItemAuditMetadata.svelte';
   import Select from './Select.svelte';
   import Textarea from './Textarea.svelte';
   import Button from './Button.svelte';
@@ -14,6 +32,8 @@
     users,
     onsubmit,
     oncancel,
+    draft,
+    onDraftChange,
     defaultCategoryId = ''
   }: {
     item?: TodoItem | null;
@@ -21,7 +41,9 @@
     categories: Category[];
     users: User[];
     onsubmit: (item: TodoItem) => Promise<void> | void;
-    oncancel: () => void;
+    oncancel: (context?: ItemFormCancelContext) => void;
+    draft?: ItemFormDraft | null;
+    onDraftChange?: (draft: ItemFormDraft) => void;
     defaultCategoryId?: string;
   } = $props();
 
@@ -38,29 +60,23 @@
 
   const isNew = $derived(!item);
 
-  let title = $state(untrack(() => item?.title ?? ''));
-  let notes = $state(untrack(() => item?.notes ?? ''));
-  let dueDate = $state<string | null>(untrack(() => item?.dueDate ?? null));
-  let categoryId = $state<string>(untrack(() => item?.categoryId ?? getEffectiveDefaultCategoryId()));
-  let assignedUserIds = $state(new Set<string>(untrack(() => item?.assignedUserIds ?? [])));
-  let recurrencePreset = $state<string>(untrack(() => getInitialRecurrencePreset(item?.recurrenceRule ?? null)));
+  let title = $state(untrack(() => item?.title ?? draft?.title ?? ''));
+  let notes = $state(untrack(() => item?.notes ?? draft?.notes ?? ''));
+  let dueDate = $state<string | null>(untrack(() => item?.dueDate ?? draft?.dueDate ?? null));
+  let categoryId = $state<string | null>(untrack(() => item?.categoryId ?? draft?.categoryId ?? getEffectiveDefaultCategoryId()));
+  let assignedUserIds = $state(new Set<string>(untrack(() => item?.assignedUserIds ?? draft?.assignedUserIds ?? [])));
+  let recurrencePreset = $state<string>(untrack(() => item ? getInitialRecurrencePreset(item.recurrenceRule ?? null) : draft?.recurrencePreset ?? ''));
   let titleInput = $state<HTMLInputElement | null>(null);
   let submitting = $state(false);
   let ignoreNextFocusOut = false;
-
-  const categoryOptions = $derived(['', ...categories.map((category) => category.id)]);
+  let suppressNextDraftChange = false;
 
   onMount(() => titleInput?.focus());
 
-  function getCategoryLabel(id: string): string {
-    if (!id) return 'Uncategorized';
-    return categories.find((category) => category.id === id)?.name ?? id;
-  }
-
-  function getEffectiveDefaultCategoryId(): string {
+  function getEffectiveDefaultCategoryId(): string | null {
     return defaultCategoryId && categories.some((category) => category.id === defaultCategoryId)
       ? defaultCategoryId
-      : '';
+      : null;
   }
 
   function getRecurrenceLabel(preset: string): string {
@@ -79,6 +95,46 @@
     return { intervalValue: parseInt(val), intervalUnit: unit as RecurrenceRule['intervalUnit'] };
   }
 
+  function currentDraft(): ItemFormDraft {
+    return {
+      title,
+      notes,
+      dueDate,
+      categoryId,
+      assignedUserIds: [...assignedUserIds],
+      recurrencePreset
+    };
+  }
+
+  function resetNewItemDraft() {
+    suppressNextDraftChange = true;
+    title = '';
+    notes = '';
+    dueDate = null;
+    categoryId = getEffectiveDefaultCategoryId();
+    assignedUserIds = new Set();
+    recurrencePreset = '';
+  }
+
+  function toggleAssignedUser(userId: string) {
+    const next = new Set(assignedUserIds);
+    if (next.has(userId)) {
+      next.delete(userId);
+    } else {
+      next.add(userId);
+    }
+    assignedUserIds = next;
+  }
+
+  $effect(() => {
+    if (!isNew) return;
+    if (suppressNextDraftChange) {
+      suppressNextDraftChange = false;
+      return;
+    }
+    onDraftChange?.(currentDraft());
+  });
+
   async function handleSubmit(e: Event) {
     e.preventDefault();
     if (submitting) return;
@@ -88,7 +144,7 @@
       const submitted: TodoItem = {
         id: item?.id ?? (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)),
         listId,
-        categoryId: categoryId || null,
+        categoryId,
         title,
         notes: notes || null,
         done: item?.done ?? false,
@@ -98,19 +154,18 @@
         recurrenceRule: parseRecurrencePreset(recurrencePreset),
         parentItemId: item?.parentItemId ?? null,
         createdByUserId: item?.createdByUserId ?? null,
+        updatedByUserId: item?.updatedByUserId ?? null,
         sortOrder: item?.sortOrder ?? 999,
-        createdAt: item?.createdAt ?? now
+        createdAt: item?.createdAt ?? now,
+        updatedAt: item?.updatedAt ?? now
       };
       await onsubmit(submitted);
       if (isNew) {
-        title = '';
-        notes = '';
-        dueDate = null;
-        categoryId = getEffectiveDefaultCategoryId();
-        assignedUserIds = new Set();
-        recurrencePreset = '';
+        resetNewItemDraft();
         titleInput?.focus();
       }
+    } catch {
+      // Callers own user-facing error handling; failed submits keep the current draft intact.
     } finally {
       submitting = false;
     }
@@ -127,7 +182,7 @@
   onfocusout={(e) => {
     if (submitting) return;
     if (ignoreNextFocusOut) { ignoreNextFocusOut = false; return; }
-    if (isNew && !e.currentTarget.contains(e.relatedTarget as Node)) oncancel();
+    if (isNew && !e.currentTarget.contains(e.relatedTarget as Node)) oncancel({ reason: 'focusout' });
   }}
   class="bg-white rounded-xl border border-gray-200 p-4 space-y-3"
 >
@@ -142,13 +197,11 @@
     />
   </div>
 
-    <Select
-      options={categoryOptions}
-      selected={categoryId}
+    <CategorySelect
+      categories={categories}
+      bind:selectedCategoryId={categoryId}
       label="Category"
       labelId="categoryId"
-      getOptionLabel={getCategoryLabel}
-      onSelect={(value) => { categoryId = value; }}
     />
 
     <DatePicker bind:value={dueDate} label="Due Date" />
@@ -174,15 +227,7 @@
             tone="neutral" appearance="outline"
             size="chip"
             selected={assignedUserIds.has(user.id)}
-            onclick={() => {
-              const next = new Set(assignedUserIds);
-              if (next.has(user.id)) {
-                next.delete(user.id);
-              } else {
-                next.add(user.id);
-              }
-              assignedUserIds = next;
-            }}
+            onclick={() => { toggleAssignedUser(user.id); }}
           >
             {user.name}
           </Button>
@@ -199,11 +244,15 @@
     resize="none"
   />
 
+  {#if item}
+    <ItemAuditMetadata {item} {users} />
+  {/if}
+
   <div class="flex justify-end gap-2 pt-1">
     <Button
       type="button"
       tone="neutral" appearance="bare"
-      onclick={oncancel}
+      onclick={() => { oncancel({ reason: 'explicit' }); }}
       emphasis="muted"
     >
       Cancel

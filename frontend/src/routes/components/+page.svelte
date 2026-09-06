@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
 	import TextInput from '$lib/components/TextInput.svelte';
+	import CategorySelect from '$lib/components/CategorySelect.svelte';
 	import EmailInput from '$lib/components/EmailInput.svelte';
+	import MemberInviteEmailInput from '$lib/components/MemberInviteEmailInput.svelte';
 	import Select from '$lib/components/Select.svelte';
 	import EditableLabel from '$lib/components/EditableLabel.svelte';
 	import Button from '$lib/components/Button.svelte';
@@ -29,6 +31,7 @@
 	let validatedTextareaValue = '';
 	let requiredTextareaValue = '';
 	let email = '';
+	let inviteEmail = '';
 	let password = '';
 	let username = '';
 	let searchQuery = '';
@@ -43,11 +46,22 @@
 	let selectedFruit: string | null = null;
 	let selectedPriority: string | null = null;
 	let selectedCategory: string | null = null;
+	let selectedCategoryId: string | null = 'showcase-produce';
 	let selectedTimeZone: string | null = 'Europe/Berlin';
 
 	const fruits = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig'];
 	const priorities = ['Low', 'Medium', 'High', 'Urgent'];
 	const categories = ['Work', 'Personal', 'Shopping', 'Health', 'Finance'];
+	const categorySelectCategories = [
+		{ id: 'showcase-produce', listId: 'showcase-list', name: 'Produce', color: '#22c55e', sortOrder: 1 },
+		{ id: 'showcase-household', listId: 'showcase-list', name: 'Household', color: null, sortOrder: 2 },
+		{ id: 'showcase-bakery', listId: 'showcase-list', name: 'Bakery', color: '#f59e0b', sortOrder: 3 }
+	];
+	const memberSuggestions = [
+		{ userId: 'showcase-casey', email: 'casey@example.com', displayName: 'Casey Stone' },
+		{ userId: 'showcase-riley', email: 'riley@example.com', displayName: 'Riley Chen' },
+		{ userId: 'showcase-morgan', email: 'morgan@example.com', displayName: 'Morgan Reed' }
+	];
 
 	function handleButtonAction(action: string) {
 		lastButtonAction = action;
@@ -274,6 +288,38 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
   bind:selected={timeZone}
   label="Timezone"
   onSelect={(value) => console.log('Selected IANA timezone:', value)}
+/>`;
+
+	const categorySelectCode = `<script lang="ts">
+  import CategorySelect from '$lib/components/CategorySelect.svelte';
+
+  let categoryId: string | null = null;
+  const categories = [
+    { id: 'produce', listId: 'grocery', name: 'Produce', color: '#22c55e', sortOrder: 1 },
+    { id: 'household', listId: 'grocery', name: 'Household', color: null, sortOrder: 2 }
+  ];
+<\/script>
+
+<CategorySelect
+  {categories}
+  bind:selectedCategoryId={categoryId}
+  label="Category"
+/>`;
+
+	const memberInviteEmailInputCode = `<script lang="ts">
+  import MemberInviteEmailInput from '$lib/components/MemberInviteEmailInput.svelte';
+
+  let inviteEmail = '';
+  const suggestions = [
+    { userId: 'casey', email: 'casey@example.com', displayName: 'Casey Stone' }
+  ];
+<\/script>
+
+<MemberInviteEmailInput
+  bind:value={inviteEmail}
+  {suggestions}
+  label="Invite member"
+  placeholder="Email address"
 />`;
 </script>
 
@@ -1450,6 +1496,100 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 			</div>
 		</section>
 
+		<!-- MemberInviteEmailInput Section -->
+		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+			<h2 class="text-2xl font-bold text-gray-900 mb-8">MemberInviteEmailInput Component</h2>
+			<p class="text-gray-600 mb-8">
+				A membership invite email field that keeps EmailInput validation while exposing suggested members through a native datalist.
+			</p>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Suggested Members</h3>
+					<MemberInviteEmailInput
+						bind:value={inviteEmail}
+						suggestions={memberSuggestions}
+						label="Invite member"
+						placeholder="Email address"
+					/>
+					<p class="text-xs text-gray-500 mt-2">Value: <code>{inviteEmail || '(empty)'}</code></p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Arbitrary Email</h3>
+					<MemberInviteEmailInput
+						value="outside@example.com"
+						suggestions={[]}
+						label="Invite unsuggested account"
+						placeholder="Email address"
+					/>
+					<p class="text-xs text-gray-500 mt-2">Works without suggestions.</p>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Example</h3>
+				<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{memberInviteEmailInputCode}</code></pre>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Props Reference</h3>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Prop</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Type</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Default</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Description</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">value</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">''</td>
+								<td class="px-4 py-2 text-gray-600">Bindable invite email value.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">suggestions</td>
+								<td class="px-4 py-2 text-gray-600">MemberSuggestionDto[]</td>
+								<td class="px-4 py-2 text-gray-600">[]</td>
+								<td class="px-4 py-2 text-gray-600">Suggested contacts rendered as datalist options.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">label</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">'Email'</td>
+								<td class="px-4 py-2 text-gray-600">Visible field label inherited from EmailInput.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">placeholder</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">'your@email.com'</td>
+								<td class="px-4 py-2 text-gray-600">Placeholder text inherited from EmailInput.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">required</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">true</td>
+								<td class="px-4 py-2 text-gray-600">Whether the invite email is required.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">customValidate</td>
+								<td class="px-4 py-2 text-gray-600">function | null</td>
+								<td class="px-4 py-2 text-gray-600">null</td>
+								<td class="px-4 py-2 text-gray-600">Additional validator passed through to EmailInput.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<p class="text-sm text-gray-600 mt-4">
+					Standard native input attributes and handlers supported by <code>EmailInput</code> are forwarded.
+				</p>
+			</div>
+		</section>
+
 		<!-- Select Section -->
 		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
 			<h2 class="text-2xl font-bold text-gray-900 mb-8">Select Component</h2>
@@ -1649,6 +1789,103 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 						<p class="text-sm text-gray-600">Close dropdown</p>
 					</div>
 				</div>
+			</div>
+		</section>
+
+		<!-- CategorySelect Section -->
+		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+			<h2 class="text-2xl font-bold text-gray-900 mb-8">CategorySelect Component</h2>
+			<p class="text-gray-600 mb-8">
+				A category-specific Select adapter that preserves shared combobox behavior while
+				displaying category colors, aligned colorless categories, and an uncategorized value.
+			</p>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Category Binding</h3>
+					<CategorySelect
+						categories={categorySelectCategories}
+						bind:selectedCategoryId
+						label="Showcase category"
+					/>
+					<p class="text-xs text-gray-500 mt-2">
+						Selected category ID: <code>{selectedCategoryId ?? 'null'}</code>
+					</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Disabled State</h3>
+					<CategorySelect
+						categories={categorySelectCategories}
+						selectedCategoryId="showcase-household"
+						label="Locked category"
+						disabled
+					/>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Example</h3>
+				<p class="text-sm font-mono text-gray-600 mb-2">Nullable category identifier:</p>
+				<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{categorySelectCode}</code></pre>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Props Reference</h3>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Prop</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Type</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Default</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Description</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">categories</td>
+								<td class="px-4 py-2 text-gray-600">Category[]</td>
+								<td class="px-4 py-2 text-gray-600">[]</td>
+								<td class="px-4 py-2 text-gray-600">Available categories with IDs, names, and optional colors.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">selectedCategoryId</td>
+								<td class="px-4 py-2 text-gray-600">string | null</td>
+								<td class="px-4 py-2 text-gray-600">null</td>
+								<td class="px-4 py-2 text-gray-600">Bindable selected category ID; null represents Uncategorized.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">label</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">'Category'</td>
+								<td class="px-4 py-2 text-gray-600">Visible Select label.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">placeholder</td>
+								<td class="px-4 py-2 text-gray-600">string</td>
+								<td class="px-4 py-2 text-gray-600">'Select a category'</td>
+								<td class="px-4 py-2 text-gray-600">Text shown when no category is selected.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">disabled</td>
+								<td class="px-4 py-2 text-gray-600">boolean</td>
+								<td class="px-4 py-2 text-gray-600">false</td>
+								<td class="px-4 py-2 text-gray-600">Disables the shared Select trigger.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-blue-600">onSelect</td>
+								<td class="px-4 py-2 text-gray-600">(categoryId: string | null) =&gt; void</td>
+								<td class="px-4 py-2 text-gray-600">undefined</td>
+								<td class="px-4 py-2 text-gray-600">Receives the selected category ID or null for Uncategorized.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<p class="text-sm text-gray-600 mt-4">
+					CategorySelect composes the shared Select behavior for filtering, keyboard navigation,
+					focus handling, and listbox semantics.
+				</p>
 			</div>
 		</section>
 

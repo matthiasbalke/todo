@@ -21,8 +21,10 @@ export function dtoToItem(dto: ItemDto): TodoItem {
 			: null,
 		parentItemId: dto.parentItemId,
 		createdByUserId: dto.createdByUserId,
+		updatedByUserId: dto.updatedByUserId,
 		sortOrder: dto.sortOrder,
 		createdAt: dto.createdAt,
+		updatedAt: dto.updatedAt,
 	};
 }
 
@@ -54,6 +56,11 @@ export async function updateItem(listId: string, itemId: string, req: itemsApi.U
 export async function deleteItem(listId: string, itemId: string): Promise<void> {
 	await itemsApi.deleteItem(listId, itemId);
 	items = items.filter(i => i.id !== itemId);
+}
+
+export async function deleteFinishedItems(listId: string): Promise<void> {
+	await itemsApi.deleteFinishedItems(listId);
+	items = items.filter(i => i.listId !== listId || !i.done);
 }
 
 export async function toggleDone(listId: string, itemId: string): Promise<void> {

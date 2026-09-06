@@ -1,13 +1,29 @@
 import type { TodoItem, Category, SortField, SortDirection, RecurrenceRule } from './mock-data';
 
+export const ASSIGNEE_FILTER_CRITERIA = ['none', 'me', 'others'] as const;
+export type AssigneeFilterCriterion = typeof ASSIGNEE_FILTER_CRITERIA[number];
+
 export interface Filters {
   starredOnly: boolean;
   hideFuture: boolean;
   hideUndated: boolean;
-  assigneeFilter: 'all' | 'none' | 'me' | 'others';
+  assigneeFilters: AssigneeFilterCriterion[];
+}
+
+export function normalizeAssigneeFilters(value: unknown): AssigneeFilterCriterion[] {
+  const criteria = new Set<AssigneeFilterCriterion>();
+  const values = Array.isArray(value) ? value : [value];
+  for (const entry of values) {
+    if (ASSIGNEE_FILTER_CRITERIA.includes(entry as AssigneeFilterCriterion)) {
+      criteria.add(entry as AssigneeFilterCriterion);
+    }
+  }
+  if (criteria.size === ASSIGNEE_FILTER_CRITERIA.length) return [];
+  return ASSIGNEE_FILTER_CRITERIA.filter((criterion) => criteria.has(criterion));
 }
 
 export function applyFilters(items: TodoItem[], filters: Filters, currentUserId?: string): TodoItem[] {
+  const assigneeFilters = normalizeAssigneeFilters(filters.assigneeFilters);
   return items.filter(item => {
     if (filters.starredOnly && !item.starred) return false;
     if (filters.hideFuture && item.dueDate) {
@@ -17,9 +33,14 @@ export function applyFilters(items: TodoItem[], filters: Filters, currentUserId?
       if (due > today) return false;
     }
     if (filters.hideUndated && !item.dueDate) return false;
-    if (filters.assigneeFilter === 'none' && item.assignedUserIds.length > 0) return false;
-    if (filters.assigneeFilter === 'me' && (!currentUserId || !item.assignedUserIds.includes(currentUserId))) return false;
-    if (filters.assigneeFilter === 'others' && (item.assignedUserIds.length === 0 || (!!currentUserId && item.assignedUserIds.includes(currentUserId)))) return false;
+    if (assigneeFilters.length > 0) {
+      const matchesAssignee = assigneeFilters.some((criterion) => {
+        if (criterion === 'none') return item.assignedUserIds.length === 0;
+        if (criterion === 'me') return !!currentUserId && item.assignedUserIds.includes(currentUserId);
+        return item.assignedUserIds.length > 0 && (!currentUserId || !item.assignedUserIds.includes(currentUserId));
+      });
+      if (!matchesAssignee) return false;
+    }
     return true;
   });
 }

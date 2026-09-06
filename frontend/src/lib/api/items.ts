@@ -17,6 +17,7 @@ export interface ItemDto {
 	recurrenceRule: RecurrenceRuleDto | null;
 	parentItemId: string | null;
 	createdByUserId: string | null;
+	updatedByUserId: string | null;
 	assignedUserIds: string[];
 	sortOrder: number;
 	createdAt: string;
@@ -70,6 +71,10 @@ export function updateItem(listId: string, itemId: string, req: UpdateItemReques
 
 export function deleteItem(listId: string, itemId: string): Promise<void> {
 	return authedFetch(`/api/lists/${listId}/items/${itemId}`, { method: 'DELETE' });
+}
+
+export function deleteFinishedItems(listId: string): Promise<void> {
+	return authedFetch(`/api/lists/${listId}/items/finished`, { method: 'DELETE' });
 }
 
 export function toggleItemDone(listId: string, itemId: string): Promise<ItemDto> {

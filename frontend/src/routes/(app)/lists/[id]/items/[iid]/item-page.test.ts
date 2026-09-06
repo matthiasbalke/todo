@@ -19,8 +19,10 @@ const item: TodoItem = {
 	recurrenceRule: { intervalUnit: 'WEEKS', intervalValue: 1 },
 	parentItemId: null,
 	createdByUserId: 'user-1',
+	updatedByUserId: 'user-1',
 	sortOrder: 0,
-	createdAt: '2026-06-01',
+	createdAt: '2026-06-01T10:00:00Z',
+	updatedAt: '2026-06-02T15:31:02Z',
 };
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));

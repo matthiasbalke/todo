@@ -166,9 +166,119 @@ The list UI SHALL display the virtual uncategorized category group after all rea
 - **THEN** the item appears in the uncategorized group
 - **AND** the uncategorized group remains displayed after all real category groups
 
+### Requirement: List views expose active filter and sort state
+The standard list view and grocery list view SHALL display a compact summary near the rendered items with item count and active sort order, and SHALL add filter-clearing controls to that summary when filters are active.
+
+#### Scenario: Active filters are visible outside the menu
+- **WHEN** a user opens a standard list view or grocery list view with one or more active filters
+- **THEN** the view displays each active filter in a compact summary near the rendered list items
+- **AND** the user can identify that the visible item set is filtered without opening the list options menu
+
+#### Scenario: Individual filters can be reset from the summary
+- **WHEN** a user activates the clear control for one active filter in the summary
+- **THEN** only that filter is reset to its default inactive value
+- **AND** other active filters, sort field, and sort direction remain unchanged
+
+#### Scenario: Hide checked is a filter
+- **WHEN** a user opens the filter submenu
+- **THEN** Hide checked is presented with the other filter controls
+- **AND** enabling Hide checked contributes to the active filter count and displays a filter chip in the summary
+
+#### Scenario: Sort order can be changed from the summary
+- **WHEN** a user opens a standard list view or grocery list view
+- **THEN** the view displays the active sort field and direction near the rendered list items
+- **AND** the user can open or invoke sort selection directly from that summary control without first opening the list options menu
+- **AND** that selection allows changing both the sort field and ascending/descending direction
+
+#### Scenario: No filter clutter when defaults are active
+- **WHEN** all filters are at their default inactive values
+- **THEN** the summary does not display any filter-clearing controls
+- **AND** the summary still displays the item count and active sort order without an empty or misleading filter indicator
+
+#### Scenario: Summary matches persisted local preferences
+- **WHEN** list filter or sort preferences are restored from local storage
+- **THEN** the summary reflects the restored active filters, sort field, and sort direction before the user changes them
+
+### Requirement: Regular list assignment filters support multiple criteria
+The regular list view SHALL allow users to select multiple assignment filter criteria at the same time and SHALL include an item when it matches any selected assignment criterion while still applying all other active filter categories.
+
+#### Scenario: Assigned to me and unassigned are combined
+- **WHEN** a user selects both `Assigned to me` and `Not assigned` in a regular list view
+- **THEN** the visible items include items assigned to the current user
+- **AND** the visible items include items with no assigned users
+- **AND** the visible items exclude items assigned only to other users
+
+#### Scenario: Other filter categories still narrow combined assignment results
+- **WHEN** a user selects multiple assignment criteria and also enables another filter such as `Starred only`, `Hide future`, `Has due date`, or `Hide checked`
+- **THEN** an item is visible only when it matches at least one selected assignment criterion and satisfies every other active filter category
+
+#### Scenario: Clearing assignment filters restores all-assignee matching
+- **WHEN** a user clears the active assignment filter from the list state summary
+- **THEN** assignment no longer restricts the visible items
+- **AND** other active filters, sort field, and sort direction remain unchanged
+
+#### Scenario: Combined assignment filters persist per list
+- **WHEN** a user selects multiple assignment criteria for a regular list and later reopens that list
+- **THEN** the same assignment criteria are restored for that list
+- **AND** the active filter summary shows the restored assignment filter state
+
+### Requirement: Item details display audit metadata
+The item detail UI SHALL display read-only update and creation metadata below the note field for the selected item in both editable and read-only modes.
+
+#### Scenario: Audit metadata is visible below notes in edit mode
+- **WHEN** an owner or editor opens an item detail page for an item with audit metadata
+- **THEN** the editable detail view displays a centered `updated by` line below the note field with the item's updated timestamp and updating user
+- **AND** the editable detail view displays a centered `created by` line below the updated line with the item's created timestamp and creating user
+
+#### Scenario: Audit metadata is visible below notes in read-only mode
+- **WHEN** a user opens an item detail view for an item with audit metadata
+- **THEN** the read-only detail view displays a centered `updated by` line below the note field with the item's updated timestamp and updating user
+- **AND** the read-only detail view displays a centered `created by` line below the updated line with the item's created timestamp and creating user
+
+#### Scenario: Audit metadata uses requested display format
+- **WHEN** the detail view renders item audit timestamps
+- **THEN** each audit line is formatted in the app's English locale as `<weekday> <day>. <month> <year> at <hour>:<minute> <action> by <display name>`, for example `Fri. 8. May 26 at 14:07 created by User`
+- **AND** each timestamp is calculated in the current user's persisted timezone
+- **AND** each line displays the timestamp before the action and user label
+
+#### Scenario: Audit metadata is read-only
+- **WHEN** a user views item audit metadata
+- **THEN** the created and updated values are not editable from the item detail UI
+- **AND** saving other item fields does not send audit metadata values from the frontend request body
+
+#### Scenario: Updated user is tracked by the item contract
+- **WHEN** an item is created or changed by an authenticated editable user
+- **THEN** item API responses and item SSE payloads include `updatedByUserId`
+- **AND** `updatedByUserId` identifies the user who performed the latest item mutation
+
+#### Scenario: Missing audit user is handled
+- **WHEN** an item has an audit user ID that cannot be resolved to a visible list user
+- **THEN** the detail view still displays the corresponding audit row
+- **AND** the user portion displays `Deleted user`
+- **AND** the raw audit user ID is not displayed
+
 ### Requirement: Backend authorization remains authoritative
 Frontend capability handling SHALL complement and SHALL NOT replace the backend role checks on write endpoints.
 
 #### Scenario: Unauthorized write request bypasses the UI
 - **WHEN** a viewer directly invokes an item, category, list, or membership write endpoint
 - **THEN** the backend continues to reject the request according to its existing minimum-role requirement
+
+### Requirement: Item mutation capability includes checked-item cleanup
+The frontend SHALL treat list-level checked-item cleanup in real list views as an item mutation capability.
+
+#### Scenario: Editable user sees cleanup action
+- **WHEN** the current user's list role is `OWNER` or `EDITOR`
+- **THEN** the regular list and grocery list options menus expose the delete-checked-items action
+
+#### Scenario: Editable user sees disabled cleanup action without checked items
+- **WHEN** the current user's list role is `OWNER` or `EDITOR` and the real list has no checked items
+- **THEN** the regular list and grocery list options menus display the delete-checked-items action disabled
+
+#### Scenario: Viewer does not see cleanup action
+- **WHEN** the current user's list role is `VIEWER`
+- **THEN** regular list and grocery list options menus do not expose the delete-checked-items action
+
+#### Scenario: Cleanup action follows item mutation capability
+- **WHEN** the shared capability mapping says a user cannot edit items
+- **THEN** presentation components do not independently re-enable checked-item cleanup through separate role checks

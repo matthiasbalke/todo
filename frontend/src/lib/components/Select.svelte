@@ -3,6 +3,7 @@
 </script>
 
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { onMount } from 'svelte';
 	import Button from './Button.svelte';
 
@@ -20,6 +21,8 @@
 		class?: string;
 		size?: Size;
 		getOptionLabel?: (option: T) => string;
+		selectedContent?: Snippet<[T]>;
+		optionContent?: Snippet<[T]>;
 		validate?: ((value: T | null) => string | null) | null;
 		onSelect?: (value: T) => void;
 	}
@@ -36,6 +39,8 @@
 		class: className = '',
 		size = 'default',
 		getOptionLabel = (option: any) => String(option),
+		selectedContent,
+		optionContent,
 		validate = null,
 		onSelect
 	}: Props<any> = $props();
@@ -253,6 +258,9 @@
 				? 'border-red-500 bg-red-50 focus-within:ring-red-500'
 				: 'border-gray-300 hover:bg-gray-50 focus-within:ring-blue-500'} {disabled ? 'cursor-not-allowed opacity-50' : ''} {inputSizeClasses}"
 		>
+			{#if selectedContent && internalSelected !== null && query === null}
+				{@render selectedContent(internalSelected)}
+			{/if}
 			<input
 				bind:this={triggerElement}
 				id={triggerId}
@@ -311,7 +319,11 @@
 						selected={filteredSelectedIndex === index}
 						active={focusedIndex === index}
 					>
-						{getOptionLabel(option)}
+						{#if optionContent}
+							{@render optionContent(option)}
+						{:else}
+							{getOptionLabel(option)}
+						{/if}
 					</Button>
 				{/each}
 

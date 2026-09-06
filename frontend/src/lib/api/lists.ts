@@ -31,6 +31,12 @@ export interface MemberDto {
 	createdAt: string;
 }
 
+export interface MemberSuggestionDto {
+	userId: string;
+	email: string;
+	displayName: string;
+}
+
 export interface CreateListRequest {
 	name: string;
 	emoji?: string;
@@ -89,6 +95,10 @@ export function duplicateList(id: string): Promise<ListDto> {
 
 export function getMembers(listId: string): Promise<MemberDto[]> {
 	return authedFetch(`/api/lists/${listId}/members`);
+}
+
+export function getMemberSuggestions(listId: string): Promise<MemberSuggestionDto[]> {
+	return authedFetch(`/api/lists/${listId}/members/suggestions`);
 }
 
 export function addMember(listId: string, req: AddMemberRequest): Promise<MemberDto> {

@@ -501,10 +501,164 @@ class ListIntegrationTest : AbstractIntegrationTest() {
         assertEquals("Groceries (2)", listRepository.findById(duplicateId).orElseThrow().name)
     }
 
+    // ─── DELETE /api/lists/{id}/items/finished ───────────────────────────────
+
+    @Test
+    fun `DELETE items - finished - owner deletes checked items and preserves unchecked items`() {
+        val owner = createUser()
+        val assignee = createUser()
+        val listId = createListAsUser(owner, "Cleanup")
+        val checked = itemRepository.save(TodoItem(listId = listId, title = "Checked", done = true))
+        val unchecked = itemRepository.save(TodoItem(listId = listId, title = "Unchecked", done = false))
+        itemAssignmentRepository.save(ItemAssignment(ItemAssignmentId(checked.id, assignee.id)))
+        itemAssignmentRepository.save(ItemAssignment(ItemAssignmentId(unchecked.id, assignee.id)))
+
+        mockMvc.delete("/api/lists/$listId/items/finished") {
+            header("Authorization", bearerHeader(owner))
+        }.andExpect {
+            status { isNoContent() }
+        }
+
+        assertFalse(itemRepository.existsById(checked.id))
+        assertTrue(itemRepository.existsById(unchecked.id))
+        assertTrue(itemAssignmentRepository.findAllByIdItemId(checked.id).isEmpty())
+        assertEquals(listOf(assignee.id), itemAssignmentRepository.findAllByIdItemId(unchecked.id).map { it.id.userId })
+    }
+
+    @Test
+    fun `DELETE items - finished - editor can delete checked items`() {
+        val owner = createUser()
+        val editor = createUser()
+        val listId = createListAsUser(owner, "Shared Cleanup")
+        addMemberToList(listId, owner, editor.email, "EDITOR")
+        val checked = itemRepository.save(TodoItem(listId = listId, title = "Checked", done = true))
+
+        mockMvc.delete("/api/lists/$listId/items/finished") {
+            header("Authorization", bearerHeader(editor))
+        }.andExpect {
+            status { isNoContent() }
+        }
+
+        assertFalse(itemRepository.existsById(checked.id))
+    }
+
+    @Test
+    fun `DELETE items - finished - rejects viewer and non-member without deleting`() {
+        val owner = createUser()
+        val viewer = createUser()
+        val stranger = createUser()
+        val listId = createListAsUser(owner, "Protected Cleanup")
+        addMemberToList(listId, owner, viewer.email, "VIEWER")
+        val checked = itemRepository.save(TodoItem(listId = listId, title = "Checked", done = true))
+
+        listOf(viewer, stranger).forEach { user ->
+            mockMvc.delete("/api/lists/$listId/items/finished") {
+                header("Authorization", bearerHeader(user))
+            }.andExpect {
+                status { isForbidden() }
+            }
+        }
+
+        assertTrue(itemRepository.existsById(checked.id))
+    }
+
+    @Test
+    fun `DELETE items - finished - removes checked recurring occurrence and preserves unchecked follow-up`() {
+        val owner = createUser()
+        val listId = createListAsUser(owner, "Recurring Cleanup")
+        val checkedOccurrence = itemRepository.save(
+            TodoItem(
+                listId = listId,
+                title = "Water plants",
+                done = true,
+                dueDate = LocalDate.of(2026, 6, 20),
+                recurrenceRule = RecurrenceRule(IntervalUnit.WEEKS, 1),
+            )
+        )
+        val uncheckedFollowUp = itemRepository.save(
+            TodoItem(
+                listId = listId,
+                title = "Water plants",
+                done = false,
+                dueDate = LocalDate.of(2026, 6, 27),
+                recurrenceRule = RecurrenceRule(IntervalUnit.WEEKS, 1),
+                parentItemId = checkedOccurrence.id,
+            )
+        )
+
+        mockMvc.delete("/api/lists/$listId/items/finished") {
+            header("Authorization", bearerHeader(owner))
+        }.andExpect {
+            status { isNoContent() }
+        }
+
+        assertFalse(itemRepository.existsById(checkedOccurrence.id))
+        val preserved = itemRepository.findById(uncheckedFollowUp.id).orElseThrow()
+        assertFalse(preserved.done)
+        assertNull(preserved.parentItemId)
+    }
+
+    // ─── GET /api/lists/{id}/members/suggestions ─────────────────────────────
+
+    @Test
+    fun `GET member suggestions - requires authentication`() {
+        val owner = createUser()
+        val listId = createListAsUser(owner, "Private")
+
+        mockMvc.get("/api/lists/$listId/members/suggestions")
+            .andExpect {
+                status { isForbidden() }
+            }
+    }
+
+    @Test
+    fun `GET member suggestions - returns direct shared-list contacts excluding current list members`() {
+        val owner = createUser("owner-${UUID.randomUUID()}@example.com")
+        val directShared = createUser("direct-${UUID.randomUUID()}@example.com")
+        val currentMember = createUser("current-${UUID.randomUUID()}@example.com")
+        val indirectContact = createUser("indirect-${UUID.randomUUID()}@example.com")
+        val targetListId = createListAsUser(owner, "Target")
+        val sharedListId = createListAsUser(owner, "Shared elsewhere")
+        val indirectListId = createListAsUser(directShared, "Not owner's list")
+
+        addMemberToList(sharedListId, owner, directShared.email, "VIEWER")
+        addMemberToList(targetListId, owner, currentMember.email, "VIEWER")
+        addMemberToList(indirectListId, directShared, indirectContact.email, "VIEWER")
+
+        mockMvc.get("/api/lists/$targetListId/members/suggestions") {
+            header("Authorization", bearerHeader(owner))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.length()") { value(1) }
+            jsonPath("$[0].userId") { value(directShared.id.toString()) }
+            jsonPath("$[0].email") { value(directShared.email) }
+            jsonPath("$[0].displayName") { value(directShared.displayName) }
+        }
+    }
+
+    @Test
+    fun `GET member suggestions - rejects editors viewers and non members`() {
+        val owner = createUser()
+        val editor = createUser()
+        val viewer = createUser()
+        val stranger = createUser()
+        val listId = createListAsUser(owner, "Owner managed")
+        addMemberToList(listId, owner, editor.email, "EDITOR")
+        addMemberToList(listId, owner, viewer.email, "VIEWER")
+
+        listOf(editor, viewer, stranger).forEach { user ->
+            mockMvc.get("/api/lists/$listId/members/suggestions") {
+                header("Authorization", bearerHeader(user))
+            }.andExpect {
+                status { isForbidden() }
+            }
+        }
+    }
+
     // ─── POST /api/lists/{id}/members ─────────────────────────────────────────
 
     @Test
-    fun `POST members - unknown email returns 404`() {
+    fun `POST members - unknown email returns non-enumerating 404`() {
         val owner = createUser()
         val listId = createListAsUser(owner, "My List")
 
@@ -514,22 +668,67 @@ class ListIntegrationTest : AbstractIntegrationTest() {
             content = """{"email":"nonexistent@example.com","role":"VIEWER"}"""
         }.andExpect {
             status { isNotFound() }
+            jsonPath("$.message") { value("Could not add member") }
         }
     }
 
     @Test
     fun `POST members - already-member email returns 409`() {
         val owner = createUser()
-        val member = createUser()
+        val member = createUser("Member-${UUID.randomUUID()}@Example.com")
         val listId = createListAsUser(owner, "My List")
         addMemberToList(listId, owner, member.email, "VIEWER")
 
         mockMvc.post("/api/lists/$listId/members") {
             header("Authorization", bearerHeader(owner))
             contentType = MediaType.APPLICATION_JSON
-            content = """{"email":"${member.email}","role":"EDITOR"}"""
+            content = """{"email":"  ${member.email.lowercase()}  ","role":"EDITOR"}"""
         }.andExpect {
             status { isEqualTo(409) }
+        }
+    }
+
+    @Test
+    fun `POST members - matches account email with different casing and whitespace`() {
+        val owner = createUser()
+        val member = createUser("Invite-${UUID.randomUUID()}@Example.com")
+        val listId = createListAsUser(owner, "My List")
+
+        mockMvc.post("/api/lists/$listId/members") {
+            header("Authorization", bearerHeader(owner))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"email":"  ${member.email.lowercase()}  ","role":"VIEWER"}"""
+        }.andExpect {
+            status { isCreated() }
+            jsonPath("$.userId") { value(member.id.toString()) }
+            jsonPath("$.email") { value(member.email) }
+            jsonPath("$.role") { value("VIEWER") }
+        }
+    }
+
+    @Test
+    fun `POST members - can re-add a removed member`() {
+        val owner = createUser()
+        val member = createUser()
+        val listId = createListAsUser(owner, "My List")
+        addMemberToList(listId, owner, member.email, "VIEWER")
+
+        mockMvc.delete("/api/lists/$listId/members/${member.id}") {
+            header("Authorization", bearerHeader(owner))
+        }.andExpect {
+            status { isNoContent() }
+        }
+
+        assertNull(listGroupAssignmentRepository.findByListIdAndUserId(listId, member.id))
+
+        mockMvc.post("/api/lists/$listId/members") {
+            header("Authorization", bearerHeader(owner))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"email":"${member.email}","role":"EDITOR"}"""
+        }.andExpect {
+            status { isCreated() }
+            jsonPath("$.userId") { value(member.id.toString()) }
+            jsonPath("$.role") { value("EDITOR") }
         }
     }
 

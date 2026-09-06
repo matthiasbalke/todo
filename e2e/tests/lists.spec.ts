@@ -92,6 +92,19 @@ test.describe('List detail — add item form', () => {
 
 		await expect(page.getByText('Test Item E2E')).toBeVisible();
 	});
+
+	test('preserves the draft when focus loss minimizes the form', async ({ page }) => {
+		await page.getByRole('button', { name: '+ Add item' }).click();
+		await page.getByPlaceholder('Item title').fill('Draft Item E2E');
+		await page.getByPlaceholder('Notes (optional)').fill('Draft note E2E');
+		await page.getByRole('button', { name: 'List options' }).click();
+
+		await expect(page.getByPlaceholder('Item title')).not.toBeVisible();
+		await page.getByRole('button', { name: '+ Add item' }).click();
+
+		await expect(page.getByPlaceholder('Item title')).toHaveValue('Draft Item E2E');
+		await expect(page.getByPlaceholder('Notes (optional)')).toHaveValue('Draft note E2E');
+	});
 });
 
 // ---------------------------------------------------------------------------
@@ -130,10 +143,11 @@ test.describe('List detail — category headings', () => {
 
 test.describe('List detail — filter and sort', () => {
 	let listId: string;
+	let itemIds: string[];
 
 	test.beforeEach(async ({ page, context }) => {
 		await registerPasskey(page, context, 'Filter Sort User', uniqueEmail('e2e-lists'));
-		({ listId } = await setupListWithItems(page, 'My List', [
+		({ listId, itemIds } = await setupListWithItems(page, 'My List', [
 			{ title: 'Cherry' },
 			{ title: 'Apple', starred: true },
 			{ title: 'Banana', starred: true },
@@ -156,6 +170,87 @@ test.describe('List detail — filter and sort', () => {
 		// 2 starred items remain
 		await expect(page.getByText('2 items')).toBeVisible();
 		await expect(page.getByText('Spinach')).not.toBeVisible();
+	});
+
+	test('combining Assigned to me and Not assigned excludes items assigned only to others', async ({
+		page,
+		browser,
+	}, testInfo) => {
+		const otherEmail = uniqueEmail('e2e-filter-other');
+		const otherContext = await browser.newContext({
+			baseURL: testInfo.project.use.baseURL as string,
+			ignoreHTTPSErrors: true,
+		});
+		const otherPage = await otherContext.newPage();
+
+		try {
+			await registerPasskey(otherPage, otherContext, 'Filter Other User', otherEmail);
+			const otherUserId = await otherPage.evaluate(async () => {
+				const { accessToken } = await fetch('/api/auth/refresh', {
+					method: 'POST',
+					credentials: 'include',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({}),
+				}).then((r) => r.json());
+				return fetch('/api/users/me', {
+					headers: { Authorization: `Bearer ${accessToken}` },
+				}).then((r) => r.json()).then((user) => user.id as string);
+			});
+
+			await page.evaluate(
+				async ({ listId, otherEmail, otherUserId }) => {
+					const { accessToken } = await fetch('/api/auth/refresh', {
+						method: 'POST',
+						credentials: 'include',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({}),
+					}).then((r) => r.json());
+					const headers = {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${accessToken}`,
+					};
+					const me = await fetch('/api/users/me', { headers }).then((r) => r.json());
+					await fetch(`/api/lists/${listId}/members`, {
+						method: 'POST',
+						credentials: 'include',
+						headers,
+						body: JSON.stringify({ email: otherEmail, role: 'EDITOR' }),
+					});
+					for (const body of [
+						{ title: 'Assignment unclaimed item', assignedUserIds: [] },
+						{ title: 'Assignment mine item', assignedUserIds: [me.id] },
+						{ title: 'Assignment other item', assignedUserIds: [otherUserId] },
+					]) {
+						await fetch(`/api/lists/${listId}/items`, {
+							method: 'POST',
+							credentials: 'include',
+							headers,
+							body: JSON.stringify(body),
+						});
+					}
+				},
+				{ listId, otherEmail, otherUserId },
+			);
+		} finally {
+			await otherContext.close();
+		}
+
+		await page.goto(`/lists/${listId}`);
+		await waitForHydration(page);
+		await expect(page.getByText('Assignment unclaimed item')).toBeVisible();
+		await expect(page.getByText('Assignment mine item')).toBeVisible();
+		await expect(page.getByText('Assignment other item')).toBeVisible();
+
+		await page.getByRole('button', { name: 'List options' }).click();
+		await page.getByRole('button', { name: /^Filter/ }).click();
+		await page.getByRole('button', { name: 'Assigned to me' }).click();
+		await page.getByRole('button', { name: 'Not assigned' }).click();
+		await page.keyboard.press('Escape');
+
+		await expect(page.getByText('Assignment unclaimed item')).toBeVisible();
+		await expect(page.getByText('Assignment mine item')).toBeVisible();
+		await expect(page.getByText('Assignment other item')).not.toBeVisible();
+		await expect(page.getByRole('button', { name: 'Clear Assigned to me or not assigned filter' })).toBeVisible();
 	});
 
 	test('changing sort to Alphabetical reorders items', async ({ page }) => {
@@ -184,6 +279,54 @@ test.describe('List detail — filter and sort', () => {
 			.boundingBox()
 			.then((b) => b?.y ?? 0);
 		expect(appleY).toBeLessThan(cherryY);
+	});
+
+	test('delete checked items removes hidden checked items from a real list', async ({ page }) => {
+		await page.evaluate(
+			async ({ listId, itemIds }) => {
+				const { accessToken } = await fetch('/api/auth/refresh', {
+					method: 'POST',
+					credentials: 'include',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({}),
+				}).then((r) => r.json());
+				const headers = {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${accessToken}`,
+				};
+				await fetch(`/api/lists/${listId}/items/${itemIds[0]}/done`, {
+					method: 'PATCH',
+					credentials: 'include',
+					headers,
+				});
+				await fetch(`/api/lists/${listId}/items/${itemIds[1]}/done`, {
+					method: 'PATCH',
+					credentials: 'include',
+					headers,
+				});
+			},
+			{ listId, itemIds },
+		);
+		await page.goto(`/lists/${listId}`);
+		await waitForHydration(page);
+
+		await page.getByRole('button', { name: 'List options' }).click();
+		await page.getByRole('button', { name: /^Filter/ }).click();
+		await page.getByRole('button', { name: 'Hide checked' }).click();
+		await expect(page.getByText('Cherry')).not.toBeVisible();
+		await expect(page.getByText('Apple')).not.toBeVisible();
+
+		await page.getByRole('button', { name: 'Delete checked items' }).click();
+		await expect(page.getByRole('dialog', { name: 'Delete all checked items?' })).toBeVisible();
+		await expect(page.getByText(/permanently delete 2 checked items/)).toBeVisible();
+		await page.getByRole('button', { name: 'Delete checked' }).click();
+
+		await expect(page.getByRole('dialog', { name: 'Delete all checked items?' })).not.toBeVisible();
+		await page.getByRole('button', { name: 'Clear Hide checked filter' }).click();
+		await expect(page.getByText('Cherry')).not.toBeVisible();
+		await expect(page.getByText('Apple')).not.toBeVisible();
+		await expect(page.getByText('Banana')).toBeVisible();
+		await expect(page.getByText('Spinach')).toBeVisible();
 	});
 });
 
@@ -239,8 +382,9 @@ test.describe('Grocery mode', () => {
 			page.getByRole('button', { name: /Apples/i }).locator('span').filter({ hasText: 'Apples' }),
 		).toHaveClass(/line-through/);
 
-		// Open kebab menu → Hide checked
+		// Open kebab menu -> Filter -> Hide checked
 		await page.getByRole('button', { name: 'List options' }).click();
+		await page.getByRole('button', { name: /Filter/ }).click();
 		await page.getByRole('button', { name: 'Hide checked' }).click();
 
 		// Apples (now done) should no longer be visible
