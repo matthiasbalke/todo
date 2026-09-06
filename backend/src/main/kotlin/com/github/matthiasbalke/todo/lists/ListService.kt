@@ -137,7 +137,7 @@ class ListService(
     @Transactional
     fun addMember(listId: UUID, requestingUserId: UUID, email: String, role: ListRole): ListMembership {
         listAccessService.requireMinRole(listId, requestingUserId, ListRole.OWNER)
-        val target = userRepository.findByEmail(email)
+        val target = userRepository.findByEmailIdentity(email)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Could not add member")
         if (listMembershipRepository.findByListIdAndUserId(listId, target.id) != null) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "User is already a member of this list")

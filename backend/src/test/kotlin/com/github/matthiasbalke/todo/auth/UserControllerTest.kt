@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
 import java.util.UUID
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -160,16 +161,35 @@ class UserControllerTest : AbstractIntegrationTest() {
 
     @Test
     fun `PUT me - rejects duplicate email with 409`() {
-        val user1 = createUser()
+        val user1 = createUser("Duplicate-${UUID.randomUUID()}@Example.com")
         val user2 = createUser()
         mockMvc.put("/api/users/me") {
             header("Authorization", bearerHeader(user2))
             contentType = MediaType.APPLICATION_JSON
-            content = """{"displayName":"${user2.displayName}","email":"${user1.email}"}"""
+            content = """{"displayName":"${user2.displayName}","email":"  ${user1.email.lowercase()}  "}"""
         }.andExpect {
             status { isEqualTo(409) }
             jsonPath("$.code") { value("EMAIL_IN_USE") }
         }
+
+        assertEquals(user2.email, userRepository.findById(user2.id).orElseThrow().email)
+    }
+
+    @Test
+    fun `PUT me - allows changing only own email casing and stores trimmed email`() {
+        val user = createUser("Own-${UUID.randomUUID()}@Example.com")
+        val updatedEmail = user.email.uppercase()
+
+        mockMvc.put("/api/users/me") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"displayName":"${user.displayName}","email":"  $updatedEmail  "}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.email") { value(updatedEmail) }
+        }
+
+        assertEquals(updatedEmail, userRepository.findById(user.id).orElseThrow().email)
     }
 
     // ─── GET /api/users/me/passkeys ───────────────────────────────────────────

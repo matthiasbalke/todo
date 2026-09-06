@@ -76,7 +76,7 @@ class AuthControllerRegistrationCleanupTest : AbstractIntegrationTest() {
 
         // 5. User must be gone from the database
         assertNull(
-            userRepository.findByEmail(user.email),
+            userRepository.findByEmailIdentity(user.email),
             "Orphaned user must be deleted after failed passkey registration",
         )
     }

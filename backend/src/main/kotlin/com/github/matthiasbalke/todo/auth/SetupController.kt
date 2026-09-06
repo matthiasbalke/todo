@@ -64,7 +64,8 @@ class SetupController(
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ErrorResponse("SETUP_SECRET_INVALID", "Setup secret is invalid. Check the backend logs and try again."))
         }
-        val existing = userRepository.findByEmail(body.email.trim())
+        val trimmedEmail = body.email.trim()
+        val existing = userRepository.findByEmailIdentity(trimmedEmail)
         if (existing != null) {
             val hasCredentials = userCredentialRepository.findByUserId(Bytes(uuidToBytes(existing.id))).isNotEmpty()
             if (hasCredentials) {
@@ -73,7 +74,7 @@ class SetupController(
             }
             userRepository.delete(existing)
         }
-        val user = userRepository.save(User(email = body.email.trim(), displayName = body.displayName.trim()))
+        val user = userRepository.save(User(email = trimmedEmail, displayName = body.displayName.trim()))
         val options = rpOperations.createPublicKeyCredentialCreationOptions(
             ImmutablePublicKeyCredentialCreationOptionsRequest(
                 UsernamePasswordAuthenticationToken.authenticated(user.email, null, emptyList())

@@ -675,16 +675,34 @@ class ListIntegrationTest : AbstractIntegrationTest() {
     @Test
     fun `POST members - already-member email returns 409`() {
         val owner = createUser()
-        val member = createUser()
+        val member = createUser("Member-${UUID.randomUUID()}@Example.com")
         val listId = createListAsUser(owner, "My List")
         addMemberToList(listId, owner, member.email, "VIEWER")
 
         mockMvc.post("/api/lists/$listId/members") {
             header("Authorization", bearerHeader(owner))
             contentType = MediaType.APPLICATION_JSON
-            content = """{"email":"${member.email}","role":"EDITOR"}"""
+            content = """{"email":"  ${member.email.lowercase()}  ","role":"EDITOR"}"""
         }.andExpect {
             status { isEqualTo(409) }
+        }
+    }
+
+    @Test
+    fun `POST members - matches account email with different casing and whitespace`() {
+        val owner = createUser()
+        val member = createUser("Invite-${UUID.randomUUID()}@Example.com")
+        val listId = createListAsUser(owner, "My List")
+
+        mockMvc.post("/api/lists/$listId/members") {
+            header("Authorization", bearerHeader(owner))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"email":"  ${member.email.lowercase()}  ","role":"VIEWER"}"""
+        }.andExpect {
+            status { isCreated() }
+            jsonPath("$.userId") { value(member.id.toString()) }
+            jsonPath("$.email") { value(member.email) }
+            jsonPath("$.role") { value("VIEWER") }
         }
     }
 

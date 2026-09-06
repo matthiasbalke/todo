@@ -69,7 +69,8 @@ class AuthController(
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ErrorResponse("REGISTRATION_DISABLED", "Registration is currently disabled"))
         }
-        val existingUser = userRepository.findByEmail(body.email)
+        val trimmedEmail = body.email.trim()
+        val existingUser = userRepository.findByEmailIdentity(trimmedEmail)
         if (existingUser != null) {
             val hasCredentials = userCredentialRepository
                 .findByUserId(Bytes(uuidToBytes(existingUser.id)))
@@ -80,7 +81,7 @@ class AuthController(
             }
             userRepository.delete(existingUser)
         }
-        val user = userRepository.save(User(email = body.email, displayName = body.displayName))
+        val user = userRepository.save(User(email = trimmedEmail, displayName = body.displayName))
 
         val options = rpOperations.createPublicKeyCredentialCreationOptions(
             ImmutablePublicKeyCredentialCreationOptionsRequest(

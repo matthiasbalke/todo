@@ -143,7 +143,7 @@ class AdminAreaIntegrationTest : AbstractIntegrationTest() {
     fun `admin can edit profile and duplicate email is rejected`() {
         val admin = createUser(admin = true)
         val target = createUser()
-        val other = createUser()
+        val other = createUser("Other-${UUID.randomUUID()}@Example.com")
         val newEmail = "updated-${UUID.randomUUID()}@example.com"
 
         mockMvc.patch("/api/admin/users/${target.id}") {
@@ -159,12 +159,33 @@ class AdminAreaIntegrationTest : AbstractIntegrationTest() {
         mockMvc.patch("/api/admin/users/${target.id}") {
             header("Authorization", bearer(admin))
             contentType = MediaType.APPLICATION_JSON
-            content = """{"displayName":"Updated User","email":"${other.email}"}"""
+            content = """{"displayName":"Updated User","email":"  ${other.email.lowercase()}  "}"""
         }.andExpect {
             status { isConflict() }
             jsonPath("$.code") { value("EMAIL_IN_USE") }
             jsonPath("$.message") { value("Email is already in use") }
         }
+
+        assertEquals(newEmail, userRepository.findById(target.id).orElseThrow().email)
+    }
+
+    @Test
+    fun `admin can change only target email casing and stores trimmed email`() {
+        val admin = createUser(admin = true)
+        val target = createUser("Target-${UUID.randomUUID()}@Example.com")
+        val updatedEmail = target.email.uppercase()
+
+        mockMvc.patch("/api/admin/users/${target.id}") {
+            header("Authorization", bearer(admin))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"displayName":"Updated User","email":"  $updatedEmail  "}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.displayName") { value("Updated User") }
+            jsonPath("$.email") { value(updatedEmail) }
+        }
+
+        assertEquals(updatedEmail, userRepository.findById(target.id).orElseThrow().email)
     }
 
     @Test
