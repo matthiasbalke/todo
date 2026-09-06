@@ -69,7 +69,7 @@ class AdminService(
         }
         val trimmedEmail = email.trim()
         if (trimmedEmail.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Email cannot be blank")
-        if (userRepository.existsByEmailAndIdNot(trimmedEmail, targetUserId)) {
+        if (userRepository.existsByEmailIdentityAndIdNot(trimmedEmail, targetUserId)) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "Email is already in use")
         }
         target.displayName = displayName.trim()

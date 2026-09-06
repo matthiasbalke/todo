@@ -20,7 +20,7 @@ class PublicKeyCredentialUserEntityRepositoryImpl(
     }
 
     override fun findByUsername(username: String): PublicKeyCredentialUserEntity? {
-        val user = userRepository.findByEmail(username) ?: return null
+        val user = userRepository.findByEmailIdentity(username) ?: return null
         return user.toUserEntity()
     }
 

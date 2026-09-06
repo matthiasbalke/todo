@@ -73,7 +73,7 @@ describe('MembersDialog Select positioning', () => {
 		render(MembersDialog, {
 			props: { listId: 'list-1', canManageMembers: true, onclose: vi.fn() }
 		});
-		await screen.findByText('editor@example.com');
+		await screen.findByText('Editor');
 		return screen.getAllByRole('combobox', { name: 'Select an option' });
 	}
 
@@ -158,6 +158,34 @@ describe('MembersDialog Select positioning', () => {
 				role: 'EDITOR'
 			});
 		});
+	});
+
+	it('excludes loaded members from suggestions by trimmed case-insensitive email identity', async () => {
+		vi.mocked(listsApi.getMembers).mockResolvedValueOnce([
+			owner,
+			{
+				...editor,
+				email: ' Editor@Example.com '
+			}
+		]);
+		vi.mocked(listsApi.getMemberSuggestions).mockResolvedValueOnce([
+			{
+				userId: 'viewer-1',
+				email: 'viewer@example.com',
+				displayName: 'Viewer'
+			},
+			{
+				userId: 'editor-1',
+				email: 'editor@example.com',
+				displayName: 'Editor'
+			}
+		]);
+
+		await renderOwnerDialog();
+
+		const renderedSuggestions = Array.from(document.querySelectorAll('datalist option'));
+		expect(renderedSuggestions).toHaveLength(1);
+		expect(renderedSuggestions[0]).toHaveAttribute('value', 'viewer@example.com');
 	});
 
 	it('keeps member management available when suggestions fail to load', async () => {

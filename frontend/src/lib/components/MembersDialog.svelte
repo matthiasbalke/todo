@@ -35,9 +35,10 @@
   const currentUser = getCurrentUser();
 
   const roles: ListRole[] = ['OWNER', 'EDITOR', 'VIEWER'];
+  const normalizeEmailIdentity = (email: string) => email.trim().toLowerCase();
   const inviteSuggestions = $derived.by(() => {
-    const memberEmails = new Set(members.map((member) => member.email.toLocaleLowerCase()));
-    return suggestions.filter((suggestion) => !memberEmails.has(suggestion.email.toLocaleLowerCase()));
+    const memberEmails = new Set(members.map((member) => normalizeEmailIdentity(member.email)));
+    return suggestions.filter((suggestion) => !memberEmails.has(normalizeEmailIdentity(suggestion.email)));
   });
 
   async function load() {

@@ -114,6 +114,31 @@ class SetupControllerIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
+    fun `register-options rejects duplicate setup email with different casing and whitespace`() {
+        val email = "Setup-${UUID.randomUUID()}@Example.com"
+        val user = userRepository.save(User(email = email, displayName = "Existing Setup User"))
+        val credId = Base64.getUrlEncoder().withoutPadding().encodeToString(UUID.randomUUID().toString().toByteArray())
+        webAuthnCredentialRepository.save(
+            WebAuthnCredential(
+                userId = user.id,
+                credentialId = credId,
+                publicKey = ByteArray(32),
+                attestationObject = ByteArray(32),
+            )
+        )
+
+        mockMvc.post("/api/setup/webauthn/register-options") {
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"email":"  ${email.lowercase()}  ","displayName":"Setup User","setupSecret":"test-setup-secret"}"""
+        }.andExpect {
+            status { isConflict() }
+            jsonPath("$.code") { value("EMAIL_ALREADY_REGISTERED") }
+        }
+
+        assertEquals(1, userRepository.findAll().count { it.email.equals(email, ignoreCase = true) })
+    }
+
+    @Test
     fun `setup completion rejects missing setup secret without promoting user`() {
         val user = userRepository.save(
             User(email = "setup-${UUID.randomUUID()}@example.com", displayName = "Setup User")

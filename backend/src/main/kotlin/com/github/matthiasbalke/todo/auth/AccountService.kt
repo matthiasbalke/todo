@@ -27,7 +27,7 @@ class AccountService(
             ResponseStatusException(HttpStatus.NOT_FOUND)
         }
         val trimmedEmail = email.trim()
-        if (trimmedEmail != user.email && userRepository.existsByEmailAndIdNot(trimmedEmail, userId)) {
+        if (userRepository.existsByEmailIdentityAndIdNot(trimmedEmail, userId)) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "Email is already in use")
         }
         user.displayName = displayName.trim()
