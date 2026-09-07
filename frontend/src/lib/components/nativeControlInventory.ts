@@ -9,6 +9,7 @@ export const primitiveExclusions = [
 	'lib/components/Button.svelte',
 	'lib/components/CalendarDayButton.svelte',
 	'lib/components/ColorSwatchButton.svelte',
+	'lib/components/ComboboxPrimitive.svelte',
 	'lib/components/CompletionToggle.svelte',
 	'lib/components/DatePicker.svelte',
 	'lib/components/EditableLabel.svelte',
