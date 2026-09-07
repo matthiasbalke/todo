@@ -33,7 +33,7 @@
 		"tailwindcss": "^4.2.2",
 		"typescript": "^6.0.2",
 		"vite": "^8.0.8",
-		"vitest": "^4.1.1",
+		"vitest": "^5.0.0",
 		"workbox-window": "^7.4.0"
 	}
 }
