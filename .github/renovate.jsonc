@@ -4,12 +4,16 @@
 
   "packageRules": [
     {
+      "description": "always update Gradle wrapper together with the Gradle build image",
       "matchDatasources": ["gradle-version"],
-
-      // always update Gradle wrapper together with the Gradle build image
       "groupName": "gradle"
     },
-
+    {
+      "matchDepNames" : "org.jetbrains.kotlin.plugin.spring",
+      "description" : "always update Kotlin Gradle Spring plugin together with the kotlin monorepo artifacts. As it seems the plugin is missing the \"sourceUrl\": \"https://github.com/JetBrains/kotlin\" where the kotlin monorepo is grouped by.",
+      // https://docs.renovatebot.com/presets-group/#groupkotlinmonorepo
+      "groupName": "kotlin monorepo"
+    },
     // -------------------------------------------------------------------------
     // DHI: Gradle
     //

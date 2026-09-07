@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if ! node -e 'if (typeof RegExp.escape !== "function") process.exit(1)' >/dev/null 2>&1; then
+  echo "Renovate requires a Node.js runtime with RegExp.escape support. Use Node 24+ for this dry run." >&2
+  exit 1
+fi
+
 # source: https://www.jvt.me/posts/2026/03/08/renovate-test-config/
 
 # only test specific managers and files
