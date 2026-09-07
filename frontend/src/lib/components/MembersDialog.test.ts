@@ -142,14 +142,9 @@ describe('MembersDialog Select positioning', () => {
 		await renderOwnerDialog();
 
 		expect(listsApi.getMemberSuggestions).toHaveBeenCalledWith('list-1');
-		const renderedSuggestions = Array.from(document.querySelectorAll('datalist option'));
-		expect(renderedSuggestions).toHaveLength(1);
-		expect(renderedSuggestions[0]).toHaveAttribute('value', 'viewer@example.com');
-		expect(renderedSuggestions[0]).toHaveAttribute('label', 'Viewer (viewer@example.com)');
-
-		await fireEvent.input(screen.getByPlaceholderText('Email address'), {
-			target: { value: 'viewer@example.com' }
-		});
+		const inviteInput = screen.getByPlaceholderText('Email address');
+		await fireEvent.input(inviteInput, { target: { value: 'view' } });
+		await fireEvent.click(screen.getByRole('option', { name: /Viewer/ }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
 		await waitFor(() => {
@@ -183,9 +178,11 @@ describe('MembersDialog Select positioning', () => {
 
 		await renderOwnerDialog();
 
-		const renderedSuggestions = Array.from(document.querySelectorAll('datalist option'));
-		expect(renderedSuggestions).toHaveLength(1);
-		expect(renderedSuggestions[0]).toHaveAttribute('value', 'viewer@example.com');
+		await fireEvent.input(screen.getByPlaceholderText('Email address'), {
+			target: { value: 'example' }
+		});
+		expect(screen.getByRole('option', { name: /Viewer/ })).toBeInTheDocument();
+		expect(screen.queryByRole('option', { name: /Editor/ })).not.toBeInTheDocument();
 	});
 
 	it('keeps member management available when suggestions fail to load', async () => {
@@ -198,7 +195,10 @@ describe('MembersDialog Select positioning', () => {
 		expect(
 			screen.getByText('Suggestions unavailable. Something went wrong — please try again.')
 		).toBeInTheDocument();
-		expect(document.querySelectorAll('datalist option')).toHaveLength(0);
+		await fireEvent.input(screen.getByPlaceholderText('Email address'), {
+			target: { value: 'view' }
+		});
+		expect(screen.queryByRole('option', { name: /Viewer/ })).not.toBeInTheDocument();
 
 		await fireEvent.input(screen.getByPlaceholderText('Email address'), {
 			target: { value: 'outside@example.com' }

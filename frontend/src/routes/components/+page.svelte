@@ -1500,7 +1500,7 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
 			<h2 class="text-2xl font-bold text-gray-900 mb-8">MemberInviteEmailInput Component</h2>
 			<p class="text-gray-600 mb-8">
-				A membership invite email field that keeps EmailInput validation while exposing suggested members through a native datalist.
+				A membership invite email field that keeps EmailInput validation while exposing suggested members through a custom combobox list.
 			</p>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -1555,7 +1555,7 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 								<td class="px-4 py-2 font-mono text-blue-600">suggestions</td>
 								<td class="px-4 py-2 text-gray-600">MemberSuggestionDto[]</td>
 								<td class="px-4 py-2 text-gray-600">[]</td>
-								<td class="px-4 py-2 text-gray-600">Suggested contacts rendered as datalist options.</td>
+								<td class="px-4 py-2 text-gray-600">Suggested contacts rendered as custom combobox options.</td>
 							</tr>
 							<tr>
 								<td class="px-4 py-2 font-mono text-blue-600">label</td>

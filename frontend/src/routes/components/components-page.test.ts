@@ -386,10 +386,12 @@ describe('ComponentsPage MemberInviteEmailInput showcase', () => {
 		const showcase = within(section);
 		const input = showcase.getByRole('combobox', { name: 'Invite member' });
 
-		expect(input).toHaveAttribute('list');
-		const suggestionList = document.getElementById(input.getAttribute('list')!);
-		expect(suggestionList?.querySelectorAll('option')).toHaveLength(3);
-		expect(suggestionList?.querySelector('option[value="casey@example.com"]')).not.toBeNull();
+		await fireEvent.input(input, { target: { value: 'casey' } });
+		expect(showcase.getByRole('option', { name: /Casey Stone/ })).toHaveTextContent(
+			'casey@example.com'
+		);
+		await fireEvent.click(showcase.getByRole('option', { name: /Casey Stone/ }));
+		expect(input).toHaveValue('casey@example.com');
 		expect(showcase.getByRole('combobox', { name: 'Invite unsuggested account' })).toHaveValue(
 			'outside@example.com'
 		);
