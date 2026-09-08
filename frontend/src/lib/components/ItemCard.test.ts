@@ -185,4 +185,15 @@ describe('ItemCard read-only presentation', () => {
 		expect(container.querySelector('button[aria-label="Delete item"]')).toBeNull();
 		expect(container.querySelector('[aria-label="Drag to reorder"]')).toBeNull();
 	});
-});
+
+	it('shows a non-interactive star indicator for unstarred items', () => {
+		const { container } = render(ItemCard, {
+			props: { item: { ...baseItem, starred: false }, categories: [], users: [], editable: false },
+		});
+
+		const star = container.querySelector('[aria-label="Not starred"]');
+		expect(star).not.toBeNull();
+		expect(container.querySelector('button[aria-label="Star"]')).toBeNull();
+		expect(star).toHaveClass('text-gray-200');
+	});
+	});

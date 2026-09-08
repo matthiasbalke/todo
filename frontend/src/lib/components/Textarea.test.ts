@@ -58,7 +58,17 @@ describe('Textarea', () => {
 		expect(textarea).toHaveAttribute('name', 'details');
 		expect(textarea).toHaveAttribute('maxlength', '120');
 		expect(textarea).toHaveAttribute('autocomplete', 'off');
-		expect(textarea).toHaveClass('w-full', 'min-h-40');
+		expect(textarea).toHaveClass(
+			'w-full',
+			'min-h-40',
+			'hover:bg-gray-50',
+			'disabled:bg-white',
+			'disabled:hover:bg-gray-50',
+			'disabled:cursor-not-allowed',
+			'disabled:opacity-50'
+		);
+		expect(textarea).not.toHaveClass('disabled:bg-gray-100');
+		expect(textarea).not.toHaveClass('disabled:text-gray-500', 'disabled:border-gray-300');
 		expect(screen.getByText('Details').parentElement).toHaveTextContent('*');
 	});
 

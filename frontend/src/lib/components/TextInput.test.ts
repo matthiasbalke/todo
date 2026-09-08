@@ -250,6 +250,7 @@ describe('TextInput', () => {
 			await tick();
 			// When no error, should have gray border
 			expect(input.className).toContain('border-gray-300');
+			expect(input.className).toContain('hover:bg-gray-50');
 		});
 
 		it('should apply disabled styles when disabled', () => {
@@ -258,6 +259,14 @@ describe('TextInput', () => {
 			});
 			const input = container.querySelector('input');
 			expect(input?.disabled).toBe(true);
+			expect(input).toHaveClass(
+				'disabled:bg-white',
+				'disabled:hover:bg-gray-50',
+				'disabled:cursor-not-allowed',
+				'disabled:opacity-50'
+			);
+			expect(input).not.toHaveClass('disabled:bg-gray-100');
+			expect(input).not.toHaveClass('disabled:text-gray-500', 'disabled:border-gray-300');
 		});
 	});
 

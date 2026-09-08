@@ -250,10 +250,18 @@
 		size="field"
 		align="between"
 		weight="normal"
-		class="w-full"
+		class="min-h-10 w-full"
 	>
 		<span class={selectedDate ? 'text-gray-800' : 'text-gray-500 italic'}>{triggerText}</span>
-		<span aria-hidden="true">▾</span>
+		<svg
+			class="h-4 w-4 flex-shrink-0 transition-transform {isOpen ? 'rotate-180' : ''}"
+			fill="none"
+			stroke="currentColor"
+			viewBox="0 0 24 24"
+			aria-hidden="true"
+		>
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+		</svg>
 	</Button>
 
 	{#if isOpen}

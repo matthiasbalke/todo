@@ -466,8 +466,9 @@ test.describe('Viewer read-only list UI', () => {
 
 			await viewerPage.getByText('Apples').click();
 			await viewerPage.waitForURL(`**/lists/${listId}/items/${itemId}`);
-			await expect(viewerPage.getByRole('heading', { name: 'Apples' })).toBeVisible();
-			await expect(viewerPage.getByText('Braeburn preferred')).toBeVisible();
+			await expect(viewerPage.getByRole('textbox', { name: 'Title' })).toHaveValue('Apples');
+			await expect(viewerPage.getByLabel('Starred')).toBeVisible();
+			await expect(viewerPage.getByRole('textbox', { name: 'Notes' })).toHaveValue('Braeburn preferred');
 			await expect(viewerPage.getByRole('button', { name: 'Save' })).not.toBeVisible();
 			await expect(viewerPage.getByRole('button', { name: 'Delete item' })).not.toBeVisible();
 

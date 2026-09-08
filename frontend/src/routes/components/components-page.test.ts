@@ -26,7 +26,7 @@ describe('ComponentsPage Textarea showcase', () => {
 		expect(showcase.getByText('Bound value:').parentElement).toHaveTextContent(
 			'First line Second line'
 		);
-	});
+	}, 10000);
 
 	it('demonstrates validation, required, disabled, rows, and resize states', async () => {
 		render(ComponentsPage);

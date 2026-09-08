@@ -107,10 +107,35 @@ describe('item detail capabilities', () => {
 		pageState.role = 'VIEWER';
 		render(ItemPage, { props: { data: { id: 'list-1', iid: 'item-1', returnTo: null, buildNumber: '0' } } });
 
-		expect(await screen.findByRole('heading', { name: 'Apples' })).toBeInTheDocument();
-		expect(screen.getByText('Get Braeburn')).toBeInTheDocument();
-		expect(screen.getByText('Produce')).toBeInTheDocument();
-		expect(screen.getByText('Alice')).toBeInTheDocument();
+		const title = await screen.findByRole('textbox', { name: 'Title' });
+		const starred = screen.getByLabelText('Starred');
+		const category = screen.getByRole('combobox', { name: 'Category' });
+		const dueDate = screen.getByRole('button', { name: 'Due Date' });
+		const recurrence = screen.getByRole('combobox', { name: 'Recurrence' });
+		const assignment = await screen.findByRole('button', { name: 'Alice' });
+		const notes = screen.getByRole('textbox', { name: 'Notes' });
+		const audit = screen.getByTestId('item-audit-metadata');
+
+		expect(title).toHaveValue('Apples');
+		expect(category).toHaveValue('Produce');
+		expect(dueDate).toHaveTextContent('Jun 13, 2026');
+		expect(recurrence).toHaveValue('Every week');
+		expect(notes).toHaveValue('Get Braeburn');
+
+		for (const control of [title, category, dueDate, recurrence, assignment, notes]) {
+			expect(control).toBeDisabled();
+		}
+
+		expect(title.compareDocumentPosition(starred) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+		expect(title.compareDocumentPosition(category) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+		expect(category.compareDocumentPosition(dueDate) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+		expect(dueDate.compareDocumentPosition(recurrence) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+		expect(recurrence.compareDocumentPosition(assignment) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+		expect(assignment.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+		expect(notes.compareDocumentPosition(audit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+		expect(screen.queryByRole('button', { name: 'Mark undone' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Mark done' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Delete item' })).not.toBeInTheDocument();
 	});

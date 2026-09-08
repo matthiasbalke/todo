@@ -18,6 +18,11 @@ Standard item cards rendered for a viewer SHALL present item state without expos
 - **WHEN** a viewer sees an item that is completed or starred
 - **THEN** the card presents those states using non-interactive indicators
 
+#### Scenario: Viewer sees an unstarred item
+- **WHEN** a viewer sees an item that is not starred
+- **THEN** the card presents the unstarred state using a non-interactive star indicator
+- **AND** the star indicator remains visible in the same position as the editable star control
+
 #### Scenario: Viewer opens item details
 - **WHEN** a viewer activates the item card's detail link
 - **THEN** navigation to that item's detail page remains available
@@ -39,11 +44,15 @@ Grocery mode SHALL present item completion state without allowing viewers to cha
 - **THEN** activating an item row retains the existing completion behavior
 
 ### Requirement: Viewer item details are read-only
-The item detail route SHALL render item information without mutation controls when the current user cannot edit items.
+The item detail route SHALL render item information without mutation controls when the current user cannot edit items, using disabled versions of the normal item-detail form controls and the normal item-detail field order.
 
 #### Scenario: Viewer opens item details
 - **WHEN** a viewer opens an item's detail route
-- **THEN** the title, notes, category, due date, recurrence, assignments, starred state, and completion state are presented as read-only information
+- **THEN** the title field and starred indicator are presented as read-only information in a single row, in that order
+- **AND** category, due date, recurrence, assignments, and notes are presented after the title row as disabled regular item-detail controls in that order
+- **AND** the read-only item detail content uses the same single-column field layout as the editable form after the title row
+- **AND** audit metadata is presented below notes in the same placement as the editable form
+- **AND** no completion or status indicator is displayed
 - **AND** no save or delete action is available
 
 #### Scenario: Editor opens item details
