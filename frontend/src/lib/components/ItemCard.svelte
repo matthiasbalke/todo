@@ -188,8 +188,11 @@
 
     {#if editable}
       <StarToggle starred={item.starred} onactivate={handleStar} />
-    {:else if item.starred}
-      <span class="flex-shrink-0 text-lg leading-none text-yellow-400" aria-label="Starred">★</span>
+    {:else}
+      <span
+        class="flex-shrink-0 text-lg leading-none {item.starred ? 'text-yellow-400' : 'text-gray-200'}"
+        aria-label={item.starred ? 'Starred' : 'Not starred'}
+      >★</span>
     {/if}
   </div>
 </div>

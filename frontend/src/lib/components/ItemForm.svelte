@@ -193,7 +193,7 @@
       onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit(e); } }}
       placeholder="Item title"
       required
-      class="w-full text-sm border-gray-200"
+      class="w-full"
     />
   </div>
 

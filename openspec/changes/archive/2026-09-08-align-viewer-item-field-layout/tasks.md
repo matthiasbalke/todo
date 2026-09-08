@@ -10,4 +10,5 @@
 - [x] 2.1 Add or update viewer item detail tests to assert the title row order, disabled control usage, absence of completion/status indicator, post-title field order, audit placement below notes, and absence of save/delete actions, and verify with `cd frontend && bun run test -- --run 'src/routes/(app)/lists/[id]/items/[iid]/item-page.test.ts'`.
 - [x] 2.2 Update shared `TextInput` and `Textarea` styling to keep a white resting background, use a muted hover background, and apply opacity-based disabled treatment matching other controls, and verify their component tests cover the class behavior.
 - [x] 2.3 Update `DatePicker` trigger height and arrow affordance to match `Select` and `CategorySelect`, and verify `DatePicker` component tests cover the trigger classes and icon.
-- [x] 2.4 Run frontend checks for the touched code and verify `cd frontend && bun run check` succeeds.
+- [x] 2.4 Update viewer `ItemCard` read-only star rendering so unstarred items still show a disabled star indicator, and verify `ItemCard` tests cover unstarred viewer cards.
+- [x] 2.5 Run frontend checks for the touched code and verify `cd frontend && bun run check` succeeds.

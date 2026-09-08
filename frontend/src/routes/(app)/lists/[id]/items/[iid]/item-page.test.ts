@@ -108,7 +108,7 @@ describe('item detail capabilities', () => {
 		render(ItemPage, { props: { data: { id: 'list-1', iid: 'item-1', returnTo: null, buildNumber: '0' } } });
 
 		const title = await screen.findByRole('textbox', { name: 'Title' });
-		const starred = screen.getByRole('button', { name: 'Unstar' });
+		const starred = screen.getByLabelText('Starred');
 		const category = screen.getByRole('combobox', { name: 'Category' });
 		const dueDate = screen.getByRole('button', { name: 'Due Date' });
 		const recurrence = screen.getByRole('combobox', { name: 'Recurrence' });
@@ -122,7 +122,7 @@ describe('item detail capabilities', () => {
 		expect(recurrence).toHaveValue('Every week');
 		expect(notes).toHaveValue('Get Braeburn');
 
-		for (const control of [title, starred, category, dueDate, recurrence, assignment, notes]) {
+		for (const control of [title, category, dueDate, recurrence, assignment, notes]) {
 			expect(control).toBeDisabled();
 		}
 

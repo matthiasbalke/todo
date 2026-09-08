@@ -8,6 +8,7 @@ Viewer-only item details currently use a two-column metadata grid that differs f
 - Present viewer read-only item fields with the same regular form components as the editable form, but disabled.
 - Align `TextInput` and `Textarea` styling globally so text fields use the same white resting background, muted hover background, and disabled opacity treatment as the other controls.
 - Align `DatePicker` trigger sizing and visual affordance with `Select` and `CategorySelect` by using the same field height and down-arrow icon treatment.
+- Always show the read-only star indicator on viewer list item cards, including when an item is not starred.
 - Place the starred indicator after the disabled title field in the same row.
 - Present the remaining viewer read-only fields in the same order as the editable form: category, due date, recurrence, assigned users, then notes.
 - Keep audit metadata below notes, matching the editable form placement.
@@ -23,7 +24,7 @@ None.
 
 ### Modified Capabilities
 
-- `viewer-read-only-list-ui`: Viewer item details must use the normal disabled item-detail controls, title-row starred indicator, normal field order, and editable-form audit metadata placement without a completion/status indicator.
+- `viewer-read-only-list-ui`: Viewer item details must use the normal disabled item-detail controls, title-row starred indicator, normal field order, and editable-form audit metadata placement without a completion/status indicator; viewer item cards must always show a non-mutating star indicator.
 
 ## Impact
 

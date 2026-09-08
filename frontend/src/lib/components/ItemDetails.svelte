@@ -48,10 +48,13 @@
       ariaLabel="Title"
       placeholder="Item title"
       required
-      class="w-full text-sm border-gray-200"
+      class="w-full"
       containerClass="min-w-0 flex-1"
     />
-    <StarToggle starred={item.starred} disabled />
+    <span
+      class="flex-shrink-0 text-lg leading-none {item.starred ? 'text-yellow-400' : 'text-gray-200'}"
+      aria-label={item.starred ? 'Starred' : 'Not starred'}
+    >★</span>
   </div>
 
   <CategorySelect

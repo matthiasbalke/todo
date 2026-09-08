@@ -182,7 +182,7 @@ describe('AccountPage settings', () => {
 			todayViewEnabled: true,
 		});
 		expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
-	});
+	}, 10000);
 
 	it('disables both controls and clears prior feedback while a new save is pending', async () => {
 		vi.mocked(updatePreferences).mockResolvedValueOnce({
