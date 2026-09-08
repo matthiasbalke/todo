@@ -97,7 +97,7 @@
 				: 'border-gray-300 focus:border-blue-500'
 			: isError
 				? 'border-red-500 bg-red-50 focus:ring-red-500'
-				: 'border-gray-300 bg-white focus:ring-blue-500'
+				: 'border-gray-300 bg-white hover:bg-gray-50 focus:ring-blue-500'
 	);
 
 	function runValidation() {
@@ -151,7 +151,7 @@
 		{onfocus}
 		class="transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {appearanceClasses[
 			appearance
-		]} {stateClasses} disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 {className}"
+		]} {stateClasses} disabled:bg-white disabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 {className}"
 		{...restProps}
 	/>
 

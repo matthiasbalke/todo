@@ -46,7 +46,10 @@ describe('ItemDetails audit metadata', () => {
 			props: { item, categories: [], users },
 		});
 
-		const notes = screen.getByText('Get Braeburn');
+		const notes = screen.getByRole('textbox', { name: 'Notes' });
+		expect(notes).toHaveValue('Get Braeburn');
+		expect(notes).toBeDisabled();
+
 		const audit = screen.getByTestId('item-audit-metadata');
 		expect(audit).toHaveTextContent(/Sun\. 1\. Feb 26 at 15:31\s*updated by Deleted user/);
 		expect(audit).toHaveTextContent(/Thu\. 1\. Jan 26 at 10:01\s*created by Alice/);

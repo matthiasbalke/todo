@@ -135,7 +135,7 @@
 		onblur={handleBlur}
 		class="w-full rounded border transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {isError
 			? 'border-red-500 bg-red-50 focus:ring-red-500'
-			: 'border-gray-300 bg-white focus:ring-blue-500'} disabled:cursor-not-allowed disabled:border-gray-300 disabled:bg-gray-100 disabled:text-gray-500 {resizeClasses[
+			: 'border-gray-300 bg-white hover:bg-gray-50 focus:ring-blue-500'} disabled:cursor-not-allowed disabled:bg-white disabled:hover:bg-gray-50 disabled:opacity-50 {resizeClasses[
 			resize
 		]} {className}"
 		{...restProps}
