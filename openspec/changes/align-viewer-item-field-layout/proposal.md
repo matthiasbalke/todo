@@ -7,6 +7,7 @@ Viewer-only item details currently use a two-column metadata grid that differs f
 - Change the viewer read-only item detail layout from a two-column metadata grid to a single-column field layout.
 - Present viewer read-only item fields with the same regular form components as the editable form, but disabled.
 - Align `TextInput` and `Textarea` styling globally so text fields use the same white resting background, muted hover background, and disabled opacity treatment as the other controls.
+- Align `DatePicker` trigger sizing and visual affordance with `Select` and `CategorySelect` by using the same field height and down-arrow icon treatment.
 - Place the starred indicator after the disabled title field in the same row.
 - Present the remaining viewer read-only fields in the same order as the editable form: category, due date, recurrence, assigned users, then notes.
 - Keep audit metadata below notes, matching the editable form placement.

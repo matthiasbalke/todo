@@ -28,6 +28,10 @@ See proposal.md for motivation. The viewer item detail route already switches fr
   - Rationale: `TextInput` and `Textarea` are the shared controls whose disabled gray fill, direct muted text styling, and missing hover background currently make viewer details visually inconsistent with the other controls. Fixing them at the component level keeps form field styling consistent everywhere.
   - Alternative considered: Pass custom classes from `ItemDetails`. That would solve one screen while leaving the shared components internally inconsistent.
 
+- Align the DatePicker trigger with select-like controls.
+  - Rationale: DatePicker is opened like Select and CategorySelect, so matching its minimum field height and down-arrow SVG gives the same visual affordance and prevents height jumps in shared forms.
+  - Alternative considered: Keep the text chevron and button default height. That leaves DatePicker visually different from adjacent fields in ItemForm and ItemDetails.
+
 - Put the disabled title and starred state in one title row, and omit completion/status from viewer details.
   - Rationale: Starred is already part of item identity and can sit beside the title without creating a separate metadata field. Completion/status is not currently shown in the edit view, so omitting it makes viewer rendering match edit mode more closely.
   - Alternative considered: Keep a disabled completion toggle before the title. That preserved state visibility but made the read-only view look unlike the edit view.
@@ -46,4 +50,5 @@ See proposal.md for motivation. The viewer item detail route already switches fr
 - Completion/status visibility regression -> Add a frontend test assertion that viewer item details do not display the completion/status control.
 - Disabled control behavior drift -> Use existing component disabled props and add tests that mutation actions are unavailable.
 - Shared field styling regression -> Add shared `TextInput` and `Textarea` tests asserting fields keep a white resting background, use a muted hover background, and use opacity-based disabled muting.
+- DatePicker field parity regression -> Add DatePicker tests asserting the trigger uses the shared field height and select-style down-arrow SVG.
 - Mobile layout differences -> Use one-column responsive structure by default so small screens and desktop share the same reading order.
