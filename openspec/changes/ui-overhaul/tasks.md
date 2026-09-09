@@ -14,12 +14,12 @@
 
 - [x] 3.1 Extend `ComboboxPrimitive` only as needed to support multi-select behavior while preserving existing `Select` behavior, including support for keeping the option list open after selection and representing multi-selected option state.
 - [x] 3.2 Add a shared `MultiSelect` component based on the extended `ComboboxPrimitive` interaction patterns, including multi-value selection that keeps the option list open after selection, toggles selected options off when activated again, closes on Escape or focus-out/blur, custom option/selected rendering snippets, accessible labels, keyboard operation, and focused tests with `cd frontend && bun run test -- --run src/lib/components/MultiSelect.test.ts src/lib/components/ComboboxPrimitive.test.ts src/lib/components/Select.test.ts`.
-- [ ] 3.3 Stop for review: inspect MultiSelect filtering, keyboard behavior, selected-value rendering, and primitive API shape before adopting it in `ItemForm` or the components page.
+- [x] 3.3 Stop for review: inspect MultiSelect filtering, keyboard behavior, selected-value rendering, and primitive API shape before adopting it in `ItemForm` or the components page.
 
 ## 4. Fixed Footer Checkpoint
 
-- [ ] 4.1 Add and adopt a shared `FixedActionFooter` for existing bottom action footers, with base horizontal and bottom display-edge spacing plus `env(safe-area-inset-bottom)` support, bounded scrollable expanded form content, and matching page-bottom reserve space; verify route/component tests or Playwright assertions confirm action borders remain visually inset, visible, and tappable on mobile viewports.
-- [ ] 4.2 Stop for review: inspect compact and expanded footer states on mobile-width viewports before changing list creation labels or item-form layout inside those footers.
+- [x] 4.1 Add and adopt a shared `FixedActionFooter` for existing bottom action footers, with base horizontal and bottom display-edge spacing plus `env(safe-area-inset-bottom)` support, bounded scrollable expanded form content, and matching page-bottom reserve space; verify route/component tests or Playwright assertions confirm action borders remain visually inset, visible, and tappable on mobile viewports.
+- [x] 4.2 Stop for review: inspect compact and expanded footer states on mobile-width viewports before changing list creation labels or item-form layout inside those footers.
 
 ## 5. List Overview and Navigation UI Checkpoint
 

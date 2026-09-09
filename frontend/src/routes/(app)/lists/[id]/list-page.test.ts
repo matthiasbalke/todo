@@ -270,6 +270,27 @@ describe('ListPage menu presentation', () => {
 		expect(screen.queryByRole('button', { name: 'Delete list' })).not.toBeInTheDocument();
 	});
 
+	it('renders add-item actions inside the shared fixed action footer with reserved scroll space', () => {
+		const { container } = render(ListPage, { props: { data: mockData } });
+
+		const footer = screen.getByTestId('fixed-action-footer');
+		const content = screen.getByTestId('fixed-action-footer-content');
+		expect(footer).toHaveClass('fixed', 'bottom-0', 'border-t', 'bg-white', 'shadow-lg');
+		expect(content).toHaveClass('px-4', 'pt-3', 'max-w-2xl');
+		expect(content.className).toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
+		expect(container.querySelector('.pb-32')).not.toBeNull();
+	});
+
+	it('bounds expanded add-item form content inside the fixed action footer', async () => {
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+
+		const scrollArea = screen.getByTestId('fixed-action-footer-scroll');
+		expect(scrollArea).toHaveClass('overflow-y-auto');
+		expect(scrollArea.className).toContain('max-h-[min(70vh,calc(100vh-2rem))]');
+	});
+
 	it('shows duplicate directly above delete for owners', async () => {
 		render(ListPage, { props: { data: mockData } });
 

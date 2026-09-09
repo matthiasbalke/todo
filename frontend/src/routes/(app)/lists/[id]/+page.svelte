@@ -27,6 +27,7 @@
   import Button from '$lib/components/Button.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
   import DeleteCheckedItemsDialog from '$lib/components/DeleteCheckedItemsDialog.svelte';
+  import FixedActionFooter from '$lib/components/FixedActionFooter.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -297,7 +298,7 @@
 {#if !list}
   <div class="text-center py-12 text-gray-400">List not found.</div>
 {:else}
-<div class="pb-20">
+<div class="pb-32">
   <div class="flex items-center gap-3 mb-4">
     <a href="/lists" class="text-gray-400 hover:text-gray-600">←</a>
     {#if editingTitle}
@@ -600,10 +601,8 @@
 {/if}
 
 {#if capabilities.canEditItems}
-  <div class="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gray-100 shadow-lg">
-    <div class="max-w-2xl mx-auto px-4 py-3">
-      {#if showAddForm}
-        <div class="max-h-[70vh] overflow-y-auto">
+  <FixedActionFooter expanded={showAddForm}>
+    {#if showAddForm}
           <ItemForm
             listId={data.id}
             {categories}
@@ -614,8 +613,7 @@
             onDraftChange={(draft) => { addItemDraft = draft; }}
             {defaultCategoryId}
           />
-        </div>
-      {:else}
+    {:else}
         <Button tone="neutral" appearance="outline"
           size="empty"
           onclick={() => { showAddForm = true; }}
@@ -623,8 +621,7 @@
         >
           + Add item
         </Button>
-      {/if}
-    </div>
-  </div>
+    {/if}
+  </FixedActionFooter>
 {/if}
 {/if}

@@ -5,6 +5,7 @@
   import { isDraggingAny } from '$lib/stores/drag.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
   import ListGroupSection from '$lib/components/ListGroupSection.svelte';
+  import FixedActionFooter from '$lib/components/FixedActionFooter.svelte';
   import { dragHandleZone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { friendlyError } from '$lib/api/errors';
   import Button from '$lib/components/Button.svelte';
@@ -127,7 +128,7 @@
   }
 </script>
 
-<div class="pb-20">
+<div class="pb-32">
   {#if isLoading()}
     <div class="space-y-3">
       {#each [1, 2, 3] as _}
@@ -185,16 +186,13 @@
   {/if}
 </div>
 
-<div class="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gray-100 shadow-lg">
-  <div class="max-w-2xl mx-auto px-4 py-3">
-    {#if showAddForm}
-      <div class="max-h-[70vh] overflow-y-auto">
+<FixedActionFooter expanded={showAddForm || addingGroup}>
+  {#if showAddForm}
         <ListForm
           onsubmit={handleSave}
           oncancel={() => { showAddForm = false; error = null; }}
         />
-      </div>
-    {:else if addingGroup}
+  {:else if addingGroup}
       <div class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
         <TextInput
           bind:element={groupInput}
@@ -221,7 +219,7 @@
           <p class="text-sm text-red-600">{groupError}</p>
         {/if}
       </div>
-    {:else}
+  {:else}
       <div class="flex gap-2">
         <Button tone="neutral" appearance="outline"
           size="empty"
@@ -238,9 +236,8 @@
           + New group
         </Button>
       </div>
-    {/if}
-    {#if error}
-      <p class="mt-2 text-sm text-red-600">{error}</p>
-    {/if}
-  </div>
-</div>
+  {/if}
+  {#if error}
+    <p class="mt-2 text-sm text-red-600">{error}</p>
+  {/if}
+</FixedActionFooter>

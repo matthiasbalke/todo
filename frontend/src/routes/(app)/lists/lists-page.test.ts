@@ -143,6 +143,28 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		expect(document.activeElement).toBe(input);
 	});
 
+	it('renders creation actions inside the shared fixed action footer with safe-area spacing', () => {
+		const { container } = render(ListsPage, { props: { } });
+
+		const footer = container.querySelector('[data-testid="fixed-action-footer"]') as HTMLElement;
+		const content = container.querySelector('[data-testid="fixed-action-footer-content"]') as HTMLElement;
+		const pageReserve = container.querySelector('.pb-32');
+		expect(footer).not.toBeNull();
+		expect(footer).toHaveClass('fixed', 'bottom-0', 'border-t', 'bg-white', 'shadow-lg');
+		expect(content).toHaveClass('px-4', 'pt-3', 'max-w-2xl');
+		expect(content.className).toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
+		expect(pageReserve).not.toBeNull();
+	});
+
+	it('bounds expanded group creation content inside the fixed action footer', async () => {
+		const container = await openAddGroupForm();
+
+		const scrollArea = container.querySelector('[data-testid="fixed-action-footer-scroll"]') as HTMLElement;
+		expect(scrollArea).not.toBeNull();
+		expect(scrollArea).toHaveClass('overflow-y-auto');
+		expect(scrollArea.className).toContain('max-h-[min(70vh,calc(100vh-2rem))]');
+	});
+
 	it('refreshes the Today count when the page mounts', () => {
 		render(ListsPage, { props: { } });
 
