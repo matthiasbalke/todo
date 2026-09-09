@@ -6,6 +6,7 @@ export const sharedControlNames = [
 	'DatePicker',
 	'EditableLabel',
 	'EmailInput',
+	'Icon',
 	'ListStateSummary',
 	'Select',
 	'StarToggle',

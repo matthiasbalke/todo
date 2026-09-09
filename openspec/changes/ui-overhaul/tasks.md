@@ -1,7 +1,7 @@
 ## 1. Icon System Checkpoint
 
-- [ ] 1.1 Add `@lucide/svelte` and establish a shared `Icon` component backed by an explicit per-icon Lucide registry as the single functional UI icon system, including semantic app names mapped to `ChevronLeft` for back navigation, `Menu` for menu controls, `Circle` for unchecked completion/status indicators, `CircleCheck` for checked/completed indicators, `Plus` for new-list creation, `Group` for list groups, `ChevronDown` for expanded sections, and `ChevronUp` for collapsed sections, while preserving existing app/PWA assets and user/list emoji content.
-- [ ] 1.2 Add shared named icon sizing presets for Lucide visual sizes and stroke widths, and verify focused icon tests pass with `cd frontend && bun run test -- --run`.
+- [x] 1.1 Add `@lucide/svelte` and establish a shared `Icon` component backed by an explicit per-icon Lucide registry as the single functional UI icon system, including semantic app names mapped to `ChevronLeft` for back navigation, `Menu` for menu controls, `Circle` for unchecked completion/status indicators, `CircleCheck` for checked/completed indicators, `Plus` for new-list creation, `Group` for list groups, `ChevronDown` for expanded sections, and `ChevronUp` for collapsed sections, while preserving existing app/PWA assets and user/list emoji content.
+- [x] 1.2 Add shared named icon sizing presets for Lucide visual sizes and stroke widths, and verify focused icon tests pass with `cd frontend && bun run test -- --run`.
 - [ ] 1.3 Stop for review: inspect the icon registry, semantic names, rendered default sizes, and tree-shakable imports before starting button, toggle, or route adoption work.
 
 ## 2. Button and Toggle Checkpoint

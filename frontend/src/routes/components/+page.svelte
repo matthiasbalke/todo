@@ -7,6 +7,7 @@
 	import Select from '$lib/components/Select.svelte';
 	import EditableLabel from '$lib/components/EditableLabel.svelte';
 	import Button from '$lib/components/Button.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import CalendarDayButton from '$lib/components/CalendarDayButton.svelte';
 	import ColorSwatchButton from '$lib/components/ColorSwatchButton.svelte';
 	import CompletionToggle from '$lib/components/CompletionToggle.svelte';
@@ -321,6 +322,14 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
   label="Invite member"
   placeholder="Email address"
 />`;
+
+	const iconCode = `<script lang="ts">
+  import Icon from '$lib/components/Icon.svelte';
+<\/script>
+
+<Icon name="plus" />
+<Icon name="menu" label="Open menu" size="header" />
+<Icon name="done" size="itemStatus" class="text-green-600" />`;
 </script>
 
 <div class="min-h-screen bg-gray-50 p-8">
@@ -498,6 +507,69 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					Standard native button attributes and handlers such as <code>title</code>,
 					<code>aria-label</code>, <code>data-*</code>, and <code>onclick</code> are forwarded.
 				</p>
+			</div>
+		</section>
+
+		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+			<h2 class="text-2xl font-bold text-gray-900 mb-4">Icon Component</h2>
+			<p class="text-gray-600 mb-8">
+				A semantic Lucide-backed icon wrapper with shared app names, decorative defaults,
+				accessible labels, and named sizing presets.
+			</p>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Semantic Names</h3>
+					<div class="flex flex-wrap items-center gap-4 text-gray-700">
+						<span class="inline-flex items-center gap-2"><Icon name="back" /> back</span>
+						<span class="inline-flex items-center gap-2"><Icon name="menu" /> menu</span>
+						<span class="inline-flex items-center gap-2"><Icon name="plus" /> plus</span>
+						<span class="inline-flex items-center gap-2"><Icon name="group" /> group</span>
+						<span class="inline-flex items-center gap-2"><Icon name="expand" /> expand</span>
+						<span class="inline-flex items-center gap-2"><Icon name="collapse" /> collapse</span>
+						<span class="inline-flex items-center gap-2"><Icon name="status" /> status</span>
+						<span class="inline-flex items-center gap-2"><Icon name="done" /> done</span>
+					</div>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Sizing Presets</h3>
+					<div class="flex flex-wrap items-end gap-5 text-gray-700">
+						<span class="inline-flex flex-col items-center gap-2 text-xs">
+							<Icon name="star" size="metadata" />
+							metadata
+						</span>
+						<span class="inline-flex flex-col items-center gap-2 text-xs">
+							<Icon name="star" size="compact" />
+							compact
+						</span>
+						<span class="inline-flex flex-col items-center gap-2 text-xs">
+							<Icon name="star" size="action" />
+							action
+						</span>
+						<span class="inline-flex flex-col items-center gap-2 text-xs">
+							<Icon name="star" size="header" />
+							header
+						</span>
+						<span class="inline-flex flex-col items-center gap-2 text-xs">
+							<Icon name="done" size="itemStatus" class="text-green-600" />
+							itemStatus
+						</span>
+					</div>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Accessible Icon</h3>
+					<div class="inline-flex items-center gap-3 rounded border border-gray-200 px-3 py-2">
+						<Icon name="menu" label="Open menu example" size="header" />
+						<span class="text-sm text-gray-600">Screen-reader named icon</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Example</h3>
+				<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{iconCode}</code></pre>
 			</div>
 		</section>
 

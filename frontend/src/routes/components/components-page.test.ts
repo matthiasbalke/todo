@@ -225,6 +225,41 @@ describe('ComponentsPage Button showcase', () => {
 	});
 });
 
+describe('ComponentsPage Icon showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('renders semantic icons, sizing presets, and accessible example', () => {
+		render(ComponentsPage);
+
+		const section = screen.getByRole('heading', { name: 'Icon Component' }).closest('section');
+		expect(section).not.toBeNull();
+		const showcase = within(section!);
+
+		for (const label of [
+			'back',
+			'menu',
+			'plus',
+			'group',
+			'expand',
+			'collapse',
+			'status',
+			'done',
+			'metadata',
+			'compact',
+			'action',
+			'header',
+			'itemStatus'
+		]) {
+			expect(showcase.getByText(label)).toBeInTheDocument();
+		}
+
+		expect(showcase.getByRole('img', { name: 'Open menu example' })).toBeInTheDocument();
+		expect(section).toHaveTextContent('<Icon name="menu" label="Open menu" size="header" />');
+	});
+});
+
 describe('ComponentsPage Toggle showcase', () => {
 	afterEach(() => {
 		cleanup();
