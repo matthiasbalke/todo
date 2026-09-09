@@ -118,6 +118,7 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
                 "title": "Buy milk",
                 "notes": "Full fat",
                 "dueDate": "2025-12-01",
+                "done": true,
                 "starred": true,
                 "recurrenceRule": {"intervalUnit": "WEEKS", "intervalValue": 1},
                 "sortOrder": 5
@@ -129,7 +130,7 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
             jsonPath("$.notes") { value("Full fat") }
             jsonPath("$.dueDate") { value("2025-12-01") }
             jsonPath("$.starred") { value(true) }
-            jsonPath("$.done") { value(false) }
+            jsonPath("$.done") { value(true) }
             jsonPath("$.recurrenceRule.intervalUnit") { value("WEEKS") }
             jsonPath("$.recurrenceRule.intervalValue") { value(1) }
             jsonPath("$.sortOrder") { value(5) }

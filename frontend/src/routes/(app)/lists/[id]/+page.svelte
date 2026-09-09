@@ -199,6 +199,7 @@
         notes: item.notes,
         categoryId: item.categoryId,
         dueDate: item.dueDate,
+        done: item.done,
         starred: item.starred,
         recurrenceRule: item.recurrenceRule,
         assignedUserIds: item.assignedUserIds,

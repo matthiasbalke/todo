@@ -6,6 +6,7 @@
 	import { onMount, tick } from 'svelte';
 	import Button from './Button.svelte';
 	import CalendarDayButton from './CalendarDayButton.svelte';
+	import Icon from './Icon.svelte';
 	import {
 		addDays,
 		addMonths,
@@ -30,6 +31,7 @@
 		max?: string | null;
 		locale?: string;
 		ariaLabel?: string;
+		appearance?: 'default' | 'inline';
 	}
 
 	let {
@@ -41,7 +43,8 @@
 		min = null,
 		max = null,
 		locale,
-		ariaLabel
+		ariaLabel,
+		appearance = 'default'
 	}: Props = $props();
 
 	let isOpen = $state(false);
@@ -246,22 +249,14 @@
 		aria-expanded={isOpen}
 		onclick={toggleCalendar}
 		tone="neutral"
-		appearance="outline"
-		size="field"
+		appearance={appearance === 'inline' ? 'bare' : 'outline'}
+		size={appearance === 'inline' ? 'display' : 'field'}
 		align="between"
 		weight="normal"
 		class="min-h-10 w-full"
 	>
 		<span class={selectedDate ? 'text-gray-800' : 'text-gray-500 italic'}>{triggerText}</span>
-		<svg
-			class="h-4 w-4 flex-shrink-0 transition-transform {isOpen ? 'rotate-180' : ''}"
-			fill="none"
-			stroke="currentColor"
-			viewBox="0 0 24 24"
-			aria-hidden="true"
-		>
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-		</svg>
+		<Icon name={isOpen ? 'collapse' : 'expand'} size="compact" class="flex-shrink-0" />
 	</Button>
 
 	{#if isOpen}
@@ -276,9 +271,9 @@
 					onclick={() => changeMonth(-1)}
 					tone="neutral"
 					appearance="ghost"
-					size="icon"
+					size="icon-compact"
 				>
-					‹
+					<Icon name="back" size="compact" />
 				</Button>
 				<h3 class="text-sm font-semibold text-gray-800" aria-live="polite">{monthHeading}</h3>
 				<Button
@@ -286,9 +281,9 @@
 					onclick={() => changeMonth(1)}
 					tone="neutral"
 					appearance="ghost"
-					size="icon"
+					size="icon-compact"
 				>
-					›
+					<Icon name="next" size="compact" />
 				</Button>
 			</div>
 

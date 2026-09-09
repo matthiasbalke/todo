@@ -27,6 +27,19 @@ describe('CategorySelect', () => {
 		]);
 	});
 
+	it('can show a different closed label for Uncategorized while preserving the option label', async () => {
+		render(CategorySelect, {
+			props: { categories, label: '', ariaLabel: 'Category', emptySelectedLabel: 'assign category' }
+		});
+
+		const trigger = screen.getByRole('combobox', { name: 'Category' });
+		expect(trigger).toHaveValue('assign category');
+		expect(screen.queryByTestId('category-select-swatch-uncategorized')).not.toBeInTheDocument();
+
+		await fireEvent.click(trigger);
+		expect(screen.getByRole('option', { name: 'Uncategorized' })).toBeInTheDocument();
+	});
+
 	it('renders color dots and reserved spacing for real category options', async () => {
 		render(CategorySelect, { props: { categories, label: 'Category' } });
 
@@ -62,18 +75,12 @@ describe('CategorySelect', () => {
 		expect(coloredSwatch).toHaveStyle({ backgroundColor: 'rgb(96, 165, 250)' });
 
 		await rerender({ categories, selectedCategoryId: 'category-2', label: 'Category' });
-		const colorlessSwatch = screen.getByTestId('category-select-swatch-category-2');
 		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Household');
-		expect(colorlessSwatch).toHaveClass('h-3', 'w-3');
-		expect(colorlessSwatch).not.toHaveClass('rounded-full');
-		expect(colorlessSwatch).not.toHaveAttribute('style');
+		expect(screen.queryByTestId('category-select-swatch-category-2')).not.toBeInTheDocument();
 
 		await rerender({ categories, selectedCategoryId: null, label: 'Category' });
 		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Uncategorized');
-		const uncategorizedSwatch = screen.getByTestId('category-select-swatch-uncategorized');
-		expect(uncategorizedSwatch).toHaveClass('h-3', 'w-3');
-		expect(uncategorizedSwatch).not.toHaveClass('rounded-full');
-		expect(uncategorizedSwatch).not.toHaveAttribute('style');
+		expect(screen.queryByTestId('category-select-swatch-uncategorized')).not.toBeInTheDocument();
 	});
 
 	it('emits category IDs and null for Uncategorized', async () => {

@@ -600,7 +600,7 @@ describe('ListPage menu presentation', () => {
 		await waitFor(() => expect(deleteListItemDefaults).toHaveBeenCalledWith('list-1'));
 		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
 
-		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Uncategorized');
+		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('assign category');
 		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 			target: { value: 'Fallback item' },
 		});
@@ -618,9 +618,11 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 			target: { value: 'Preserved title' },
 		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
 		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
 			target: { value: 'Preserved notes' },
 		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 		await fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
 			relatedTarget: externalElement,
 		});
@@ -629,7 +631,7 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
 
 		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Preserved title');
-		expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Preserved notes');
+		expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Preserved notes');
 		externalElement.remove();
 	});
 
@@ -670,6 +672,23 @@ describe('ListPage menu presentation', () => {
 		externalElement.remove();
 	});
 
+	it('passes the selected completion state when creating an item', async () => {
+		const { createItem } = await import('$lib/stores/items.svelte');
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+			target: { value: 'Already checked' },
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Mark done' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+		expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({
+			title: 'Already checked',
+			done: true,
+		}));
+	});
+
 	it('keeps an add-item draft available after failed submission', async () => {
 		const alert = vi.fn();
 		vi.stubGlobal('alert', alert);
@@ -681,14 +700,16 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 			target: { value: 'Retry title' },
 		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
 		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
 			target: { value: 'Retry notes' },
 		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
 		await waitFor(() => expect(alert).toHaveBeenCalledWith('Error: boom'));
 		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Retry title');
-		expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Retry notes');
+		expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Retry notes');
 		vi.unstubAllGlobals();
 	});
 });

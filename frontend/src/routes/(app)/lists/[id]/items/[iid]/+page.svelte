@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { getItems, loadItemsForList, updateItem, deleteItem } from '$lib/stores/items.svelte';
+  import { getItems, loadItemsForList, updateItem, deleteItem, toggleDone, toggleStarred } from '$lib/stores/items.svelte';
   import { getList, getCategoriesForList, loadCategoriesForList } from '$lib/stores/lists.svelte';
   import type { TodoItem, User } from '$lib/mock-data';
   import ItemForm from '$lib/components/ItemForm.svelte';
@@ -48,6 +48,24 @@
     }
   }
 
+  async function handleDoneChange() {
+    try {
+      await toggleDone(data.id, data.iid);
+    } catch (e) {
+      alert(friendlyError(e, 'Failed to update item status'));
+      throw e;
+    }
+  }
+
+  async function handleStarredChange() {
+    try {
+      await toggleStarred(data.id, data.iid);
+    } catch (e) {
+      alert(friendlyError(e, 'Failed to update item star'));
+      throw e;
+    }
+  }
+
   function handleCancel() {
     goto(returnDestination);
   }
@@ -82,6 +100,8 @@
         users={members}
         onsubmit={handleSave}
         oncancel={handleCancel}
+        onDoneChange={handleDoneChange}
+        onStarredChange={handleStarredChange}
       />
       <div class="mt-4">
         <Button tone="danger" appearance="ghost"

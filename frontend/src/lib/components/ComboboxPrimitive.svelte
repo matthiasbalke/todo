@@ -7,8 +7,10 @@
 	import { onMount, tick } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import Button from './Button.svelte';
+	import Icon from './Icon.svelte';
 
 	type Size = 'default' | 'compact' | 'dense';
+	type Appearance = 'default' | 'inline';
 
 	interface Props<T> {
 		options: T[];
@@ -17,12 +19,14 @@
 		disabled?: boolean;
 		required?: boolean;
 		label?: string;
+		ariaLabel?: string;
 		placeholder?: string;
 		labelId?: string;
 		id?: string;
 		listboxId?: string;
 		class?: string;
 		size?: Size;
+		appearance?: Appearance;
 		type?: HTMLInputAttributes['type'];
 		errorMessage?: string | null;
 		emptyMessage?: string;
@@ -49,12 +53,14 @@
 		disabled = false,
 		required = false,
 		label = '',
+		ariaLabel = '',
 		placeholder = 'Select an option',
 		labelId = '',
 		id = '',
 		listboxId = '',
 		class: className = '',
 		size = 'default',
+		appearance = 'default',
 		type = 'text',
 		errorMessage = null,
 		emptyMessage = 'No options available',
@@ -90,6 +96,15 @@
 				? 'px-3 py-1.5 text-sm'
 				: 'px-2 py-1 text-xs'
 	);
+	const presentationClasses = $derived.by(() => {
+		if (isError) {
+			return 'border-red-500 bg-red-50 focus-within:ring-red-500';
+		}
+		if (appearance === 'inline') {
+			return 'border-transparent bg-transparent hover:bg-gray-50 focus-within:ring-blue-500';
+		}
+		return 'border-gray-300 bg-white hover:bg-gray-50 focus-within:ring-blue-500';
+	});
 	const inputCharacterWidth = $derived.by(() => {
 		const visibleLength = Math.max(1, inputValue.length || placeholder.length);
 		const maxWidth = size === 'dense' ? 6 : size === 'compact' ? 14 : 24;
@@ -228,9 +243,7 @@
 
 	<div class="relative" onfocusout={handleFocusOut}>
 		<div
-			class="flex w-full items-center gap-2 rounded border bg-white text-gray-700 transition-colors focus-within:ring-2 focus-within:ring-offset-2 disabled:cursor-not-allowed {isError
-				? 'border-red-500 bg-red-50 focus-within:ring-red-500'
-				: 'border-gray-300 hover:bg-gray-50 focus-within:ring-blue-500'} {disabled ? 'cursor-not-allowed opacity-50' : ''} {inputSizeClasses}"
+			class="flex w-full items-center gap-2 rounded border text-gray-700 transition-colors focus-within:ring-2 focus-within:ring-offset-2 disabled:cursor-not-allowed {presentationClasses} {disabled ? 'cursor-not-allowed opacity-50' : ''} {inputSizeClasses}"
 		>
 			{#if selectedContent}
 				{@render selectedContent()}
@@ -246,7 +259,7 @@
 				{disabled}
 				{required}
 				aria-autocomplete="list"
-				aria-label={label ? undefined : placeholder}
+				aria-label={ariaLabel || (label ? undefined : placeholder)}
 				aria-haspopup="listbox"
 				aria-expanded={isOpen}
 				aria-controls={isOpen ? resolvedListboxId : undefined}
@@ -260,15 +273,7 @@
 				onblur={onblur}
 				class="min-w-0 flex-1 bg-transparent p-0 text-left font-normal outline-none placeholder:text-gray-500 placeholder:italic disabled:cursor-not-allowed"
 			/>
-			<svg
-				class="h-4 w-4 flex-shrink-0 transition-transform {isOpen ? 'rotate-180' : ''}"
-				fill="none"
-				stroke="currentColor"
-				viewBox="0 0 24 24"
-				aria-hidden="true"
-			>
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-			</svg>
+			<Icon name={isOpen ? 'collapse' : 'expand'} size="compact" class="flex-shrink-0" />
 		</div>
 
 		{#if isOpen}

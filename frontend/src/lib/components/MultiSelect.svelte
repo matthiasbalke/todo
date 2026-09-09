@@ -8,18 +8,21 @@
 	import Icon from './Icon.svelte';
 
 	type Size = 'default' | 'compact' | 'dense';
+	type Appearance = 'default' | 'inline';
 
 	interface Props<T> {
 		options: T[];
 		selected?: T[];
 		disabled?: boolean;
 		label?: string;
+		ariaLabel?: string;
 		placeholder?: string;
 		labelId?: string;
 		id?: string;
 		listboxId?: string;
 		class?: string;
 		size?: Size;
+		appearance?: Appearance;
 		getOptionLabel?: (option: T) => string;
 		optionKey?: (option: T, index: number) => string;
 		selectedContent?: Snippet<[T]>;
@@ -34,12 +37,14 @@
 		selected = $bindable([]),
 		disabled = false,
 		label = '',
+		ariaLabel = '',
 		placeholder = 'Select options',
 		labelId = '',
 		id = '',
 		listboxId = '',
 		class: className = '',
 		size = 'default',
+		appearance = 'default',
 		getOptionLabel = (option: any) => String(option),
 		optionKey = defaultOptionKey,
 		selectedContent: selectedContentSnippet,
@@ -117,12 +122,14 @@
 	selectedOption={null}
 	{disabled}
 	{label}
+	{ariaLabel}
 	placeholder={inputPlaceholder}
 	{labelId}
 	id={triggerId}
 	listboxId={listboxId || `${generatedId}-listbox`}
 	class={className}
 	{size}
+	{appearance}
 	{getOptionLabel}
 	{optionKey}
 	closeOnSelect={false}

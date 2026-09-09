@@ -7,6 +7,7 @@
 
 	type Resize = 'none' | 'vertical' | 'horizontal' | 'both';
 	type Size = 'default' | 'compact';
+	type Appearance = 'default' | 'inline';
 
 	interface Props
 		extends Omit<
@@ -17,7 +18,9 @@
 			| 'class'
 			| 'disabled'
 			| 'onblur'
+			| 'onfocus'
 			| 'oninput'
+			| 'onkeydown'
 			| 'placeholder'
 			| 'required'
 			| 'rows'
@@ -32,13 +35,17 @@
 		rows?: number;
 		resize?: Resize;
 		size?: Size;
+		appearance?: Appearance;
 		validate?: ((value: string) => string | null) | null;
 		ariaLabel?: string;
 		class?: string;
+		element?: HTMLTextAreaElement | null;
 		'aria-describedby'?: string;
 		'aria-label'?: string;
 		oninput?: HTMLTextareaAttributes['oninput'];
 		onblur?: HTMLTextareaAttributes['onblur'];
+		onfocus?: HTMLTextareaAttributes['onfocus'];
+		onkeydown?: HTMLTextareaAttributes['onkeydown'];
 	}
 
 	let {
@@ -51,13 +58,17 @@
 		rows = 3,
 		resize = 'vertical',
 		size = 'default',
+		appearance = 'default',
 		validate = null,
 		ariaLabel,
 		class: className = '',
+		element = $bindable(null),
 		'aria-describedby': consumerDescribedBy,
 		'aria-label': nativeAriaLabel,
 		oninput,
 		onblur,
+		onfocus,
+		onkeydown,
 		...restProps
 	}: Props = $props();
 
@@ -78,6 +89,15 @@
 	};
 
 	const isError = $derived(Boolean(errorMessage));
+	const presentationClasses = $derived.by(() => {
+		if (isError) {
+			return 'border-red-500 bg-red-50 focus:ring-red-500';
+		}
+		if (appearance === 'inline') {
+			return 'border-transparent bg-transparent hover:bg-gray-50 focus:ring-blue-500';
+		}
+		return 'border-gray-300 bg-white hover:bg-gray-50 focus:ring-blue-500';
+	});
 	const describedBy = $derived(
 		[consumerDescribedBy, description ? descriptionId : null, isError ? errorId : null]
 			.filter(Boolean)
@@ -122,6 +142,7 @@
 	{/if}
 
 	<textarea
+		bind:this={element}
 		id={instanceId}
 		{value}
 		{placeholder}
@@ -133,9 +154,9 @@
 		aria-describedby={describedBy}
 		oninput={handleInput}
 		onblur={handleBlur}
-		class="w-full rounded border transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {isError
-			? 'border-red-500 bg-red-50 focus:ring-red-500'
-			: 'border-gray-300 bg-white hover:bg-gray-50 focus:ring-blue-500'} disabled:cursor-not-allowed disabled:bg-white disabled:hover:bg-gray-50 disabled:opacity-50 {resizeClasses[
+		onfocus={onfocus}
+		onkeydown={onkeydown}
+		class="w-full rounded border transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {presentationClasses} disabled:cursor-not-allowed disabled:bg-white disabled:hover:bg-gray-50 disabled:opacity-50 {resizeClasses[
 			resize
 		]} {className}"
 		{...restProps}

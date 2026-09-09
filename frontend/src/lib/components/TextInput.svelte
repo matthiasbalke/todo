@@ -88,13 +88,13 @@
 	};
 	const appearanceClasses: Record<Appearance, string> = {
 		default: 'rounded border',
-		inline: 'rounded-none border-0 border-b bg-transparent focus:ring-0'
+		inline: 'rounded border border-transparent bg-transparent'
 	};
 	const stateClasses = $derived(
 		appearance === 'inline'
 			? isError
-				? 'border-red-500 focus:border-red-500'
-				: 'border-gray-300 focus:border-blue-500'
+				? 'border-red-500 focus:ring-red-500'
+				: 'hover:bg-gray-50 focus:ring-blue-500'
 			: isError
 				? 'border-red-500 bg-red-50 focus:ring-red-500'
 				: 'border-gray-300 bg-white hover:bg-gray-50 focus:ring-blue-500'

@@ -30,6 +30,8 @@ vi.mock('$lib/stores/items.svelte', () => ({
 	getItems: vi.fn(() => [item]),
 	loadItemsForList: vi.fn(),
 	updateItem: vi.fn(),
+	toggleDone: vi.fn(),
+	toggleStarred: vi.fn(),
 	deleteItem: vi.fn(),
 }));
 vi.mock('$lib/stores/lists.svelte', () => ({
@@ -67,7 +69,7 @@ vi.mock('$lib/api/errors', () => ({
 
 import ItemPage from './+page.svelte';
 import { goto } from '$app/navigation';
-import { updateItem } from '$lib/stores/items.svelte';
+import { toggleDone, toggleStarred, updateItem } from '$lib/stores/items.svelte';
 
 afterEach(() => {
 	cleanup();
@@ -165,5 +167,31 @@ describe('item detail capabilities', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 		expect(goto).toHaveBeenCalledWith('/lists/list-1');
+	});
+
+	it('persists changed completion state immediately without saving', async () => {
+		vi.mocked(toggleDone).mockResolvedValue(undefined);
+		render(ItemPage, {
+			props: { data: { id: 'list-1', iid: 'item-1', returnTo: null, buildNumber: '0' } },
+		});
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Mark undone' }));
+
+		expect(toggleDone).toHaveBeenCalledWith('list-1', 'item-1');
+		expect(updateItem).not.toHaveBeenCalled();
+		expect(goto).not.toHaveBeenCalled();
+	});
+
+	it('persists changed star state immediately without saving', async () => {
+		vi.mocked(toggleStarred).mockResolvedValue(undefined);
+		render(ItemPage, {
+			props: { data: { id: 'list-1', iid: 'item-1', returnTo: null, buildNumber: '0' } },
+		});
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Unstar' }));
+
+		expect(toggleStarred).toHaveBeenCalledWith('list-1', 'item-1');
+		expect(updateItem).not.toHaveBeenCalled();
+		expect(goto).not.toHaveBeenCalled();
 	});
 });

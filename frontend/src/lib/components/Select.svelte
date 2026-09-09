@@ -7,19 +7,23 @@
 	import ComboboxPrimitive from './ComboboxPrimitive.svelte';
 
 	type Size = 'default' | 'compact' | 'dense';
+	type Appearance = 'default' | 'inline';
 
 	interface Props<T> {
 		options: T[];
 		selected?: T | null;
 		disabled?: boolean;
 		label?: string;
+		ariaLabel?: string;
 		placeholder?: string;
 		labelId?: string;
 		id?: string;
 		listboxId?: string;
 		class?: string;
 		size?: Size;
+		appearance?: Appearance;
 		getOptionLabel?: (option: T) => string;
+		getSelectedLabel?: (option: T) => string;
 		selectedContent?: Snippet<[T]>;
 		optionContent?: Snippet<[T]>;
 		validate?: ((value: T | null) => string | null) | null;
@@ -31,13 +35,16 @@
 		selected = $bindable(null),
 		disabled = false,
 		label = '',
+		ariaLabel = '',
 		placeholder = 'Select an option',
 		labelId = '',
 		id = '',
 		listboxId = '',
 		class: className = '',
 		size = 'default',
+		appearance = 'default',
 		getOptionLabel = (option: any) => String(option),
+		getSelectedLabel = getOptionLabel,
 		selectedContent: selectedContentSnippet,
 		optionContent: optionContentSnippet,
 		validate = null,
@@ -50,7 +57,7 @@
 	let query = $state<string | null>(null);
 	const generatedId = `select-${nextSelectId++}`;
 	const triggerId = $derived(id || labelId || `${generatedId}-trigger`);
-	const selectedLabel = $derived(internalSelected !== null ? getOptionLabel(internalSelected) : '');
+	const selectedLabel = $derived(internalSelected !== null ? getSelectedLabel(internalSelected) : '');
 	const searchText = $derived(query ?? '');
 	const normalizedSearch = $derived(searchText.trim().toLocaleLowerCase());
 	const filteredOptions = $derived.by(() => {
@@ -123,12 +130,14 @@
 	{inputValue}
 	{disabled}
 	{label}
+	{ariaLabel}
 	{placeholder}
 	{labelId}
 	id={triggerId}
 	listboxId={listboxId || `${generatedId}-listbox`}
 	class={className}
 	{size}
+	{appearance}
 	{getOptionLabel}
 	{errorMessage}
 	emptyMessage={options.length === 0 ? 'No options available' : 'No matching options'}

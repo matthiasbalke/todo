@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/sve
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Category, TodoItem, User } from '$lib/mock-data';
 import { setProfile } from '$lib/stores/preferences.svelte';
-import ItemForm from './ItemForm.svelte';
+import ItemForm, { NOTES_PREVIEW_LIMIT } from './ItemForm.svelte';
 
 const defaultProps = {
 	listId: 'list-1',
@@ -72,6 +72,46 @@ describe('ItemForm', () => {
 		vi.useRealTimers();
 	});
 
+	describe('state toggles', () => {
+		it('renders completion before the title and star after the title, then submits toggled values', async () => {
+			const onsubmit = vi.fn();
+			render(ItemForm, { props: { ...defaultProps, onsubmit } });
+
+			const doneButton = screen.getByRole('button', { name: 'Mark done' });
+			const titleInput = screen.getByRole('textbox', { name: 'Item title' });
+			const starButton = screen.getByRole('button', { name: 'Star' });
+			expect(doneButton.compareDocumentPosition(titleInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+			expect(titleInput.compareDocumentPosition(starButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+			await fireEvent.input(titleInput, { target: { value: 'Stateful item' } });
+			await fireEvent.click(doneButton);
+			await fireEvent.click(starButton);
+			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+			expect(onsubmit.mock.calls[0][0]).toMatchObject({
+				title: 'Stateful item',
+				done: true,
+				starred: true
+			});
+		});
+
+		it('initializes existing completion and star state and submits later changes', async () => {
+			const onsubmit = vi.fn();
+			render(ItemForm, {
+				props: { ...defaultProps, item: { ...itemWithDueDate(null), done: true, starred: true }, onsubmit }
+			});
+
+			await fireEvent.click(screen.getByRole('button', { name: 'Mark undone' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Unstar' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+			expect(onsubmit.mock.calls[0][0]).toMatchObject({
+				done: false,
+				starred: false
+			});
+		});
+	});
+
 	describe('category', () => {
 		it('renders audit rows below the notes field for existing items', () => {
 			const users: User[] = [{ id: 'user-1', name: 'Alice', email: 'alice@example.com' }];
@@ -87,7 +127,7 @@ describe('ItemForm', () => {
 				props: { ...defaultProps, item, users }
 			});
 
-			const notesField = screen.getByRole('textbox', { name: 'Notes' });
+			const notesField = screen.getByRole('button', { name: 'Notes' });
 			const audit = screen.getByTestId('item-audit-metadata');
 			expect(audit).toHaveTextContent(/Sun\. 1\. Feb 26 at 15:31\s*updated by Alice/);
 			expect(audit).toHaveTextContent(/Thu\. 1\. Jan 26 at 10:01\s*created by Deleted user/);
@@ -104,7 +144,8 @@ describe('ItemForm', () => {
 			});
 
 			const trigger = screen.getByRole('combobox', { name: 'Category' });
-			expect(trigger).toHaveValue('Uncategorized');
+			expect(trigger).toHaveValue('assign category');
+			expect(container.querySelector('label[for="categoryId"]')).not.toBeInTheDocument();
 			expect(container.querySelector('select#categoryId')).not.toBeInTheDocument();
 
 			await fireEvent.click(trigger);
@@ -126,9 +167,9 @@ describe('ItemForm', () => {
 
 		it.each([
 			['existing category', itemWithCategory('category-2'), undefined, 'Household'],
-			['uncategorized item', itemWithCategory(null), undefined, 'Uncategorized'],
+			['uncategorized item', itemWithCategory(null), undefined, 'assign category'],
 			['new-item default', undefined, 'category-1', 'Groceries'],
-			['stale new-item default', undefined, 'missing-category', 'Uncategorized'],
+			['stale new-item default', undefined, 'missing-category', 'assign category'],
 			['stale category', itemWithCategory('missing-category'), undefined, 'missing-category']
 		])('initializes from the %s', (_name, item, defaultCategoryId, label) => {
 			render(ItemForm, {
@@ -211,8 +252,8 @@ describe('ItemForm', () => {
 
 		it.each([
 			['configured default', 'category-1', 'Groceries'],
-			['stale default', 'missing-category', 'Uncategorized'],
-			['Uncategorized', undefined, 'Uncategorized']
+			['stale default', 'missing-category', 'assign category'],
+			['empty category', undefined, 'assign category']
 		])('resets to %s after creating an item', async (_name, defaultCategoryId, label) => {
 			const onsubmit = vi.fn().mockResolvedValue(undefined);
 			render(ItemForm, {
@@ -259,12 +300,12 @@ describe('ItemForm', () => {
 			const { container } = render(ItemForm, { props: defaultProps });
 			const trigger = screen.getByRole('combobox', { name: 'Recurrence' });
 
-			expect(trigger).toHaveValue('No recurrence');
+			expect(trigger).toHaveValue('recurrence');
 			expect(container.querySelector('select#recurrencePreset')).not.toBeInTheDocument();
 
 			await fireEvent.click(trigger);
 			expect(screen.getAllByRole('option').map((option) => option.textContent?.trim())).toEqual([
-				'No recurrence',
+				'recurrence',
 				'Every day',
 				'Every week',
 				'Every 2 weeks',
@@ -281,8 +322,8 @@ describe('ItemForm', () => {
 			['monthly', itemWithRecurrence(1, 'MONTHS'), 'Every month'],
 			['quarterly', itemWithRecurrence(3, 'MONTHS'), 'Every 3 months'],
 			['yearly', itemWithRecurrence(1, 'YEARS'), 'Every year'],
-			['no recurrence', itemWithDueDate(null), 'No recurrence'],
-			['unsupported recurrence', itemWithRecurrence(4, 'WEEKS'), 'No recurrence']
+			['no recurrence', itemWithDueDate(null), 'recurrence'],
+			['unsupported recurrence', itemWithRecurrence(4, 'WEEKS'), 'recurrence']
 		])('initializes the %s recurrence state', (_name, item, label) => {
 			render(ItemForm, { props: { ...defaultProps, item } });
 
@@ -313,7 +354,7 @@ describe('ItemForm', () => {
 			});
 		});
 
-		it('submits No recurrence as null', async () => {
+		it('submits recurrence placeholder as null', async () => {
 			const onsubmit = vi.fn();
 			render(ItemForm, {
 				props: {
@@ -324,7 +365,7 @@ describe('ItemForm', () => {
 			});
 
 			await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
-			await fireEvent.click(screen.getByRole('option', { name: 'No recurrence' }));
+			await fireEvent.click(screen.getByRole('option', { name: 'recurrence' }));
 			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
 			expect(onsubmit.mock.calls[0][0].recurrenceRule).toBeNull();
@@ -350,7 +391,7 @@ describe('ItemForm', () => {
 				intervalValue: 1,
 				intervalUnit: 'MONTHS'
 			});
-			expect(trigger).toHaveValue('No recurrence');
+			expect(trigger).toHaveValue('recurrence');
 			expect(oncancel).not.toHaveBeenCalled();
 		});
 
@@ -376,22 +417,24 @@ describe('ItemForm', () => {
 		});
 	});
 
-	describe('assignment chips', () => {
-		it('toggles a chip to selected state and back', async () => {
+	describe('assignees', () => {
+		it('uses MultiSelect with avatar rendering and toggles selected users', async () => {
 			const user = { id: 'u1', name: 'Alice', email: 'alice@example.com' };
 			const { container } = render(ItemForm, { props: { ...defaultProps, users: [user] } });
 
-			const chip = screen.getByRole('button', { name: 'Alice' });
-			expect(chip).toHaveClass('bg-white', 'border-gray-300');
+			const trigger = screen.getByRole('combobox', { name: 'Assignees' });
+			expect(trigger).toHaveValue('');
+			expect(container.querySelector('label[for="assignedUserIds"]')).not.toBeInTheDocument();
+			expect(container.querySelector('fieldset')).not.toBeInTheDocument();
 
-			await fireEvent.click(chip);
-			expect(chip.className).toContain('bg-blue-100');
+			await fireEvent.click(trigger);
+			const option = screen.getByRole('option', { name: 'Alice' });
+			expect(option).toHaveTextContent('A');
+			await fireEvent.click(option);
+			expect(trigger.parentElement).toHaveTextContent('Alice');
 
-			await fireEvent.click(chip);
-			expect(chip).toHaveClass('bg-white', 'border-gray-300');
-
-			const fieldset = container.querySelector('fieldset')!;
-			expect(fieldset.className).not.toContain('m-0');
+			await fireEvent.click(screen.getByRole('option', { name: 'Alice' }));
+			expect(trigger.parentElement).not.toHaveTextContent('Alice');
 		});
 	});
 
@@ -399,7 +442,7 @@ describe('ItemForm', () => {
 		it('renders the shared DatePicker instead of a native date input', () => {
 			const { container } = render(ItemForm, { props: defaultProps });
 
-			expect(screen.getByRole('button', { name: 'Due Date' })).toHaveTextContent('Select a date');
+			expect(screen.getByRole('button', { name: 'Due Date' })).toHaveTextContent('due date');
 			expect(container.querySelector('input[type="date"]')).not.toBeInTheDocument();
 		});
 
@@ -421,7 +464,7 @@ describe('ItemForm', () => {
 				props: { ...defaultProps, item: itemWithDueDate(null) }
 			});
 
-			expect(screen.getByRole('button', { name: 'Due Date' })).toHaveTextContent('Select a date');
+			expect(screen.getByRole('button', { name: 'Due Date' })).toHaveTextContent('due date');
 		});
 
 		it('submits a selected ISO date', async () => {
@@ -472,7 +515,7 @@ describe('ItemForm', () => {
 			);
 			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
-			expect(trigger).toHaveTextContent('Select a date');
+			expect(trigger).toHaveTextContent('due date');
 		});
 	});
 
@@ -484,11 +527,13 @@ describe('ItemForm', () => {
 			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 				target: { value: 'Document item' }
 			});
+			await fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
 			const notes = screen.getByRole('textbox', { name: 'Notes' });
 			await fireEvent.input(notes, { target: { value: 'First line\nSecond line' } });
+			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
-			expect(notes).toHaveAttribute('rows', '2');
+			expect(notes).toHaveAttribute('rows', '14');
 			expect(notes).toHaveClass('resize-none');
 			expect(onsubmit.mock.calls[0][0].notes).toBe('First line\nSecond line');
 		});
@@ -504,14 +549,91 @@ describe('ItemForm', () => {
 			expect(onsubmit.mock.calls[0][0].notes).toBeNull();
 		});
 
-		it('does not cancel when focus moves between notes and another form control', () => {
+		it('does not cancel when focus moves between notes and another form control', async () => {
 			const oncancel = vi.fn();
 			render(ItemForm, { props: { ...defaultProps, oncancel } });
+			await fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
 			const notes = screen.getByRole('textbox', { name: 'Notes' });
 			const title = screen.getByPlaceholderText('Item title');
 
 			fireEvent.focusOut(notes, { relatedTarget: title });
 
+			expect(oncancel).not.toHaveBeenCalled();
+		});
+
+		it('renders absent, short, and truncated notes previews without normalizing whitespace', () => {
+			render(ItemForm, { props: defaultProps });
+			expect(screen.getByRole('button', { name: 'Notes' }).parentElement?.previousElementSibling).toHaveClass('mt-2.5');
+			expect(screen.getByRole('button', { name: 'Notes' })).toHaveClass('items-start');
+			expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('notes');
+			cleanup();
+
+			render(ItemForm, {
+				props: { ...defaultProps, item: { ...itemWithDueDate(null), notes: 'First line\nSecond line' } }
+			});
+			expect(screen.getByTestId('item-form-notes-preview').textContent).toBe('First line\nSecond line');
+			expect(screen.getByTestId('item-form-notes-open-cue')).toHaveTextContent('open');
+			cleanup();
+
+			const longNotes = `${'a'.repeat(NOTES_PREVIEW_LIMIT)}tail`;
+			render(ItemForm, {
+				props: { ...defaultProps, item: { ...itemWithDueDate(null), notes: longNotes } }
+			});
+			const preview = screen.getByRole('button', { name: 'Notes' });
+			expect(screen.getByTestId('item-form-notes-preview').textContent).toBe(`${'a'.repeat(NOTES_PREVIEW_LIMIT)}...`);
+			expect(preview).not.toHaveTextContent(longNotes);
+		});
+
+		it('shows the complete long notes only inside fullscreen editing', async () => {
+			const longNotes = `${'a'.repeat(NOTES_PREVIEW_LIMIT)}tail`;
+			render(ItemForm, {
+				props: { ...defaultProps, item: { ...itemWithDueDate(null), notes: longNotes } }
+			});
+
+			expect(screen.getByRole('button', { name: 'Notes' })).not.toHaveTextContent(longNotes);
+			await fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
+
+			expect(screen.getByRole('dialog', { name: 'Notes' })).toBeInTheDocument();
+			expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue(longNotes);
+		});
+
+		it('saves, cancels, handles Escape, returns focus, and keeps form cancel untouched', async () => {
+			const oncancel = vi.fn();
+			render(ItemForm, { props: { ...defaultProps, oncancel } });
+			const trigger = screen.getByRole('button', { name: 'Notes' });
+
+			await fireEvent.click(trigger);
+			let dialog = screen.getByRole('dialog', { name: 'Notes' });
+			expect(within(dialog).getByRole('button', { name: 'Cancel' }).querySelector('svg')).toHaveClass('lucide-chevron-left');
+			expect(within(dialog).getByRole('heading', { name: 'Notes' })).toBeInTheDocument();
+			expect(within(dialog).getByRole('button', { name: 'Save' })).toBeInTheDocument();
+			expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Notes' }));
+			await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
+				target: { value: 'Saved\nnotes' }
+			});
+			await fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+			await vi.runAllTimersAsync();
+			expect(screen.queryByRole('dialog', { name: 'Notes' })).not.toBeInTheDocument();
+			expect(screen.getByTestId('item-form-notes-preview').textContent).toBe('Saved\nnotes');
+			expect(document.activeElement).toBe(trigger);
+
+			await fireEvent.click(trigger);
+			dialog = screen.getByRole('dialog', { name: 'Notes' });
+			await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
+				target: { value: 'Discarded' }
+			});
+			await fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+			await vi.runAllTimersAsync();
+			expect(screen.getByTestId('item-form-notes-preview').textContent).toBe('Saved\nnotes');
+			expect(oncancel).not.toHaveBeenCalled();
+
+			await fireEvent.click(trigger);
+			await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
+				target: { value: 'Escape discard' }
+			});
+			await fireEvent.keyDown(screen.getByRole('textbox', { name: 'Notes' }), { key: 'Escape' });
+			await vi.runAllTimersAsync();
+			expect(screen.getByTestId('item-form-notes-preview').textContent).toBe('Saved\nnotes');
 			expect(oncancel).not.toHaveBeenCalled();
 		});
 	});
@@ -529,17 +651,21 @@ describe('ItemForm', () => {
 						dueDate: '2026-06-15',
 						categoryId: 'category-1',
 						assignedUserIds: ['u1'],
-						recurrencePreset: '1_WEEKS'
+						recurrencePreset: '1_WEEKS',
+						done: true,
+						starred: true
 					}
 				}
 			});
 
 			expect(screen.getByPlaceholderText('Item title')).toHaveValue('Draft title');
-			expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Draft notes');
+			expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Draft notes');
 			expect(screen.getByRole('button', { name: 'Due Date' })).toHaveTextContent('Jun 15, 2026');
 			expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Groceries');
-			expect(screen.getByRole('button', { name: 'Alice' })).toHaveClass('bg-blue-100');
+			expect(screen.getByRole('combobox', { name: 'Assignees' })).toHaveValue('');
 			expect(screen.getByRole('combobox', { name: 'Recurrence' })).toHaveValue('Every week');
+			expect(screen.getByRole('button', { name: 'Mark undone' })).toHaveAttribute('aria-pressed', 'true');
+			expect(screen.getByRole('button', { name: 'Unstar' })).toHaveAttribute('aria-pressed', 'true');
 		});
 
 		it('emits cloned draft changes for new-item fields', async () => {
@@ -557,9 +683,11 @@ describe('ItemForm', () => {
 			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 				target: { value: 'Draft item' }
 			});
+			await fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
 			await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
 				target: { value: 'Remember this' }
 			});
+			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 			await fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
 			await fireEvent.click(screen.getByRole('option', { name: 'Household' }));
 			await fireEvent.click(screen.getByRole('button', { name: 'Due Date' }));
@@ -568,7 +696,10 @@ describe('ItemForm', () => {
 			);
 			await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
 			await fireEvent.click(screen.getByRole('option', { name: 'Every month' }));
-			await fireEvent.click(screen.getByRole('button', { name: 'Alice' }));
+			await fireEvent.click(screen.getByRole('combobox', { name: 'Assignees' }));
+			await fireEvent.click(screen.getByRole('option', { name: 'Alice' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Mark done' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Star' }));
 
 			const lastDraft = onDraftChange.mock.calls.at(-1)?.[0];
 			expect(lastDraft).toEqual({
@@ -577,7 +708,9 @@ describe('ItemForm', () => {
 				dueDate: '2026-06-15',
 				categoryId: 'category-2',
 				assignedUserIds: ['u1'],
-				recurrencePreset: '1_MONTHS'
+				recurrencePreset: '1_MONTHS',
+				done: true,
+				starred: true
 			});
 			expect(lastDraft.assignedUserIds).not.toBe(onDraftChange.mock.calls.at(-2)?.[0].assignedUserIds);
 		});
@@ -626,13 +759,15 @@ describe('ItemForm', () => {
 			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 				target: { value: 'Retry this item' }
 			});
+			await fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
 			await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
 				target: { value: 'Still needed' }
 			});
+			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
 			expect(screen.getByPlaceholderText('Item title')).toHaveValue('Retry this item');
-			expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Still needed');
+			expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Still needed');
 		});
 
 		it('does not cancel when focus moves between form controls', () => {
@@ -640,7 +775,7 @@ describe('ItemForm', () => {
 			render(ItemForm, { props: { ...defaultProps, oncancel } });
 
 			fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
-				relatedTarget: screen.getByRole('textbox', { name: 'Notes' })
+				relatedTarget: screen.getByRole('button', { name: 'Notes' })
 			});
 
 			expect(oncancel).not.toHaveBeenCalled();
