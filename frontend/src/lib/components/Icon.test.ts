@@ -3,7 +3,12 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import Icon from './Icon.svelte';
-import { appIcons, iconSizePresets, type AppIconName } from './iconRegistry';
+import {
+	appIcons,
+	iconSizePresets,
+	iconTouchTargetPresets,
+	type AppIconName
+} from './iconRegistry';
 
 afterEach(cleanup);
 
@@ -60,6 +65,12 @@ describe('Icon', () => {
 		expect(icon).toHaveAttribute('width', '22');
 		expect(icon).toHaveAttribute('height', '22');
 		expect(icon).toHaveAttribute('stroke-width', '2.5');
+	});
+
+	it('defines icon-only touch target presets for shared controls', () => {
+		expect(iconTouchTargetPresets.control.className).toContain('h-10');
+		expect(iconTouchTargetPresets.controlCompact.className).toContain('h-8');
+		expect(iconTouchTargetPresets.header.className).toContain('h-11');
 	});
 
 	it('uses explicit per-icon Lucide imports for tree-shaking', () => {

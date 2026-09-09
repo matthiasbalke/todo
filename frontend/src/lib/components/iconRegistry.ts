@@ -52,6 +52,10 @@ export interface IconSizePreset {
 	strokeWidth: number;
 }
 
+export interface IconTouchTargetPreset {
+	className: string;
+}
+
 export type IconSizePresetName =
 	| 'action'
 	| 'compact'
@@ -61,6 +65,8 @@ export type IconSizePresetName =
 	| 'controlCompact'
 	| 'itemStatus';
 
+export type IconTouchTargetPresetName = 'control' | 'controlCompact' | 'header';
+
 export const iconSizePresets: Record<IconSizePresetName, IconSizePreset> = {
 	action: { size: 18, strokeWidth: 2 },
 	compact: { size: 16, strokeWidth: 2 },
@@ -69,6 +75,12 @@ export const iconSizePresets: Record<IconSizePresetName, IconSizePreset> = {
 	control: { size: 18, strokeWidth: 2 },
 	controlCompact: { size: 16, strokeWidth: 2 },
 	itemStatus: { size: 24, strokeWidth: 2.5 }
+};
+
+export const iconTouchTargetPresets: Record<IconTouchTargetPresetName, IconTouchTargetPreset> = {
+	control: { className: 'h-10 w-10 rounded-lg p-0' },
+	controlCompact: { className: 'h-8 w-8 rounded p-0' },
+	header: { className: 'h-11 w-11 rounded-lg p-0' }
 };
 
 export const appIcons: Record<AppIconName, Component<any>> = {

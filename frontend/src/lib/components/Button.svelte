@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { HTMLButtonAttributes } from 'svelte/elements';
+	import { iconTouchTargetPresets } from './iconRegistry';
 
 	type Tone = 'primary' | 'neutral' | 'danger' | 'success';
 	type Appearance = 'solid' | 'outline' | 'soft' | 'ghost' | 'bare';
@@ -10,6 +11,9 @@
 		| 'small'
 		| 'compact'
 		| 'icon'
+		| 'icon-compact'
+		| 'icon-standard'
+		| 'icon-header'
 		| 'menu'
 		| 'menu-indented'
 		| 'chip'
@@ -107,6 +111,9 @@
 		small: 'rounded-md px-3 py-1.5 text-sm',
 		compact: 'rounded px-2 py-1 text-xs',
 		icon: 'rounded p-1',
+		'icon-compact': iconTouchTargetPresets.controlCompact.className,
+		'icon-standard': iconTouchTargetPresets.control.className,
+		'icon-header': iconTouchTargetPresets.header.className,
 		menu: 'w-full rounded-none px-4 py-2 text-left text-sm',
 		'menu-indented': 'w-full rounded-none px-6 py-1.5 text-left text-sm',
 		chip: 'rounded-full px-2 py-0.5 text-xs',

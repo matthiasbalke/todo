@@ -191,6 +191,9 @@ describe('ComponentsPage Button showcase', () => {
 		expect(loadingButton).toBeDisabled();
 		expect(loadingButton).toHaveAttribute('aria-busy', 'true');
 		expect(screen.getByRole('button', { name: 'Full-width button' })).toHaveClass('w-full');
+		expect(screen.getByRole('button', { name: 'Compact icon action' })).toHaveClass('h-8');
+		expect(screen.getByRole('button', { name: 'Standard icon action' })).toHaveClass('h-10');
+		expect(screen.getByRole('button', { name: 'Header icon action' })).toHaveClass('h-11');
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Submit example' }));
 		expect(screen.getByText('Last action:').parentElement).toHaveTextContent('Submit');
@@ -221,6 +224,7 @@ describe('ComponentsPage Button showcase', () => {
 		expect(showcase.getByText(/standard native button attributes and handlers/i)).toBeInTheDocument();
 		expect(showcase.getByText('Tone, appearance, and click handling:')).toBeInTheDocument();
 		expect(showcase.getByText('States, type, and layout classes:')).toBeInTheDocument();
+		expect(showcase.getByText('Icon Touch Targets')).toBeInTheDocument();
 		expect(showcase.getByText(/selected options use blue text/i)).toBeInTheDocument();
 	});
 });
@@ -376,10 +380,13 @@ describe('ComponentsPage specialized controls showcase', () => {
 			'true'
 		);
 
-		await fireEvent.click(showcase.getByRole('button', { name: 'Mark done' }));
-		await fireEvent.click(showcase.getByRole('button', { name: 'Star' }));
-		expect(showcase.getByRole('button', { name: 'Mark undone' })).toBeInTheDocument();
-		expect(showcase.getByRole('button', { name: 'Unstar' })).toBeInTheDocument();
+		expect(showcase.getAllByRole('button', { name: 'Mark done' })).toHaveLength(2);
+		expect(showcase.getAllByRole('button', { name: 'Star' })).toHaveLength(2);
+
+		await fireEvent.click(showcase.getAllByRole('button', { name: 'Mark done' })[0]);
+		await fireEvent.click(showcase.getAllByRole('button', { name: 'Star' })[0]);
+		expect(showcase.getAllByRole('button', { name: 'Mark undone' })).toHaveLength(2);
+		expect(showcase.getAllByRole('button', { name: 'Unstar' })).toHaveLength(2);
 		expect(showcase.getByRole('button', { name: 'Delete example item' })).toHaveClass('bg-red-600');
 	});
 });

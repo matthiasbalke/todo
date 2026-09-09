@@ -2,12 +2,12 @@
 
 - [x] 1.1 Add `@lucide/svelte` and establish a shared `Icon` component backed by an explicit per-icon Lucide registry as the single functional UI icon system, including semantic app names mapped to `ChevronLeft` for back navigation, `Menu` for menu controls, `Circle` for unchecked completion/status indicators, `CircleCheck` for checked/completed indicators, `Plus` for new-list creation, `Group` for list groups, `ChevronDown` for expanded sections, and `ChevronUp` for collapsed sections, while preserving existing app/PWA assets and user/list emoji content.
 - [x] 1.2 Add shared named icon sizing presets for Lucide visual sizes and stroke widths, and verify focused icon tests pass with `cd frontend && bun run test -- --run`.
-- [ ] 1.3 Stop for review: inspect the icon registry, semantic names, rendered default sizes, and tree-shakable imports before starting button, toggle, or route adoption work.
+- [x] 1.3 Stop for review: inspect the icon registry, semantic names, rendered default sizes, and tree-shakable imports before starting button, toggle, or route adoption work.
 
 ## 2. Button and Toggle Checkpoint
 
-- [ ] 2.1 Wire shared `Button` icon sizes or a toolbar/icon-button wrapper to consume icon-only touch target presets, and verify existing `Button` tests plus any new icon-button tests pass with `cd frontend && bun run test -- --run src/lib/components/Button.test.ts`.
-- [ ] 2.2 Extend `CompletionToggle` and `StarToggle` only as needed for item-form usage while preserving component-owned Lucide visuals, and verify `ItemStateToggles` and `ItemCard` tests pass with `cd frontend && bun run test -- --run src/lib/components/ItemStateToggles.test.ts src/lib/components/ItemCard.test.ts`.
+- [x] 2.1 Wire shared `Button` icon sizes or a toolbar/icon-button wrapper to consume icon-only touch target presets, and verify existing `Button` tests plus any new icon-button tests pass with `cd frontend && bun run test -- --run src/lib/components/Button.test.ts`.
+- [x] 2.2 Extend `CompletionToggle` and `StarToggle` only as needed for item-form usage while preserving component-owned Lucide visuals, and verify `ItemStateToggles` and `ItemCard` tests pass with `cd frontend && bun run test -- --run src/lib/components/ItemStateToggles.test.ts src/lib/components/ItemCard.test.ts`.
 - [ ] 2.3 Stop for review: inspect button/toggle sizing, stroke weight, focus rings, and touch target behavior before starting footer, route, or item-form adoption work.
 
 ## 3. MultiSelect Checkpoint

@@ -393,6 +393,21 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 				</div>
 
 				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Icon Touch Targets</h3>
+					<div class="flex flex-wrap items-center gap-3">
+						<Button tone="neutral" appearance="ghost" size="icon-compact" aria-label="Compact icon action">
+							<Icon name="menu" size="compact" />
+						</Button>
+						<Button tone="neutral" appearance="ghost" size="icon-standard" aria-label="Standard icon action">
+							<Icon name="menu" size="action" />
+						</Button>
+						<Button tone="neutral" appearance="ghost" size="icon-header" aria-label="Header icon action">
+							<Icon name="menu" size="header" />
+						</Button>
+					</div>
+				</div>
+
+				<div>
 					<h3 class="text-lg font-semibold text-gray-800 mb-4">Native Submit Type</h3>
 					<form onsubmit={handleButtonSubmit}>
 						<Button type="submit">Submit example</Button>
@@ -668,6 +683,8 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 				/>
 				<CompletionToggle done={showcaseDone} onactivate={() => { showcaseDone = !showcaseDone; }} />
 				<StarToggle starred={showcaseStarred} onactivate={() => { showcaseStarred = !showcaseStarred; }} />
+				<CompletionToggle size="form" done={showcaseDone} onactivate={() => { showcaseDone = !showcaseDone; }} />
+				<StarToggle size="form" starred={showcaseStarred} onactivate={() => { showcaseStarred = !showcaseStarred; }} />
 				<div class="h-12">
 					<SwipeDeleteAction label="Delete example item" />
 				</div>
