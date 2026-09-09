@@ -10,6 +10,7 @@
   import { friendlyError } from '$lib/api/errors';
   import Button from '$lib/components/Button.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
+  import Icon from '$lib/components/Icon.svelte';
   import { getProfile } from '$lib/stores/preferences.svelte';
   import { getTodayUnfinishedCount, loadTodayCount } from '$lib/stores/today.svelte';
   import { onMount, untrack } from 'svelte';
@@ -146,7 +147,7 @@
               <h2 class="font-semibold text-blue-900">Today</h2>
             </div>
             <span class="rounded-full bg-blue-100 px-2 py-0.5 text-sm text-blue-800">{todayCount}</span>
-            <span class="text-gray-300">›</span>
+            <Icon name="next" size="compact" tone="muted" class="flex-shrink-0" />
           </a>
         </div>
       {/if}
@@ -220,20 +221,22 @@
         {/if}
       </div>
   {:else}
-      <div class="flex gap-2">
+      <div class="flex items-center gap-3">
         <Button tone="neutral" appearance="outline"
           size="empty"
           onclick={() => { showAddForm = true; }}
           disabled={saving}
           class="flex-1"
         >
-          + New list
+          <Icon name="plus" size="action" />
+          <span>new list</span>
         </Button>
         <Button tone="neutral" appearance="outline"
-          size="empty"
+          size="icon-standard"
           onclick={() => { addingGroup = true; }}
+          aria-label="Create group"
         >
-          + New group
+          <Icon name="group" size="control" />
         </Button>
       </div>
   {/if}

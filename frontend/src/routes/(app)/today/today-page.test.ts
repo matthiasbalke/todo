@@ -74,7 +74,13 @@ describe('Today page', () => {
 	it('uses the common burger menu with Filter and Sort submenus', async () => {
 		render(TodayPage);
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Today options' }));
+		const back = screen.getByRole('link', { name: 'Back to lists' });
+		const menu = screen.getByRole('button', { name: 'Today options' });
+		expect(back.querySelector('svg')).not.toBeNull();
+		expect(menu).toHaveClass('h-11', 'w-11');
+		expect(menu.querySelector('svg')).not.toBeNull();
+
+		await fireEvent.click(menu);
 		expect(screen.getByRole('button', { name: /Filter/ })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: /Sort/ })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Delete checked items' })).not.toBeInTheDocument();

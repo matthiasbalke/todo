@@ -125,6 +125,19 @@ describe('Grocery page capabilities', () => {
 });
 
 describe('Grocery page menu presentation', () => {
+	it('renders Lucide back and menu controls while preserving menu behavior', async () => {
+		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
+
+		const back = screen.getByRole('link', { name: 'Back to list' });
+		const menu = screen.getByRole('button', { name: 'List options' });
+		expect(back.querySelector('svg')).not.toBeNull();
+		expect(menu).toHaveClass('h-11', 'w-11');
+		expect(menu.querySelector('svg')).not.toBeNull();
+
+		await fireEvent.click(menu);
+		expect(screen.getByRole('link', { name: 'Standard mode' })).toBeInTheDocument();
+	});
+
 	it('uses blue text and inherited check marks for selected menu choices', async () => {
 		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
 

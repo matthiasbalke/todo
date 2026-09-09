@@ -23,11 +23,11 @@
 
 ## 5. List Overview and Navigation UI Checkpoint
 
-- [ ] 5.1 Replace the `/lists` footer list creation action with a Lucide `Plus` icon followed by the text `new list`, replace the group creation text action with a right-aligned Lucide `Group` icon action, and verify list overview tests assert the new list label/icon, group icon action accessible name, and absence of the old labels.
-- [ ] 5.2 Apply the shared stronger Lucide icon treatment to back-navigation controls on all app screens and to menu controls, and verify tests cover accessible names plus unchanged navigation/menu behavior.
-- [ ] 5.3 Update list group headers to show a Lucide `Group` icon before each group name and move the expand/collapse indicator to the right edge using `ChevronDown` for expanded and `ChevronUp` for collapsed state.
-- [ ] 5.4 Update list category headers and checked-items group controls to use the same `ChevronDown`/`ChevronUp` expanded/collapsed icons as list groups, preserving the right-aligned disclosure layout.
-- [ ] 5.5 Stop for review: inspect list overview creation actions, back/menu controls, and group/category disclosure rows before starting the item form overhaul.
+- [x] 5.1 Replace the `/lists` footer list creation action with a Lucide `Plus` icon followed by the text `new list`, replace the group creation text action with a right-aligned Lucide `Group` icon action, and verify list overview tests assert the new list label/icon, group icon action accessible name, and absence of the old labels.
+- [x] 5.2 Apply the shared stronger Lucide icon treatment to back-navigation controls on all app screens and to menu controls, and verify tests cover accessible names plus unchanged navigation/menu behavior.
+- [x] 5.3 Update list group headers to show a Lucide `Group` icon before each group name and move the expand/collapse indicator to the right edge using `ChevronDown` for expanded and `ChevronUp` for collapsed state.
+- [x] 5.4 Update list category headers and checked-items group controls to use the same `ChevronDown`/`ChevronUp` expanded/collapsed icons as list groups, preserving the right-aligned disclosure layout.
+- [x] 5.5 Stop for review: inspect list overview creation actions, back/menu controls, and group/category disclosure rows before starting the item form overhaul.
 
 ## 6. Item Form Overhaul Checkpoint
 

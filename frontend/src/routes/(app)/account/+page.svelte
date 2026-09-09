@@ -18,6 +18,7 @@
   import { friendlyError } from '$lib/api/errors';
   import { ApiError } from '$lib/api/client';
   import Button from '$lib/components/Button.svelte';
+  import Icon from '$lib/components/Icon.svelte';
   import EditableLabel from '$lib/components/EditableLabel.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
   import TimezonePicker from '$lib/components/TimezonePicker.svelte';
@@ -233,7 +234,9 @@
 
 <div class="space-y-8">
   <div class="flex items-center gap-3">
-    <a href="/lists" class="text-gray-400 hover:text-gray-600">←</a>
+    <a href="/lists" class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" aria-label="Back to lists">
+      <Icon name="back" size="header" />
+    </a>
     <h1 class="text-xl font-bold text-gray-900">Account</h1>
   </div>
 

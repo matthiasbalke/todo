@@ -15,6 +15,7 @@
   import type { FilterChip } from '$lib/components/ListStateSummary.svelte';
   import { friendlyError } from '$lib/api/errors';
   import Button from '$lib/components/Button.svelte';
+  import Icon from '$lib/components/Icon.svelte';
   import { getListCapabilities } from '$lib/listCapabilities';
   import DeleteCheckedItemsDialog from '$lib/components/DeleteCheckedItemsDialog.svelte';
 
@@ -171,7 +172,9 @@
 
 <div>
   <div class="flex items-center gap-3 mb-4">
-    <a href="/lists/{data.id}" class="text-gray-400 hover:text-gray-600">←</a>
+    <a href="/lists/{data.id}" class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" aria-label="Back to list">
+      <Icon name="back" size="header" />
+    </a>
     {#if showEditForm}
       <div class="flex-1">
         <ListForm
@@ -185,12 +188,12 @@
       <span class="text-sm text-gray-400">Grocery mode</span>
       <div class="relative ml-auto">
         <Button tone="neutral" appearance="bare"
-          size="icon"
+          size="icon-header"
           emphasis="muted"
           onclick={() => { menuOpen = !menuOpen; sortSubmenuOpen = false; filterSubmenuOpen = false; }}
           aria-label="List options"
         >
-          ⋮
+          <Icon name="menu" size="header" />
         </Button>
         {#if menuOpen}
           <div

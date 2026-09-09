@@ -18,12 +18,13 @@ describe('Icon', () => {
 			'back',
 			'menu',
 			'status',
-			'done',
-			'plus',
-			'group',
-			'expand',
-			'collapse'
-		];
+				'done',
+				'plus',
+				'group',
+				'next',
+				'expand',
+				'collapse'
+			];
 
 		for (const name of requiredNames) {
 			expect(appIcons[name], `${name} should be registered`).toBeDefined();
@@ -76,6 +77,15 @@ describe('Icon', () => {
 		expect(icon).toHaveClass('flex-shrink-0', 'text-menu-selected');
 	});
 
+	it('applies muted semantic tone classes', () => {
+		const { container } = render(Icon, {
+			props: { name: 'next', tone: 'muted' }
+		});
+
+		const icon = container.querySelector('svg');
+		expect(icon).toHaveClass('text-gray-300');
+	});
+
 	it('defines icon-only touch target presets for shared controls', () => {
 		expect(iconTouchTargetPresets.control.className).toContain('h-10');
 		expect(iconTouchTargetPresets.controlCompact.className).toContain('h-8');
@@ -88,6 +98,7 @@ describe('Icon', () => {
 		expect(source).not.toContain("from '@lucide/svelte'");
 		expect(source).not.toContain('import * as');
 		expect(source).toMatch(/from '@lucide\/svelte\/icons\/chevron-left'/);
+		expect(source).toMatch(/from '@lucide\/svelte\/icons\/chevron-right'/);
 		expect(source).toMatch(/from '@lucide\/svelte\/icons\/menu'/);
 	});
 });

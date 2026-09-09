@@ -4,6 +4,7 @@ import CalendarDays from '@lucide/svelte/icons/calendar-days';
 import Check from '@lucide/svelte/icons/check';
 import ChevronDown from '@lucide/svelte/icons/chevron-down';
 import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+import ChevronRight from '@lucide/svelte/icons/chevron-right';
 import ChevronUp from '@lucide/svelte/icons/chevron-up';
 import Circle from '@lucide/svelte/icons/circle';
 import CircleCheck from '@lucide/svelte/icons/circle-check';
@@ -39,6 +40,7 @@ export type AppIconName =
 	| 'group'
 	| 'list'
 	| 'menu'
+	| 'next'
 	| 'notes'
 	| 'plus'
 	| 'recurrence'
@@ -100,6 +102,7 @@ export const appIcons: Record<AppIconName, Component<any>> = {
 	group: Group,
 	list: List,
 	menu: Menu,
+	next: ChevronRight,
 	notes: NotebookText,
 	plus: Plus,
 	recurrence: Repeat,

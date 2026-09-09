@@ -63,6 +63,8 @@ describe('ListGroupSection', () => {
     const { container } = render(ListGroupSection, { props: { group, lists } });
     const handles = container.querySelectorAll('[aria-label="Drag to reorder"]');
     expect(handles.length).toBe(lists.length);
+    expect(handles[0]?.querySelector('svg')).not.toBeNull();
+    expect(handles[0]?.querySelector('svg')).toHaveClass('lucide-grip-vertical');
   });
 
   it('keeps personal list ordering available for viewer-role lists', () => {
@@ -76,6 +78,7 @@ describe('ListGroupSection', () => {
   it('renders a separate list group drag handle only when requested', () => {
     const grouped = render(ListGroupSection, { props: { group, lists, showGroupDragHandle: true } });
     expect(grouped.container.querySelectorAll('[aria-label="Drag to reorder list group"]')).toHaveLength(1);
+    expect(grouped.container.querySelector('[aria-label="Drag to reorder list group"] svg')).toHaveClass('lucide-grip-vertical');
     expect(grouped.container.querySelectorAll('[aria-label="Drag to reorder"]')).toHaveLength(lists.length);
 
     const ungrouped = render(ListGroupSection, { props: { group: null, lists, showGroupDragHandle: true } });
@@ -91,15 +94,18 @@ describe('ListGroupSection', () => {
   });
 
   it('renders group name', () => {
-    const { getAllByText, getByRole } = render(ListGroupSection, { props: { group, lists } });
+    const { container, getAllByText, getByRole } = render(ListGroupSection, { props: { group, lists } });
     expect(getAllByText('Home').length).toBeGreaterThan(0);
-    expect(getByRole('button', { name: /home/i })).toHaveClass('justify-start');
+    expect(getByRole('button', { name: /home/i })).toHaveClass('justify-between');
+    expect(container.querySelectorAll('button[aria-expanded="true"] svg')).toHaveLength(2);
   });
 
   it('renders lists within the group', () => {
-    const { getByText } = render(ListGroupSection, { props: { group, lists } });
+    const { container, getByText } = render(ListGroupSection, { props: { group, lists } });
     expect(getByText('Grocery')).toBeTruthy();
     expect(getByText('Household')).toBeTruthy();
+    expect(container.querySelectorAll('a[href] svg')).toHaveLength(lists.length);
+    expect(container.textContent).not.toContain('›');
   });
 
   it('renders lists in sortOrderInGroup order', () => {
@@ -128,7 +134,7 @@ describe('ListGroupSection', () => {
     const { getAllByText, getByText, getByRole } = render(ListGroupSection, { props: { group: null, lists: ungrouped } });
     expect(getAllByText('Ungrouped').length).toBeGreaterThan(0);
     expect(getByText('Personal')).toBeTruthy();
-    expect(getByRole('button', { name: /ungrouped/i })).toHaveClass('justify-start');
+    expect(getByRole('button', { name: /ungrouped/i })).toHaveClass('justify-between');
   });
 
   it('ungrouped section is collapsible', async () => {
@@ -153,6 +159,7 @@ describe('ListGroupSection', () => {
     const { container, getByRole } = render(ListGroupSection, { props: { group, lists, collapsed: true } });
 
     expect(getByRole('button', { name: /home/i })).toHaveAttribute('aria-expanded', 'false');
+    expect(getByRole('button', { name: /home/i }).querySelector('svg')).not.toBeNull();
     expect(container.querySelectorAll('a[href]')).toHaveLength(0);
   });
 

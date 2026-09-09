@@ -28,6 +28,7 @@
   import TextInput from '$lib/components/TextInput.svelte';
   import DeleteCheckedItemsDialog from '$lib/components/DeleteCheckedItemsDialog.svelte';
   import FixedActionFooter from '$lib/components/FixedActionFooter.svelte';
+  import Icon from '$lib/components/Icon.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -300,7 +301,9 @@
 {:else}
 <div class="pb-32">
   <div class="flex items-center gap-3 mb-4">
-    <a href="/lists" class="text-gray-400 hover:text-gray-600">←</a>
+    <a href="/lists" class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" aria-label="Back to lists">
+      <Icon name="back" size="header" />
+    </a>
     {#if editingTitle}
       <TextInput
         bind:element={titleInput}
@@ -331,12 +334,12 @@
     {/if}
       <div class="relative ml-auto">
         <Button tone="neutral" appearance="bare"
-          size="icon"
+          size="icon-header"
           emphasis="muted"
           onclick={() => { menuOpen = !menuOpen; sortSubmenuOpen = false; filterSubmenuOpen = false; }}
           aria-label="List options"
         >
-          ⋮
+          <Icon name="menu" size="header" />
         </Button>
         {#if menuOpen}
           <div

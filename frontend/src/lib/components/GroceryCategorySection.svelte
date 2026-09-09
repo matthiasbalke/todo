@@ -3,6 +3,7 @@
   import { toggleDone } from '$lib/stores/items.svelte';
   import { friendlyError } from '$lib/api/errors';
   import Button from './Button.svelte';
+  import Icon from './Icon.svelte';
 
   let {
     category,
@@ -36,11 +37,12 @@
     size="row-muted"
     align="between"
     onclick={ontoggle}
+    aria-expanded={!collapsed}
   >
     <span class="font-semibold text-gray-800">{category?.name ?? 'Uncategorized'}</span>
     <div class="flex items-center gap-2">
       <span class="text-sm text-gray-500">{unchecked.length}/{items.length}</span>
-      <span class="text-gray-400 transition-transform {collapsed ? '' : 'rotate-180'}">▼</span>
+      <Icon name={collapsed ? 'collapse' : 'expand'} size="compact" />
     </div>
   </Button>
 

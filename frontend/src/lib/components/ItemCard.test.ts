@@ -171,6 +171,17 @@ describe('ItemCard specialized actions', () => {
 });
 
 describe('ItemCard read-only presentation', () => {
+	it('renders editable drag handles with the shared Lucide drag icon', () => {
+		const { container } = render(ItemCard, {
+			props: { item: baseItem, categories: [], users: [], editable: true, isDraggable: true },
+		});
+
+		const handle = container.querySelector('[aria-label="Drag to reorder"]') as HTMLElement;
+		expect(handle).not.toBeNull();
+		expect(handle.querySelector('svg')).not.toBeNull();
+		expect(handle.querySelector('svg')).toHaveClass('lucide-grip-vertical');
+	});
+
 	it('shows item state and navigation without mutation controls', () => {
 		const item = { ...baseItem, done: true, starred: true };
 		const { container } = render(ItemCard, {

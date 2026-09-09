@@ -6,6 +6,7 @@
   import Button from './Button.svelte';
   import ColorSwatchButton from './ColorSwatchButton.svelte';
   import TextInput from './TextInput.svelte';
+  import Icon from './Icon.svelte';
 
   const CATEGORY_DND_TYPE = 'configure-category';
 
@@ -160,11 +161,7 @@
                 aria-label="Drag to reorder category"
                 tabindex="-1"
               >
-                <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">
-                  <circle cx="3" cy="3" r="1.5"/><circle cx="7" cy="3" r="1.5"/>
-                  <circle cx="3" cy="8" r="1.5"/><circle cx="7" cy="8" r="1.5"/>
-                  <circle cx="3" cy="13" r="1.5"/><circle cx="7" cy="13" r="1.5"/>
-                </svg>
+                <Icon name="drag" size="controlCompact" />
               </div>
 
               {#if editingId === cat.id}

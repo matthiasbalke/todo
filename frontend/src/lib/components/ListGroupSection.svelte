@@ -6,6 +6,7 @@
   import { dragHandleZone, dragHandle, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { friendlyError } from '$lib/api/errors';
   import Button from './Button.svelte';
+  import Icon from './Icon.svelte';
   import TextInput from './TextInput.svelte';
 
   let {
@@ -114,39 +115,38 @@
 </script>
 
 <div class="mb-4">
-  <div class="flex items-center justify-between px-1 mb-2">
-    <div class="flex items-center min-w-0">
+  <div class="flex items-center justify-between gap-1 px-1 mb-2">
+    <div class="flex min-w-0 flex-1 items-center gap-1">
       {#if showGroupDragHandle && group !== null}
         <Button
           bind:element={groupDragHandleElement}
           tone="neutral"
           appearance="bare"
-          size="icon"
+          size="icon-compact"
           emphasis="subtle"
-          class="flex-shrink-0 w-7 h-8"
           aria-label="Drag to reorder list group"
         >
-          <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">
-            <circle cx="3" cy="3" r="1.5"/><circle cx="7" cy="3" r="1.5"/>
-            <circle cx="3" cy="8" r="1.5"/><circle cx="7" cy="8" r="1.5"/>
-            <circle cx="3" cy="13" r="1.5"/><circle cx="7" cy="13" r="1.5"/>
-          </svg>
+          <Icon name="drag" size="controlCompact" />
         </Button>
       {/if}
       <Button
         tone="neutral" appearance="bare"
         size="header"
-        align="start"
+        align="between"
         emphasis="muted"
         onclick={toggleCollapsed}
         aria-expanded={!collapsed}
+        class="min-w-0 flex-1"
       >
-        <span class="font-normal normal-case tracking-normal">{collapsed ? '▶' : '▼'}</span>
-        {#if group !== null && !renaming}
-          <span>{group.name}</span>
-        {:else if group === null}
-          <span>Ungrouped</span>
-        {/if}
+        <span class="flex min-w-0 items-center gap-2">
+          <Icon name="group" size="compact" class="flex-shrink-0" />
+          {#if group !== null && !renaming}
+            <span class="truncate">{group.name}</span>
+          {:else if group === null}
+            <span class="truncate">Ungrouped</span>
+          {/if}
+        </span>
+        <Icon name={collapsed ? 'collapse' : 'expand'} size="compact" class="flex-shrink-0" />
       </Button>
     </div>
 
@@ -167,12 +167,12 @@
         <div class="relative">
           <Button
             tone="neutral" appearance="bare"
-            size="icon"
+            size="icon-header"
             onclick={(e) => { e.stopPropagation(); showMenu = !showMenu; }}
             emphasis="subtle"
             aria-label="Group options"
           >
-            ⋯
+            <Icon name="menu" size="header" />
           </Button>
           {#if showMenu}
             <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -234,18 +234,14 @@
             aria-label="Drag to reorder"
             tabindex="-1"
           >
-            <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">
-              <circle cx="3" cy="3" r="1.5"/><circle cx="7" cy="3" r="1.5"/>
-              <circle cx="3" cy="8" r="1.5"/><circle cx="7" cy="8" r="1.5"/>
-              <circle cx="3" cy="13" r="1.5"/><circle cx="7" cy="13" r="1.5"/>
-            </svg>
+            <Icon name="drag" size="controlCompact" />
           </div>
           <a href="/lists/{list.id}" class="flex items-center gap-4 flex-1 min-w-0" draggable="false" oncontextmenu={(e) => e.preventDefault()}>
             <span class="text-3xl">{list.emoji ?? '📋'}</span>
             <div class="flex-1 min-w-0">
               <h2 class="font-semibold text-gray-900">{list.name}</h2>
             </div>
-            <span class="text-gray-300">›</span>
+            <Icon name="next" size="compact" tone="muted" class="flex-shrink-0" />
           </a>
         </div>
       {/each}

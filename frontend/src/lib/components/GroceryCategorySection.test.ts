@@ -48,7 +48,10 @@ describe('GroceryCategorySection alignment', () => {
 			props: { category, items: [baseItem], collapsed: false, ontoggle: vi.fn() }
 		});
 
-		expect(screen.getByRole('button', { name: /Produce/ })).toHaveClass('justify-between');
+		const header = screen.getByRole('button', { name: /Produce/ });
+		expect(header).toHaveClass('justify-between');
+		expect(header).toHaveAttribute('aria-expanded', 'true');
+		expect(header.querySelector('svg')).not.toBeNull();
 	});
 
 	it('left aligns unchecked and checked grocery rows', () => {

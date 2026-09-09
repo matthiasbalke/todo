@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
   import Button from '$lib/components/Button.svelte';
+  import Icon from '$lib/components/Icon.svelte';
   import ListStateSummary from '$lib/components/ListStateSummary.svelte';
   import type { FilterChip } from '$lib/components/ListStateSummary.svelte';
   import { getProfile } from '$lib/stores/preferences.svelte';
@@ -133,13 +134,15 @@
 
 <div class="space-y-5">
   <div class="flex items-center gap-3">
-    <a href="/lists" class="text-gray-400 hover:text-gray-600">←</a>
+    <a href="/lists" class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" aria-label="Back to lists">
+      <Icon name="back" size="header" />
+    </a>
     <h1 class="text-xl font-bold text-gray-900">📆 Today</h1>
     <div class="relative ml-auto">
       <Button
         tone="neutral"
         appearance="bare"
-        size="icon"
+        size="icon-header"
         emphasis="muted"
         onclick={() => {
           menuOpen = !menuOpen;
@@ -148,7 +151,7 @@
         }}
         aria-label="Today options"
       >
-        ⋮
+        <Icon name="menu" size="header" />
       </Button>
       {#if menuOpen}
         <div

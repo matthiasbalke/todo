@@ -281,6 +281,19 @@ describe('ListPage menu presentation', () => {
 		expect(container.querySelector('.pb-32')).not.toBeNull();
 	});
 
+	it('renders Lucide back and menu controls while preserving menu behavior', async () => {
+		render(ListPage, { props: { data: mockData } });
+
+		const back = screen.getByRole('link', { name: 'Back to lists' });
+		const menu = screen.getByRole('button', { name: 'List options' });
+		expect(back.querySelector('svg')).not.toBeNull();
+		expect(menu).toHaveClass('h-11', 'w-11');
+		expect(menu.querySelector('svg')).not.toBeNull();
+
+		await fireEvent.click(menu);
+		expect(screen.getByRole('button', { name: 'Configure categories' })).toBeInTheDocument();
+	});
+
 	it('bounds expanded add-item form content inside the fixed action footer', async () => {
 		render(ListPage, { props: { data: mockData } });
 

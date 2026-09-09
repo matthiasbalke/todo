@@ -105,9 +105,7 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 
 	async function openAddGroupForm() {
 		const { container } = render(ListsPage, { props: { } });
-		const newGroupBtn = Array.from(container.querySelectorAll('button')).find(
-			(b) => b.textContent?.trim() === '+ New group',
-		)!;
+		const newGroupBtn = container.querySelector('button[aria-label="Create group"]')!;
 		await fireEvent.click(newGroupBtn);
 		return container;
 	}
@@ -156,6 +154,21 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		expect(pageReserve).not.toBeNull();
 	});
 
+	it('renders list and group creation actions with Lucide icons and without old labels', () => {
+		const { container } = render(ListsPage, { props: { } });
+		const newListButton = Array.from(container.querySelectorAll('button')).find((button) =>
+			button.textContent?.trim() === 'new list'
+		)!;
+		const groupButton = container.querySelector('button[aria-label="Create group"]') as HTMLButtonElement;
+
+		expect(newListButton).not.toBeNull();
+		expect(newListButton.querySelector('svg')).not.toBeNull();
+		expect(groupButton).not.toBeNull();
+		expect(groupButton.querySelector('svg')).not.toBeNull();
+		expect(container.textContent).not.toContain('+ New list');
+		expect(container.textContent).not.toContain('+ New group');
+	});
+
 	it('bounds expanded group creation content inside the fixed action footer', async () => {
 		const container = await openAddGroupForm();
 
@@ -184,8 +197,9 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		expect(zone.textContent).not.toContain('Ungrouped');
 		expect(container.querySelectorAll('[aria-label="Drag to reorder list group"]')).toHaveLength(2);
 
-		const sectionLabels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => button.textContent);
-		expect(sectionLabels).toEqual(['▼ Home', '▼ Work', '▼ Ungrouped']);
+		const sectionLabels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => button.textContent?.trim());
+		expect(sectionLabels).toEqual(['Home', 'Work', 'Ungrouped']);
+		expect(container.querySelectorAll('button[aria-expanded] svg').length).toBeGreaterThanOrEqual(3);
 	});
 
 	it('persists finalized list group wrapper order without affecting list-card drag handles', async () => {
@@ -217,16 +231,16 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		storeMocks.getLists.mockReturnValue(lists);
 		saveListGroupState({ collapsed: { 'group-home': true } });
 
-		const { container } = render(ListsPage, { props: { } });
-		const labels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => ({
-			text: button.textContent,
-			expanded: button.getAttribute('aria-expanded'),
-		}));
+			const { container } = render(ListsPage, { props: { } });
+			const labels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => ({
+				text: button.textContent?.trim(),
+				expanded: button.getAttribute('aria-expanded'),
+			}));
 
 		expect(labels).toEqual([
-			{ text: '▶ Home', expanded: 'false' },
-			{ text: '▼ Work', expanded: 'true' },
-			{ text: '▼ Ungrouped', expanded: 'true' },
+			{ text: 'Home', expanded: 'false' },
+			{ text: 'Work', expanded: 'true' },
+			{ text: 'Ungrouped', expanded: 'true' },
 		]);
 		expect(container.querySelector('a[href="/lists/list-home"]')).toBeNull();
 		expect(container.querySelector('a[href="/lists/list-work"]')).not.toBeNull();
@@ -237,16 +251,16 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		storeMocks.getLists.mockReturnValue(lists);
 		saveListGroupState({ collapsed: { [UNGROUPED_LIST_GROUP_STATE_KEY]: true } });
 
-		const { container } = render(ListsPage, { props: { } });
-		const labels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => ({
-			text: button.textContent,
-			expanded: button.getAttribute('aria-expanded'),
-		}));
+			const { container } = render(ListsPage, { props: { } });
+			const labels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => ({
+				text: button.textContent?.trim(),
+				expanded: button.getAttribute('aria-expanded'),
+			}));
 
 		expect(labels).toEqual([
-			{ text: '▼ Home', expanded: 'true' },
-			{ text: '▼ Work', expanded: 'true' },
-			{ text: '▶ Ungrouped', expanded: 'false' },
+			{ text: 'Home', expanded: 'true' },
+			{ text: 'Work', expanded: 'true' },
+			{ text: 'Ungrouped', expanded: 'false' },
 		]);
 		expect(container.querySelector('a[href="/lists/list-ungrouped"]')).toBeNull();
 	});

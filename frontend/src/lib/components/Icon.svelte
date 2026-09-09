@@ -7,7 +7,7 @@
 		type IconSizePresetName
 	} from './iconRegistry';
 
-	type IconTone = 'default' | 'menuSelected';
+	type IconTone = 'default' | 'muted' | 'menuSelected';
 
 	interface Props extends Omit<SVGAttributes<SVGSVGElement>, 'children' | 'class'> {
 		name: AppIconName;
@@ -30,7 +30,12 @@
 		...restProps
 	}: Props = $props();
 
-	const toneClass = $derived(tone === 'menuSelected' ? 'text-menu-selected' : '');
+	const toneClasses: Record<IconTone, string> = {
+		default: '',
+		muted: 'text-gray-300',
+		menuSelected: 'text-menu-selected'
+	};
+	const toneClass = $derived(toneClasses[tone]);
 	const classes = $derived([className, toneClass].filter(Boolean).join(' '));
 	const IconComponent = $derived(appIcons[name]);
 	const preset = $derived(typeof size === 'string' ? iconSizePresets[size] : null);

@@ -9,6 +9,7 @@
   import CompletionToggle from './CompletionToggle.svelte';
   import StarToggle from './StarToggle.svelte';
   import SwipeDeleteAction from './SwipeDeleteAction.svelte';
+  import Icon from './Icon.svelte';
 
   let { item, categories, users, editable = true, isDraggable = false, onchanged, returnTo }: {
     item: TodoItem;
@@ -140,11 +141,7 @@
         aria-label="Drag to reorder"
         tabindex="-1"
       >
-        <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">
-          <circle cx="3" cy="3" r="1.5"/><circle cx="7" cy="3" r="1.5"/>
-          <circle cx="3" cy="8" r="1.5"/><circle cx="7" cy="8" r="1.5"/>
-          <circle cx="3" cy="13" r="1.5"/><circle cx="7" cy="13" r="1.5"/>
-        </svg>
+        <Icon name="drag" size="controlCompact" />
       </div>
     {/if}
     {#if editable}
