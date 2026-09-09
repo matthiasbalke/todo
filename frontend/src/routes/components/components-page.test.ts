@@ -415,6 +415,66 @@ describe('ComponentsPage Select showcase', () => {
 	});
 });
 
+describe('ComponentsPage MultiSelect showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('demonstrates empty, selected, custom avatar rendering, and callback feedback', async () => {
+		render(ComponentsPage);
+		const section = screen.getByRole('heading', { name: 'MultiSelect Component' }).closest('section')!;
+		const showcase = within(section);
+
+		const fruits = showcase.getByRole('combobox', { name: 'Favorite fruits' });
+		expect(fruits).toHaveAttribute('placeholder', 'Choose fruits...');
+		await fireEvent.click(fruits);
+		await fireEvent.click(showcase.getByRole('option', { name: 'Banana' }));
+		await fireEvent.click(showcase.getByRole('option', { name: 'Cherry' }));
+		expect(showcase.getByText('Selected:').parentElement).toHaveTextContent('Banana, Cherry');
+		expect(showcase.getByRole('listbox', { name: 'Favorite fruits' })).toHaveAttribute(
+			'aria-multiselectable',
+			'true'
+		);
+		await fireEvent.keyDown(fruits, { key: 'Escape' });
+
+		const groupSelect = showcase.getByRole('combobox', { name: 'List groups' });
+		expect(groupSelect.parentElement).toHaveTextContent('Home');
+		expect(groupSelect.parentElement).toHaveTextContent('Shopping');
+
+		const assignees = showcase.getByRole('combobox', { name: 'Assignees' });
+		expect(assignees.parentElement).toHaveTextContent('Riley Chen');
+		expect(assignees.parentElement).toHaveTextContent('Morgan Reed');
+		await fireEvent.click(assignees);
+		expect(showcase.getByRole('option', { name: 'Casey Stone' })).toHaveTextContent('C');
+		await fireEvent.click(showcase.getByRole('option', { name: 'Casey Stone' }));
+		expect(showcase.getByText('Selected IDs:').parentElement).toHaveTextContent(
+			'showcase-riley, showcase-morgan, showcase-casey'
+		);
+	});
+
+	it('documents MultiSelect usage and props', () => {
+		render(ComponentsPage);
+		const section = screen.getByRole('heading', { name: 'MultiSelect Component' }).closest('section')!;
+		const showcase = within(section);
+
+		expect(showcase.getByText('Usage Example')).toBeInTheDocument();
+		expect(section).toHaveTextContent('<MultiSelect');
+		for (const prop of [
+			'options',
+			'selected',
+			'label',
+			'placeholder',
+			'getOptionLabel',
+			'optionKey',
+			'selectedContent',
+			'optionContent',
+			'onChange'
+		]) {
+			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
+		}
+	});
+});
+
 describe('ComponentsPage MemberInviteEmailInput showcase', () => {
 	afterEach(() => {
 		cleanup();

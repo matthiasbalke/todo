@@ -67,6 +67,15 @@ describe('Icon', () => {
 		expect(icon).toHaveAttribute('stroke-width', '2.5');
 	});
 
+	it('applies semantic tone classes alongside layout classes', () => {
+		const { container } = render(Icon, {
+			props: { name: 'check', tone: 'menuSelected', class: 'flex-shrink-0' }
+		});
+
+		const icon = container.querySelector('svg');
+		expect(icon).toHaveClass('flex-shrink-0', 'text-menu-selected');
+	});
+
 	it('defines icon-only touch target presets for shared controls', () => {
 		expect(iconTouchTargetPresets.control.className).toContain('h-10');
 		expect(iconTouchTargetPresets.controlCompact.className).toContain('h-8');

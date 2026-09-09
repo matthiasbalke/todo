@@ -27,7 +27,10 @@
 		errorMessage?: string | null;
 		emptyMessage?: string;
 		noMatchMessage?: string;
+		closeOnSelect?: boolean;
+		multiselectable?: boolean;
 		optionKey?: (option: T, index: number) => string;
+		isOptionSelected?: (option: T) => boolean;
 		getOptionLabel?: (option: T) => string;
 		selectedContent?: Snippet;
 		optionContent?: Snippet<[T]>;
@@ -56,7 +59,10 @@
 		errorMessage = null,
 		emptyMessage = 'No options available',
 		noMatchMessage = 'No matching options',
+		closeOnSelect = true,
+		multiselectable = false,
 		optionKey = (_option: any, index: number) => String(index),
+		isOptionSelected = (option: any) => selectedOption === option,
 		getOptionLabel = (option: any) => String(option),
 		selectedContent,
 		optionContent,
@@ -112,7 +118,9 @@
 
 	function selectOption(option: any) {
 		onoptionselect?.(option);
-		closeDropdown();
+		if (closeOnSelect) {
+			closeDropdown();
+		}
 	}
 
 	function handleTriggerClick() {
@@ -269,13 +277,14 @@
 				id={resolvedListboxId}
 				role="listbox"
 				aria-label={accessibleName}
+				aria-multiselectable={multiselectable || undefined}
 				class="absolute left-0 top-full z-50 max-h-60 w-full overflow-y-auto rounded border border-gray-300 bg-white shadow-lg"
 			>
 				{#each options as option, index (optionKey(option, index))}
 					<Button
 						id={`${resolvedListboxId}-option-${index}`}
 						role="option"
-						aria-selected={selectedOption === option}
+						aria-selected={isOptionSelected(option)}
 						onpointerdown={(event) => event.preventDefault()}
 						onclick={() => selectOption(option)}
 						onmouseenter={() => (focusedIndex = index)}
@@ -283,8 +292,8 @@
 						appearance="bare"
 						size="menu"
 						align="start"
-						weight={selectedOption === option ? 'medium' : 'normal'}
-						selected={selectedOption === option}
+						weight={isOptionSelected(option) ? 'medium' : 'normal'}
+						selected={isOptionSelected(option)}
 						active={focusedIndex === index}
 					>
 						{#if optionContent}

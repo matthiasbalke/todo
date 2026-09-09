@@ -4,6 +4,7 @@
 	import CategorySelect from '$lib/components/CategorySelect.svelte';
 	import EmailInput from '$lib/components/EmailInput.svelte';
 	import MemberInviteEmailInput from '$lib/components/MemberInviteEmailInput.svelte';
+	import MultiSelect from '$lib/components/MultiSelect.svelte';
 	import Select from '$lib/components/Select.svelte';
 	import EditableLabel from '$lib/components/EditableLabel.svelte';
 	import Button from '$lib/components/Button.svelte';
@@ -45,10 +46,16 @@
 	let savingEditableName = 'Saving in progress';
 
 	let selectedFruit: string | null = null;
+	let selectedFruits: string[] = [];
 	let selectedPriority: string | null = null;
 	let selectedCategory: string | null = null;
 	let selectedCategoryId: string | null = 'showcase-produce';
 	let selectedTimeZone: string | null = 'Europe/Berlin';
+	let selectedAssignees = [
+		{ id: 'showcase-riley', name: 'Riley Chen' },
+		{ id: 'showcase-morgan', name: 'Morgan Reed' }
+	];
+	let latestAssigneeSelection = selectedAssignees.map((assignee) => assignee.id).join(', ');
 
 	const fruits = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig'];
 	const priorities = ['Low', 'Medium', 'High', 'Urgent'];
@@ -62,6 +69,12 @@
 		{ userId: 'showcase-casey', email: 'casey@example.com', displayName: 'Casey Stone' },
 		{ userId: 'showcase-riley', email: 'riley@example.com', displayName: 'Riley Chen' },
 		{ userId: 'showcase-morgan', email: 'morgan@example.com', displayName: 'Morgan Reed' }
+	];
+	const assigneeOptions = [
+		{ id: 'showcase-casey', name: 'Casey Stone' },
+		{ id: 'showcase-riley', name: 'Riley Chen' },
+		{ id: 'showcase-morgan', name: 'Morgan Reed' },
+		{ id: 'showcase-taylor', name: 'Taylor Brooks' }
 	];
 
 	function handleButtonAction(action: string) {
@@ -115,6 +128,10 @@
 	function validateSelection(value: string | null): string | null {
 		if (value === 'High' || value === 'Urgent' ) return null;
 		return 'select a high or urgent value';
+	}
+
+	function handleAssigneeSelection(values: typeof assigneeOptions) {
+		latestAssigneeSelection = values.map((assignee) => assignee.id).join(', ') || '(none)';
 	}
 
 	const basicInputCode = `<TextInput
@@ -278,6 +295,33 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
     // Handle selection
   }}
 />`;
+
+	const multiSelectCode = `<script lang="ts">
+  import MultiSelect from '$lib/components/MultiSelect.svelte';
+
+  const assignees = [
+    { id: 'casey', name: 'Casey Stone' },
+    { id: 'riley', name: 'Riley Chen' }
+  ];
+  let selectedAssignees = $state([]);
+<\/script>
+
+<MultiSelect
+  options={assignees}
+  bind:selected={selectedAssignees}
+  label="Assignees"
+  placeholder="Choose assignees"
+  getOptionLabel={(assignee) => assignee.name}
+  optionKey={(assignee) => assignee.id}
+>
+  {#snippet selectedContent(assignee)}
+    <span>{assignee.name}</span>
+  {/snippet}
+
+  {#snippet optionContent(assignee)}
+    <span>{assignee.name}</span>
+  {/snippet}
+</MultiSelect>`;
 
 	const timezonePickerCode = `<script lang="ts">
   import TimezonePicker from '$lib/components/TimezonePicker.svelte';
@@ -1877,6 +1921,106 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 						<p class="font-mono text-sm text-blue-600 mb-1">Click outside</p>
 						<p class="text-sm text-gray-600">Close dropdown</p>
 					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- MultiSelect Section -->
+		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+			<h2 class="text-2xl font-bold text-gray-900 mb-8">MultiSelect Component</h2>
+			<p class="text-gray-600 mb-8">
+				A reusable searchable multi-select component that extends the shared combobox
+				interaction pattern while keeping the option list open for repeated selection.
+			</p>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Empty State</h3>
+					<MultiSelect
+						options={fruits}
+						bind:selected={selectedFruits}
+						label="Favorite fruits"
+						placeholder="Choose fruits..."
+					/>
+					<p class="text-xs text-gray-500 mt-2">
+						Selected: <code>{selectedFruits.length ? selectedFruits.join(', ') : '(none)'}</code>
+					</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Multiple Selected Values</h3>
+					<MultiSelect
+						options={['Home', 'Work', 'Errands', 'Shopping']}
+						selected={['Home', 'Shopping']}
+						label="List groups"
+						placeholder="Choose groups..."
+					/>
+				</div>
+
+				<div class="md:col-span-2">
+					<h3 class="text-lg font-semibold text-gray-800 mb-4">Custom Assignee Rendering</h3>
+					<MultiSelect
+						options={assigneeOptions}
+						bind:selected={selectedAssignees}
+						label="Assignees"
+						placeholder="Choose assignees..."
+						getOptionLabel={(assignee) => assignee.name}
+						optionKey={(assignee) => assignee.id}
+						onChange={handleAssigneeSelection}
+					>
+						{#snippet selectedContent(assignee)}
+							<span class="inline-flex min-w-0 items-center gap-1.5">
+								<span class="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-[10px] font-semibold text-blue-700" aria-hidden="true">
+									{assignee.name[0]}
+								</span>
+								<span class="truncate">{assignee.name}</span>
+							</span>
+						{/snippet}
+
+						{#snippet optionContent(assignee)}
+							<span class="inline-flex min-w-0 items-center gap-2">
+								<span class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700" aria-hidden="true">
+									{assignee.name[0]}
+								</span>
+								<span class="truncate">{assignee.name}</span>
+							</span>
+						{/snippet}
+					</MultiSelect>
+					<p class="text-xs text-gray-500 mt-2">
+						Selected IDs: <code>{latestAssigneeSelection}</code>
+					</p>
+				</div>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Example</h3>
+				<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{multiSelectCode}</code></pre>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-800 mb-4">Props Reference</h3>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Prop</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Type</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Default</th>
+								<th class="text-left px-4 py-2 font-semibold text-gray-700">Description</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							<tr><td class="px-4 py-2 font-mono text-blue-600">options</td><td class="px-4 py-2 text-gray-600">T[]</td><td class="px-4 py-2 text-gray-600">[]</td><td class="px-4 py-2 text-gray-600">Array of options to display.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">selected</td><td class="px-4 py-2 text-gray-600">T[]</td><td class="px-4 py-2 text-gray-600">[]</td><td class="px-4 py-2 text-gray-600">Bindable selected option array.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">label</td><td class="px-4 py-2 text-gray-600">string</td><td class="px-4 py-2 text-gray-600">''</td><td class="px-4 py-2 text-gray-600">Visible field label and accessible name.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">placeholder</td><td class="px-4 py-2 text-gray-600">string</td><td class="px-4 py-2 text-gray-600">'Select options'</td><td class="px-4 py-2 text-gray-600">Empty-state trigger text.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">getOptionLabel</td><td class="px-4 py-2 text-gray-600">(option: T) =&gt; string</td><td class="px-4 py-2 text-gray-600">String(option)</td><td class="px-4 py-2 text-gray-600">Accessible option label and filter text.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">optionKey</td><td class="px-4 py-2 text-gray-600">(option: T, index: number) =&gt; string</td><td class="px-4 py-2 text-gray-600">index</td><td class="px-4 py-2 text-gray-600">Stable option identity for keyed rendering.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">selectedContent</td><td class="px-4 py-2 text-gray-600">Snippet&lt;[T]&gt;</td><td class="px-4 py-2 text-gray-600">undefined</td><td class="px-4 py-2 text-gray-600">Custom selected-value content.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">optionContent</td><td class="px-4 py-2 text-gray-600">Snippet&lt;[T]&gt;</td><td class="px-4 py-2 text-gray-600">undefined</td><td class="px-4 py-2 text-gray-600">Custom option content.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-blue-600">onChange</td><td class="px-4 py-2 text-gray-600">(values: T[]) =&gt; void</td><td class="px-4 py-2 text-gray-600">undefined</td><td class="px-4 py-2 text-gray-600">Receives the complete selected array after changes.</td></tr>
+						</tbody>
+					</table>
 				</div>
 			</div>
 		</section>

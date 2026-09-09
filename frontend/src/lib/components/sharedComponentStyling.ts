@@ -8,6 +8,7 @@ export const sharedControlNames = [
 	'EmailInput',
 	'Icon',
 	'ListStateSummary',
+	'MultiSelect',
 	'Select',
 	'StarToggle',
 	'SwipeDeleteAction',

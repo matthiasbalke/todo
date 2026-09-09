@@ -8,12 +8,12 @@
 
 - [x] 2.1 Wire shared `Button` icon sizes or a toolbar/icon-button wrapper to consume icon-only touch target presets, and verify existing `Button` tests plus any new icon-button tests pass with `cd frontend && bun run test -- --run src/lib/components/Button.test.ts`.
 - [x] 2.2 Extend `CompletionToggle` and `StarToggle` only as needed for item-form usage while preserving component-owned Lucide visuals, and verify `ItemStateToggles` and `ItemCard` tests pass with `cd frontend && bun run test -- --run src/lib/components/ItemStateToggles.test.ts src/lib/components/ItemCard.test.ts`.
-- [ ] 2.3 Stop for review: inspect button/toggle sizing, stroke weight, focus rings, and touch target behavior before starting footer, route, or item-form adoption work.
+- [x] 2.3 Stop for review: inspect button/toggle sizing, stroke weight, focus rings, and touch target behavior before starting footer, route, or item-form adoption work.
 
 ## 3. MultiSelect Checkpoint
 
-- [ ] 3.1 Extend `ComboboxPrimitive` only as needed to support multi-select behavior while preserving existing `Select` behavior, including support for keeping the option list open after selection and representing multi-selected option state.
-- [ ] 3.2 Add a shared `MultiSelect` component based on the extended `ComboboxPrimitive` interaction patterns, including multi-value selection that keeps the option list open after selection, toggles selected options off when activated again, closes on Escape or focus-out/blur, custom option/selected rendering snippets, accessible labels, keyboard operation, and focused tests with `cd frontend && bun run test -- --run src/lib/components/MultiSelect.test.ts src/lib/components/ComboboxPrimitive.test.ts src/lib/components/Select.test.ts`.
+- [x] 3.1 Extend `ComboboxPrimitive` only as needed to support multi-select behavior while preserving existing `Select` behavior, including support for keeping the option list open after selection and representing multi-selected option state.
+- [x] 3.2 Add a shared `MultiSelect` component based on the extended `ComboboxPrimitive` interaction patterns, including multi-value selection that keeps the option list open after selection, toggles selected options off when activated again, closes on Escape or focus-out/blur, custom option/selected rendering snippets, accessible labels, keyboard operation, and focused tests with `cd frontend && bun run test -- --run src/lib/components/MultiSelect.test.ts src/lib/components/ComboboxPrimitive.test.ts src/lib/components/Select.test.ts`.
 - [ ] 3.3 Stop for review: inspect MultiSelect filtering, keyboard behavior, selected-value rendering, and primitive API shape before adopting it in `ItemForm` or the components page.
 
 ## 4. Fixed Footer Checkpoint
@@ -42,7 +42,7 @@
 
 ## 7. Components Page Checkpoint
 
-- [ ] 7.1 Add a `MultiSelect` section to the components page near the existing `Select` section, including examples for empty state, multiple selected values, custom avatar option rendering, custom selected rendering, and callback/bound value feedback.
+- [x] 7.1 Add a `MultiSelect` section to the components page near the existing `Select` section, including examples for empty state, multiple selected values, custom avatar option rendering, custom selected rendering, and callback/bound value feedback.
 - [ ] 7.2 Add components-page section anchors and responsive sidebar/top navigation generated from a local section registry, and verify tests cover navigation links, target section ids, and presence of all documented component sections.
 - [ ] 7.3 Stop for review: inspect desktop sidebar navigation, mobile navigation, and the MultiSelect showcase examples before final verification.
 
