@@ -121,6 +121,24 @@ The `/lists` overview SHALL allow a signed-in user to reorder their persisted li
 - **THEN** the uncategorized category group inside any individual list remains governed by the uncategorized-last category group requirement
 - **AND** list group sorting SHALL NOT create or persist a sortable position for the uncategorized category group
 
+### Requirement: List group header controls use consistent menu and collapse ordering
+The `/lists` overview SHALL render list group header action menus before the collapse/expand chevron when both controls are present.
+
+#### Scenario: Persisted group shows menu before collapse control
+- **WHEN** a signed-in user views a persisted list group on `/lists`
+- **THEN** the group options menu control appears to the left of the collapse/expand chevron
+- **AND** activating the group options menu does not toggle the group's collapsed state
+
+#### Scenario: Collapse control remains available after menu repositioning
+- **WHEN** a signed-in user activates the collapse/expand control for a list group on `/lists`
+- **THEN** the group expands or collapses as before
+- **AND** its action menu behavior remains unchanged
+
+#### Scenario: Ungrouped section keeps compatible header alignment
+- **WHEN** the virtual Ungrouped section is visible on `/lists`
+- **THEN** its header aligns with the same collapse/expand control position used by persisted list groups
+- **AND** no group options menu is shown for the virtual Ungrouped section
+
 ### Requirement: List group collapse state is restored locally
 The `/lists` overview SHALL persist list group expanded/collapsed state locally on the user's device and restore it on later visits.
 

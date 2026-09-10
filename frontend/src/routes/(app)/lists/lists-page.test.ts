@@ -162,11 +162,23 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		const groupButton = container.querySelector('button[aria-label="Create group"]') as HTMLButtonElement;
 
 		expect(newListButton).not.toBeNull();
+		expect(newListButton).toHaveClass('justify-start', 'flex-1');
 		expect(newListButton.querySelector('svg')).not.toBeNull();
 		expect(groupButton).not.toBeNull();
 		expect(groupButton.querySelector('svg')).not.toBeNull();
 		expect(container.textContent).not.toContain('+ New list');
 		expect(container.textContent).not.toContain('+ New group');
+	});
+
+	it('opens the list creation form from the left-aligned new list action', async () => {
+		const { container, getByPlaceholderText } = render(ListsPage, { props: { } });
+		const newListButton = Array.from(container.querySelectorAll('button')).find((button) =>
+			button.textContent?.trim() === 'new list'
+		)!;
+
+		await fireEvent.click(newListButton);
+
+		expect(getByPlaceholderText('List name')).toBeInTheDocument();
 	});
 
 	it('bounds expanded group creation content inside the fixed action footer', async () => {
@@ -197,7 +209,9 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		expect(zone.textContent).not.toContain('Ungrouped');
 		expect(container.querySelectorAll('[aria-label="Drag to reorder list group"]')).toHaveLength(2);
 
-		const sectionLabels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => button.textContent?.trim());
+		const sectionLabels = Array.from(container.querySelectorAll('button[aria-expanded]'))
+			.map(button => button.textContent?.trim())
+			.filter(Boolean);
 		expect(sectionLabels).toEqual(['Home', 'Work', 'Ungrouped']);
 		expect(container.querySelectorAll('button[aria-expanded] svg').length).toBeGreaterThanOrEqual(3);
 	});
@@ -232,10 +246,12 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		saveListGroupState({ collapsed: { 'group-home': true } });
 
 			const { container } = render(ListsPage, { props: { } });
-			const labels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => ({
-				text: button.textContent?.trim(),
-				expanded: button.getAttribute('aria-expanded'),
-			}));
+			const labels = Array.from(container.querySelectorAll('button[aria-expanded]'))
+				.map(button => ({
+					text: button.textContent?.trim(),
+					expanded: button.getAttribute('aria-expanded'),
+				}))
+				.filter(label => label.text);
 
 		expect(labels).toEqual([
 			{ text: 'Home', expanded: 'false' },
@@ -252,10 +268,12 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		saveListGroupState({ collapsed: { [UNGROUPED_LIST_GROUP_STATE_KEY]: true } });
 
 			const { container } = render(ListsPage, { props: { } });
-			const labels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => ({
-				text: button.textContent?.trim(),
-				expanded: button.getAttribute('aria-expanded'),
-			}));
+			const labels = Array.from(container.querySelectorAll('button[aria-expanded]'))
+				.map(button => ({
+					text: button.textContent?.trim(),
+					expanded: button.getAttribute('aria-expanded'),
+				}))
+				.filter(label => label.text);
 
 		expect(labels).toEqual([
 			{ text: 'Home', expanded: 'true' },

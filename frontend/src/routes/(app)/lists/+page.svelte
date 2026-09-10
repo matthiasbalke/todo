@@ -224,6 +224,7 @@
       <div class="flex items-center gap-3">
         <Button tone="neutral" appearance="outline"
           size="empty"
+          align="start"
           onclick={() => { showAddForm = true; }}
           disabled={saving}
           class="flex-1"

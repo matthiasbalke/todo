@@ -96,8 +96,28 @@ describe('ListGroupSection', () => {
   it('renders group name', () => {
     const { container, getAllByText, getByRole } = render(ListGroupSection, { props: { group, lists } });
     expect(getAllByText('Home').length).toBeGreaterThan(0);
-    expect(getByRole('button', { name: /home/i })).toHaveClass('justify-between');
+    expect(getByRole('button', { name: /home/i })).toHaveClass('justify-start');
     expect(container.querySelectorAll('button[aria-expanded="true"] svg')).toHaveLength(2);
+  });
+
+  it('places group options before the collapse chevron without toggling collapse', async () => {
+    const oncollapsedchange = vi.fn();
+    const { container, getByRole } = render(ListGroupSection, {
+      props: { group, lists, collapsed: false, oncollapsedchange },
+    });
+
+    const groupOptions = getByRole('button', { name: 'Group options' });
+    const collapseChevron = getByRole('button', { name: 'Collapse section' });
+
+    expect(
+      groupOptions.compareDocumentPosition(collapseChevron) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    await fireEvent.click(groupOptions);
+
+    expect(oncollapsedchange).not.toHaveBeenCalled();
+    expect(getByRole('button', { name: 'Rename' })).toBeInTheDocument();
+    expect(container.querySelectorAll('a[href]')).toHaveLength(lists.length);
   });
 
   it('renders lists within the group', () => {
@@ -131,10 +151,12 @@ describe('ListGroupSection', () => {
         role: 'OWNER',
       },
     ];
-    const { getAllByText, getByText, getByRole } = render(ListGroupSection, { props: { group: null, lists: ungrouped } });
+    const { container, getAllByText, getByText, getByRole } = render(ListGroupSection, { props: { group: null, lists: ungrouped } });
     expect(getAllByText('Ungrouped').length).toBeGreaterThan(0);
     expect(getByText('Personal')).toBeTruthy();
-    expect(getByRole('button', { name: /ungrouped/i })).toHaveClass('justify-between');
+    expect(getByRole('button', { name: /ungrouped/i })).toHaveClass('justify-start');
+    expect(getByRole('button', { name: 'Collapse section' })).toBeInTheDocument();
+    expect(container.querySelector('[aria-label="Group options"]')).toBeNull();
   });
 
   it('ungrouped section is collapsible', async () => {

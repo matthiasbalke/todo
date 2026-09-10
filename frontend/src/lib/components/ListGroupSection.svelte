@@ -132,7 +132,7 @@
       <Button
         tone="neutral" appearance="bare"
         size="header"
-        align="between"
+        align="start"
         emphasis="muted"
         onclick={toggleCollapsed}
         aria-expanded={!collapsed}
@@ -146,7 +146,6 @@
             <span class="truncate">Ungrouped</span>
           {/if}
         </span>
-        <Icon name={collapsed ? 'collapse' : 'expand'} size="compact" class="flex-shrink-0" />
       </Button>
     </div>
 
@@ -205,6 +204,17 @@
         </div>
       {/if}
     {/if}
+
+    <Button
+      tone="neutral" appearance="bare"
+      size="icon-header"
+      onclick={toggleCollapsed}
+      emphasis="muted"
+      aria-label={collapsed ? 'Expand section' : 'Collapse section'}
+      aria-expanded={!collapsed}
+    >
+      <Icon name={collapsed ? 'collapse' : 'expand'} size="compact" class="flex-shrink-0" />
+    </Button>
   </div>
 
   {#if error}
