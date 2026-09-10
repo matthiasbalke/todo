@@ -6,6 +6,7 @@
 	import { onMount, tick } from 'svelte';
 	import Button from './Button.svelte';
 	import CalendarDayButton from './CalendarDayButton.svelte';
+	import { controlPlaceholderTextClasses, controlValueTextClasses } from './controlStyles';
 	import Icon from './Icon.svelte';
 	import {
 		addDays,
@@ -70,6 +71,9 @@
 					day: 'numeric'
 				})
 			: placeholder
+	);
+	const triggerTextClasses = $derived(
+		selectedDate ? controlValueTextClasses : controlPlaceholderTextClasses
 	);
 	const monthHeading = $derived(
 		formatCalendarDate({ year: displayedYear, month: displayedMonth, day: 1 }, locale, {
@@ -255,7 +259,7 @@
 		weight="normal"
 		class="min-h-10 w-full"
 	>
-		<span class={selectedDate ? 'text-gray-800' : 'text-gray-500 italic'}>{triggerText}</span>
+		<span class={triggerTextClasses}>{triggerText}</span>
 		<Icon name={isOpen ? 'collapse' : 'expand'} size="compact" class="flex-shrink-0" />
 	</Button>
 

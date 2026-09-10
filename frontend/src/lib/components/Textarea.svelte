@@ -4,6 +4,7 @@
 
 <script lang="ts">
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
+	import { controlTypographyPresets } from './controlStyles';
 
 	type Resize = 'none' | 'vertical' | 'horizontal' | 'both';
 	type Size = 'default' | 'compact';
@@ -84,8 +85,8 @@
 		both: 'resize'
 	};
 	const sizeClasses: Record<Size, string> = {
-		default: 'px-3 py-2 text-sm',
-		compact: 'px-2 py-1 text-xs'
+		default: `px-3 py-2 ${controlTypographyPresets.default}`,
+		compact: `px-2 py-1 ${controlTypographyPresets.compact}`
 	};
 
 	const isError = $derived(Boolean(errorMessage));

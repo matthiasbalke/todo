@@ -4,6 +4,7 @@
 
 <script lang="ts">
 	import type { HTMLInputAttributes } from 'svelte/elements';
+	import { controlTypographyPresets } from './controlStyles';
 
 	type Size = 'default' | 'small' | 'compact' | 'title';
 	type Appearance = 'default' | 'inline';
@@ -81,10 +82,10 @@
 			.join(' ') || undefined
 	);
 	const sizeClasses: Record<Size, string> = {
-		default: 'px-3 py-2 text-sm',
-		small: 'px-3 py-1.5 text-sm',
-		compact: 'px-2 py-0.5 text-xs',
-		title: 'px-0 py-0 text-xl font-bold'
+		default: `px-3 py-2 ${controlTypographyPresets.default}`,
+		small: `px-3 py-1.5 ${controlTypographyPresets.default}`,
+		compact: `px-2 py-0.5 ${controlTypographyPresets.compact}`,
+		title: `px-0 py-0 ${controlTypographyPresets.title} font-bold`
 	};
 	const appearanceClasses: Record<Appearance, string> = {
 		default: 'rounded border',

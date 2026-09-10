@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { HTMLButtonAttributes } from 'svelte/elements';
+	import { controlTypographyPresets } from './controlStyles';
 	import { iconTouchTargetPresets } from './iconRegistry';
 
 	type Tone = 'primary' | 'neutral' | 'danger' | 'success';
@@ -106,26 +107,26 @@
 	};
 
 	const sizeClasses: Record<Size, string> = {
-		default: 'rounded-lg px-4 py-2 text-sm',
-		large: 'rounded-lg px-4 py-2.5 text-sm',
-		small: 'rounded-md px-3 py-1.5 text-sm',
-		compact: 'rounded px-2 py-1 text-xs',
+		default: `rounded-lg px-4 py-2 ${controlTypographyPresets.default}`,
+		large: `rounded-lg px-4 py-2.5 ${controlTypographyPresets.default}`,
+		small: `rounded-md px-3 py-1.5 ${controlTypographyPresets.default}`,
+		compact: `rounded px-2 py-1 ${controlTypographyPresets.compact}`,
 		icon: 'rounded p-1',
 		'icon-compact': iconTouchTargetPresets.controlCompact.className,
 		'icon-standard': iconTouchTargetPresets.control.className,
 		'icon-header': iconTouchTargetPresets.header.className,
-		menu: 'w-full rounded-none px-4 py-2 text-left text-sm',
-		'menu-indented': 'w-full rounded-none px-6 py-1.5 text-left text-sm',
-		chip: 'rounded-full px-2 py-0.5 text-xs',
+		menu: `w-full rounded-none px-4 py-2 text-left ${controlTypographyPresets.default}`,
+		'menu-indented': `w-full rounded-none px-6 py-1.5 text-left ${controlTypographyPresets.default}`,
+		chip: `rounded-full px-2 py-0.5 ${controlTypographyPresets.compact}`,
 		backdrop: 'rounded-none p-0',
-		field: 'rounded px-3 py-2 text-sm',
-		display: 'min-h-10 rounded px-3 py-2 text-left text-sm',
-		'display-plain': 'rounded p-0 text-left text-sm',
-		empty: 'rounded-xl border-2 border-dashed px-4 py-3 text-sm',
-		header: 'w-full rounded px-1 py-0.5 text-xs uppercase tracking-wider',
+		field: `rounded px-3 py-2 ${controlTypographyPresets.default}`,
+		display: `min-h-10 rounded px-3 py-2 text-left ${controlTypographyPresets.default}`,
+		'display-plain': `rounded p-0 text-left ${controlTypographyPresets.default}`,
+		empty: `rounded-xl border-2 border-dashed px-4 py-3 ${controlTypographyPresets.default}`,
+		header: `w-full rounded px-1 py-0.5 ${controlTypographyPresets.compact} uppercase tracking-wider`,
 		row: 'w-full rounded-lg px-4 py-3 text-left',
 		'row-muted': 'w-full rounded-xl px-4 py-3 text-left',
-		title: 'rounded p-0 text-left text-xl'
+		title: `rounded p-0 text-left ${controlTypographyPresets.title}`
 	};
 
 	const alignClasses: Record<Align, string> = {

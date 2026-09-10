@@ -6,7 +6,7 @@
 	import type { Snippet } from 'svelte';
 	import ComboboxPrimitive from './ComboboxPrimitive.svelte';
 
-	type Size = 'default' | 'compact' | 'dense';
+	type Size = 'default' | 'compact' | 'dense' | 'display';
 	type Appearance = 'default' | 'inline';
 
 	interface Props<T> {
@@ -24,6 +24,7 @@
 		appearance?: Appearance;
 		getOptionLabel?: (option: T) => string;
 		getSelectedLabel?: (option: T) => string;
+		isSelectedMuted?: (option: T) => boolean;
 		selectedContent?: Snippet<[T]>;
 		optionContent?: Snippet<[T]>;
 		validate?: ((value: T | null) => string | null) | null;
@@ -45,6 +46,7 @@
 		appearance = 'default',
 		getOptionLabel = (option: any) => String(option),
 		getSelectedLabel = getOptionLabel,
+		isSelectedMuted = () => false,
 		selectedContent: selectedContentSnippet,
 		optionContent: optionContentSnippet,
 		validate = null,
@@ -58,6 +60,9 @@
 	const generatedId = `select-${nextSelectId++}`;
 	const triggerId = $derived(id || labelId || `${generatedId}-trigger`);
 	const selectedLabel = $derived(internalSelected !== null ? getSelectedLabel(internalSelected) : '');
+	const mutedValue = $derived(
+		query === null && internalSelected !== null && isSelectedMuted(internalSelected)
+	);
 	const searchText = $derived(query ?? '');
 	const normalizedSearch = $derived(searchText.trim().toLocaleLowerCase());
 	const filteredOptions = $derived.by(() => {
@@ -138,6 +143,7 @@
 	class={className}
 	{size}
 	{appearance}
+	{mutedValue}
 	{getOptionLabel}
 	{errorMessage}
 	emptyMessage={options.length === 0 ? 'No options available' : 'No matching options'}

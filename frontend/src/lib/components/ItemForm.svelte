@@ -31,6 +31,7 @@
   import StarToggle from './StarToggle.svelte';
   import Textarea from './Textarea.svelte';
   import Button from './Button.svelte';
+  import { controlPlaceholderTextClasses, controlValueTextClasses } from './controlStyles';
   import TextInput from './TextInput.svelte';
 
   let {
@@ -102,7 +103,11 @@
   }
 
   function getRecurrenceFormLabel(preset: string): string {
-    return preset ? getRecurrenceLabel(preset) : 'recurrence';
+    return preset ? getRecurrenceLabel(preset) : 'set recurrence';
+  }
+
+  function isRecurrenceMuted(preset: string): boolean {
+    return !preset;
   }
 
   function getInitialRecurrencePreset(rule: RecurrenceRule | null): string {
@@ -158,6 +163,12 @@
 
   const notesPreview = $derived(
     notes.length > NOTES_PREVIEW_LIMIT ? `${notes.slice(0, NOTES_PREVIEW_LIMIT)}...` : notes
+  );
+  const notesPreviewButtonClasses = $derived(notes ? 'min-h-24 w-full items-start' : 'min-h-10 w-full');
+  const notesPreviewTextClasses = $derived(
+    notes
+      ? `whitespace-pre-wrap text-left ${controlValueTextClasses}`
+      : `text-left ${controlPlaceholderTextClasses}`
   );
 
   function openNotesEditor() {
@@ -299,6 +310,7 @@
           placeholder="category"
           emptySelectedLabel="assign category"
       labelId="categoryId"
+          size="display"
           appearance="inline"
     />
       </div>
@@ -307,7 +319,7 @@
     <div class="flex items-start gap-3 rounded-lg px-1 py-1">
       <Icon name="date" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
-        <DatePicker bind:value={dueDate} ariaLabel="Due Date" placeholder="due date" appearance="inline" />
+        <DatePicker bind:value={dueDate} ariaLabel="Due Date" placeholder="set due date" appearance="inline" />
       </div>
     </div>
 
@@ -318,10 +330,13 @@
       options={recurrencePresetOptions}
       selected={recurrencePreset}
           ariaLabel="Recurrence"
-          placeholder="recurrence"
+          placeholder="set recurrence"
       labelId="recurrencePreset"
+          size="display"
           appearance="inline"
-          getOptionLabel={getRecurrenceFormLabel}
+          getOptionLabel={getRecurrenceLabel}
+          getSelectedLabel={getRecurrenceFormLabel}
+          isSelectedMuted={isRecurrenceMuted}
       onSelect={(value) => { recurrencePreset = value; }}
     />
       </div>
@@ -334,8 +349,9 @@
           options={users}
           selected={selectedAssignees}
           ariaLabel="Assignees"
-          placeholder="assignees"
+          placeholder="add assignee"
           labelId="assignedUserIds"
+          size="display"
           appearance="inline"
           getOptionLabel={getUserLabel}
           optionKey={(user) => user.id}
@@ -375,14 +391,14 @@
           weight="normal"
           aria-label="Notes"
           onclick={openNotesEditor}
-          class="min-h-24 w-full items-start"
+          class={notesPreviewButtonClasses}
         >
           <span class="flex min-w-0 flex-1 flex-col items-stretch gap-2">
             <span
               data-testid="item-form-notes-preview"
-              class={notes ? 'whitespace-pre-wrap text-left text-gray-800' : 'text-left text-gray-500 italic'}
+              class={notesPreviewTextClasses}
             >
-              {notes ? notesPreview : 'notes'}
+              {notes ? notesPreview : 'add note'}
             </span>
             {#if notes}
               <span data-testid="item-form-notes-open-cue" class="text-right text-xs font-medium text-gray-400">open</span>

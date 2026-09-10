@@ -7,7 +7,7 @@
 	import ComboboxPrimitive from './ComboboxPrimitive.svelte';
 	import Icon from './Icon.svelte';
 
-	type Size = 'default' | 'compact' | 'dense';
+	type Size = 'default' | 'compact' | 'dense' | 'display';
 	type Appearance = 'default' | 'inline';
 
 	interface Props<T> {
@@ -146,7 +146,7 @@
 		{#if selectedOptions.length > 0}
 			<div class="flex min-w-0 flex-wrap gap-1">
 				{#each selectedOptions as option, index (optionKey(option, index))}
-					<span class="inline-flex max-w-full items-center rounded bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+					<span class="inline-flex max-w-full items-center rounded bg-blue-50 px-2 py-0.5 font-medium text-blue-700">
 						{#if selectedContentSnippet}
 							{@render selectedContentSnippet(option)}
 						{:else}

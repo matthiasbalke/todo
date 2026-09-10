@@ -2,7 +2,7 @@
 	import type { Category } from '$lib/mock-data';
 	import Select from './Select.svelte';
 
-	type Size = 'default' | 'compact' | 'dense';
+	type Size = 'default' | 'compact' | 'dense' | 'display';
 	type Appearance = 'default' | 'inline';
 
 	interface Props {
@@ -59,6 +59,10 @@
 		return getCategoryLabel(categoryId);
 	}
 
+	function isSelectedCategoryMuted(categoryId: string): boolean {
+		return !categoryId;
+	}
+
 	function getCategoryColor(categoryId: string): string | null {
 		if (!categoryId) return null;
 		return findCategory(categoryId)?.color ?? null;
@@ -95,6 +99,7 @@
 	{appearance}
 	getOptionLabel={getCategoryLabel}
 	getSelectedLabel={getSelectedCategoryLabel}
+	isSelectedMuted={isSelectedCategoryMuted}
 	onSelect={handleSelect}
 >
 	{#snippet selectedContent(categoryId)}

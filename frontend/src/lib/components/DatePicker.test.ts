@@ -45,6 +45,14 @@ describe('DatePicker', () => {
 
 		const trigger = screen.getByRole('button', { name: 'Pick date' });
 		expect(trigger).toHaveTextContent('Choose date');
+		expect(trigger).toHaveClass('font-sans', 'text-sm', 'leading-5');
+		expect(trigger.querySelector('span')).toHaveClass(
+			'font-sans',
+			'text-sm',
+			'leading-5',
+			'text-gray-500',
+			'italic'
+		);
 		await fireEvent.click(trigger);
 
 		const dialog = screen.getByRole('dialog', { name: 'Calendar' });
@@ -101,6 +109,13 @@ describe('DatePicker', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
 
 		expect(trigger).toHaveTextContent('No due date');
+		expect(trigger.querySelector('span')).toHaveClass(
+			'font-sans',
+			'text-sm',
+			'leading-5',
+			'text-gray-500',
+			'italic'
+		);
 	});
 
 	it('selects Today using the local calendar date', async () => {

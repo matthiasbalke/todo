@@ -145,6 +145,8 @@ describe('ItemForm', () => {
 
 			const trigger = screen.getByRole('combobox', { name: 'Category' });
 			expect(trigger).toHaveValue('assign category');
+			expect(trigger).toHaveClass('font-sans', 'text-sm', 'leading-5', 'font-normal');
+			expect(trigger.parentElement).toHaveClass('min-h-10', 'px-3', 'py-2');
 			expect(container.querySelector('label[for="categoryId"]')).not.toBeInTheDocument();
 			expect(container.querySelector('select#categoryId')).not.toBeInTheDocument();
 
@@ -300,12 +302,15 @@ describe('ItemForm', () => {
 			const { container } = render(ItemForm, { props: defaultProps });
 			const trigger = screen.getByRole('combobox', { name: 'Recurrence' });
 
-			expect(trigger).toHaveValue('recurrence');
+			expect(trigger).toHaveValue('set recurrence');
+			expect(trigger).toHaveClass('font-sans', 'text-sm', 'leading-5', 'font-normal');
+			expect(trigger.parentElement).toHaveClass('min-h-10', 'px-3', 'py-2');
+			expect(trigger).toHaveClass('text-gray-500', 'italic');
 			expect(container.querySelector('select#recurrencePreset')).not.toBeInTheDocument();
 
 			await fireEvent.click(trigger);
 			expect(screen.getAllByRole('option').map((option) => option.textContent?.trim())).toEqual([
-				'recurrence',
+				'No recurrence',
 				'Every day',
 				'Every week',
 				'Every 2 weeks',
@@ -322,8 +327,8 @@ describe('ItemForm', () => {
 			['monthly', itemWithRecurrence(1, 'MONTHS'), 'Every month'],
 			['quarterly', itemWithRecurrence(3, 'MONTHS'), 'Every 3 months'],
 			['yearly', itemWithRecurrence(1, 'YEARS'), 'Every year'],
-			['no recurrence', itemWithDueDate(null), 'recurrence'],
-			['unsupported recurrence', itemWithRecurrence(4, 'WEEKS'), 'recurrence']
+			['no recurrence', itemWithDueDate(null), 'set recurrence'],
+			['unsupported recurrence', itemWithRecurrence(4, 'WEEKS'), 'set recurrence']
 		])('initializes the %s recurrence state', (_name, item, label) => {
 			render(ItemForm, { props: { ...defaultProps, item } });
 
@@ -365,7 +370,7 @@ describe('ItemForm', () => {
 			});
 
 			await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
-			await fireEvent.click(screen.getByRole('option', { name: 'recurrence' }));
+			await fireEvent.click(screen.getByRole('option', { name: 'No recurrence' }));
 			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
 			expect(onsubmit.mock.calls[0][0].recurrenceRule).toBeNull();
@@ -383,6 +388,7 @@ describe('ItemForm', () => {
 			await fireEvent.click(trigger);
 			await fireEvent.click(screen.getByRole('option', { name: 'Every month' }));
 			expect(trigger).toHaveValue('Every month');
+			expect(trigger).not.toHaveClass('text-gray-500', 'italic');
 			expect(oncancel).not.toHaveBeenCalled();
 
 			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
@@ -391,7 +397,7 @@ describe('ItemForm', () => {
 				intervalValue: 1,
 				intervalUnit: 'MONTHS'
 			});
-			expect(trigger).toHaveValue('recurrence');
+			expect(trigger).toHaveValue('set recurrence');
 			expect(oncancel).not.toHaveBeenCalled();
 		});
 
@@ -424,6 +430,9 @@ describe('ItemForm', () => {
 
 			const trigger = screen.getByRole('combobox', { name: 'Assignees' });
 			expect(trigger).toHaveValue('');
+			expect(trigger).toHaveClass('font-sans', 'text-sm', 'leading-5', 'font-normal');
+			expect(trigger.parentElement).toHaveClass('min-h-10', 'px-3', 'py-2');
+			expect(trigger).toHaveAttribute('placeholder', 'add assignee');
 			expect(container.querySelector('label[for="assignedUserIds"]')).not.toBeInTheDocument();
 			expect(container.querySelector('fieldset')).not.toBeInTheDocument();
 
@@ -442,7 +451,9 @@ describe('ItemForm', () => {
 		it('renders the shared DatePicker instead of a native date input', () => {
 			const { container } = render(ItemForm, { props: defaultProps });
 
-			expect(screen.getByRole('button', { name: 'Due Date' })).toHaveTextContent('due date');
+			const dueDate = screen.getByRole('button', { name: 'Due Date' });
+			expect(dueDate).toHaveTextContent('set due date');
+			expect(dueDate).toHaveClass('font-sans', 'text-sm', 'leading-5', 'font-normal');
 			expect(container.querySelector('input[type="date"]')).not.toBeInTheDocument();
 		});
 
@@ -464,7 +475,7 @@ describe('ItemForm', () => {
 				props: { ...defaultProps, item: itemWithDueDate(null) }
 			});
 
-			expect(screen.getByRole('button', { name: 'Due Date' })).toHaveTextContent('due date');
+			expect(screen.getByRole('button', { name: 'Due Date' })).toHaveTextContent('set due date');
 		});
 
 		it('submits a selected ISO date', async () => {
@@ -515,7 +526,7 @@ describe('ItemForm', () => {
 			);
 			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
-			expect(trigger).toHaveTextContent('due date');
+			expect(trigger).toHaveTextContent('set due date');
 		});
 	});
 
@@ -563,14 +574,19 @@ describe('ItemForm', () => {
 
 		it('renders absent, short, and truncated notes previews without normalizing whitespace', () => {
 			render(ItemForm, { props: defaultProps });
+			const emptyNotesTrigger = screen.getByRole('button', { name: 'Notes' });
+			const emptyNotesPreview = screen.getByTestId('item-form-notes-preview');
+			expect(emptyNotesTrigger).toHaveClass('font-sans', 'text-sm', 'leading-5', 'font-normal', 'min-h-10');
 			expect(screen.getByRole('button', { name: 'Notes' }).parentElement?.previousElementSibling).toHaveClass('mt-2.5');
-			expect(screen.getByRole('button', { name: 'Notes' })).toHaveClass('items-start');
-			expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('notes');
+			expect(emptyNotesTrigger).not.toHaveClass('items-start');
+			expect(emptyNotesPreview).toHaveClass('font-sans', 'text-sm', 'leading-5', 'text-gray-500', 'italic');
+			expect(emptyNotesTrigger).toHaveTextContent('add note');
 			cleanup();
 
 			render(ItemForm, {
 				props: { ...defaultProps, item: { ...itemWithDueDate(null), notes: 'First line\nSecond line' } }
 			});
+			expect(screen.getByRole('button', { name: 'Notes' })).toHaveClass('min-h-24', 'items-start');
 			expect(screen.getByTestId('item-form-notes-preview').textContent).toBe('First line\nSecond line');
 			expect(screen.getByTestId('item-form-notes-open-cue')).toHaveTextContent('open');
 			cleanup();

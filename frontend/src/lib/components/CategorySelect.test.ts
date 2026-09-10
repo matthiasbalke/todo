@@ -34,6 +34,7 @@ describe('CategorySelect', () => {
 
 		const trigger = screen.getByRole('combobox', { name: 'Category' });
 		expect(trigger).toHaveValue('assign category');
+		expect(trigger).toHaveClass('text-gray-500', 'italic');
 		expect(screen.queryByTestId('category-select-swatch-uncategorized')).not.toBeInTheDocument();
 
 		await fireEvent.click(trigger);
@@ -71,6 +72,7 @@ describe('CategorySelect', () => {
 
 		const coloredSwatch = screen.getByTestId('category-select-swatch-category-1');
 		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Groceries');
+		expect(screen.getByRole('combobox', { name: 'Category' })).not.toHaveClass('text-gray-500', 'italic');
 		expect(coloredSwatch).toHaveClass('rounded-full');
 		expect(coloredSwatch).toHaveStyle({ backgroundColor: 'rgb(96, 165, 250)' });
 

@@ -9,6 +9,7 @@ describe('ComboboxPrimitive', () => {
 		render(ComboboxPrimitiveFixture);
 
 		const trigger = screen.getByRole('combobox', { name: 'Primitive fruit' });
+		expect(trigger).toHaveClass('font-sans', 'text-sm', 'leading-5', 'font-normal');
 		await fireEvent.input(trigger, { target: { value: 'ban' } });
 
 		const listbox = screen.getByRole('listbox', { name: 'Primitive fruit' });

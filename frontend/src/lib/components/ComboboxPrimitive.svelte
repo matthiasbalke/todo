@@ -7,9 +7,10 @@
 	import { onMount, tick } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import Button from './Button.svelte';
+	import { controlTypographyPresets } from './controlStyles';
 	import Icon from './Icon.svelte';
 
-	type Size = 'default' | 'compact' | 'dense';
+	type Size = 'default' | 'compact' | 'dense' | 'display';
 	type Appearance = 'default' | 'inline';
 
 	interface Props<T> {
@@ -27,6 +28,7 @@
 		class?: string;
 		size?: Size;
 		appearance?: Appearance;
+		mutedValue?: boolean;
 		type?: HTMLInputAttributes['type'];
 		errorMessage?: string | null;
 		emptyMessage?: string;
@@ -61,6 +63,7 @@
 		class: className = '',
 		size = 'default',
 		appearance = 'default',
+		mutedValue = false,
 		type = 'text',
 		errorMessage = null,
 		emptyMessage = 'No options available',
@@ -90,11 +93,16 @@
 	const accessibleName = $derived(label || placeholder);
 	const isError = $derived(Boolean(errorMessage));
 	const inputSizeClasses = $derived(
-		size === 'default'
-			? 'min-h-10 px-3 py-2 text-sm'
+		size === 'display'
+			? `min-h-10 px-3 py-2 ${controlTypographyPresets.default}`
+			: size === 'default'
+			? `min-h-10 px-3 py-2 ${controlTypographyPresets.default}`
 			: size === 'compact'
-				? 'px-3 py-1.5 text-sm'
-				: 'px-2 py-1 text-xs'
+				? `px-3 py-1.5 ${controlTypographyPresets.default}`
+				: `px-2 py-1 ${controlTypographyPresets.compact}`
+	);
+	const inputTextClasses = $derived(
+		`${size === 'dense' ? controlTypographyPresets.compact : controlTypographyPresets.default} font-normal`
 	);
 	const presentationClasses = $derived.by(() => {
 		if (isError) {
@@ -271,7 +279,9 @@
 				oninput={handleInput}
 				onkeydown={handleKeyDown}
 				onblur={onblur}
-				class="min-w-0 flex-1 bg-transparent p-0 text-left font-normal outline-none placeholder:text-gray-500 placeholder:italic disabled:cursor-not-allowed"
+				class="min-w-0 flex-1 bg-transparent p-0 text-left outline-none placeholder:text-gray-500 placeholder:italic disabled:cursor-not-allowed {inputTextClasses} {mutedValue
+					? 'text-gray-500 italic'
+					: 'text-gray-700'}"
 			/>
 			<Icon name={isOpen ? 'collapse' : 'expand'} size="compact" class="flex-shrink-0" />
 		</div>
