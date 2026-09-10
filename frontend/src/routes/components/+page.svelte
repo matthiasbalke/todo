@@ -374,25 +374,25 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 <Icon name="plus" />
 <Icon name="menu" label="Open menu" size="header" />
 <Icon name="done" size="itemStatus" class="text-green-600" />`;
+	const sections = [
+		{ id: 'button', label: 'Button', title: 'Button Component', content: buttonSection },
+		{ id: 'icon', label: 'Icon', title: 'Icon Component', content: iconSection },
+		{ id: 'toggle', label: 'Toggle', title: 'Toggle Component', content: toggleSection },
+		{ id: 'specialized-interaction-controls', label: 'Specialized Interaction Controls', title: 'Specialized Interaction Controls', content: specialized_interaction_controlsSection },
+		{ id: 'date-picker', label: 'DatePicker', title: 'DatePicker Component', content: date_pickerSection },
+		{ id: 'textarea', label: 'Textarea', title: 'Textarea Component', content: textareaSection },
+		{ id: 'text-input', label: 'TextInput', title: 'TextInput Component', content: text_inputSection },
+		{ id: 'editable-label', label: 'EditableLabel', title: 'EditableLabel Component', content: editable_labelSection },
+		{ id: 'email-input', label: 'EmailInput', title: 'EmailInput Component', content: email_inputSection },
+		{ id: 'member-invite-email-input', label: 'MemberInviteEmailInput', title: 'MemberInviteEmailInput Component', content: member_invite_email_inputSection },
+		{ id: 'select', label: 'Select', title: 'Select Component', content: selectSection },
+		{ id: 'multi-select', label: 'MultiSelect', title: 'MultiSelect Component', content: multi_selectSection },
+		{ id: 'category-select', label: 'CategorySelect', title: 'CategorySelect Component', content: category_selectSection },
+		{ id: 'timezone-picker', label: 'TimezonePicker', title: 'TimezonePicker Component', content: timezone_pickerSection }
+	];
 </script>
 
-<div class="min-h-screen bg-gray-50 p-8">
-	<div class="max-w-4xl mx-auto">
-		<div class="mb-12">
-			<h1 class="text-4xl font-bold text-gray-900 mb-2">Component Library Showcase</h1>
-			<p class="text-gray-600">
-				{#if dev}
-					<span class="inline-flex items-center gap-2 bg-yellow-50 border border-yellow-200 px-3 py-1 rounded text-sm">
-						<span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
-						Development mode — this route is hidden in production
-					</span>
-				{/if}
-			</p>
-		</div>
-
-		<!-- Button Section -->
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-8">Button Component</h2>
+{#snippet buttonSection()}
 			<p class="text-gray-600 mb-8">
 				A native button primitive with semantic tones, appearances, disabled and loading states,
 				focus treatment, and support for standard button attributes and events.
@@ -567,10 +567,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					<code>aria-label</code>, <code>data-*</code>, and <code>onclick</code> are forwarded.
 				</p>
 			</div>
-		</section>
+{/snippet}
 
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-4">Icon Component</h2>
+{#snippet iconSection()}
 			<p class="text-gray-600 mb-8">
 				A semantic Lucide-backed icon wrapper with shared app names, decorative defaults,
 				accessible labels, and named sizing presets.
@@ -630,10 +629,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 				<h3 class="text-lg font-semibold text-gray-800 mb-4">Usage Example</h3>
 				<pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{iconCode}</code></pre>
 			</div>
-		</section>
+{/snippet}
 
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-4">Toggle Component</h2>
+{#snippet toggleSection()}
 			<p class="text-gray-600 mb-8">
 				An accessible switch for persistent boolean settings. Toggle owns its track, thumb,
 				state, focus, transition, and disabled presentation.
@@ -699,10 +697,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					</table>
 				</div>
 			</div>
-		</section>
+{/snippet}
 
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-4">Specialized Interaction Controls</h2>
+{#snippet specialized_interaction_controlsSection()}
 			<p class="text-gray-600 mb-8">
 				Domain controls own state-dependent visuals and accessibility while parents keep business
 				and gesture orchestration.
@@ -737,11 +734,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 				Consumers pass date, color, completion, star, and geometry state without visual utility
 				classes.
 			</p>
-		</section>
+{/snippet}
 
-		<!-- DatePicker Section -->
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-8">DatePicker Component</h2>
+{#snippet date_pickerSection()}
 			<p class="text-gray-600 mb-8">
 				A custom, accessible calendar popover for selecting one nullable ISO date without
 				timezone conversion.
@@ -906,11 +901,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					</table>
 				</div>
 			</div>
-		</section>
+{/snippet}
 
-		<!-- Textarea Section -->
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-8">Textarea Component</h2>
+{#snippet textareaSection()}
 			<p class="text-gray-600 mb-8">
 				A native multiline text field with bindable values, validation, accessible descriptions,
 				configurable rows and resize behavior, and standard textarea attribute forwarding.
@@ -1085,11 +1078,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					</table>
 				</div>
 			</div>
-		</section>
+{/snippet}
 
-		<!-- TextInput Section -->
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-8">TextInput Component</h2>
+{#snippet text_inputSection()}
 			<p class="text-gray-600 mb-8">
 				A reusable text input with optional custom validation. Displays error messages and applies error styling automatically.
 			</p>
@@ -1221,11 +1212,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					</table>
 				</div>
 			</div>
-		</section>
+{/snippet}
 
-		<!-- EditableLabel Section -->
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-8">EditableLabel Component</h2>
+{#snippet editable_labelSection()}
 			<p class="text-gray-600 mb-8">
 				An inline editable field that switches from a read-only label to an input. It supports
 				validation, keyboard controls, and disabled or saving states without making persistence
@@ -1445,11 +1434,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					</table>
 				</div>
 			</div>
-		</section>
+{/snippet}
 
-		<!-- EmailInput Section -->
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-8">EmailInput Component</h2>
+{#snippet email_inputSection()}
 			<p class="text-gray-600 mb-8">
 				A specialized text input that extends TextInput with built-in email validation. Validates email format including @ symbol and domain.
 			</p>
@@ -1627,11 +1614,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					</li>
 				</ul>
 			</div>
-		</section>
+{/snippet}
 
-		<!-- MemberInviteEmailInput Section -->
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-8">MemberInviteEmailInput Component</h2>
+{#snippet member_invite_email_inputSection()}
 			<p class="text-gray-600 mb-8">
 				A membership invite email field that keeps EmailInput validation while exposing suggested members through a custom combobox list.
 			</p>
@@ -1721,11 +1706,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					Standard native input attributes and handlers supported by <code>EmailInput</code> are forwarded.
 				</p>
 			</div>
-		</section>
+{/snippet}
 
-		<!-- Select Section -->
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-8">Select Component</h2>
+{#snippet selectSection()}
 			<p class="text-gray-600 mb-8">
 				A reusable searchable single-select component with keyboard navigation, custom validation, predefined typed values, and accessibility support.
 			</p>
@@ -1923,11 +1906,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					</div>
 				</div>
 			</div>
-		</section>
+{/snippet}
 
-		<!-- MultiSelect Section -->
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-8">MultiSelect Component</h2>
+{#snippet multi_selectSection()}
 			<p class="text-gray-600 mb-8">
 				A reusable searchable multi-select component that extends the shared combobox
 				interaction pattern while keeping the option list open for repeated selection.
@@ -2023,11 +2004,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					</table>
 				</div>
 			</div>
-		</section>
+{/snippet}
 
-		<!-- CategorySelect Section -->
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-8">CategorySelect Component</h2>
+{#snippet category_selectSection()}
 			<p class="text-gray-600 mb-8">
 				A category-specific Select adapter that preserves shared combobox behavior while
 				displaying category colors, aligned colorless categories, and an uncategorized value.
@@ -2120,11 +2099,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					focus handling, and listbox semantics.
 				</p>
 			</div>
-		</section>
+{/snippet}
 
-		<!-- TimezonePicker Section -->
-		<section class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-8">TimezonePicker Component</h2>
+{#snippet timezone_pickerSection()}
 			<p class="text-gray-600 mb-8">
 				A timezone-specific Select that exposes exact IANA identifiers, displays friendly
 				region labels, includes UTC, and falls back to the selected and browser-detected zones
@@ -2199,7 +2176,41 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					</table>
 				</div>
 			</div>
-		</section>
+{/snippet}
+
+<div class="min-h-screen bg-gray-50 p-4 sm:p-8">
+	<div class="max-w-7xl mx-auto">
+		<div class="mb-12">
+			<h1 class="text-4xl font-bold text-gray-900 mb-2">Component Library Showcase</h1>
+			<p class="text-gray-600">
+				{#if dev}
+					<span class="inline-flex items-center gap-2 bg-yellow-50 border border-yellow-200 px-3 py-1 rounded text-sm">
+						<span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
+						Development mode — this route is hidden in production
+					</span>
+				{/if}
+			</p>
+		</div>
+
+		<div class="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-8">
+			<nav aria-label="Component sections" class="sticky top-0 z-10 mb-6 self-start bg-gray-50 py-2 lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:overflow-y-auto">
+				<ul class="flex gap-2 overflow-x-auto lg:flex-col">
+					{#each sections as section (section.id)}
+						<li class="shrink-0">
+							<a href={'#' + section.id} class="flex min-h-11 items-center rounded px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset">{section.label}</a>
+						</li>
+					{/each}
+				</ul>
+			</nav>
+			<main class="min-w-0">
+				{#each sections as section (section.id)}
+					<section id={section.id} aria-labelledby={section.id + '-heading'} class="scroll-mt-20 bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-8 mb-8 lg:scroll-mt-4">
+						<h2 id={section.id + '-heading'} class="text-2xl font-bold text-gray-900 mb-8">{section.title}</h2>
+						{@render section.content()}
+					</section>
+				{/each}
+			</main>
+		</div>
 
 		<!-- Future Components Notice -->
 		<div class="bg-blue-50 border border-blue-200 rounded-lg p-6">

@@ -591,3 +591,25 @@ describe('ComponentsPage TimezonePicker showcase', () => {
 		}
 	});
 });
+
+
+describe('ComponentsPage section navigation', () => {
+	afterEach(cleanup);
+
+	it('links to every documented section in display order with unique targets', () => {
+		render(ComponentsPage);
+		const navigation = screen.getByRole('navigation', { name: 'Component sections' });
+		const links = within(navigation).getAllByRole('link');
+		const headings = screen.getAllByRole('heading', { level: 2 });
+		expect(headings).toHaveLength(14);
+		expect(links).toHaveLength(headings.length);
+		expect(new Set(links.map((link) => link.getAttribute('href'))).size).toBe(links.length);
+		for (const [index, link] of links.entries()) {
+			const section = headings[index].closest('section')!;
+			expect(link).toHaveAttribute('href', '#' + section.id);
+			expect(section).toHaveAttribute('aria-labelledby', headings[index].id);
+			expect(section).toHaveAccessibleName(headings[index].textContent!);
+		}
+		expect(within(navigation).getByRole('link', { name: 'MultiSelect', exact: true })).toHaveAttribute('href', '#multi-select');
+	});
+});

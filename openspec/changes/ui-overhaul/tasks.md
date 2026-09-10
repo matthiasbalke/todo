@@ -45,7 +45,7 @@
 ## 7. Components Page Checkpoint
 
 - [x] 7.1 Add a `MultiSelect` section to the components page near the existing `Select` section, including examples for empty state, multiple selected values, custom avatar option rendering, custom selected rendering, and callback/bound value feedback.
-- [ ] 7.2 Add components-page section anchors and responsive sidebar/top navigation generated from a local section registry, and verify tests cover navigation links, target section ids, and presence of all documented component sections.
+- [x] 7.2 Add components-page section anchors and responsive sidebar/top navigation generated from a local section registry, and verify tests cover navigation links, target section ids, and presence of all documented component sections.
 - [ ] 7.3 Stop for review: inspect desktop sidebar navigation, mobile navigation, and the MultiSelect showcase examples before final verification.
 
 ## 8. Shared Style Foundation Checkpoint
