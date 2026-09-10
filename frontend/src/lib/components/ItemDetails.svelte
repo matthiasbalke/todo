@@ -4,6 +4,7 @@
   import CategorySelect from './CategorySelect.svelte';
   import DatePicker from './DatePicker.svelte';
   import ItemAuditMetadata from './ItemAuditMetadata.svelte';
+  import Icon from './Icon.svelte';
   import Select from './Select.svelte';
   import StarToggle from './StarToggle.svelte';
   import Textarea from './Textarea.svelte';
@@ -52,9 +53,11 @@
       containerClass="min-w-0 flex-1"
     />
     <span
-      class="flex-shrink-0 text-lg leading-none {item.starred ? 'text-warning-highlight' : 'text-inactive'}"
+      class="flex-shrink-0 {item.starred ? 'text-warning-highlight' : 'text-inactive'}"
       aria-label={item.starred ? 'Starred' : 'Not starred'}
-    >★</span>
+    >
+      <Icon name="star" size="action" />
+    </span>
   </div>
 
   <CategorySelect

@@ -148,7 +148,7 @@
   const visibleItemCount = $derived(
     hideDone ? filtered.filter((item) => !item.done).length : filtered.length
   );
-  const sortLabel = $derived(`${sortFields.find(f => f.value === sortField)?.label} ${sortDirection === 'ASC' ? '↑' : '↓'}`);
+  const sortLabel = $derived(sortFields.find(f => f.value === sortField)?.label ?? sortField);
   const activeFilterChips = $derived.by((): FilterChip[] => {
     const chips: FilterChip[] = [];
     if (filters.starredOnly) {
@@ -397,7 +397,7 @@
                       onclick={() => { filters = { ...filters, starredOnly: opt.value }; }}
                     >
                       {opt.label}
-                      {#if filters.starredOnly === opt.value}<span>✓</span>{/if}
+                      {#if filters.starredOnly === opt.value}<Icon name="check" size="metadata" />{/if}
                     </Button>
                   {/each}
                   <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Due date</p>
@@ -410,7 +410,7 @@
                       onclick={() => { filters = { ...filters, hideFuture: opt.value === 'hideFuture', hideUndated: opt.value === 'hideUndated' }; }}
                     >
                       {opt.label}
-                      {#if dueDateValue === opt.value}<span>✓</span>{/if}
+                      {#if dueDateValue === opt.value}<Icon name="check" size="metadata" />{/if}
                     </Button>
                   {/each}
                   <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Assigned</p>
@@ -422,7 +422,7 @@
                     onclick={() => { filters = { ...filters, assigneeFilters: [] }; }}
                   >
                     All items
-                    {#if filters.assigneeFilters.length === 0}<span>✓</span>{/if}
+                    {#if filters.assigneeFilters.length === 0}<Icon name="check" size="metadata" />{/if}
                   </Button>
                   {#each assigneeFilterOptions as opt}
                     <Button tone="neutral" appearance="bare"
@@ -433,7 +433,7 @@
                       onclick={() => { toggleAssigneeFilter(opt.value); }}
                     >
                       {opt.label}
-                      {#if filters.assigneeFilters.includes(opt.value)}<span>✓</span>{/if}
+                      {#if filters.assigneeFilters.includes(opt.value)}<Icon name="check" size="metadata" />{/if}
                     </Button>
                   {/each}
                   <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Checked</p>
@@ -445,7 +445,7 @@
                     onclick={() => { updateHideDone(false); }}
                   >
                     Show checked
-                    {#if !hideDone}<span>✓</span>{/if}
+                    {#if !hideDone}<Icon name="check" size="metadata" />{/if}
                   </Button>
                   <Button tone="neutral" appearance="bare"
                     size="menu-indented"
@@ -455,7 +455,7 @@
                     onclick={() => { updateHideDone(true); }}
                   >
                     Hide checked
-                    {#if hideDone}<span>✓</span>{/if}
+                    {#if hideDone}<Icon name="check" size="metadata" />{/if}
                   </Button>
                 </div>
               {/if}
@@ -468,7 +468,10 @@
                 onclick={() => { sortSubmenuOpen = !sortSubmenuOpen; filterSubmenuOpen = false; }}
               >
                 <span>Sort</span>
-                <span class="text-subdued text-xs">{sortFields.find(f => f.value === sortField)?.label} {sortDirection === 'ASC' ? '↑' : '↓'}</span>
+                <span class="text-subdued text-xs inline-flex items-center gap-1">
+                  {sortFields.find(f => f.value === sortField)?.label}
+                  <Icon name={sortDirection === 'ASC' ? 'sortAscending' : 'sortDescending'} size="metadata" />
+                </span>
               </Button>
               {#if sortSubmenuOpen}
                 <div class="bg-canvas border-t border-border-subtle">
@@ -482,7 +485,7 @@
                     >
                       {f.label}
                       {#if sortField === f.value}
-                        <span>✓</span>
+                        <Icon name="check" size="metadata" />
                       {/if}
                     </Button>
                   {/each}
@@ -493,7 +496,8 @@
                     weight="normal"
                     onclick={() => { sortDirection = sortDirection === 'ASC' ? 'DESC' : 'ASC'; }}
                   >
-                    {sortDirection === 'ASC' ? '↑ Ascending' : '↓ Descending'}
+                    <Icon name={sortDirection === 'ASC' ? 'sortAscending' : 'sortDescending'} size="metadata" />
+                    {sortDirection === 'ASC' ? 'Ascending' : 'Descending'}
                   </Button>
                 </div>
               {/if}

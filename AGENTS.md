@@ -83,6 +83,10 @@ zsh scripts/tests/local-domain.test.sh # local HTTPS helper tests
 zsh -n path/to/script.sh               # syntax check a helper
 ```
 
+## Development Conventions
+
+- Always remove unused imports from implementation and test files when creating or modifying code.
+
 ## Shell Helper Conventions
 
 - Repository-owned `.sh` helper scripts use `#!/usr/bin/env zsh`.

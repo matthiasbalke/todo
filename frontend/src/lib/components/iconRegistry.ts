@@ -1,5 +1,7 @@
 import type { Component } from 'svelte';
 import AlarmClock from '@lucide/svelte/icons/alarm-clock';
+import ArrowDown from '@lucide/svelte/icons/arrow-down';
+import ArrowUp from '@lucide/svelte/icons/arrow-up';
 import CalendarDays from '@lucide/svelte/icons/calendar-days';
 import Check from '@lucide/svelte/icons/check';
 import ChevronDown from '@lucide/svelte/icons/chevron-down';
@@ -45,6 +47,8 @@ export type AppIconName =
 	| 'plus'
 	| 'recurrence'
 	| 'save'
+	| 'sortAscending'
+	| 'sortDescending'
 	| 'star'
 	| 'status'
 	| 'time';
@@ -107,6 +111,8 @@ export const appIcons: Record<AppIconName, Component<any>> = {
 	plus: Plus,
 	recurrence: Repeat,
 	save: Save,
+	sortAscending: ArrowUp,
+	sortDescending: ArrowDown,
 	star: Star,
 	status: Circle,
 	time: AlarmClock

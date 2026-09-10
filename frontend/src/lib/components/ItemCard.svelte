@@ -187,9 +187,11 @@
       <StarToggle starred={item.starred} onactivate={handleStar} />
     {:else}
       <span
-        class="flex-shrink-0 text-lg leading-none {item.starred ? 'text-warning-highlight' : 'text-inactive'}"
+        class="flex-shrink-0 {item.starred ? 'text-warning-highlight' : 'text-inactive'}"
         aria-label={item.starred ? 'Starred' : 'Not starred'}
-      >★</span>
+      >
+        <Icon name="star" size="action" />
+      </span>
     {/if}
   </div>
 </div>

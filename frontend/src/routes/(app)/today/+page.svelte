@@ -91,7 +91,7 @@
   const visibleItemCount = $derived(
     entries.filter((entry) => (!starredOnly || entry.starred) && (!hideDone || !entry.done)).length
   );
-  const sortLabel = $derived(`${sortFields.find(field => field.value === sortField)?.label} ${sortDirection === 'ASC' ? '↑' : '↓'}`);
+  const sortLabel = $derived(sortFields.find(field => field.value === sortField)?.label ?? sortField);
   const activeFilterChips = $derived.by((): FilterChip[] => {
     const chips: FilterChip[] = [];
     if (starredOnly) {
@@ -193,7 +193,7 @@
                     onclick={() => { starredOnly = option.value; }}
                   >
                     {option.label}
-                    {#if starredOnly === option.value}<span>✓</span>{/if}
+                    {#if starredOnly === option.value}<Icon name="check" size="metadata" />{/if}
                   </Button>
                 {/each}
                 <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Checked</p>
@@ -207,7 +207,7 @@
                   onclick={() => { hideDone = false; }}
                 >
                   Show checked
-                  {#if !hideDone}<span>✓</span>{/if}
+                  {#if !hideDone}<Icon name="check" size="metadata" />{/if}
                 </Button>
                 <Button
                   tone="neutral"
@@ -219,7 +219,7 @@
                   onclick={() => { hideDone = true; }}
                 >
                   Hide checked
-                  {#if hideDone}<span>✓</span>{/if}
+                  {#if hideDone}<Icon name="check" size="metadata" />{/if}
                 </Button>
               </div>
             {/if}
@@ -237,7 +237,10 @@
               }}
             >
               <span>Sort</span>
-              <span class="text-subdued text-xs">{sortFields.find(field => field.value === sortField)?.label} {sortDirection === 'ASC' ? '↑' : '↓'}</span>
+              <span class="text-subdued text-xs inline-flex items-center gap-1">
+                {sortFields.find(field => field.value === sortField)?.label}
+                <Icon name={sortDirection === 'ASC' ? 'sortAscending' : 'sortDescending'} size="metadata" />
+              </span>
             </Button>
             {#if sortSubmenuOpen}
               <div class="bg-canvas border-t border-border-subtle">
@@ -252,7 +255,7 @@
                     onclick={() => { sortField = field.value; }}
                   >
                     {field.label}
-                    {#if sortField === field.value}<span>✓</span>{/if}
+                    {#if sortField === field.value}<Icon name="check" size="metadata" />{/if}
                   </Button>
                 {/each}
                 <div class="border-t border-border mx-4 my-1"></div>
@@ -264,7 +267,8 @@
                   weight="normal"
                   onclick={() => { sortDirection = sortDirection === 'ASC' ? 'DESC' : 'ASC'; }}
                 >
-                  {sortDirection === 'ASC' ? '↑ Ascending' : '↓ Descending'}
+                  <Icon name={sortDirection === 'ASC' ? 'sortAscending' : 'sortDescending'} size="metadata" />
+                  {sortDirection === 'ASC' ? 'Ascending' : 'Descending'}
                 </Button>
               </div>
             {/if}

@@ -200,8 +200,8 @@ describe('Button', () => {
 	});
 
 	it('supports accessible icon-only usage', () => {
-		render(Button, { props: { children: text('★'), size: 'icon', 'aria-label': 'Star item' } });
-		expect(screen.getByRole('button', { name: 'Star item' })).toBeInTheDocument();
+		render(Button, { props: { children: text('Icon'), size: 'icon', 'aria-label': 'Run action' } });
+		expect(screen.getByRole('button', { name: 'Run action' })).toBeInTheDocument();
 	});
 
 	it('prevents clicks while disabled', async () => {

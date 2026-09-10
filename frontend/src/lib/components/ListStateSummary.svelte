@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Button from './Button.svelte';
+	import Icon from './Icon.svelte';
 
 	export interface FilterChip {
 		id: string;
@@ -35,6 +36,9 @@
 	} = $props();
 
 	let sortOpen = $state(false);
+	const sortDirectionLabel = $derived(sortDirection === 'ASC' ? 'ascending' : 'descending');
+	const sortDirectionText = $derived(sortDirection === 'ASC' ? 'Ascending' : 'Descending');
+	const sortDirectionIcon = $derived(sortDirection === 'ASC' ? 'sortAscending' : 'sortDescending');
 </script>
 
 <div class="mb-4 flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -46,11 +50,12 @@
 			type="button"
 			class="inline-flex h-6 items-center rounded-full border border-primary-soft bg-primary-surface px-2 text-xs text-primary-strong hover:bg-primary-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-1 control-focus"
 			onclick={() => { sortOpen = !sortOpen; }}
-			aria-label="Change sort order: {sortLabel}"
+			aria-label="Change sort order: {sortLabel} {sortDirectionLabel}"
 			aria-haspopup="menu"
 			aria-expanded={sortOpen}
 		>
 			Sort: {sortLabel}
+			<Icon name={sortDirectionIcon} size="metadata" />
 		</button>
 		{#if sortOpen}
 			<button
@@ -73,7 +78,7 @@
 					>
 						{option.label}
 						{#if sortField === option.value}
-							<span>✓</span>
+							<Icon name="check" size="metadata" />
 						{/if}
 					</Button>
 				{/each}
@@ -86,7 +91,8 @@
 					weight="normal"
 					onclick={() => { onSortDirectionChange(sortDirection === 'ASC' ? 'DESC' : 'ASC'); }}
 				>
-					{sortDirection === 'ASC' ? '↑ Ascending' : '↓ Descending'}
+					<Icon name={sortDirectionIcon} size="metadata" />
+					{sortDirectionText}
 				</Button>
 			</div>
 		{/if}
@@ -102,7 +108,7 @@
 				aria-label="Clear {filter.label} filter"
 				onclick={filter.onreset}
 			>
-				x
+				<Icon name="close" size="metadata" />
 			</button>
 		</span>
 	{/each}

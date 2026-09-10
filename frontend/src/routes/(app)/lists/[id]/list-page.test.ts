@@ -435,11 +435,10 @@ describe('ListPage menu presentation', () => {
 		expect(filterButton).toHaveClass('justify-between', 'font-normal');
 		await fireEvent.click(filterButton);
 
-		const selected = screen.getAllByRole('button', { name: 'All items ✓' })[0];
+		const selected = screen.getAllByRole('button', { name: 'All items' })[0];
 		const unselected = screen.getByRole('button', { name: 'Starred only' });
 		expect(selected).toHaveClass('justify-between', 'font-normal', 'text-menu-selected');
-		expect(selected.querySelector('span:last-child')).toHaveTextContent('✓');
-		expect(selected.querySelector('span:last-child')).not.toHaveAttribute('class');
+		expect(selected.querySelector('svg')).toHaveClass('lucide-check');
 		expect(selected).not.toHaveClass('font-medium');
 		expect(unselected).toHaveClass('font-normal', 'text-label');
 		expect(unselected).not.toHaveClass('text-menu-selected', 'font-medium');
@@ -448,9 +447,9 @@ describe('ListPage menu presentation', () => {
 		const sortButton = screen.getByRole('button', { name: /Sort/ });
 		await fireEvent.click(sortButton);
 
-		const selectedSort = screen.getByRole('button', { name: 'Manual ✓' });
+		const selectedSort = screen.getByRole('button', { name: 'Manual' });
 		expect(selectedSort).toHaveClass('text-menu-selected');
-		expect(selectedSort.querySelector('span:last-child')).toHaveTextContent('✓');
+		expect(selectedSort.querySelector('svg')).toHaveClass('lucide-check');
 		expect(screen.getByRole('button', { name: 'Created' })).toHaveClass('text-label');
 
 		await fireEvent.click(sortButton);
@@ -461,28 +460,27 @@ describe('ListPage menu presentation', () => {
 
 		await fireEvent.click(inactiveHideChecked);
 
-		const activeHideChecked = screen.getByRole('button', { name: 'Hide checked ✓' });
+		const activeHideChecked = screen.getByRole('button', { name: 'Hide checked' });
 		expect(activeHideChecked).toHaveClass('text-menu-selected');
-		expect(activeHideChecked.querySelector('span:last-child')).toHaveTextContent('✓');
-		expect(activeHideChecked.querySelector('span:last-child')).not.toHaveAttribute('class');
+		expect(activeHideChecked.querySelector('svg')).toHaveClass('lucide-check');
 	});
 
 	it('shows summary state and opens sort controls from the summary', async () => {
 		render(ListPage, { props: { data: mockData } });
 
 		expect(screen.getByText('0 items')).toBeInTheDocument();
-		const summarySort = screen.getByRole('button', { name: 'Change sort order: Manual ↑' });
-		expect(summarySort).toHaveTextContent('Sort: Manual ↑');
+		const summarySort = screen.getByRole('button', { name: 'Change sort order: Manual ascending' });
+		expect(summarySort).toHaveTextContent('Sort: Manual');
 		expect(screen.queryByRole('button', { name: /Clear .* filter/ })).not.toBeInTheDocument();
 
 		await fireEvent.click(summarySort);
 		expect(screen.queryByRole('button', { name: 'Filter' })).not.toBeInTheDocument();
 		expect(screen.getByText('Sort by')).toBeInTheDocument();
 		await fireEvent.click(screen.getByRole('button', { name: 'Created' }));
-		expect(screen.getByRole('button', { name: 'Change sort order: Created ↑' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Change sort order: Created ascending' })).toBeInTheDocument();
 
-		await fireEvent.click(screen.getByRole('button', { name: '↑ Ascending' }));
-		expect(screen.getByRole('button', { name: 'Change sort order: Created ↓' })).toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: 'Ascending' }));
+		expect(screen.getByRole('button', { name: 'Change sort order: Created descending' })).toBeInTheDocument();
 	});
 
 	it('shows active filter chips and resets only the selected filter', async () => {

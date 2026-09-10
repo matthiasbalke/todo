@@ -156,7 +156,9 @@
 	const buttonVariantsCode = `<Button onclick={() => handleAction('Primary')}>Primary action</Button>
 <Button tone="neutral" appearance="outline">Secondary action</Button>
 <Button tone="danger" appearance="solid">Delete item</Button>
-<Button tone="neutral" appearance="ghost" size="icon" aria-label="Open menu">⋮</Button>
+<Button tone="neutral" appearance="ghost" size="icon" aria-label="Open menu">
+  <Icon name="menu" size="control" />
+</Button>
 <Button tone="neutral" appearance="bare" size="menu" align="start" weight="normal">Menu item</Button>`;
 
 	const buttonStatesCode = `<Button loading={isSaving} loadingLabel="Saving…">
@@ -447,7 +449,9 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 							Danger action
 						</Button>
 						<Button tone="neutral" appearance="ghost" onclick={() => handleButtonAction('Ghost')}>Ghost action</Button>
-						<Button tone="neutral" appearance="bare" size="icon" aria-label="Icon action">⋮</Button>
+						<Button tone="neutral" appearance="bare" size="icon" aria-label="Icon action">
+							<Icon name="menu" size="control" />
+						</Button>
 					</div>
 					<p class="text-xs text-muted mt-3">
 						Last action: <code>{lastButtonAction}</code>
@@ -468,7 +472,7 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 						Full-width button
 					</Button>
 					<Button class="w-full mt-2" tone="neutral" appearance="bare" size="menu" align="between" weight="normal" selected>
-						<span>Selected menu option</span><span>✓</span>
+						<span>Selected menu option</span><Icon name="check" size="metadata" />
 					</Button>
 					<p class="text-xs text-muted mt-2">Menu rows use regular weight; selected options use blue text and a selection indicator.</p>
 				</div>

@@ -92,7 +92,7 @@ describe('Today page', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: /Sort/ }));
 		const alphabetical = screen.getByRole('button', { name: 'Alphabetical' });
-		const dueDate = screen.getByRole('button', { name: /^Due date ✓$/ });
+		const dueDate = screen.getByRole('button', { name: /^Due date$/ });
 		expect(alphabetical.compareDocumentPosition(dueDate) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Manual' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Starred only' })).not.toBeInTheDocument();
@@ -102,18 +102,18 @@ describe('Today page', () => {
 		render(TodayPage);
 
 		expect(screen.getByText('3 items')).toBeInTheDocument();
-		const summarySort = screen.getByRole('button', { name: 'Change sort order: Due date ↑' });
-		expect(summarySort).toHaveTextContent('Sort: Due date ↑');
+		const summarySort = screen.getByRole('button', { name: 'Change sort order: Due date ascending' });
+		expect(summarySort).toHaveTextContent('Sort: Due date');
 		expect(screen.queryByRole('button', { name: /Clear .* filter/ })).not.toBeInTheDocument();
 
 		await fireEvent.click(summarySort);
 		expect(screen.queryByRole('button', { name: 'Filter' })).not.toBeInTheDocument();
 		expect(screen.getByText('Sort by')).toBeInTheDocument();
 		await fireEvent.click(screen.getByRole('button', { name: 'Alphabetical' }));
-		expect(screen.getByRole('button', { name: 'Change sort order: Alphabetical ↑' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Change sort order: Alphabetical ascending' })).toBeInTheDocument();
 
-		await fireEvent.click(screen.getByRole('button', { name: '↑ Ascending' }));
-		expect(screen.getByRole('button', { name: 'Change sort order: Alphabetical ↓' })).toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: 'Ascending' }));
+		expect(screen.getByRole('button', { name: 'Change sort order: Alphabetical descending' })).toBeInTheDocument();
 	});
 
 	it('shows supported filter chips and resets one Today filter at a time', async () => {

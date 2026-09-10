@@ -133,7 +133,9 @@
     <!-- Header -->
     <div class="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
       <h2 class="font-semibold text-heading">Categories</h2>
-      <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={onclose} aria-label="Close">✕</Button>
+      <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={onclose} aria-label="Close">
+        <Icon name="close" size="controlCompact" />
+      </Button>
     </div>
 
     {#if error}
@@ -189,8 +191,12 @@
                     {/if}
                   </div>
                 </div>
-                <Button tone="success" appearance="bare" size="icon" onclick={() => commitEdit(cat)} aria-label="Save">✓</Button>
-                <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={cancelEdit} aria-label="Cancel">✕</Button>
+                <Button tone="success" appearance="bare" size="icon" onclick={() => commitEdit(cat)} aria-label="Save">
+                  <Icon name="save" size="controlCompact" />
+                </Button>
+                <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={cancelEdit} aria-label="Cancel">
+                  <Icon name="cancel" size="controlCompact" />
+                </Button>
               {:else}
                 <div class="flex-1 flex items-center gap-2 min-w-0">
                   {#if cat.color}
@@ -204,8 +210,12 @@
                     onkeydown={(e) => { if (e.key === 'Enter') startEdit(cat); }}
                   >{cat.name}</span>
                 </div>
-                <Button tone="neutral" appearance="bare" size="icon" emphasis="subtle" onclick={() => startEdit(cat)} class="sm:opacity-0 sm:group-hover:opacity-100" aria-label="Rename">✏️</Button>
-                <Button tone="danger" appearance="bare" size="icon" onclick={() => removeCat(cat)} class="sm:opacity-0 sm:group-hover:opacity-100" aria-label="Delete">🗑</Button>
+                <Button tone="neutral" appearance="bare" size="icon" emphasis="subtle" onclick={() => startEdit(cat)} class="sm:opacity-0 sm:group-hover:opacity-100" aria-label="Rename">
+                  <Icon name="edit" size="controlCompact" />
+                </Button>
+                <Button tone="danger" appearance="bare" size="icon" onclick={() => removeCat(cat)} class="sm:opacity-0 sm:group-hover:opacity-100" aria-label="Delete">
+                  <Icon name="delete" size="controlCompact" />
+                </Button>
               {/if}
             </div>
           {/each}
