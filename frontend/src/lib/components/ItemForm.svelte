@@ -470,7 +470,7 @@
             bind:element={notesTextarea}
             bind:value={notesEditorDraft}
             ariaLabel="Notes"
-            placeholder="Notes"
+            placeholder="add note"
             rows={14}
             resize="none"
             appearance="inline"

@@ -40,6 +40,8 @@
 - [x] 6.7 Implement fullscreen notes editing with top chrome containing left Lucide `ChevronLeft` plus `Cancel`, centered `Notes`, and right-aligned `Save`, plus Escape dismissal, autofocus, focus return, no backdrop dismissal, desktop width constrained to the regular list content width, and internal-focus handling; verify `ItemForm` tests assert the header controls and that the new-item form does not call `oncancel` while the fullscreen editor is used.
 - [x] 6.8 Stop for review: inspect new and existing item forms on mobile and desktop, including empty rows, selected values, assignee multi-select, notes preview, fullscreen notes, submit/cancel, and draft behavior before starting components-page documentation.
 
+- [x] 6.9 Match the empty fullscreen notes textarea placeholder to the preview's `add note` placeholder.
+
 ## 7. Components Page Checkpoint
 
 - [x] 7.1 Add a `MultiSelect` section to the components page near the existing `Select` section, including examples for empty state, multiple selected values, custom avatar option rendering, custom selected rendering, and callback/bound value feedback.

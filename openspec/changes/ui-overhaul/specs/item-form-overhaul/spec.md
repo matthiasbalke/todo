@@ -77,6 +77,7 @@ The item form SHALL display notes with a larger preview area and SHALL open a fu
 #### Scenario: Notes are absent
 - **WHEN** an item form has no notes
 - **THEN** the notes row displays the notes placeholder in the larger preview area
+- **AND** opening the fullscreen editor displays the same `add note` placeholder when the notes value is empty
 
 #### Scenario: Notes are present
 - **WHEN** an item form has notes longer than the preview length
