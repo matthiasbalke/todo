@@ -88,12 +88,12 @@
 </script>
 
 <div class="flex-1 flex items-center justify-center p-4">
-  <div class="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-2">Welcome</h1>
-    <p class="text-gray-500 text-sm mb-6">{registrationEnabled ? 'Sign in or create an account' : 'Sign in'}</p>
+  <div class="w-full max-w-sm bg-surface rounded-2xl shadow-sm border border-border-subtle p-8">
+    <h1 class="text-2xl font-bold text-heading mb-2">Welcome</h1>
+    <p class="text-muted text-sm mb-6">{registrationEnabled ? 'Sign in or create an account' : 'Sign in'}</p>
 
     {#if errorMessage}
-      <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+      <div class="mb-4 p-3 bg-danger-surface border border-danger-soft rounded-lg text-sm text-danger-strong">
         {errorMessage}
       </div>
     {/if}
@@ -168,10 +168,10 @@
         {#if registrationEnabled}
           <div class="relative my-4">
             <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-200"></div>
+              <div class="w-full border-t border-border"></div>
             </div>
-            <div class="relative flex justify-center text-xs text-gray-400">
-              <span class="bg-white px-2">or</span>
+            <div class="relative flex justify-center text-xs text-subdued">
+              <span class="bg-surface px-2">or</span>
             </div>
           </div>
 

@@ -34,9 +34,9 @@
 		event.preventDefault();
 		activate(event);
 	}}
-	class="{sizeClasses[size]} flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 {done
-		? 'text-green-500'
-		: 'text-gray-300 hover:text-green-400'}"
+	class="{sizeClasses[size]} flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-success focus-visible:ring-offset-1 control-focus control-disabled {done
+		? 'text-success-indicator'
+		: 'text-faint hover:text-success-highlight'}"
 >
 	<Icon name={done ? 'done' : 'status'} size="itemStatus" />
 </button>

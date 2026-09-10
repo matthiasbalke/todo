@@ -387,7 +387,7 @@ describe('ComponentsPage specialized controls showcase', () => {
 		await fireEvent.click(showcase.getAllByRole('button', { name: 'Star' })[0]);
 		expect(showcase.getAllByRole('button', { name: 'Mark undone' })).toHaveLength(2);
 		expect(showcase.getAllByRole('button', { name: 'Unstar' })).toHaveLength(2);
-		expect(showcase.getByRole('button', { name: 'Delete example item' })).toHaveClass('bg-red-600');
+		expect(showcase.getByRole('button', { name: 'Delete example item' })).toHaveClass('bg-danger');
 	});
 });
 
@@ -601,7 +601,7 @@ describe('ComponentsPage section navigation', () => {
 		const navigation = screen.getByRole('navigation', { name: 'Component sections' });
 		const links = within(navigation).getAllByRole('link');
 		const headings = screen.getAllByRole('heading', { level: 2 });
-		expect(headings).toHaveLength(14);
+		expect(headings).toHaveLength(15);
 		expect(links).toHaveLength(headings.length);
 		expect(new Set(links.map((link) => link.getAttribute('href'))).size).toBe(links.length);
 		for (const [index, link] of links.entries()) {
@@ -610,6 +610,6 @@ describe('ComponentsPage section navigation', () => {
 			expect(section).toHaveAttribute('aria-labelledby', headings[index].id);
 			expect(section).toHaveAccessibleName(headings[index].textContent!);
 		}
-		expect(within(navigation).getByRole('link', { name: 'MultiSelect', exact: true })).toHaveAttribute('href', '#multi-select');
+		expect(within(navigation).getByRole('link', { name: /^MultiSelect$/ })).toHaveAttribute('href', '#multi-select');
 	});
 });

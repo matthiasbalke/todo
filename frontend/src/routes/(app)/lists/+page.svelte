@@ -133,26 +133,26 @@
   {#if isLoading()}
     <div class="space-y-3">
       {#each [1, 2, 3] as _}
-        <div class="h-16 bg-gray-100 rounded-xl animate-pulse"></div>
+        <div class="h-16 bg-surface-subtle rounded-xl animate-pulse"></div>
       {/each}
     </div>
   {:else}
     <div class="space-y-2">
       {#if profile?.todayViewEnabled}
-        <div class="flex items-center gap-4 p-4 rounded-xl border border-blue-100 bg-blue-50 hover:border-blue-200 hover:shadow-sm transition-all mb-4">
+        <div class="flex items-center gap-4 p-4 rounded-xl border border-primary-subtle bg-primary-surface hover:border-primary-soft hover:shadow-sm transition-all mb-4">
           <div class="flex-shrink-0 w-5" aria-hidden="true"></div>
           <a href="/today" class="flex items-center gap-4 flex-1 min-w-0">
             <span class="text-3xl">📆</span>
             <div class="flex-1 min-w-0">
-              <h2 class="font-semibold text-blue-900">Today</h2>
+              <h2 class="font-semibold text-primary-heading">Today</h2>
             </div>
-            <span class="rounded-full bg-blue-100 px-2 py-0.5 text-sm text-blue-800">{todayCount}</span>
+            <span class="rounded-full bg-primary-subtle px-2 py-0.5 text-sm text-primary-emphasis">{todayCount}</span>
             <Icon name="next" size="compact" tone="muted" class="flex-shrink-0" />
           </a>
         </div>
       {/if}
       {#if groupError}
-        <p class="px-1 text-sm text-red-600">{groupError}</p>
+        <p class="px-1 text-sm text-danger">{groupError}</p>
       {/if}
 
       <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -194,7 +194,7 @@
           oncancel={() => { showAddForm = false; error = null; }}
         />
   {:else if addingGroup}
-      <div class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+      <div class="bg-surface rounded-xl border border-border p-4 space-y-3">
         <TextInput
           bind:element={groupInput}
           bind:value={newGroupName}
@@ -217,7 +217,7 @@
           </Button>
         </div>
         {#if groupError}
-          <p class="text-sm text-red-600">{groupError}</p>
+          <p class="text-sm text-danger">{groupError}</p>
         {/if}
       </div>
   {:else}
@@ -241,6 +241,6 @@
       </div>
   {/if}
   {#if error}
-    <p class="mt-2 text-sm text-red-600">{error}</p>
+    <p class="mt-2 text-sm text-danger">{error}</p>
   {/if}
 </FixedActionFooter>

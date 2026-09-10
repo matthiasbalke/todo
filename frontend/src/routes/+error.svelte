@@ -9,14 +9,14 @@
   );
 </script>
 
-<div class="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-  <div class="w-full max-w-sm bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+<div class="min-h-screen flex items-center justify-center p-4 bg-canvas">
+  <div class="w-full max-w-sm bg-surface rounded-lg border border-border p-6 space-y-4">
     <div>
-      <p class="text-sm font-medium text-gray-500">{page.status}</p>
-      <h1 class="text-2xl font-bold text-gray-900 mt-1">{title}</h1>
-      <p class="text-sm text-gray-500 mt-2">{message}</p>
+      <p class="text-sm font-medium text-muted">{page.status}</p>
+      <h1 class="text-2xl font-bold text-heading mt-1">{title}</h1>
+      <p class="text-sm text-muted mt-2">{message}</p>
     </div>
-    <a href="/" class="block text-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 px-4 py-2.5 text-sm font-medium">
+    <a href="/" class="block text-center rounded-lg bg-primary text-on-action hover:bg-primary-strong px-4 py-2.5 text-sm font-medium">
       Go home
     </a>
   </div>

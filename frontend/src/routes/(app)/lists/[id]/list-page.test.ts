@@ -275,7 +275,7 @@ describe('ListPage menu presentation', () => {
 
 		const footer = screen.getByTestId('fixed-action-footer');
 		const content = screen.getByTestId('fixed-action-footer-content');
-		expect(footer).toHaveClass('fixed', 'bottom-0', 'border-t', 'bg-white', 'shadow-lg');
+		expect(footer).toHaveClass('fixed', 'bottom-0', 'border-t', 'bg-surface', 'shadow-lg');
 		expect(content).toHaveClass('px-4', 'pt-3', 'max-w-2xl');
 		expect(content.className).toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
 		expect(container.querySelector('.pb-32')).not.toBeNull();
@@ -343,7 +343,7 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked items' }));
 
 		expect(screen.getByRole('dialog', { name: 'Delete all checked items?' })).toBeInTheDocument();
-		expect(screen.getByText(/permanently delete 2 checked items/)).toHaveClass('font-semibold', 'text-red-600');
+		expect(screen.getByText(/permanently delete 2 checked items/)).toHaveClass('font-semibold', 'text-danger');
 		expect(screen.getByText('Checked items hidden by filters will also be deleted.')).toBeInTheDocument();
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked' }));
@@ -418,9 +418,9 @@ describe('ListPage menu presentation', () => {
 			'w-full',
 			'px-4',
 			'py-2',
-			'text-sm',
-			'text-gray-700',
-			'hover:text-gray-900'
+			'typography-control',
+			'text-label',
+			'hover:text-heading'
 		);
 		expect(screen.getByRole('button', { name: 'Configure categories' })).toHaveClass(
 			'justify-start',
@@ -441,7 +441,7 @@ describe('ListPage menu presentation', () => {
 		expect(selected.querySelector('span:last-child')).toHaveTextContent('✓');
 		expect(selected.querySelector('span:last-child')).not.toHaveAttribute('class');
 		expect(selected).not.toHaveClass('font-medium');
-		expect(unselected).toHaveClass('font-normal', 'text-gray-700');
+		expect(unselected).toHaveClass('font-normal', 'text-label');
 		expect(unselected).not.toHaveClass('text-menu-selected', 'font-medium');
 
 		await fireEvent.click(filterButton);
@@ -451,12 +451,12 @@ describe('ListPage menu presentation', () => {
 		const selectedSort = screen.getByRole('button', { name: 'Manual ✓' });
 		expect(selectedSort).toHaveClass('text-menu-selected');
 		expect(selectedSort.querySelector('span:last-child')).toHaveTextContent('✓');
-		expect(screen.getByRole('button', { name: 'Created' })).toHaveClass('text-gray-700');
+		expect(screen.getByRole('button', { name: 'Created' })).toHaveClass('text-label');
 
 		await fireEvent.click(sortButton);
 		await fireEvent.click(filterButton);
 		const inactiveHideChecked = screen.getByRole('button', { name: 'Hide checked' });
-		expect(inactiveHideChecked).toHaveClass('text-gray-700');
+		expect(inactiveHideChecked).toHaveClass('text-label');
 		expect(inactiveHideChecked).not.toHaveClass('text-menu-selected');
 
 		await fireEvent.click(inactiveHideChecked);

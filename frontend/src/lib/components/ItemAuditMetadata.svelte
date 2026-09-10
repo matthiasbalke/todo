@@ -60,7 +60,7 @@
   }
 </script>
 
-<div class="space-y-1 text-center text-xs text-gray-500" data-testid="item-audit-metadata">
+<div class="space-y-1 text-center text-xs text-muted" data-testid="item-audit-metadata">
   <p>
     <time datetime={item.updatedAt}>{formatAuditTimestamp(item.updatedAt, timeZone)}</time>
     updated by {displayName(item.updatedByUserId)}

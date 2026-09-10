@@ -34,9 +34,9 @@
 		event.preventDefault();
 		activate(event);
 	}}
-	class="{sizeClasses[size]} inline-flex flex-shrink-0 items-center justify-center rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 {starred
-		? 'text-yellow-400'
-		: 'text-gray-200 hover:text-yellow-300'}"
+	class="{sizeClasses[size]} inline-flex flex-shrink-0 items-center justify-center rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-warning focus-visible:ring-offset-1 control-focus control-disabled {starred
+		? 'text-warning-highlight'
+		: 'text-inactive hover:text-warning-border'}"
 >
 	<Icon name="star" size="action" fill={starred ? 'currentColor' : 'none'} />
 </button>

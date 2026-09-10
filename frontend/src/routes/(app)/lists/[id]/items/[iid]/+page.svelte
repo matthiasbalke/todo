@@ -83,11 +83,11 @@
 
 <div>
   <div class="flex items-center gap-3 mb-6">
-    <a href={returnDestination} class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" aria-label="Back">
+    <a href={returnDestination} class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-surface-subtle hover:text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-2" aria-label="Back">
       <Icon name="back" size="header" />
     </a>
     {#if list}
-      <span class="text-sm text-gray-400">{list.emoji} {list.name}</span>
+      <span class="text-sm text-subdued">{list.emoji} {list.name}</span>
     {/if}
   </div>
 
@@ -116,6 +116,6 @@
       <ItemDetails {item} {categories} users={members} />
     {/if}
   {:else}
-    <div class="text-center py-12 text-gray-400">Item not found.</div>
+    <div class="text-center py-12 text-subdued">Item not found.</div>
   {/if}
 </div>

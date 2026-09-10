@@ -106,39 +106,39 @@
 
 <div class="space-y-8">
   <div>
-    <h1 class="text-2xl font-bold text-gray-900">Admin</h1>
-    <p class="text-sm text-gray-500 mt-1">Manage this Todo instance.</p>
+    <h1 class="text-2xl font-bold text-heading">Admin</h1>
+    <p class="text-sm text-muted mt-1">Manage this Todo instance.</p>
   </div>
 
   <section class="space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900">Settings</h2>
-    <div class="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+    <h2 class="text-lg font-semibold text-heading">Settings</h2>
+    <div class="flex items-center justify-between border border-border rounded-lg p-4">
       <div>
-        <p class="text-sm font-medium text-gray-900">Registration</p>
-        <p class="text-sm text-gray-500">Allow new account creation.</p>
+        <p class="text-sm font-medium text-heading">Registration</p>
+        <p class="text-sm text-muted">Allow new account creation.</p>
       </div>
       <Toggle checked={registrationEnabled} ariaLabel="Registration enabled" onchange={saveRegistration} />
     </div>
-    {#if settingsMessage}<p class="text-sm text-green-700">{settingsMessage}</p>{/if}
-    {#if settingsError}<p class="text-sm text-red-700">{settingsError}</p>{/if}
+    {#if settingsMessage}<p class="text-sm text-success-strong">{settingsMessage}</p>{/if}
+    {#if settingsError}<p class="text-sm text-danger-strong">{settingsError}</p>{/if}
   </section>
 
   <section class="space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900">Usage</h2>
+    <h2 class="text-lg font-semibold text-heading">Usage</h2>
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-      <div class="border border-gray-200 rounded-lg p-3"><p class="text-xs text-gray-500">Users</p><p class="text-xl font-semibold">{data.stats.users}</p></div>
-      <div class="border border-gray-200 rounded-lg p-3"><p class="text-xs text-gray-500">Admins</p><p class="text-xl font-semibold">{data.stats.admins}</p></div>
-      <div class="border border-gray-200 rounded-lg p-3"><p class="text-xs text-gray-500">Blocked</p><p class="text-xl font-semibold">{data.stats.blockedUsers}</p></div>
-      <div class="border border-gray-200 rounded-lg p-3"><p class="text-xs text-gray-500">Lists</p><p class="text-xl font-semibold">{data.stats.lists}</p></div>
-      <div class="border border-gray-200 rounded-lg p-3"><p class="text-xs text-gray-500">Items</p><p class="text-xl font-semibold">{data.stats.todoItems}</p></div>
+      <div class="border border-border rounded-lg p-3"><p class="text-xs text-muted">Users</p><p class="text-xl font-semibold">{data.stats.users}</p></div>
+      <div class="border border-border rounded-lg p-3"><p class="text-xs text-muted">Admins</p><p class="text-xl font-semibold">{data.stats.admins}</p></div>
+      <div class="border border-border rounded-lg p-3"><p class="text-xs text-muted">Blocked</p><p class="text-xl font-semibold">{data.stats.blockedUsers}</p></div>
+      <div class="border border-border rounded-lg p-3"><p class="text-xs text-muted">Lists</p><p class="text-xl font-semibold">{data.stats.lists}</p></div>
+      <div class="border border-border rounded-lg p-3"><p class="text-xs text-muted">Items</p><p class="text-xl font-semibold">{data.stats.todoItems}</p></div>
     </div>
   </section>
 
   <section class="space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900">Users</h2>
+    <h2 class="text-lg font-semibold text-heading">Users</h2>
     <div class="space-y-3">
       {#each users as user (user.id)}
-        <div class="border border-gray-200 rounded-lg p-4 space-y-3">
+        <div class="border border-border rounded-lg p-4 space-y-3">
           <div class="grid sm:grid-cols-2 gap-3">
             <TextInput bind:value={user.editDisplayName} label="Display name" class="w-full" />
             <TextInput bind:value={user.editEmail} label="Email" type="email" class="w-full" />
@@ -152,7 +152,7 @@
               <Toggle checked={user.blocked} ariaLabel="Blocked {user.email}" onchange={(checked) => setBlocked(user, checked)} />
               Blocked
             </label>
-            <span class="text-gray-500">{user.passkeyCount} passkey{user.passkeyCount === 1 ? '' : 's'}</span>
+            <span class="text-muted">{user.passkeyCount} passkey{user.passkeyCount === 1 ? '' : 's'}</span>
           </div>
           <div class="flex flex-wrap gap-2">
             <Button tone="primary" appearance="solid" size="small" onclick={() => saveProfile(user)} disabled={user.saving}>
@@ -163,12 +163,12 @@
             </Button>
           </div>
           {#if recoveryLinks[user.id]}
-            <div class="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-900 break-all">
+            <div class="bg-warning-surface border border-warning-soft rounded p-3 text-sm text-warning-heading break-all">
               <p class="font-medium mb-1">Secret recovery URL, expires {new Date(recoveryLinks[user.id].expiresAt).toLocaleString()}</p>
               <p>{recoveryLinks[user.id].url}</p>
             </div>
           {/if}
-          {#if user.error}<p class="text-sm text-red-700">{user.error}</p>{/if}
+          {#if user.error}<p class="text-sm text-danger-strong">{user.error}</p>{/if}
         </div>
       {/each}
     </div>

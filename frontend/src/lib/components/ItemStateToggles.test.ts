@@ -10,7 +10,7 @@ describe('CompletionToggle', () => {
 		const toggle = screen.getByRole('button', { name: 'Mark done' });
 
 		expect(toggle).toHaveAttribute('aria-pressed', 'false');
-		expect(toggle).toHaveClass('text-gray-300');
+		expect(toggle).toHaveClass('text-faint');
 		expect(toggle.querySelector('svg.lucide-circle')).not.toBeNull();
 		await fireEvent.click(toggle);
 		expect(onactivate).toHaveBeenCalledOnce();
@@ -21,7 +21,7 @@ describe('CompletionToggle', () => {
 
 		await rerender({ done: true, onactivate });
 		const doneToggle = screen.getByRole('button', { name: 'Mark undone' });
-		expect(doneToggle).toHaveClass('text-green-500');
+		expect(doneToggle).toHaveClass('text-success-indicator');
 		expect(doneToggle.querySelector('svg.lucide-circle-check')).not.toBeNull();
 	});
 
@@ -40,7 +40,7 @@ describe('StarToggle', () => {
 		const toggle = screen.getByRole('button', { name: 'Star' });
 
 		expect(toggle).toHaveAttribute('aria-pressed', 'false');
-		expect(toggle).toHaveClass('text-gray-200');
+		expect(toggle).toHaveClass('text-inactive');
 		expect(toggle.querySelector('svg.lucide-star')).not.toBeNull();
 		await fireEvent.click(toggle);
 		expect(onactivate).toHaveBeenCalledOnce();
@@ -51,7 +51,7 @@ describe('StarToggle', () => {
 
 		await rerender({ starred: true, onactivate });
 		const starredToggle = screen.getByRole('button', { name: 'Unstar' });
-		expect(starredToggle).toHaveClass('text-yellow-400');
+		expect(starredToggle).toHaveClass('text-warning-highlight');
 		expect(starredToggle.querySelector('svg.lucide-star')).toHaveAttribute('fill', 'currentColor');
 	});
 
@@ -62,10 +62,10 @@ describe('StarToggle', () => {
 		expect(toggle).toHaveClass(
 			'focus:outline-none',
 			'focus-visible:ring-2',
-			'focus-visible:ring-yellow-400',
+			'focus-visible:ring-focus-warning',
 			'focus-visible:ring-offset-1'
 		);
-		expect(toggle).not.toHaveClass('focus:ring-2', 'focus:ring-yellow-400');
+		expect(toggle).not.toHaveClass('focus:ring-2', 'focus:ring-focus-warning');
 	});
 
 	it('stops touch propagation and does not activate while disabled', async () => {

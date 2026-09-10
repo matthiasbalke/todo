@@ -83,7 +83,7 @@ describe('Icon', () => {
 		});
 
 		const icon = container.querySelector('svg');
-		expect(icon).toHaveClass('text-gray-300');
+		expect(icon).toHaveClass('text-faint');
 	});
 
 	it('defines icon-only touch target presets for shared controls', () => {

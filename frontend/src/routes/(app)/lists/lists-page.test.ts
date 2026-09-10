@@ -110,10 +110,10 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		return container;
 	}
 
-	it('add-group form should have card container (bg-white rounded-xl border border-gray-200 p-4)', async () => {
+	it('add-group form should have card container (bg-surface rounded-xl border border-border p-4)', async () => {
 		const container = await openAddGroupForm();
-		// ListForm wraps everything in a card: bg-white rounded-xl border border-gray-200 p-4
-		const card = container.querySelector('.bg-white.rounded-xl.border.border-gray-200.p-4');
+		// ListForm wraps everything in a card: bg-surface rounded-xl border border-border p-4
+		const card = container.querySelector('.bg-surface.rounded-xl.border.border-border.p-4');
 		expect(card).not.toBeNull();
 	});
 
@@ -148,7 +148,7 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		const content = container.querySelector('[data-testid="fixed-action-footer-content"]') as HTMLElement;
 		const pageReserve = container.querySelector('.pb-32');
 		expect(footer).not.toBeNull();
-		expect(footer).toHaveClass('fixed', 'bottom-0', 'border-t', 'bg-white', 'shadow-lg');
+		expect(footer).toHaveClass('fixed', 'bottom-0', 'border-t', 'bg-surface', 'shadow-lg');
 		expect(content).toHaveClass('px-4', 'pt-3', 'max-w-2xl');
 		expect(content.className).toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
 		expect(pageReserve).not.toBeNull();

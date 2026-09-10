@@ -145,7 +145,7 @@ describe('ItemForm', () => {
 
 			const trigger = screen.getByRole('combobox', { name: 'Category' });
 			expect(trigger).toHaveValue('assign category');
-			expect(trigger).toHaveClass('font-sans', 'text-sm', 'leading-5', 'font-normal');
+			expect(trigger).toHaveClass('typography-control', 'font-normal');
 			expect(trigger.parentElement).toHaveClass('min-h-10', 'px-3', 'py-2');
 			expect(container.querySelector('label[for="categoryId"]')).not.toBeInTheDocument();
 			expect(container.querySelector('select#categoryId')).not.toBeInTheDocument();
@@ -303,9 +303,9 @@ describe('ItemForm', () => {
 			const trigger = screen.getByRole('combobox', { name: 'Recurrence' });
 
 			expect(trigger).toHaveValue('set recurrence');
-			expect(trigger).toHaveClass('font-sans', 'text-sm', 'leading-5', 'font-normal');
+			expect(trigger).toHaveClass('typography-control', 'font-normal');
 			expect(trigger.parentElement).toHaveClass('min-h-10', 'px-3', 'py-2');
-			expect(trigger).toHaveClass('text-gray-500', 'italic');
+			expect(trigger).toHaveClass('typography-placeholder');
 			expect(container.querySelector('select#recurrencePreset')).not.toBeInTheDocument();
 
 			await fireEvent.click(trigger);
@@ -388,7 +388,7 @@ describe('ItemForm', () => {
 			await fireEvent.click(trigger);
 			await fireEvent.click(screen.getByRole('option', { name: 'Every month' }));
 			expect(trigger).toHaveValue('Every month');
-			expect(trigger).not.toHaveClass('text-gray-500', 'italic');
+			expect(trigger).not.toHaveClass('typography-placeholder');
 			expect(oncancel).not.toHaveBeenCalled();
 
 			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
@@ -430,7 +430,7 @@ describe('ItemForm', () => {
 
 			const trigger = screen.getByRole('combobox', { name: 'Assignees' });
 			expect(trigger).toHaveValue('');
-			expect(trigger).toHaveClass('font-sans', 'text-sm', 'leading-5', 'font-normal');
+			expect(trigger).toHaveClass('typography-control', 'font-normal');
 			expect(trigger.parentElement).toHaveClass('min-h-10', 'px-3', 'py-2');
 			expect(trigger).toHaveAttribute('placeholder', 'add assignee');
 			expect(container.querySelector('label[for="assignedUserIds"]')).not.toBeInTheDocument();
@@ -453,7 +453,7 @@ describe('ItemForm', () => {
 
 			const dueDate = screen.getByRole('button', { name: 'Due Date' });
 			expect(dueDate).toHaveTextContent('set due date');
-			expect(dueDate).toHaveClass('font-sans', 'text-sm', 'leading-5', 'font-normal');
+			expect(dueDate).toHaveClass('typography-control', 'font-normal');
 			expect(container.querySelector('input[type="date"]')).not.toBeInTheDocument();
 		});
 
@@ -576,10 +576,10 @@ describe('ItemForm', () => {
 			render(ItemForm, { props: defaultProps });
 			const emptyNotesTrigger = screen.getByRole('button', { name: 'Notes' });
 			const emptyNotesPreview = screen.getByTestId('item-form-notes-preview');
-			expect(emptyNotesTrigger).toHaveClass('font-sans', 'text-sm', 'leading-5', 'font-normal', 'min-h-10');
+			expect(emptyNotesTrigger).toHaveClass('typography-control', 'font-normal', 'min-h-10');
 			expect(screen.getByRole('button', { name: 'Notes' }).parentElement?.previousElementSibling).toHaveClass('mt-2.5');
 			expect(emptyNotesTrigger).not.toHaveClass('items-start');
-			expect(emptyNotesPreview).toHaveClass('font-sans', 'text-sm', 'leading-5', 'text-gray-500', 'italic');
+			expect(emptyNotesPreview).toHaveClass('typography-placeholder');
 			expect(emptyNotesTrigger).toHaveTextContent('add note');
 			cleanup();
 

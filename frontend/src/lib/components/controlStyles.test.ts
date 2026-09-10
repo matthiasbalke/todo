@@ -8,14 +8,14 @@ import {
 describe('controlStyles', () => {
 	it('defines shared typography presets for built controls', () => {
 		expect(controlTypographyPresets).toEqual({
-			default: 'font-sans text-sm leading-5',
+			default: 'typography-control',
 			compact: 'font-sans text-xs leading-4',
 			title: 'font-sans text-xl leading-7'
 		});
 	});
 
 	it('defines shared display text classes for built controls', () => {
-		expect(controlValueTextClasses).toBe('font-sans text-sm leading-5 text-gray-800');
-		expect(controlPlaceholderTextClasses).toBe('font-sans text-sm leading-5 text-gray-500 italic');
+		expect(controlValueTextClasses).toBe('typography-control text-value');
+		expect(controlPlaceholderTextClasses).toBe('typography-placeholder');
 	});
 });

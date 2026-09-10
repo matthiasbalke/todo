@@ -1,0 +1,200 @@
+/* Shared visual foundation. Components select semantic roles; palettes own values. */
+:root {
+  --ui-border: var(--color-gray-200);
+  --ui-border-emphasis: var(--color-gray-700);
+  --ui-border-strong: var(--color-gray-300);
+  --ui-border-subtle: var(--color-gray-100);
+  --ui-canvas: var(--color-gray-50);
+  --ui-danger: var(--color-red-600);
+  --ui-danger-border: var(--color-red-300);
+  --ui-danger-indicator: var(--color-red-500);
+  --ui-danger-soft: var(--color-red-200);
+  --ui-danger-strong: var(--color-red-700);
+  --ui-danger-subtle: var(--color-red-100);
+  --ui-danger-surface: var(--color-red-50);
+  --ui-due-today-indicator: var(--color-orange-500);
+  --ui-faint: var(--color-gray-300);
+  --ui-focus-danger: var(--color-red-500);
+  --ui-focus-neutral: var(--color-gray-500);
+  --ui-focus-primary: var(--color-blue-500);
+  --ui-focus-success: var(--color-green-500);
+  --ui-focus-warning: var(--color-yellow-400);
+  --ui-heading: var(--color-gray-900);
+  --ui-inactive: var(--color-gray-200);
+  --ui-info-strong: var(--color-purple-700);
+  --ui-info-subtle: var(--color-purple-100);
+  --ui-label: var(--color-gray-700);
+  --ui-menu-selected: var(--color-blue-600);
+  --ui-muted: var(--color-gray-500);
+  --ui-neutral: var(--color-gray-700);
+  --ui-neutral-hover: var(--color-gray-800);
+  --ui-on-action: white;
+  --ui-on-inverse: var(--color-gray-100);
+  --ui-overlay: black;
+  --ui-placeholder: var(--color-gray-500);
+  --ui-primary: var(--color-blue-600);
+  --ui-primary-border: var(--color-blue-300);
+  --ui-primary-emphasis: var(--color-blue-800);
+  --ui-primary-heading: var(--color-blue-900);
+  --ui-primary-indicator: var(--color-blue-500);
+  --ui-primary-soft: var(--color-blue-200);
+  --ui-primary-strong: var(--color-blue-700);
+  --ui-primary-subtle: var(--color-blue-100);
+  --ui-primary-surface: var(--color-blue-50);
+  --ui-subdued: var(--color-gray-400);
+  --ui-success: var(--color-green-600);
+  --ui-success-border: var(--color-green-300);
+  --ui-success-highlight: var(--color-green-400);
+  --ui-success-indicator: var(--color-green-500);
+  --ui-success-strong: var(--color-green-700);
+  --ui-success-subtle: var(--color-green-100);
+  --ui-success-surface: var(--color-green-50);
+  --ui-supporting: var(--color-gray-600);
+  --ui-surface: white;
+  --ui-surface-hover: var(--color-gray-200);
+  --ui-surface-inverse: var(--color-gray-900);
+  --ui-surface-subtle: var(--color-gray-100);
+  --ui-track-disabled: var(--color-gray-300);
+  --ui-value: var(--color-gray-800);
+  --ui-warning-border: var(--color-yellow-300);
+  --ui-warning-emphasis: var(--color-yellow-800);
+  --ui-warning-heading: var(--color-yellow-900);
+  --ui-warning-highlight: var(--color-yellow-400);
+  --ui-warning-indicator: var(--color-yellow-500);
+  --ui-warning-soft: var(--color-yellow-200);
+  --ui-warning-surface: var(--color-yellow-50);
+  --ui-shadow: rgb(0 0 0 / 0.1);
+  --ui-shadow-soft: rgb(0 0 0 / 0.05);
+  --ui-control-size: 1rem;
+  --ui-control-leading: 1.25rem;
+  --ui-placeholder-style: italic;
+  --ui-disabled-opacity: 0.5;
+}
+
+@theme inline {
+  --color-border: var(--ui-border);
+  --color-border-emphasis: var(--ui-border-emphasis);
+  --color-border-strong: var(--ui-border-strong);
+  --color-border-subtle: var(--ui-border-subtle);
+  --color-canvas: var(--ui-canvas);
+  --color-danger: var(--ui-danger);
+  --color-danger-border: var(--ui-danger-border);
+  --color-danger-indicator: var(--ui-danger-indicator);
+  --color-danger-soft: var(--ui-danger-soft);
+  --color-danger-strong: var(--ui-danger-strong);
+  --color-danger-subtle: var(--ui-danger-subtle);
+  --color-danger-surface: var(--ui-danger-surface);
+  --color-due-today-indicator: var(--ui-due-today-indicator);
+  --color-faint: var(--ui-faint);
+  --color-focus-danger: var(--ui-focus-danger);
+  --color-focus-neutral: var(--ui-focus-neutral);
+  --color-focus-primary: var(--ui-focus-primary);
+  --color-focus-success: var(--ui-focus-success);
+  --color-focus-warning: var(--ui-focus-warning);
+  --color-heading: var(--ui-heading);
+  --color-inactive: var(--ui-inactive);
+  --color-info-strong: var(--ui-info-strong);
+  --color-info-subtle: var(--ui-info-subtle);
+  --color-label: var(--ui-label);
+  --color-menu-selected: var(--ui-menu-selected);
+  --color-muted: var(--ui-muted);
+  --color-neutral: var(--ui-neutral);
+  --color-neutral-hover: var(--ui-neutral-hover);
+  --color-on-action: var(--ui-on-action);
+  --color-on-inverse: var(--ui-on-inverse);
+  --color-overlay: var(--ui-overlay);
+  --color-placeholder: var(--ui-placeholder);
+  --color-primary: var(--ui-primary);
+  --color-primary-border: var(--ui-primary-border);
+  --color-primary-emphasis: var(--ui-primary-emphasis);
+  --color-primary-heading: var(--ui-primary-heading);
+  --color-primary-indicator: var(--ui-primary-indicator);
+  --color-primary-soft: var(--ui-primary-soft);
+  --color-primary-strong: var(--ui-primary-strong);
+  --color-primary-subtle: var(--ui-primary-subtle);
+  --color-primary-surface: var(--ui-primary-surface);
+  --color-subdued: var(--ui-subdued);
+  --color-success: var(--ui-success);
+  --color-success-border: var(--ui-success-border);
+  --color-success-highlight: var(--ui-success-highlight);
+  --color-success-indicator: var(--ui-success-indicator);
+  --color-success-strong: var(--ui-success-strong);
+  --color-success-subtle: var(--ui-success-subtle);
+  --color-success-surface: var(--ui-success-surface);
+  --color-supporting: var(--ui-supporting);
+  --color-surface: var(--ui-surface);
+  --color-surface-hover: var(--ui-surface-hover);
+  --color-surface-inverse: var(--ui-surface-inverse);
+  --color-surface-subtle: var(--ui-surface-subtle);
+  --color-track-disabled: var(--ui-track-disabled);
+  --color-value: var(--ui-value);
+  --color-warning-border: var(--ui-warning-border);
+  --color-warning-emphasis: var(--ui-warning-emphasis);
+  --color-warning-heading: var(--ui-warning-heading);
+  --color-warning-highlight: var(--ui-warning-highlight);
+  --color-warning-indicator: var(--ui-warning-indicator);
+  --color-warning-soft: var(--ui-warning-soft);
+  --color-warning-surface: var(--ui-warning-surface);
+}
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --spacing: 0.25rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --shadow-2xs: 0 1px var(--ui-shadow-soft);
+  --shadow-sm: 0 1px 2px 0 var(--ui-shadow);
+  --shadow-md: 0 4px 6px -1px var(--ui-shadow), 0 2px 4px -2px var(--ui-shadow);
+  --shadow-lg: 0 10px 15px -3px var(--ui-shadow), 0 4px 6px -4px var(--ui-shadow);
+  --shadow-xl: 0 20px 25px -5px var(--ui-shadow), 0 8px 10px -6px var(--ui-shadow);
+}
+
+@layer base {
+  *, ::before, ::after { --tw-ring-offset-color: var(--ui-surface); }
+  body { font-family: var(--font-sans); color: var(--ui-value); background: var(--ui-canvas); }
+  input, select, textarea { font-size: max(1rem, var(--ui-control-size)); }
+}
+
+@utility typography-control {
+  font-family: var(--font-sans);
+  font-size: max(1rem, var(--ui-control-size));
+  line-height: var(--ui-control-leading);
+}
+@utility typography-placeholder {
+  font-family: var(--font-sans);
+  font-size: max(1rem, var(--ui-control-size));
+  line-height: var(--ui-control-leading);
+  color: var(--ui-placeholder);
+  font-style: var(--ui-placeholder-style);
+}
+@utility typography-label { font-size: var(--text-sm); line-height: 1.25rem; font-weight: var(--font-weight-medium); color: var(--ui-label); }
+@utility typography-supporting { font-size: var(--text-sm); line-height: 1.25rem; color: var(--ui-muted); }
+@utility typography-error { font-size: var(--text-sm); line-height: 1.25rem; color: var(--ui-danger); }
+@utility control-focus { --tw-ring-offset-color: var(--ui-surface); }
+@utility control-disabled { &:disabled { cursor: not-allowed; opacity: var(--ui-disabled-opacity); } }
+
+/* Native and rendered placeholders share one role, including browser opacity. */
+@layer components {
+  .native-placeholder::placeholder {
+    color: var(--ui-placeholder);
+    font-style: var(--ui-placeholder-style);
+    opacity: 1;
+  }
+}

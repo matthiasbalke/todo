@@ -39,9 +39,9 @@
     onclick={ontoggle}
     aria-expanded={!collapsed}
   >
-    <span class="font-semibold text-gray-800">{category?.name ?? 'Uncategorized'}</span>
+    <span class="font-semibold text-value">{category?.name ?? 'Uncategorized'}</span>
     <div class="flex items-center gap-2">
-      <span class="text-sm text-gray-500">{unchecked.length}/{items.length}</span>
+      <span class="text-sm text-muted">{unchecked.length}/{items.length}</span>
       <Icon name={collapsed ? 'collapse' : 'expand'} size="compact" />
     </div>
   </Button>
@@ -56,13 +56,13 @@
             align="start"
             onclick={() => handleToggle(item)}
           >
-            <span class="w-6 h-6 rounded-full border-2 border-gray-300 flex-shrink-0"></span>
-            <span class="text-base text-gray-900">{item.title}</span>
+            <span class="w-6 h-6 rounded-full border-2 border-border-strong flex-shrink-0"></span>
+            <span class="text-base text-heading">{item.title}</span>
           </Button>
         {:else}
-          <div class="flex w-full items-center justify-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
-            <span class="w-6 h-6 rounded-full border-2 border-gray-300 flex-shrink-0" aria-label="Not completed"></span>
-            <span class="text-base text-gray-900">{item.title}</span>
+          <div class="flex w-full items-center justify-start gap-3 rounded-lg border border-border bg-surface px-4 py-3">
+            <span class="w-6 h-6 rounded-full border-2 border-border-strong flex-shrink-0" aria-label="Not completed"></span>
+            <span class="text-base text-heading">{item.title}</span>
           </div>
         {/if}
       {/each}
@@ -75,21 +75,21 @@
             onclick={() => handleToggle(item)}
             class="opacity-50"
           >
-            <span class="w-6 h-6 rounded-full bg-green-500 border-2 border-green-500 flex-shrink-0 flex items-center justify-center">
-              <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span class="w-6 h-6 rounded-full bg-success-indicator border-2 border-success-indicator flex-shrink-0 flex items-center justify-center">
+              <svg class="w-3 h-3 text-on-action" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
               </svg>
             </span>
-            <span class="text-base text-gray-400 line-through">{item.title}</span>
+            <span class="text-base text-subdued line-through">{item.title}</span>
           </Button>
         {:else}
-          <div class="flex w-full items-center justify-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 opacity-50">
-          <span class="w-6 h-6 rounded-full bg-green-500 border-2 border-green-500 flex-shrink-0 flex items-center justify-center">
-            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Completed">
+          <div class="flex w-full items-center justify-start gap-3 rounded-lg border border-border bg-surface px-4 py-3 opacity-50">
+          <span class="w-6 h-6 rounded-full bg-success-indicator border-2 border-success-indicator flex-shrink-0 flex items-center justify-center">
+            <svg class="w-3 h-3 text-on-action" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Completed">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
             </svg>
           </span>
-          <span class="text-base text-gray-400 line-through">{item.title}</span>
+          <span class="text-base text-subdued line-through">{item.title}</span>
           </div>
         {/if}
       {/each}

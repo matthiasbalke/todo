@@ -9,12 +9,12 @@ describe('Toggle', () => {
 		const toggle = screen.getByRole('switch', { name: 'Example setting' });
 
 		expect(toggle).toHaveAttribute('aria-checked', 'false');
-		expect(toggle).toHaveClass('bg-gray-300');
+		expect(toggle).toHaveClass('bg-track-disabled');
 		expect(toggle.firstElementChild).toHaveClass('translate-x-0');
 
 		await rerender({ checked: true, ariaLabel: 'Example setting' });
 		expect(toggle).toHaveAttribute('aria-checked', 'true');
-		expect(toggle).toHaveClass('bg-blue-600');
+		expect(toggle).toHaveClass('bg-primary');
 		expect(toggle.firstElementChild).toHaveClass('translate-x-5');
 	});
 
@@ -77,7 +77,7 @@ describe('Toggle', () => {
 		const toggle = screen.getByRole('switch', { name: 'Disabled setting' });
 
 		expect(toggle).toBeDisabled();
-		expect(toggle).toHaveClass('disabled:opacity-50');
+		expect(toggle).toHaveClass('control-disabled');
 		await fireEvent.click(toggle);
 		await fireEvent.keyDown(toggle, { key: 'Enter' });
 		await fireEvent.keyUp(toggle, { key: 'Enter' });

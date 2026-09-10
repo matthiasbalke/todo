@@ -1,6 +1,6 @@
 import { render, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import EditableLabel from './EditableLabel.svelte';
 
 describe('EditableLabel', () => {
@@ -313,7 +313,7 @@ describe('EditableLabel', () => {
 			await fireEvent.blur(input);
 			await tick();
 
-			expect(input).toHaveClass('border-red-500', 'bg-red-50');
+			expect(input).toHaveClass('border-danger-indicator', 'bg-danger-surface');
 		});
 	});
 

@@ -45,13 +45,9 @@ describe('DatePicker', () => {
 
 		const trigger = screen.getByRole('button', { name: 'Pick date' });
 		expect(trigger).toHaveTextContent('Choose date');
-		expect(trigger).toHaveClass('font-sans', 'text-sm', 'leading-5');
+		expect(trigger).toHaveClass('typography-control');
 		expect(trigger.querySelector('span')).toHaveClass(
-			'font-sans',
-			'text-sm',
-			'leading-5',
-			'text-gray-500',
-			'italic'
+			'typography-placeholder'
 		);
 		await fireEvent.click(trigger);
 
@@ -110,11 +106,7 @@ describe('DatePicker', () => {
 
 		expect(trigger).toHaveTextContent('No due date');
 		expect(trigger.querySelector('span')).toHaveClass(
-			'font-sans',
-			'text-sm',
-			'leading-5',
-			'text-gray-500',
-			'italic'
+			'typography-placeholder'
 		);
 	});
 

@@ -102,7 +102,7 @@
 	{#snippet optionContent(suggestion)}
 		<span class="flex min-w-0 flex-col text-left">
 			<span class="truncate font-medium">{suggestion.displayName}</span>
-			<span class="truncate text-xs text-gray-500">{suggestion.email}</span>
+			<span class="truncate text-xs text-muted">{suggestion.email}</span>
 		</span>
 	{/snippet}
 </ComboboxPrimitive>

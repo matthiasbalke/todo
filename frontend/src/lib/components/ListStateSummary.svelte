@@ -37,14 +37,14 @@
 	let sortOpen = $state(false);
 </script>
 
-<div class="mb-4 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+<div class="mb-4 flex flex-wrap items-center gap-2 text-sm text-muted">
 	{#if visibleCount !== undefined}
 		<span>{visibleCount} {visibleCount === 1 ? 'item' : 'items'}</span>
 	{/if}
 	<span class="relative inline-flex">
 		<button
 			type="button"
-			class="inline-flex h-6 items-center rounded-full border border-blue-200 bg-blue-50 px-2 text-xs text-blue-700 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+			class="inline-flex h-6 items-center rounded-full border border-primary-soft bg-primary-surface px-2 text-xs text-primary-strong hover:bg-primary-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-1 control-focus"
 			onclick={() => { sortOpen = !sortOpen; }}
 			aria-label="Change sort order: {sortLabel}"
 			aria-haspopup="menu"
@@ -59,8 +59,8 @@
 				aria-label="Close sort menu"
 				onclick={() => { sortOpen = false; }}
 			></button>
-			<div class="absolute left-0 top-7 z-20 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-				<p class="px-4 py-1 text-xs font-medium uppercase text-gray-400">Sort by</p>
+			<div class="absolute left-0 top-7 z-20 w-48 rounded-lg border border-border bg-surface py-1 shadow-lg">
+				<p class="px-4 py-1 text-xs font-medium uppercase text-subdued">Sort by</p>
 				{#each sortOptions as option (option.value)}
 					<Button
 						tone="neutral"
@@ -77,7 +77,7 @@
 						{/if}
 					</Button>
 				{/each}
-				<div class="mx-4 my-1 border-t border-gray-200"></div>
+				<div class="mx-4 my-1 border-t border-border"></div>
 				<Button
 					tone="neutral"
 					appearance="bare"
@@ -93,12 +93,12 @@
 	</span>
 	{#each filters as filter (filter.id)}
 		<span
-			class="inline-flex items-center overflow-hidden rounded-full border border-blue-200 bg-blue-50 text-xs text-blue-700"
+			class="inline-flex items-center overflow-hidden rounded-full border border-primary-soft bg-primary-surface text-xs text-primary-strong"
 		>
 			<span class="px-2 py-0.5">{filter.label}</span>
 			<button
 				type="button"
-				class="flex h-6 w-6 items-center justify-center border-l border-blue-200 text-blue-600 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+				class="flex h-6 w-6 items-center justify-center border-l border-primary-soft text-primary hover:bg-primary-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-1 control-focus"
 				aria-label="Clear {filter.label} filter"
 				onclick={filter.onreset}
 			>

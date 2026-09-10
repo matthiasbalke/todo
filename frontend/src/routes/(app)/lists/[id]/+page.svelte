@@ -298,11 +298,11 @@
 </script>
 
 {#if !list}
-  <div class="text-center py-12 text-gray-400">List not found.</div>
+  <div class="text-center py-12 text-subdued">List not found.</div>
 {:else}
 <div class="pb-32">
   <div class="flex items-center gap-3 mb-4">
-    <a href="/lists" class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" aria-label="Back to lists">
+    <a href="/lists" class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-surface-subtle hover:text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-2" aria-label="Back to lists">
       <Icon name="back" size="header" />
     </a>
     {#if editingTitle}
@@ -329,7 +329,7 @@
         {list.emoji ?? '📋'} {list.name}
       </Button>
     {:else}
-      <h1 class="flex-1 min-w-0 text-xl font-bold text-gray-900">
+      <h1 class="flex-1 min-w-0 text-xl font-bold text-heading">
         {list.emoji ?? '📋'} {list.name}
       </h1>
     {/if}
@@ -348,7 +348,7 @@
             onclick={() => { menuOpen = false; sortSubmenuOpen = false; filterSubmenuOpen = false; }}
             role="presentation"
           ></div>
-          <div class="absolute right-0 top-8 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+          <div class="absolute right-0 top-8 z-20 w-48 bg-surface border border-border rounded-lg shadow-lg py-1">
             <Button tone="neutral" appearance="bare"
               size="menu"
               align="start"
@@ -375,7 +375,7 @@
             >
               Members
             </Button>
-            <div class="border-t border-gray-100 mt-1 pt-1">
+            <div class="border-t border-border-subtle mt-1 pt-1">
               <Button tone="neutral" appearance="bare"
                 size="menu"
                 align="between"
@@ -383,11 +383,11 @@
                 onclick={() => { filterSubmenuOpen = !filterSubmenuOpen; sortSubmenuOpen = false; }}
               >
                 <span>Filter</span>
-                <span class="text-gray-400 text-xs">{activeFilterCount > 0 ? `${activeFilterCount} active` : 'Off'}</span>
+                <span class="text-subdued text-xs">{activeFilterCount > 0 ? `${activeFilterCount} active` : 'Off'}</span>
               </Button>
               {#if filterSubmenuOpen}
-                <div class="bg-gray-50 border-t border-gray-100">
-                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Starred</p>
+                <div class="bg-canvas border-t border-border-subtle">
+                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Starred</p>
                   {#each [{ value: false, label: 'All items' }, { value: true, label: 'Starred only' }] as opt}
                     <Button tone="neutral" appearance="bare"
                       size="menu-indented"
@@ -400,7 +400,7 @@
                       {#if filters.starredOnly === opt.value}<span>✓</span>{/if}
                     </Button>
                   {/each}
-                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Due date</p>
+                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Due date</p>
                   {#each dueDateOptions as opt}
                     <Button tone="neutral" appearance="bare"
                       size="menu-indented"
@@ -413,7 +413,7 @@
                       {#if dueDateValue === opt.value}<span>✓</span>{/if}
                     </Button>
                   {/each}
-                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Assigned</p>
+                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Assigned</p>
                   <Button tone="neutral" appearance="bare"
                     size="menu-indented"
                     align="between"
@@ -436,7 +436,7 @@
                       {#if filters.assigneeFilters.includes(opt.value)}<span>✓</span>{/if}
                     </Button>
                   {/each}
-                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Checked</p>
+                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Checked</p>
                   <Button tone="neutral" appearance="bare"
                     size="menu-indented"
                     align="between"
@@ -460,7 +460,7 @@
                 </div>
               {/if}
             </div>
-            <div class="border-t border-gray-100 mt-1 pt-1">
+            <div class="border-t border-border-subtle mt-1 pt-1">
               <Button tone="neutral" appearance="bare"
                 size="menu"
                 align="between"
@@ -468,10 +468,10 @@
                 onclick={() => { sortSubmenuOpen = !sortSubmenuOpen; filterSubmenuOpen = false; }}
               >
                 <span>Sort</span>
-                <span class="text-gray-400 text-xs">{sortFields.find(f => f.value === sortField)?.label} {sortDirection === 'ASC' ? '↑' : '↓'}</span>
+                <span class="text-subdued text-xs">{sortFields.find(f => f.value === sortField)?.label} {sortDirection === 'ASC' ? '↑' : '↓'}</span>
               </Button>
               {#if sortSubmenuOpen}
-                <div class="bg-gray-50 border-t border-gray-100">
+                <div class="bg-canvas border-t border-border-subtle">
                   {#each sortFields as f}
                     <Button tone="neutral" appearance="bare"
                       size="menu-indented"
@@ -486,7 +486,7 @@
                       {/if}
                     </Button>
                   {/each}
-                  <div class="border-t border-gray-200 mx-4 my-1"></div>
+                  <div class="border-t border-border mx-4 my-1"></div>
                   <Button tone="neutral" appearance="bare"
                     size="menu-indented"
                     align="start"
@@ -499,7 +499,7 @@
               {/if}
             </div>
             {#if capabilities.canEditItems}
-              <div class="border-t border-gray-100 mt-1 pt-1">
+              <div class="border-t border-border-subtle mt-1 pt-1">
                 <Button tone="danger" appearance="ghost"
                   size="menu"
                   align="start"
@@ -512,7 +512,7 @@
               </div>
             {/if}
             {#if capabilities.canDuplicateList || capabilities.canEditList}
-              <div class="border-t border-gray-100 mt-1 pt-1">
+              <div class="border-t border-border-subtle mt-1 pt-1">
                 {#if capabilities.canDuplicateList}
                   <Button tone="neutral" appearance="bare"
                     size="menu"

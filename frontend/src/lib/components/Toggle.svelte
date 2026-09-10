@@ -45,13 +45,13 @@
 	{disabled}
 	{...restProps}
 	onclick={handleClick}
-	class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {checked
-		? 'bg-blue-600'
-		: 'bg-gray-300'} {className}"
+	class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-2 control-focus control-disabled {checked
+		? 'bg-primary'
+		: 'bg-track-disabled'} {className}"
 >
 	<span
 		aria-hidden="true"
-		class="pointer-events-none block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ease-in-out {checked
+		class="pointer-events-none block h-5 w-5 rounded-full bg-on-action shadow-sm transition-transform duration-200 ease-in-out {checked
 			? 'translate-x-5'
 			: 'translate-x-0'}"
 	></span>

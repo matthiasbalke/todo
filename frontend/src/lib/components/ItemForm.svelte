@@ -88,6 +88,7 @@
   let notesEditorDraft = $state('');
   let submitting = $state(false);
   let ignoreNextFocusOut = false;
+  let returningNotesFocus = false;
   let suppressNextDraftChange = false;
 
   onMount(() => titleInput?.focus());
@@ -179,9 +180,13 @@
   }
 
   function closeNotesEditor({ returnFocus = true }: { returnFocus?: boolean } = {}) {
+    returningNotesFocus = returnFocus;
     notesEditorOpen = false;
     if (returnFocus) {
-      tick().then(() => notesTrigger?.focus());
+      tick().then(() => {
+        notesTrigger?.focus();
+        returningNotesFocus = false;
+      });
     }
   }
 
@@ -275,11 +280,11 @@
     setTimeout(() => { ignoreNextFocusOut = false; }, 0);
   }}
   onfocusout={(e) => {
-    if (submitting) return;
+    if (submitting || returningNotesFocus) return;
     if (ignoreNextFocusOut) { ignoreNextFocusOut = false; return; }
     if (isNew && !e.currentTarget.contains(e.relatedTarget as Node)) oncancel({ reason: 'focusout' });
   }}
-  class="bg-white rounded-xl border border-gray-200 p-4 space-y-4"
+  class="bg-surface rounded-xl border border-border p-4 space-y-4"
 >
   <div class="flex items-center gap-2">
     <CompletionToggle size="form" {done} onactivate={toggleDoneState} />
@@ -359,7 +364,7 @@
         >
           {#snippet selectedContent(user)}
             <span class="inline-flex min-w-0 items-center gap-1">
-              <span class="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-[10px] font-semibold text-blue-700" aria-hidden="true">
+              <span class="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-primary-subtle text-[10px] font-semibold text-primary-strong" aria-hidden="true">
                 {getUserInitial(user)}
               </span>
               <span class="truncate">{getUserLabel(user)}</span>
@@ -368,7 +373,7 @@
 
           {#snippet optionContent(user)}
             <span class="inline-flex min-w-0 items-center gap-2">
-              <span class="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600" aria-hidden="true">
+              <span class="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-surface-subtle text-xs font-semibold text-supporting" aria-hidden="true">
                 {getUserInitial(user)}
               </span>
               <span class="min-w-0 truncate">{getUserLabel(user)}</span>
@@ -401,7 +406,7 @@
               {notes ? notesPreview : 'add note'}
             </span>
             {#if notes}
-              <span data-testid="item-form-notes-open-cue" class="text-right text-xs font-medium text-gray-400">open</span>
+              <span data-testid="item-form-notes-open-cue" class="text-right text-xs font-medium text-subdued">open</span>
             {/if}
           </span>
         </Button>
@@ -436,10 +441,10 @@
       role="dialog"
       aria-modal="true"
       aria-labelledby="notes-editor-title"
-      class="fixed inset-0 z-50 bg-white"
+      class="fixed inset-0 z-50 bg-surface"
     >
       <div class="mx-auto flex min-h-screen max-w-2xl flex-col">
-        <div class="grid grid-cols-[1fr_auto_1fr] items-center border-b border-gray-200 px-4 py-3">
+        <div class="grid grid-cols-[1fr_auto_1fr] items-center border-b border-border px-4 py-3">
           <Button
             type="button"
             tone="neutral"
@@ -451,7 +456,7 @@
             <Icon name="back" size="compact" />
             Cancel
           </Button>
-          <h2 id="notes-editor-title" class="text-sm font-semibold text-gray-900">Notes</h2>
+          <h2 id="notes-editor-title" class="text-sm font-semibold text-heading">Notes</h2>
           <Button
             type="button"
             tone="primary"

@@ -130,14 +130,14 @@
   {/if}
   <!-- Sliding card content -->
   <div
-    class="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors {isDraggable ? 'select-none' : ''}"
+    class="flex items-center gap-3 p-3 bg-surface rounded-lg border border-border-subtle hover:border-border transition-colors {isDraggable ? 'select-none' : ''}"
     style="transform: translateX({swipeX}px); transition: {snapping ? 'transform 0.2s ease' : 'none'}"
     ontransitionend={() => { snapping = false; }}
   >
     {#if editable && isDraggable}
       <div
         use:dragHandle
-        class="flex-shrink-0 flex items-center justify-center w-5 cursor-grab active:cursor-grabbing touch-none text-gray-300 hover:text-gray-400"
+        class="flex-shrink-0 flex items-center justify-center w-5 cursor-grab active:cursor-grabbing touch-none text-faint hover:text-subdued"
         aria-label="Drag to reorder"
         tabindex="-1"
       >
@@ -148,11 +148,11 @@
       <CompletionToggle done={item.done} onactivate={handleDone} />
     {:else}
       <span
-        class="h-5 w-5 flex-shrink-0 rounded-full border-2 {item.done ? 'border-green-500 bg-green-500' : 'border-gray-300'}"
+        class="h-5 w-5 flex-shrink-0 rounded-full border-2 {item.done ? 'border-success-indicator bg-success-indicator' : 'border-border-strong'}"
         aria-label={item.done ? 'Completed' : 'Not completed'}
       >
         {#if item.done}
-          <svg class="mx-auto h-3 w-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <svg class="mx-auto h-3 w-3 text-on-action" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
           </svg>
         {/if}
@@ -161,7 +161,7 @@
 
     <a href={detailHref} class="flex-1 min-w-0">
       <div class="flex items-start justify-between gap-2">
-        <span class="text-sm font-medium text-gray-900 {item.done ? 'line-through text-gray-400' : ''}">
+        <span class="text-sm font-medium text-heading {item.done ? 'line-through text-subdued' : ''}">
           {item.title}
         </span>
       </div>
@@ -169,14 +169,14 @@
         <DueDateChip dueDate={item.dueDate} />
         <RecurrenceIndicator rule={item.recurrenceRule} />
         {#if item.notes}
-          <span class="text-xs text-gray-400 truncate max-w-32">📝 {item.notes}</span>
+          <span class="text-xs text-subdued truncate max-w-32">📝 {item.notes}</span>
         {/if}
       </div>
     </a>
 
     {#each assignedUsers as assignedUser}
       <div
-        class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold"
+        class="flex-shrink-0 w-6 h-6 rounded-full bg-primary-subtle text-primary-strong flex items-center justify-center text-xs font-semibold"
         title={assignedUser.name}
       >
         {assignedUser.name[0].toUpperCase()}
@@ -187,7 +187,7 @@
       <StarToggle starred={item.starred} onactivate={handleStar} />
     {:else}
       <span
-        class="flex-shrink-0 text-lg leading-none {item.starred ? 'text-yellow-400' : 'text-gray-200'}"
+        class="flex-shrink-0 text-lg leading-none {item.starred ? 'text-warning-highlight' : 'text-inactive'}"
         aria-label={item.starred ? 'Starred' : 'Not starred'}
       >★</span>
     {/if}

@@ -39,12 +39,12 @@
 
 	const stateClasses = $derived(
 		selected
-			? 'bg-blue-600 text-white'
+			? 'bg-primary text-on-action'
 			: current
-				? 'bg-blue-50 font-semibold text-blue-700'
+				? 'bg-primary-surface font-semibold text-primary-strong'
 				: adjacent
-					? 'text-gray-400 hover:bg-gray-100'
-					: 'text-gray-700 hover:bg-gray-100'
+					? 'text-subdued hover:bg-surface-subtle'
+					: 'text-label hover:bg-surface-subtle'
 	);
 </script>
 
@@ -60,7 +60,7 @@
 	tabindex={focused ? 0 : -1}
 	onclick={handleClick}
 	onkeydown={handleKeydown}
-	class="aspect-square rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-30 {stateClasses}"
+	class="aspect-square rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-focus-primary disabled:cursor-not-allowed disabled:opacity-30 {stateClasses}"
 >
 	{day}
 </button>

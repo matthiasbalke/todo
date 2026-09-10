@@ -238,9 +238,9 @@
 
 <div bind:this={containerElement} class="relative flex flex-col gap-1">
 	{#if label}
-		<span class="text-sm font-medium text-gray-700">
+		<span class="text-sm font-medium text-label">
 			<span id={labelId}>{label}</span>
-			{#if required}<span class="text-red-500">*</span>{/if}
+			{#if required}<span class="text-danger-indicator">*</span>{/if}
 		</span>
 	{/if}
 
@@ -267,7 +267,7 @@
 		<div
 			role="dialog"
 			aria-label={label ? `${label} calendar` : 'Calendar'}
-			class="absolute left-0 top-full z-50 mt-1 w-full min-w-72 max-w-sm rounded-lg border border-gray-200 bg-white p-3 shadow-lg"
+			class="absolute left-0 top-full z-50 mt-1 w-full min-w-72 max-w-sm rounded-lg border border-border bg-surface p-3 shadow-lg"
 		>
 			<div class="mb-3 flex items-center justify-between">
 				<Button
@@ -279,7 +279,7 @@
 				>
 					<Icon name="back" size="compact" />
 				</Button>
-				<h3 class="text-sm font-semibold text-gray-800" aria-live="polite">{monthHeading}</h3>
+				<h3 class="text-sm font-semibold text-value" aria-live="polite">{monthHeading}</h3>
 				<Button
 					aria-label="Next month"
 					onclick={() => changeMonth(1)}
@@ -293,7 +293,7 @@
 
 			<div role="grid" aria-label={monthHeading} class="grid grid-cols-7 gap-1">
 				{#each weekdayLabels as weekday}
-					<div role="columnheader" class="py-1 text-center text-xs font-medium text-gray-500">
+					<div role="columnheader" class="py-1 text-center text-xs font-medium text-muted">
 						{weekday}
 					</div>
 				{/each}
@@ -325,7 +325,7 @@
 				{/each}
 			</div>
 
-			<div class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
+			<div class="mt-3 flex items-center justify-between border-t border-border-subtle pt-3">
 				<Button
 					disabled={!isAllowed(today)}
 					onclick={selectToday}

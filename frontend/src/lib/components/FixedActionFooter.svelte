@@ -13,7 +13,7 @@
 <footer
 	{...restProps}
 	data-testid="fixed-action-footer"
-	class="fixed inset-x-0 bottom-0 z-20 border-t border-gray-100 bg-white shadow-lg"
+	class="fixed inset-x-0 bottom-0 z-20 border-t border-border-subtle bg-surface shadow-lg"
 >
 	<div
 		data-testid="fixed-action-footer-content"

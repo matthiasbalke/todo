@@ -4,7 +4,7 @@
 
 <script lang="ts">
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
-	import { controlTypographyPresets } from './controlStyles';
+	import { controlTypographyPresets, controlGeometryPresets } from './controlStyles';
 
 	type Resize = 'none' | 'vertical' | 'horizontal' | 'both';
 	type Size = 'default' | 'compact';
@@ -85,19 +85,19 @@
 		both: 'resize'
 	};
 	const sizeClasses: Record<Size, string> = {
-		default: `px-3 py-2 ${controlTypographyPresets.default}`,
-		compact: `px-2 py-1 ${controlTypographyPresets.compact}`
+		default: `${controlGeometryPresets.default} ${controlTypographyPresets.default}`,
+		compact: `${controlGeometryPresets.compact} ${controlTypographyPresets.default}`
 	};
 
 	const isError = $derived(Boolean(errorMessage));
 	const presentationClasses = $derived.by(() => {
 		if (isError) {
-			return 'border-red-500 bg-red-50 focus:ring-red-500';
+			return 'border-danger-indicator bg-danger-surface focus:ring-focus-danger';
 		}
 		if (appearance === 'inline') {
-			return 'border-transparent bg-transparent hover:bg-gray-50 focus:ring-blue-500';
+			return 'border-transparent bg-transparent hover:bg-canvas focus:ring-focus-primary';
 		}
-		return 'border-gray-300 bg-white hover:bg-gray-50 focus:ring-blue-500';
+		return 'border-border-strong bg-surface hover:bg-canvas focus:ring-focus-primary';
 	});
 	const describedBy = $derived(
 		[consumerDescribedBy, description ? descriptionId : null, isError ? errorId : null]
@@ -132,14 +132,14 @@
 
 <div class="flex flex-col gap-1">
 	{#if label}
-		<label for={instanceId} class="text-sm font-medium text-gray-700">
+		<label for={instanceId} class="typography-label">
 			{label}
-			{#if required}<span class="text-red-500" aria-hidden="true">*</span>{/if}
+			{#if required}<span class="text-danger-indicator" aria-hidden="true">*</span>{/if}
 		</label>
 	{/if}
 
 	{#if description}
-		<p id={descriptionId} class="text-sm text-gray-500">{description}</p>
+		<p id={descriptionId} class="typography-supporting">{description}</p>
 	{/if}
 
 	<textarea
@@ -157,13 +157,13 @@
 		onblur={handleBlur}
 		onfocus={onfocus}
 		onkeydown={onkeydown}
-		class="w-full rounded border transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {presentationClasses} disabled:cursor-not-allowed disabled:bg-white disabled:hover:bg-gray-50 disabled:opacity-50 {resizeClasses[
+		class="native-placeholder text-value w-full rounded border transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {presentationClasses} disabled:cursor-not-allowed disabled:bg-surface disabled:hover:bg-canvas control-disabled {resizeClasses[
 			resize
 		]} {className}"
 		{...restProps}
 	></textarea>
 
 	{#if errorMessage}
-		<p id={errorId} class="text-sm text-red-600">{errorMessage}</p>
+		<p id={errorId} class="typography-error">{errorMessage}</p>
 	{/if}
 </div>

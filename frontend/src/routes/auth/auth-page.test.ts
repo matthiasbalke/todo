@@ -57,13 +57,13 @@ describe('AuthPage', () => {
 		await waitForIdle();
 
 		const signInButton = screen.getByRole('button', { name: /sign in with passkey/i });
-		expect(signInButton).toHaveClass('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+		expect(signInButton).toHaveClass('bg-primary', 'text-on-action', 'hover:bg-primary-strong');
 		expect(signInButton).not.toHaveClass('bg-transparent');
 
 		await fireEvent.click(screen.getByRole('button', { name: /create account/i }));
 
 		const registerButton = screen.getByRole('button', { name: /register passkey/i });
-		expect(registerButton).toHaveClass('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+		expect(registerButton).toHaveClass('bg-primary', 'text-on-action', 'hover:bg-primary-strong');
 		expect(registerButton).not.toHaveClass('bg-transparent');
 	});
 

@@ -33,5 +33,5 @@
 	{disabled}
 	onclick={() => onactivate?.()}
 >
-	<span class="text-lg text-white" aria-hidden="true">🗑</span>
+	<span class="text-lg text-on-action" aria-hidden="true">🗑</span>
 </Button>

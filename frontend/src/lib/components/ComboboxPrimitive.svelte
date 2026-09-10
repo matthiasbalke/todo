@@ -7,7 +7,7 @@
 	import { onMount, tick } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import Button from './Button.svelte';
-	import { controlTypographyPresets } from './controlStyles';
+	import { controlTypographyPresets, controlGeometryPresets } from './controlStyles';
 	import Icon from './Icon.svelte';
 
 	type Size = 'default' | 'compact' | 'dense' | 'display';
@@ -94,24 +94,24 @@
 	const isError = $derived(Boolean(errorMessage));
 	const inputSizeClasses = $derived(
 		size === 'display'
-			? `min-h-10 px-3 py-2 ${controlTypographyPresets.default}`
+			? `min-h-10 ${controlGeometryPresets.default} ${controlTypographyPresets.default}`
 			: size === 'default'
-			? `min-h-10 px-3 py-2 ${controlTypographyPresets.default}`
+			? `min-h-10 ${controlGeometryPresets.default} ${controlTypographyPresets.default}`
 			: size === 'compact'
-				? `px-3 py-1.5 ${controlTypographyPresets.default}`
-				: `px-2 py-1 ${controlTypographyPresets.compact}`
+				? `${controlGeometryPresets.small} ${controlTypographyPresets.default}`
+				: `${controlGeometryPresets.compact} ${controlTypographyPresets.default}`
 	);
 	const inputTextClasses = $derived(
-		`${size === 'dense' ? controlTypographyPresets.compact : controlTypographyPresets.default} font-normal`
+		`${controlTypographyPresets.default} font-normal`
 	);
 	const presentationClasses = $derived.by(() => {
 		if (isError) {
-			return 'border-red-500 bg-red-50 focus-within:ring-red-500';
+			return 'border-danger-indicator bg-danger-surface focus-within:ring-focus-danger';
 		}
 		if (appearance === 'inline') {
-			return 'border-transparent bg-transparent hover:bg-gray-50 focus-within:ring-blue-500';
+			return 'border-transparent bg-transparent hover:bg-canvas focus-within:ring-focus-primary';
 		}
-		return 'border-gray-300 bg-white hover:bg-gray-50 focus-within:ring-blue-500';
+		return 'border-border-strong bg-surface hover:bg-canvas focus-within:ring-focus-primary';
 	});
 	const inputCharacterWidth = $derived.by(() => {
 		const visibleLength = Math.max(1, inputValue.length || placeholder.length);
@@ -243,15 +243,15 @@
 
 <div bind:this={containerElement} class="flex flex-col gap-1 {className}">
 	{#if label}
-		<label for={triggerId} class="text-sm font-medium text-gray-700">
+		<label for={triggerId} class="typography-label">
 			{label}
-			{#if required}<span class="text-red-500" aria-hidden="true">*</span>{/if}
+			{#if required}<span class="text-danger-indicator" aria-hidden="true">*</span>{/if}
 		</label>
 	{/if}
 
 	<div class="relative" onfocusout={handleFocusOut}>
 		<div
-			class="flex w-full items-center gap-2 rounded border text-gray-700 transition-colors focus-within:ring-2 focus-within:ring-offset-2 disabled:cursor-not-allowed {presentationClasses} {disabled ? 'cursor-not-allowed opacity-50' : ''} {inputSizeClasses}"
+			class="flex w-full items-center gap-2 rounded border text-label transition-colors focus-within:ring-2 focus-within:ring-offset-2 control-focus disabled:cursor-not-allowed {presentationClasses} {disabled ? 'cursor-not-allowed opacity-50' : ''} {inputSizeClasses}"
 		>
 			{#if selectedContent}
 				{@render selectedContent()}
@@ -279,9 +279,9 @@
 				oninput={handleInput}
 				onkeydown={handleKeyDown}
 				onblur={onblur}
-				class="min-w-0 flex-1 bg-transparent p-0 text-left outline-none placeholder:text-gray-500 placeholder:italic disabled:cursor-not-allowed {inputTextClasses} {mutedValue
-					? 'text-gray-500 italic'
-					: 'text-gray-700'}"
+				class="min-w-0 flex-1 bg-transparent p-0 text-left outline-none native-placeholder disabled:cursor-not-allowed {inputTextClasses} {mutedValue
+					? 'typography-placeholder'
+					: 'text-label'}"
 			/>
 			<Icon name={isOpen ? 'collapse' : 'expand'} size="compact" class="flex-shrink-0" />
 		</div>
@@ -293,7 +293,7 @@
 				role="listbox"
 				aria-label={accessibleName}
 				aria-multiselectable={multiselectable || undefined}
-				class="absolute left-0 top-full z-50 max-h-60 w-full overflow-y-auto rounded border border-gray-300 bg-white shadow-lg"
+				class="absolute left-0 top-full z-50 max-h-60 w-full overflow-y-auto rounded border border-border-strong bg-surface shadow-lg"
 			>
 				{#each options as option, index (optionKey(option, index))}
 					<Button
@@ -320,7 +320,7 @@
 				{/each}
 
 				{#if options.length === 0}
-					<div class="px-3 py-2 text-center text-gray-500">
+					<div class="px-3 py-2 text-center text-muted">
 						{inputValue.trim() ? noMatchMessage : emptyMessage}
 					</div>
 				{/if}
@@ -329,7 +329,7 @@
 	</div>
 
 	{#if errorMessage}
-		<p id={`${triggerId}-error`} class="text-sm text-red-600">
+		<p id={`${triggerId}-error`} class="typography-error">
 			{errorMessage}
 		</p>
 	{/if}

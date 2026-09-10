@@ -128,3 +128,54 @@ Theme scope belongs at the app root so controls, page backgrounds, cards, menus,
 Require a temporary alternate palette for development/browser verification. It must be unmistakably different from the default palette across text, surfaces, borders, accents, and state roles, for example a readable purple/cream/teal combination rather than a subtle shade adjustment. This is a diagnostic palette, not the future dark-theme design. Provide a documented, reversible development/test-only activation at the app root so the showcase and representative app screens can be inspected with the same override. Keep the production default unchanged and exclude the diagnostic palette and activation control from production delivery.
 
 Verify both palettes in desktop and mobile browsers using visual inspection and representative computed-style assertions. Check native and rendered placeholders, hover/focus/selected/invalid/disabled states, page and overlay surfaces, and restoration of the default palette. Unexpected default colors expose missed semantic-role adoption and must be resolved or identified as intentional domain values. A production dark palette, system/light/dark selection, preference persistence, initial-render handling to avoid a theme flash, and native browser color-scheme integration remain future work.
+
+### Foundation adoption inventory (2026-09-10)
+
+The inventory below covers every shared Svelte component before migration. Existing utility geometry already consumes Tailwind theme spacing/radius values; these values will be explicitly owned by the foundation. Color utilities will move to semantic roles with the same initial palette values.
+
+| Component | Existing color families | Adoption |
+|---|---|---|
+| Button | blue, gray, green, red, white | Shared semantic colors and typography; retain native behavior |
+| CalendarDayButton | blue, gray, white | Shared semantic colors and typography; retain native behavior |
+| CategoryConfigDialog | black, gray, red, white | Shared semantic colors and typography; retain native behavior |
+| CategoryGroup | Composed primitives / inherited | Consume foundation through composed primitives |
+| CategorySelect | Composed primitives / inherited | Consume foundation through composed primitives |
+| ColorSwatchButton | blue, gray | Shared semantic colors and typography; retain native behavior |
+| ComboboxPrimitive | blue, gray, red, white | Shared semantic colors and typography; retain native behavior |
+| CompletionToggle | gray, green | Shared semantic colors and typography; retain native behavior |
+| DatePicker | gray, red, white | Shared semantic colors and typography; retain native behavior |
+| DeleteCheckedItemsDialog | black, gray, red, white | Shared semantic colors and typography; retain native behavior |
+| DueDateChip | gray, orange, red | Shared semantic colors and typography; retain native behavior |
+| EditableLabel | Composed primitives / inherited | Consume foundation through composed primitives |
+| EmailInput | Composed primitives / inherited | Consume foundation through composed primitives |
+| FilterBar | Composed primitives / inherited | Consume foundation through composed primitives |
+| FixedActionFooter | gray, white | Shared semantic colors and typography; retain native behavior |
+| GroceryCategorySection | gray, green, white | Shared semantic colors and typography; retain native behavior |
+| Icon | gray | Shared semantic colors and typography; retain native behavior |
+| ItemAuditMetadata | gray | Shared semantic colors and typography; retain native behavior |
+| ItemCard | blue, gray, green, white, yellow | Shared semantic colors and typography; retain native behavior |
+| ItemDetails | gray, white, yellow | Shared semantic colors and typography; retain native behavior |
+| ItemForm | blue, gray, white | Shared semantic colors and typography; retain native behavior |
+| ListForm | gray, white | Shared semantic colors and typography; retain native behavior |
+| ListGroupSection | gray, red, white | Shared semantic colors and typography; retain native behavior |
+| ListStateSummary | blue, gray, white | Shared semantic colors and typography; retain native behavior |
+| MemberInviteEmailInput | gray | Shared semantic colors and typography; retain native behavior |
+| MembersDialog | black, blue, gray, purple, red, white | Shared semantic colors and typography; retain native behavior |
+| MultiSelect | blue | Shared semantic colors and typography; retain native behavior |
+| RecurrenceIndicator | gray | Shared semantic colors and typography; retain native behavior |
+| Select | Composed primitives / inherited | Consume foundation through composed primitives |
+| SortSelector | Composed primitives / inherited | Consume foundation through composed primitives |
+| StarToggle | gray, yellow | Shared semantic colors and typography; retain native behavior |
+| SwipeDeleteAction | white | Shared semantic colors and typography; retain native behavior |
+| TextInput | blue, gray, red, white | Shared semantic colors and typography; retain native behavior |
+| Textarea | blue, gray, red, white | Shared semantic colors and typography; retain native behavior |
+| TimezonePicker | Composed primitives / inherited | Consume foundation through composed primitives |
+| Toggle | blue, gray, white | Shared semantic colors and typography; retain native behavior |
+
+Role mapping: neutral foregrounds become heading, value, label, supporting, muted, faint, and inactive text; neutral backgrounds become canvas, surface, subtle, hover, disabled track, and inverse surface. Blue becomes primary action/link, selected surface, and focus roles; red becomes danger; green success; yellow warning/star; orange due-today; purple informational badges. Borders retain subtle/default/strong levels. Foregrounds on filled actions and inverse surfaces have separate roles. Each interaction state retains its current value as a semantic recipe. Page roots, route-local cards, navigation, and modal backgrounds adopt the same roles.
+
+Intentional differences: title and metadata typography retain their size hierarchy; compact control geometry remains independent of text size. Native TextInput/Textarea placeholders currently differ from preview/combobox placeholders in color and italic treatment; align them to the shared placeholder role. Editable input text is protected at a minimum of 1rem; rendered control-value/placeholder typography will also use at least 1rem so notes previews and editors match. This is an explicit readability alignment from the existing 14px control preset, while supporting labels and metadata retain their current sizes.
+
+Exceptions: category swatch hex values and user-selected category backgrounds are domain data; swipe translation and drag animation are interaction geometry; icon size/stroke values stay in iconRegistry. Transparent surfaces and currentColor remain intentional compositional values. Showcase code samples and syntax presentation may demonstrate domain data, but their enclosing surfaces adopt theme roles. Font, spacing, radius, weight, line-height, tracking, and shadow scales are owned centrally; component recipes choose those tokens instead of duplicating new numeric values.
+
+Implementation verification: `e2e/tests/foundation.spec.ts` exercises default and diagnostic palettes at 1280px and 390px, including computed placeholder typography, root token propagation, focus, hover, menu surfaces, disabled/invalid states, fullscreen notes, and fixed footers. Browser testing exposed a focus-return race when removing the notes editor's focused Save button; ItemForm now protects the return-focus transition from new-item cancellation. The development palette is documented in `docs/style-foundation.md`. The dynamic import is guarded by Vite’s build-time `import.meta.env.DEV` so production output excludes the module entirely without a custom plugin; emitted client/server and adapter output were checked for the module, palette values, and activation-control strings.

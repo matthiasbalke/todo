@@ -32,7 +32,7 @@
 
 	const toneClasses: Record<IconTone, string> = {
 		default: '',
-		muted: 'text-gray-300',
+		muted: 'text-faint',
 		menuSelected: 'text-menu-selected'
 	};
 	const toneClass = $derived(toneClasses[tone]);

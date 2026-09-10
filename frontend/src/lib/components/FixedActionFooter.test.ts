@@ -13,7 +13,7 @@ describe('FixedActionFooter', () => {
 
 		const footer = screen.getByTestId('fixed-action-footer');
 		const inner = screen.getByTestId('fixed-action-footer-content');
-		expect(footer).toHaveClass('fixed', 'bottom-0', 'border-t', 'bg-white', 'shadow-lg');
+		expect(footer).toHaveClass('fixed', 'bottom-0', 'border-t', 'bg-surface', 'shadow-lg');
 		expect(inner).toHaveClass('mx-auto', 'max-w-2xl', 'px-4', 'pt-3');
 		expect(inner.className).toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
 		expect(container.querySelector('button')).toHaveTextContent('Action');

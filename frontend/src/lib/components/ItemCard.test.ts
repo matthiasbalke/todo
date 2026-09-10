@@ -41,7 +41,7 @@ describe('ItemCard avatar alignment', () => {
       props: { item, categories: [], users: [user] },
     });
 
-    const avatar = container.querySelector('div.rounded-full.bg-blue-100');
+    const avatar = container.querySelector('div.rounded-full.bg-primary-subtle');
     expect(avatar).not.toBeNull();
     expect(avatar!.className).not.toContain('self-center');
   });
@@ -67,7 +67,7 @@ describe('ItemCard delete background visibility', () => {
     });
     const deleteAction = container.querySelector('button[aria-label="Delete item"]');
     expect(deleteAction).not.toBeNull();
-    expect(deleteAction).toHaveClass('bg-red-600');
+    expect(deleteAction).toHaveClass('bg-danger');
     expect(deleteAction!.parentElement!.className).toContain('invisible');
   });
 });
@@ -77,7 +77,7 @@ describe('ItemCard vertical alignment', () => {
     const { container } = render(ItemCard, {
       props: { item: baseItem, categories: [], users: [] },
     });
-    const card = container.querySelector('div.bg-white');
+    const card = container.querySelector('div.bg-surface');
     expect(card).not.toBeNull();
     expect(card!.className).toContain('items-center');
   });
@@ -100,7 +100,7 @@ describe('ItemCard link navigation on mobile tap', () => {
     });
 
     const card = container.firstElementChild as HTMLElement;
-    const slidingCard = container.querySelector<HTMLElement>('div.bg-white.rounded-lg');
+    const slidingCard = container.querySelector<HTMLElement>('div.bg-surface.rounded-lg');
     expect(slidingCard).not.toBeNull();
 
     await fireEvent.touchStart(card, {
@@ -205,6 +205,6 @@ describe('ItemCard read-only presentation', () => {
 		const star = container.querySelector('[aria-label="Not starred"]');
 		expect(star).not.toBeNull();
 		expect(container.querySelector('button[aria-label="Star"]')).toBeNull();
-		expect(star).toHaveClass('text-gray-200');
+		expect(star).toHaveClass('text-inactive');
 	});
 	});
