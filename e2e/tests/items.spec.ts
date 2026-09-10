@@ -36,10 +36,17 @@ test.describe('Item detail', () => {
 		await waitForHydration(page);
 
 		await expect(page.getByPlaceholder('Item title')).toHaveValue('Apples');
-		await expect(page.getByPlaceholder('Notes (optional)')).toHaveValue(
+		await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+		await expect(page.getByTestId('item-form-notes-preview')).toHaveText(
 			'Get Braeburn if available',
 		);
-		await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+
+		await page.getByRole('button', { name: 'Notes' }).click();
+
+		const notesDialog = page.getByRole('dialog', { name: 'Notes' });
+		await expect(notesDialog.getByRole('textbox', { name: 'Notes' })).toHaveValue(
+			'Get Braeburn if available',
+		);
 	});
 
 	test('editing the item title and saving navigates back and shows updated title', async ({
