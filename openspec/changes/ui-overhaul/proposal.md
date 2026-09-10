@@ -4,6 +4,9 @@ The current list and item editing UI has inconsistent control sizing, cramped mo
 
 ## What Changes
 
+- Prepare the style foundation for future light/dark themes with overridable semantic color variables, paired foreground/surface roles, and app-level theme scope. Require a temporary, conspicuously different alternate palette for browser verification; production theme selection and a finished dark palette remain future work.
+- Establish a shared style foundation for all shared frontend components, covering typography, semantic colors, spacing, corners, control geometry, and interaction states. Components consume theme values and named presets while retaining their native semantics and existing semantic props.
+- Consolidate existing visual definitions first, preserving the current appearance and documenting intentional differences, then review the foundation on the components page before visual tuning.
 - Increase the visual weight and tap target consistency of back-navigation and menu icon buttons.
 - Standardize functional UI icons on Lucide SVG icons so controls no longer mix text glyphs, emoji icons, and hand-authored SVGs.
 - Replace the list overview list creation action with a Lucide `Plus` icon followed by `new list`, and replace the group creation text action with a right-aligned Lucide `Group` icon action.
@@ -19,6 +22,7 @@ The current list and item editing UI has inconsistent control sizing, cramped mo
 ## Capabilities
 
 ### New Capabilities
+- `shared-style-foundation`: Defines centrally owned visual values and semantic presets, consistent adoption across shared components, and a showcase for reviewing the app's visual language.
 - `item-form-overhaul`: Covers the add/edit item form row layout, inline status/star controls, icon-led rows, borderless presentation, placeholders, and fullscreen note editing behavior.
 - `multiselect-component`: Covers reusable multi-value selection behavior built from existing select/combobox patterns, including custom option and selected-value rendering.
 - `component-showcase-navigation`: Covers the components page sidebar navigation and the new multi-select showcase section.
@@ -32,5 +36,6 @@ The current list and item editing UI has inconsistent control sizing, cramped mo
 ## Impact
 
 - Affected frontend areas include `frontend/src/lib/components/ItemForm.svelte`, shared form/control components, list overview footer actions, app/list navigation controls, and related component and route tests.
+- Foundation adoption also covers `frontend/src/app.css`, the existing `controlStyles.ts` and icon presets, all shared frontend components, and the components showcase. Existing screens receive shared styling through component adoption; screen layout redesign is outside this extension.
 - No backend API, database schema, authentication, SSE, or Docker changes are expected.
 - The implementation should preserve existing item submission, draft preservation, focus-out cancellation, category/date/recurrence/assignee behavior, and audit metadata display.

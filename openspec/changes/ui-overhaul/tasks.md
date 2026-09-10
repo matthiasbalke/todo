@@ -48,9 +48,26 @@
 - [ ] 7.2 Add components-page section anchors and responsive sidebar/top navigation generated from a local section registry, and verify tests cover navigation links, target section ids, and presence of all documented component sections.
 - [ ] 7.3 Stop for review: inspect desktop sidebar navigation, mobile navigation, and the MultiSelect showcase examples before final verification.
 
-## 8. Final Verification
+## 8. Shared Style Foundation Checkpoint
 
-- [ ] 8.1 Run the frontend type check and unit test suite with `cd frontend && bun run check && bun run test -- --run`, and fix any regressions.
-- [ ] 8.2 Run targeted Playwright coverage for mobile list overview, components-page navigation, and item form behavior, using the project e2e workflow, and verify the UI is usable on a mobile viewport.
-- [ ] 8.3 Verify changed UI areas do not use text glyph or emoji functional icons where Lucide equivalents exist.
-- [ ] 8.4 Run `openspec validate ui-overhaul --strict` and verify the change artifacts pass validation.
+- [ ] 8.1 Inventory typography, colors, geometry, and interaction styles across all shared frontend components; record their target foundation roles, intentional domain-specific values, and existing visible inconsistencies in the design before migration.
+- [ ] 8.2 Establish shared theme values and semantic presets by extending the existing app theme and `controlStyles.ts`, covering typography roles, text and surface colors, borders, spacing, corners, control geometry, and interaction states; reuse the existing icon registry and keep typography independent of geometry.
+- [ ] 8.3 Adopt the foundation in Button, TextInput, Textarea, and ComboboxPrimitive, including labels, descriptions, errors, and native placeholders; preserve semantic APIs and behavior, and run their focused component tests.
+- [ ] 8.4 Adopt the foundation in Select, MultiSelect, EditableLabel, picker components, and ItemForm, including matching notes preview and textarea placeholder presentation; run affected focused component tests.
+- [ ] 8.5 Complete adoption across the remaining shared components identified in the inventory, including specialized controls and shared surfaces; verify all theme-owned values use foundation roles directly or through composed primitives and record intentional exceptions.
+- [ ] 8.6 Add a navigable foundation section to the components showcase with typography roles, semantic colors, and real control states for cross-component comparison; verify the section and navigation coverage.
+- [ ] 8.7 Verify in the browser that representative controls respond to a shared foundation value change, retain consistent placeholder presentation, and preserve mobile input sizing; use computed styles and existing interaction coverage rather than class-string-only assertions, following the project e2e workflow.
+- [ ] 8.8 Stop for review: inspect the consolidated foundation and representative components on desktop and mobile, including hover, keyboard focus, selected, invalid, and disabled states, before global visual tuning or final verification.
+
+Theme-readiness work below is part of the foundation adoption and must be completed before checkpoint 8.8.
+
+- [ ] 8.9 Define overridable semantic CSS color variables with paired foreground/surface roles and app-root scope; include surrounding page, menu, dialog, and footer surfaces in the inventory and adoption, preserve shared typography/geometry, and avoid per-component theme props.
+- [ ] 8.10 Provide a temporary, unmistakably different and readable alternate palette for development/browser verification, with documented reversible activation at the app root; exclude the diagnostic palette and activation control from production delivery.
+- [ ] 8.11 Extend browser verification from 8.7 to exercise default and diagnostic palettes on desktop and mobile, using visual inspection and computed styles for text, placeholders, surfaces, borders, accents, interaction states, menus, fullscreen notes, and fixed footers; resolve missed theme-owned colors, verify default restoration, and confirm production exclusion.
+
+## 9. Final Verification
+
+- [ ] 9.1 Run the frontend type check and unit test suite with `cd frontend && bun run check && bun run test -- --run`, and fix any regressions.
+- [ ] 9.2 Run targeted Playwright coverage for mobile list overview, components-page navigation, foundation consistency, and item form behavior, using the project e2e workflow, and verify the UI is usable on a mobile viewport.
+- [ ] 9.3 Verify changed UI areas do not use text glyph or emoji functional icons where Lucide equivalents exist.
+- [ ] 9.4 Run `openspec validate ui-overhaul --strict` and verify the change artifacts pass validation.

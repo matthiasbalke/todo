@@ -7,6 +7,7 @@ The change is frontend-only. Existing business behavior for list/group creation,
 ## Goals / Non-Goals
 
 **Goals:**
+- Give all shared components one visual foundation so typography, colors, geometry, and interaction treatments can be tuned centrally.
 - Make toolbar/back/menu icon sizing consistent without spreading per-consumer visual overrides.
 - Standardize functional UI icons on Lucide SVG components for a coherent visual language.
 - Keep list overview creation action and list-group header changes local to the overview UI.
@@ -91,6 +92,7 @@ The change is frontend-only. Existing business behavior for list/group creation,
 
 ## Risks / Trade-offs
 
+- Central style changes affect many screens -> Inventory current roles and computed styles, migrate in stages, and review representative desktop and mobile states before tuning values.
 - Fullscreen editor focus handling regresses new-item auto-cancel behavior -> Add tests that open, edit, save, cancel, and close notes while asserting `oncancel` is not called for internal interactions.
 - Borderless controls reduce visible affordance -> Preserve accessible names, placeholders, focus rings, row icons, and clear selected-value text.
 - Larger notes preview can crowd compact forms -> Use stable responsive row sizing and a bounded preview height so actions remain visible on mobile.
@@ -104,3 +106,25 @@ The change is frontend-only. Existing business behavior for list/group creation,
 ## Migration Plan
 
 Implement as a frontend UI change in one release. No data migration is needed. Rollback is a normal frontend revert because the backend contract and stored data remain unchanged.
+
+### Shared style foundation
+
+Extend the existing `controlStyles.ts` foundation into a layered system: shared theme values, named semantic style presets, shared components, and composed screens. Keep globally applicable values in the app theme and have component presets reference those values. Define font family, font size, font weight, line height, letter spacing, semantic text and surface colors, borders, spacing, corner radii, control heights, and interaction treatments centrally. Font size and text size are the same setting. Reuse the existing icon size, stroke, and touch-target registry as part of this foundation rather than introducing a second source of icon values.
+
+Provide typography roles for body/value, title, label, supporting text, and placeholder. Separate typography choices from control geometry so reduced padding does not implicitly reduce readable text size. Define semantic colors for main and muted text, primary actions, danger, success, surfaces, and borders, with shared hover, focus, selected, invalid, and disabled treatments. Component-specific recipes may select appropriate combinations; coherence does not require every component or state to look identical.
+
+Components consume these values and presets directly or through composed primitives. A mandatory `BaseComponent.svelte` wrapper or component inheritance hierarchy is not required: a wrapper alone cannot keep child visual overrides consistent and would add structure around native controls. Preserve native elements, accessible names, bindings, validation, keyboard behavior, focus handling, and semantic props such as `tone`, `size`, and `appearance`. Continue the existing semantic styling boundary: callers own parent layout while components own presentation.
+
+Inventory all shared components before adoption, starting with `Button`, `TextInput`, `Textarea`, `ComboboxPrimitive`, `Select`, `MultiSelect`, and `EditableLabel`, then migrate composite and specialized components. Reuse presets for labels, helper text, and errors as well as primary control content. In particular, native placeholders and rendered empty-state placeholders such as the notes preview use the same placeholder role. Record intentional domain-specific values, such as user-selected category colors, separately from theme-owned UI colors.
+
+First consolidate the current appearance without choosing a new production font or palette. Record existing inconsistencies and propose their shared role mapping explicitly; review any necessary visible alignment rather than silently treating it as preservation. Check actual rendered text sizes on mobile against the existing input-size protection in `app.css`. Use the components page to compare real controls, typography roles, and interaction states. Stop for review after adoption and focused verification, before global visual tuning. Production theme selection and a broad screen layout redesign are outside this extension.
+
+### Future light and dark themes
+
+Define theme-owned colors as overridable CSS custom properties named for semantic purpose. Component presets reference these roles rather than embedding fixed palette values. Themes supply values for the same roles; typography and geometry remain shared by default. Define foreground/background pairs for main and muted text, placeholders, primary and destructive actions, selected and invalid states, as well as borders, focus rings, hover treatments, disabled states, shadows, and overlays where applicable. Review readability of each pair rather than assuming a palette can be inverted.
+
+Theme scope belongs at the app root so controls, page backgrounds, cards, menus, dialogs, and fixed footers receive the same values, including overlays rendered outside their originating component. Components do not need individual light/dark props or theme-specific behavior branches. Include surrounding app surface colors in the adoption inventory without redesigning screen layouts. Preserve user-authored colors as domain data and inspect their readability against theme surfaces.
+
+Require a temporary alternate palette for development/browser verification. It must be unmistakably different from the default palette across text, surfaces, borders, accents, and state roles, for example a readable purple/cream/teal combination rather than a subtle shade adjustment. This is a diagnostic palette, not the future dark-theme design. Provide a documented, reversible development/test-only activation at the app root so the showcase and representative app screens can be inspected with the same override. Keep the production default unchanged and exclude the diagnostic palette and activation control from production delivery.
+
+Verify both palettes in desktop and mobile browsers using visual inspection and representative computed-style assertions. Check native and rendered placeholders, hover/focus/selected/invalid/disabled states, page and overlay surfaces, and restoration of the default palette. Unexpected default colors expose missed semantic-role adoption and must be resolved or identified as intentional domain values. A production dark palette, system/light/dark selection, preference persistence, initial-render handling to avoid a theme flash, and native browser color-scheme integration remain future work.
