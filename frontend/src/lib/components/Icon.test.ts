@@ -17,6 +17,7 @@ describe('Icon', () => {
 		const requiredNames: AppIconName[] = [
 			'back',
 			'menu',
+			'ellipsis',
 			'status',
 				'done',
 				'plus',
@@ -100,5 +101,6 @@ describe('Icon', () => {
 		expect(source).toMatch(/from '@lucide\/svelte\/icons\/chevron-left'/);
 		expect(source).toMatch(/from '@lucide\/svelte\/icons\/chevron-right'/);
 		expect(source).toMatch(/from '@lucide\/svelte\/icons\/menu'/);
+		expect(source).toMatch(/from '@lucide\/svelte\/icons\/ellipsis'/);
 	});
 });

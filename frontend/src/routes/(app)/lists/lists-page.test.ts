@@ -163,6 +163,7 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 
 		expect(newListButton).not.toBeNull();
 		expect(newListButton).toHaveClass('justify-start', 'flex-1');
+		expect(newListButton).not.toHaveClass('border', 'border-2', 'border-dashed');
 		expect(newListButton.querySelector('svg')).not.toBeNull();
 		expect(groupButton).not.toBeNull();
 		expect(groupButton.querySelector('svg')).not.toBeNull();

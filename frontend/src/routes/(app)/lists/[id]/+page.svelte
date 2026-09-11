@@ -348,7 +348,7 @@
             onclick={() => { menuOpen = false; sortSubmenuOpen = false; filterSubmenuOpen = false; }}
             role="presentation"
           ></div>
-          <div class="absolute right-0 top-8 z-20 w-48 bg-surface border border-border rounded-lg shadow-lg py-1">
+          <div class="absolute right-0 top-full mt-1 z-20 w-48 bg-surface border border-border rounded-lg shadow-lg py-1">
             <Button tone="neutral" appearance="bare"
               size="menu"
               align="start"
@@ -622,12 +622,13 @@
             {defaultCategoryId}
           />
     {:else}
-        <Button tone="neutral" appearance="outline"
-          size="empty"
+        <Button tone="neutral" appearance="bare"
+          size="large"
+          align="start"
           onclick={() => { showAddForm = true; }}
-          class="w-full"
+          class="w-full rounded-xl px-4 py-3"
         >
-          + Add item
+          + add item
         </Button>
     {/if}
   </FixedActionFooter>

@@ -10,6 +10,7 @@ import ChevronRight from '@lucide/svelte/icons/chevron-right';
 import ChevronUp from '@lucide/svelte/icons/chevron-up';
 import Circle from '@lucide/svelte/icons/circle';
 import CircleCheck from '@lucide/svelte/icons/circle-check';
+import Ellipsis from '@lucide/svelte/icons/ellipsis';
 import GripVertical from '@lucide/svelte/icons/grip-vertical';
 import Group from '@lucide/svelte/icons/group';
 import List from '@lucide/svelte/icons/list';
@@ -38,6 +39,7 @@ export type AppIconName =
 	| 'done'
 	| 'drag'
 	| 'edit'
+	| 'ellipsis'
 	| 'expand'
 	| 'group'
 	| 'list'
@@ -102,6 +104,7 @@ export const appIcons: Record<AppIconName, Component<any>> = {
 	done: CircleCheck,
 	drag: GripVertical,
 	edit: Pencil,
+	ellipsis: Ellipsis,
 	expand: ChevronDown,
 	group: Group,
 	list: List,

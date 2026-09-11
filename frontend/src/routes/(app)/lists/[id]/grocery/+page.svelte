@@ -201,7 +201,7 @@
             onclick={() => { menuOpen = false; sortSubmenuOpen = false; filterSubmenuOpen = false; }}
             role="presentation"
           ></div>
-          <div class="absolute right-0 top-8 z-20 w-48 bg-surface border border-border rounded-lg shadow-lg py-1">
+          <div class="absolute right-0 top-full mt-1 z-20 w-48 bg-surface border border-border rounded-lg shadow-lg py-1">
             <a
               href="/lists/{data.id}"
               onclick={() => { menuOpen = false; }}

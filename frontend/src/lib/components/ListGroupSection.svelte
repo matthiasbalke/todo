@@ -171,7 +171,7 @@
             emphasis="subtle"
             aria-label="Group options"
           >
-            <Icon name="menu" size="header" />
+            <Icon name="ellipsis" size="header" />
           </Button>
           {#if showMenu}
             <!-- svelte-ignore a11y_no_static_element_interactions -->

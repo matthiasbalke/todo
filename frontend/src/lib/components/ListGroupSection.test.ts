@@ -109,6 +109,7 @@ describe('ListGroupSection', () => {
     const groupOptions = getByRole('button', { name: 'Group options' });
     const collapseChevron = getByRole('button', { name: 'Collapse section' });
 
+    expect(groupOptions.querySelector('svg')).toHaveClass('lucide-ellipsis');
     expect(
       groupOptions.compareDocumentPosition(collapseChevron) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();

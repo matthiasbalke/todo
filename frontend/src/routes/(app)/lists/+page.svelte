@@ -222,12 +222,12 @@
       </div>
   {:else}
       <div class="flex items-center gap-3">
-        <Button tone="neutral" appearance="outline"
-          size="empty"
+        <Button tone="neutral" appearance="bare"
+          size="large"
           align="start"
           onclick={() => { showAddForm = true; }}
           disabled={saving}
-          class="flex-1"
+          class="flex-1 rounded-xl px-4 py-3"
         >
           <Icon name="plus" size="action" />
           <span>new list</span>

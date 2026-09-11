@@ -7,9 +7,12 @@ See `proposal.md` for motivation. The `/lists` overview renders persisted and vi
 **Goals:**
 
 - Reorder the persisted list group header controls so the group options menu sits immediately before the collapse/expand chevron.
+- Render group options with the ellipsis icon so the control reads as an overflow/action menu rather than general navigation.
 - Preserve menu, collapse, rename, delete, drag handle, and keyboard behavior.
 - Keep persisted list groups and the virtual Ungrouped section visually aligned after the reorder.
-- Left-align the primary `new list` footer action content without changing the adjacent group creation icon action.
+- Left-align the primary `new list` footer action content and remove its border without changing the adjacent group creation icon action.
+- Increase list option overlay spacing so the menu sits below its icon trigger with the same visual gap used by the sort summary pill menu.
+- Render the regular list compact `+ add item` action with the same borderless, left-aligned style direction as the overview's `new list` action, with lowercase action text.
 - Cover the control order with focused frontend tests.
 
 **Non-Goals:**
@@ -24,7 +27,10 @@ See `proposal.md` for motivation. The `/lists` overview renders persisted and vi
 - Update the list group section header layout in place. This keeps the change scoped to the component that already owns group menu and collapse behavior, while avoiding changes to stores, APIs, or parent page data flow.
 - Treat the chevron as the terminal header control. The title area should continue to toggle collapse, and the group options button should remain a separate button whose click does not bubble into collapse.
 - Keep the Ungrouped section without a menu. Its header should retain compatible spacing and the same right-side chevron position so it lines up with persisted group headers.
-- Keep the footer's existing action structure and adjust only the primary `new list` button alignment. This preserves the flexible width relationship between the list creation action and the group icon action.
+- Add the ellipsis icon to the app icon registry and use it only for group options, leaving top-level page menus on the existing menu icon.
+- Keep the footer's existing action structure and adjust only the primary `new list` button presentation. This preserves the flexible width relationship between the list creation action and the group icon action.
+- Position standard, grocery, and sort summary menus with the same `top-full mt-1` pattern instead of hard-coded numeric offsets. This keeps trigger-to-menu spacing coherent when trigger heights differ.
+- Keep the regular list add-item action in the fixed footer, but change its presentation from the dashed empty style to a borderless bare button with left-aligned content and text `+ add item`.
 - Verify order with DOM-position tests and preserve interaction tests for menu opening and collapse toggling. This is more stable than relying on screenshots for a small control-order change.
 - Verify footer alignment with a component-level class or DOM assertion plus existing behavior that opens the list creation form.
 
@@ -33,4 +39,6 @@ See `proposal.md` for motivation. The `/lists` overview renders persisted and vi
 - Header flex changes could shrink long group names unexpectedly -> keep the title area `min-w-0` with truncation and fixed-size icon buttons.
 - Moving the menu nearer to the collapse control could accidentally trigger collapse through event propagation -> keep explicit event handling coverage that menu activation does not change collapsed state.
 - Existing tests may assert broad header text or button ordering -> update only expectations that describe the intentional new order.
-- Changing the primary footer button alignment could disturb compact spacing with the group icon action -> keep the existing flex sizing and only change content alignment inside the primary action.
+- Changing the primary footer button presentation could disturb compact spacing with the group icon action -> keep the existing flex sizing and only change content alignment and border treatment inside the primary action.
+- Changing overlay positioning could affect small screens -> keep the existing horizontal alignment and menu width unchanged, changing only the vertical gap pattern.
+- Changing add-item button presentation could hide affordance -> preserve the plus prefix and existing fixed footer placement.

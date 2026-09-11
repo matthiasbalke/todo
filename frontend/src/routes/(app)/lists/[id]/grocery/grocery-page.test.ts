@@ -135,7 +135,9 @@ describe('Grocery page menu presentation', () => {
 		expect(menu.querySelector('svg')).not.toBeNull();
 
 		await fireEvent.click(menu);
-		expect(screen.getByRole('link', { name: 'Standard mode' })).toBeInTheDocument();
+		const standardMode = screen.getByRole('link', { name: 'Standard mode' });
+		expect(standardMode).toBeInTheDocument();
+		expect(standardMode.parentElement).toHaveClass('top-full', 'mt-1');
 	});
 
 	it('uses blue text and inherited check marks for selected menu choices', async () => {
@@ -198,7 +200,9 @@ describe('Grocery page menu presentation', () => {
 
 		await fireEvent.click(summarySort);
 		expect(screen.queryByRole('button', { name: 'Filter' })).not.toBeInTheDocument();
-		expect(screen.getByText('Sort by')).toBeInTheDocument();
+		const sortHeading = screen.getByText('Sort by');
+		expect(sortHeading).toBeInTheDocument();
+		expect(sortHeading.parentElement).toHaveClass('top-full', 'mt-1');
 		await fireEvent.click(screen.getByRole('button', { name: 'Created' }));
 		expect(screen.getByRole('button', { name: 'Change sort order: Created ascending' })).toBeInTheDocument();
 
