@@ -62,21 +62,23 @@ class UserControllerTest : AbstractIntegrationTest() {
             jsonPath("$.timeZone") { value("UTC") }
             jsonPath("$.timeZoneInitialized") { value(false) }
             jsonPath("$.todayViewEnabled") { value(true) }
+            jsonPath("$.themePreference") { value("SYSTEM") }
         }
     }
 
     @Test
-    fun `PUT preferences - persists valid timezone and Today setting`() {
+    fun `PUT preferences - persists valid timezone, Today setting, and theme`() {
         val user = createUser()
         mockMvc.put("/api/users/me/preferences") {
             header("Authorization", bearerHeader(user))
             contentType = MediaType.APPLICATION_JSON
-            content = """{"timeZone":"Europe/Berlin","todayViewEnabled":false}"""
+            content = """{"timeZone":"Europe/Berlin","todayViewEnabled":false,"themePreference":"DARK"}"""
         }.andExpect {
             status { isOk() }
             jsonPath("$.timeZone") { value("Europe/Berlin") }
             jsonPath("$.timeZoneInitialized") { value(true) }
             jsonPath("$.todayViewEnabled") { value(false) }
+            jsonPath("$.themePreference") { value("DARK") }
         }
     }
 
@@ -86,11 +88,12 @@ class UserControllerTest : AbstractIntegrationTest() {
         mockMvc.put("/api/users/me/preferences") {
             header("Authorization", bearerHeader(user))
             contentType = MediaType.APPLICATION_JSON
-            content = """{"timeZone":"UTC","todayViewEnabled":true}"""
+            content = """{"timeZone":"UTC","todayViewEnabled":true,"themePreference":"SYSTEM"}"""
         }.andExpect {
             status { isOk() }
             jsonPath("$.timeZone") { value("UTC") }
             jsonPath("$.timeZoneInitialized") { value(true) }
+            jsonPath("$.themePreference") { value("SYSTEM") }
         }
     }
 
@@ -100,7 +103,7 @@ class UserControllerTest : AbstractIntegrationTest() {
         mockMvc.put("/api/users/me/preferences") {
             header("Authorization", bearerHeader(user))
             contentType = MediaType.APPLICATION_JSON
-            content = """{"timeZone":"Not/A_Zone","todayViewEnabled":false}"""
+            content = """{"timeZone":"Not/A_Zone","todayViewEnabled":false,"themePreference":"DARK"}"""
         }.andExpect {
             status { isBadRequest() }
             jsonPath("$.code") { value("INVALID_TIME_ZONE") }
@@ -109,6 +112,24 @@ class UserControllerTest : AbstractIntegrationTest() {
         assert(unchanged.timeZone == "UTC")
         assertFalse(unchanged.timeZoneInitialized)
         assertTrue(unchanged.todayViewEnabled)
+        assertEquals(ThemePreference.SYSTEM, unchanged.themePreference)
+    }
+
+    @Test
+    fun `PUT preferences - rejects invalid theme without changing state`() {
+        val user = createUser()
+        mockMvc.put("/api/users/me/preferences") {
+            header("Authorization", bearerHeader(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"timeZone":"Europe/Berlin","todayViewEnabled":false,"themePreference":"NOPE"}"""
+        }.andExpect {
+            status { isBadRequest() }
+        }
+        val unchanged = userRepository.findById(user.id).orElseThrow()
+        assertEquals("UTC", unchanged.timeZone)
+        assertFalse(unchanged.timeZoneInitialized)
+        assertTrue(unchanged.todayViewEnabled)
+        assertEquals(ThemePreference.SYSTEM, unchanged.themePreference)
     }
 
     @Test

@@ -62,7 +62,8 @@ describe('ItemForm', () => {
 			displayName: 'Alice',
 			timeZone: 'UTC',
 			timeZoneInitialized: true,
-			todayViewEnabled: true
+			todayViewEnabled: true,
+			themePreference: 'SYSTEM'
 		});
 	});
 

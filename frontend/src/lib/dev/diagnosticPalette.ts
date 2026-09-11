@@ -1,4 +1,4 @@
-// Loaded only through a dev-gated dynamic import. Never import from production code directly.
+// Used by development-only surfaces that need to inspect semantic color coverage.
 const diagnosticPalette = {
   "--ui-border": "#9674b0",
   "--ui-border-emphasis": "#44205f",
@@ -67,26 +67,11 @@ const diagnosticPalette = {
   "--ui-shadow-soft": "rgb(71 20 103 / 0.12)"
 } as const;
 
-export function installDiagnosticPalette(): () => void {
- const root = document.documentElement;
+export function installDiagnosticPaletteStyles(): () => void {
  const style = document.createElement('style');
  style.dataset.diagnosticPalette = 'true';
  style.textContent = ':root[data-diagnostic-palette="true"] {' +
   Object.entries(diagnosticPalette).map(([name, value]) => `${name}: ${value};`).join('') + '}';
  document.head.append(style);
- const button = document.createElement('button');
- button.type = 'button';
- button.dataset.diagnosticPaletteControl = 'true';
- button.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:100;padding:8px 12px;border:2px solid var(--ui-border-emphasis);border-radius:8px;background:var(--ui-surface);color:var(--ui-value);font:14px system-ui;';
- let active = new URL(location.href).searchParams.get('palette') === 'diagnostic';
- function update() {
-  if (active) root.dataset.diagnosticPalette = 'true';
-  else delete root.dataset.diagnosticPalette;
-  button.textContent = active ? 'Restore default palette' : 'Use diagnostic palette';
-  button.setAttribute('aria-pressed', String(active));
- }
- button.addEventListener('click', () => { active = !active; update(); });
- document.body.append(button);
- update();
- return () => { delete root.dataset.diagnosticPalette; style.remove(); button.remove(); };
+ return () => style.remove();
 }

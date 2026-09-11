@@ -34,7 +34,8 @@ beforeEach(() => {
 		displayName: 'Alice',
 		timeZone: 'UTC',
 		timeZoneInitialized: true,
-		todayViewEnabled: true
+		todayViewEnabled: true,
+		themePreference: 'SYSTEM'
 	});
 });
 
@@ -67,7 +68,8 @@ describe('ItemDetails audit metadata', () => {
 			displayName: 'Alice',
 			timeZone: 'Europe/Berlin',
 			timeZoneInitialized: true,
-			todayViewEnabled: true
+			todayViewEnabled: true,
+			themePreference: 'SYSTEM'
 		});
 
 		render(ItemDetails, {

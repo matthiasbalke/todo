@@ -94,6 +94,7 @@ async function installStartupRecoveryFixtures(
 				timeZone: 'UTC',
 				timeZoneInitialized: true,
 				todayViewEnabled: true,
+				themePreference: 'SYSTEM',
 			}),
 		});
 	});
@@ -109,6 +110,7 @@ async function installStartupRecoveryFixtures(
 				timeZone: 'UTC',
 				timeZoneInitialized: true,
 				todayViewEnabled: true,
+				themePreference: 'SYSTEM',
 			}),
 		});
 	});

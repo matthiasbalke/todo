@@ -2,10 +2,18 @@ package com.github.matthiasbalke.todo.auth
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.time.Instant
 import java.util.UUID
+
+enum class ThemePreference {
+    SYSTEM,
+    LIGHT,
+    DARK,
+}
 
 @Entity
 @Table(name = "users")
@@ -27,6 +35,10 @@ class User(
 
     @Column(name = "today_view_enabled", nullable = false)
     var todayViewEnabled: Boolean = true,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "theme_preference", nullable = false)
+    var themePreference: ThemePreference = ThemePreference.SYSTEM,
 
     @Column(nullable = false)
     var admin: Boolean = false,

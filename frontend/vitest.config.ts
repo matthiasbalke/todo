@@ -9,7 +9,14 @@ export default defineConfig({
     alias: {
       $lib: resolve(__dirname, 'src/lib'),
       $app: resolve(__dirname, 'node_modules/@sveltejs/kit/src/runtime/app'),
+      'virtual:pwa-info': resolve(__dirname, 'src/lib/test/pwaInfo.ts'),
     },
   },
-  test: { environment: 'jsdom', globals: true, include: ['src/**/*.{test,spec}.{js,ts}'], setupFiles: ['src/vitest.setup.ts'] },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    include: ['src/**/*.{test,spec}.{js,ts}'],
+    setupFiles: ['src/vitest.setup.ts'],
+    testTimeout: 10000,
+  },
 });

@@ -1,4 +1,5 @@
 import { getMe, updatePreferences, type UserProfileDto } from '$lib/api/users';
+import { normalizeThemePreference, setThemePreference } from './theme.svelte';
 
 let profile = $state<UserProfileDto | null>(null);
 let loading = $state(false);
@@ -15,6 +16,8 @@ export async function loadPreferences(fetchFn: typeof fetch = fetch): Promise<Us
 	loading = true;
 	try {
 		profile = await getMe(fetchFn);
+		profile = { ...profile, themePreference: normalizeThemePreference(profile.themePreference) };
+		setThemePreference(profile.themePreference);
 		if (!profile.timeZoneInitialized) {
 			let detected = 'UTC';
 			try {
@@ -25,7 +28,10 @@ export async function loadPreferences(fetchFn: typeof fetch = fetch): Promise<Us
 			profile = await updatePreferences({
 				timeZone: detected,
 				todayViewEnabled: profile.todayViewEnabled,
+				themePreference: profile.themePreference,
 			});
+			profile = { ...profile, themePreference: normalizeThemePreference(profile.themePreference) };
+			setThemePreference(profile.themePreference);
 		}
 		return profile;
 	} finally {
@@ -33,11 +39,18 @@ export async function loadPreferences(fetchFn: typeof fetch = fetch): Promise<Us
 	}
 }
 
-export async function savePreferences(timeZone: string, todayViewEnabled: boolean): Promise<UserProfileDto> {
-	profile = await updatePreferences({ timeZone, todayViewEnabled });
+export async function savePreferences(
+	timeZone: string,
+	todayViewEnabled: boolean,
+	themePreference = profile?.themePreference ?? 'SYSTEM',
+): Promise<UserProfileDto> {
+	profile = await updatePreferences({ timeZone, todayViewEnabled, themePreference });
+	profile = { ...profile, themePreference: normalizeThemePreference(profile.themePreference) };
+	setThemePreference(profile.themePreference);
 	return profile;
 }
 
 export function setProfile(value: UserProfileDto): void {
-	profile = value;
+	profile = { ...value, themePreference: normalizeThemePreference(value.themePreference) };
+	setThemePreference(profile.themePreference);
 }

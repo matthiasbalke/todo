@@ -1,10 +1,4 @@
-# account-settings-preferences Specification
-
-## Purpose
-
-Define the presentation and immediate persistence behavior of account-level timezone, Today View, and theme preferences.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Account preferences use a Settings section
 The account page SHALL retain its `Account` page title and `/account` route while presenting timezone, Today View, and theme preferences in a section titled `Settings`.
@@ -17,43 +11,6 @@ The account page SHALL retain its `Account` page title and `/account` route whil
 - **AND** the Today View preference is available
 - **AND** the theme preference is available
 - **AND** the existing profile, security, and danger-zone sections remain available
-
-### Requirement: Timezone preference explains its purpose
-The Settings page SHALL display concise supporting text directly below the timezone selector explaining that the timezone is used for date-sensitive behavior, including Today.
-
-#### Scenario: Timezone selector is displayed
-- **WHEN** the user views the timezone preference
-- **THEN** explanatory text appears below the selector
-- **AND** the text explains that the selected timezone determines which calendar date is considered today
-
-#### Scenario: Timezone selector is disabled during save
-- **WHEN** preference saving is in progress
-- **THEN** the timezone selector remains disabled
-- **AND** its explanatory text remains visible
-
-### Requirement: Today View uses the shared Toggle
-The Settings page SHALL present the Today visibility preference as a row labeled `Today View` using the shared Toggle component.
-
-#### Scenario: Today View is enabled
-- **WHEN** the persisted Today preference is enabled
-- **THEN** the `Today View` toggle is on
-- **AND** no `Enabled` or `Disabled` suffix is included in the visible preference label
-
-#### Scenario: Today View is disabled
-- **WHEN** the persisted Today preference is disabled
-- **THEN** the `Today View` toggle is off
-
-#### Scenario: User changes Today View
-- **WHEN** the user activates the `Today View` toggle
-- **THEN** the local preference value changes
-- **AND** prior success feedback is cleared
-- **AND** all current preference values are submitted immediately through the existing preference API
-
-#### Scenario: Preference save is in progress
-- **WHEN** the Settings section is saving preferences
-- **THEN** the Today View toggle is disabled
-- **AND** the timezone selector is disabled
-- **AND** the theme selector is disabled
 
 ### Requirement: Preference changes save immediately
 The Settings section SHALL save timezone, Today View, and theme changes immediately through the existing preference operation without displaying a separate save button.
@@ -92,6 +49,8 @@ The Settings section SHALL save timezone, Today View, and theme changes immediat
 - **AND** all controls return to the last successfully persisted values
 - **AND** the last successfully persisted theme remains applied
 - **AND** success feedback is not displayed
+
+## ADDED Requirements
 
 ### Requirement: Theme preference uses account settings controls
 The Settings section SHALL present the theme preference as an accessible control with options for system, light, and dark.
