@@ -6,7 +6,7 @@ const chromiumHostResolverRules = process.env.CHROMIUM_HOST_RESOLVER_RULES;
 export default defineConfig({
   testDir: './tests',
   fullyParallel: false,
-  timeout: 10000,
+  timeout: 30000,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL,

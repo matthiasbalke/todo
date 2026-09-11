@@ -101,7 +101,7 @@ for (const width of [1280, 390]) {
   await expect(members).toBeVisible();
   expect((await appearance(members.locator('..'))).background).toBe((await appearance(footer)).background);
   await page.mouse.click(5, 400);
-  await page.getByRole('button', { name: '+ Add item', exact: true }).click();
+  await page.getByRole('button', { name: '+ add item', exact: true }).click();
   await page.getByPlaceholder('Item title').fill('Palette item');
   const preview = await appearance(page.getByTestId('item-form-notes-preview'));
   await page.getByRole('button', { name: 'Notes', exact: true }).click();
