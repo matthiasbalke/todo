@@ -5,7 +5,7 @@
 </script>
 
 {#if rule}
-  <span class="text-xs text-gray-400 flex items-center gap-1">
+  <span class="text-xs text-subdued flex items-center gap-1">
     <span>↻</span>
     <span>{recurrenceRuleToHuman(rule)}</span>
   </span>

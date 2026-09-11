@@ -41,21 +41,21 @@
   }
 </script>
 
-<div class="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-  <form onsubmit={handleSubmit} class="w-full max-w-sm bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+<div class="min-h-screen flex items-center justify-center p-4 bg-canvas">
+  <form onsubmit={handleSubmit} class="w-full max-w-sm bg-surface rounded-lg border border-border p-6 space-y-4">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">Setup admin</h1>
-      <p class="text-sm text-gray-500 mt-1">Create the first admin account for this Todo instance.</p>
+      <h1 class="text-2xl font-bold text-heading">Setup admin</h1>
+      <p class="text-sm text-muted mt-1">Create the first admin account for this Todo instance.</p>
     </div>
 
     {#if errorMessage}
-      <div class="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">{errorMessage}</div>
+      <div class="p-3 bg-danger-surface border border-danger-soft rounded text-sm text-danger-strong">{errorMessage}</div>
     {/if}
 
     <TextInput id="setup-display-name" bind:value={displayName} label="Display name" required class="w-full" />
     <EmailInput id="setup-email" bind:value={email} label="Email" required class="w-full" />
     <TextInput id="setup-secret" bind:value={setupSecret} label="Setup secret" required placeholder="Shown in backend logs" class="w-full" />
-    <p class="text-xs text-gray-500 -mt-2">Use the setup secret from the backend logs. This is only needed for first setup.</p>
+    <p class="text-xs text-muted -mt-2">Use the setup secret from the backend logs. This is only needed for first setup.</p>
     <TextInput id="setup-passkey-label" bind:value={passkeyLabel} label="Passkey name (optional)" placeholder="e.g. My laptop" class="w-full" />
 
     <Button type="submit" tone="primary" appearance="solid" size="large" class="w-full" disabled={saving}>

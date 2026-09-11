@@ -207,7 +207,7 @@ describe('ListPage menu presentation', () => {
 		render(ListPage, { props: { data: mockData } });
 
 		expect(screen.getByRole('heading', { name: /Groceries/i })).toBeInTheDocument();
-		expect(screen.queryByRole('button', { name: '+ Add item' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '+ add item' })).not.toBeInTheDocument();
 
 		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
 		expect(screen.getByRole('button', { name: 'Grocery mode' })).toBeInTheDocument();
@@ -261,13 +261,52 @@ describe('ListPage menu presentation', () => {
 		listStoreState.role = 'EDITOR';
 		render(ListPage, { props: { data: mockData } });
 
-		expect(screen.getByRole('button', { name: '+ Add item' })).toBeInTheDocument();
+		const addItem = screen.getByRole('button', { name: '+ add item' });
+		expect(addItem).toBeInTheDocument();
+		expect(addItem).toHaveClass('justify-start', 'w-full');
+		expect(addItem).not.toHaveClass('border', 'border-2', 'border-dashed');
 		expect(screen.queryByRole('button', { name: /Groceries/i })).not.toBeInTheDocument();
 
 		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
 		expect(screen.getByRole('button', { name: 'Configure categories' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Duplicate list' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Delete list' })).not.toBeInTheDocument();
+	});
+
+	it('renders add-item actions inside the shared fixed action footer with reserved scroll space', () => {
+		const { container } = render(ListPage, { props: { data: mockData } });
+
+		const footer = screen.getByTestId('fixed-action-footer');
+		const content = screen.getByTestId('fixed-action-footer-content');
+		expect(footer).toHaveClass('fixed', 'bottom-0', 'border-t', 'bg-surface', 'shadow-lg');
+		expect(content).toHaveClass('px-4', 'pt-3', 'max-w-2xl');
+		expect(content.className).toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
+		expect(container.querySelector('.pb-32')).not.toBeNull();
+	});
+
+	it('renders Lucide back and menu controls while preserving menu behavior', async () => {
+		render(ListPage, { props: { data: mockData } });
+
+		const back = screen.getByRole('link', { name: 'Back to lists' });
+		const menu = screen.getByRole('button', { name: 'List options' });
+		expect(back.querySelector('svg')).not.toBeNull();
+		expect(menu).toHaveClass('h-11', 'w-11');
+		expect(menu.querySelector('svg')).not.toBeNull();
+
+		await fireEvent.click(menu);
+		const configureCategories = screen.getByRole('button', { name: 'Configure categories' });
+		expect(configureCategories).toBeInTheDocument();
+		expect(configureCategories.parentElement).toHaveClass('top-full', 'mt-1');
+	});
+
+	it('bounds expanded add-item form content inside the fixed action footer', async () => {
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ add item' }));
+
+		const scrollArea = screen.getByTestId('fixed-action-footer-scroll');
+		expect(scrollArea).toHaveClass('overflow-y-auto');
+		expect(scrollArea.className).toContain('max-h-[min(70vh,calc(100vh-2rem))]');
 	});
 
 	it('shows duplicate directly above delete for owners', async () => {
@@ -309,7 +348,7 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked items' }));
 
 		expect(screen.getByRole('dialog', { name: 'Delete all checked items?' })).toBeInTheDocument();
-		expect(screen.getByText(/permanently delete 2 checked items/)).toHaveClass('font-semibold', 'text-red-600');
+		expect(screen.getByText(/permanently delete 2 checked items/)).toHaveClass('font-semibold', 'text-danger');
 		expect(screen.getByText('Checked items hidden by filters will also be deleted.')).toBeInTheDocument();
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked' }));
@@ -384,9 +423,9 @@ describe('ListPage menu presentation', () => {
 			'w-full',
 			'px-4',
 			'py-2',
-			'text-sm',
-			'text-gray-700',
-			'hover:text-gray-900'
+			'typography-control',
+			'text-label',
+			'hover:text-heading'
 		);
 		expect(screen.getByRole('button', { name: 'Configure categories' })).toHaveClass(
 			'justify-start',
@@ -401,54 +440,54 @@ describe('ListPage menu presentation', () => {
 		expect(filterButton).toHaveClass('justify-between', 'font-normal');
 		await fireEvent.click(filterButton);
 
-		const selected = screen.getAllByRole('button', { name: 'All items ✓' })[0];
+		const selected = screen.getAllByRole('button', { name: 'All items' })[0];
 		const unselected = screen.getByRole('button', { name: 'Starred only' });
 		expect(selected).toHaveClass('justify-between', 'font-normal', 'text-menu-selected');
-		expect(selected.querySelector('span:last-child')).toHaveTextContent('✓');
-		expect(selected.querySelector('span:last-child')).not.toHaveAttribute('class');
+		expect(selected.querySelector('svg')).toHaveClass('lucide-check');
 		expect(selected).not.toHaveClass('font-medium');
-		expect(unselected).toHaveClass('font-normal', 'text-gray-700');
+		expect(unselected).toHaveClass('font-normal', 'text-label');
 		expect(unselected).not.toHaveClass('text-menu-selected', 'font-medium');
 
 		await fireEvent.click(filterButton);
 		const sortButton = screen.getByRole('button', { name: /Sort/ });
 		await fireEvent.click(sortButton);
 
-		const selectedSort = screen.getByRole('button', { name: 'Manual ✓' });
+		const selectedSort = screen.getByRole('button', { name: 'Manual' });
 		expect(selectedSort).toHaveClass('text-menu-selected');
-		expect(selectedSort.querySelector('span:last-child')).toHaveTextContent('✓');
-		expect(screen.getByRole('button', { name: 'Created' })).toHaveClass('text-gray-700');
+		expect(selectedSort.querySelector('svg')).toHaveClass('lucide-check');
+		expect(screen.getByRole('button', { name: 'Created' })).toHaveClass('text-label');
 
 		await fireEvent.click(sortButton);
 		await fireEvent.click(filterButton);
 		const inactiveHideChecked = screen.getByRole('button', { name: 'Hide checked' });
-		expect(inactiveHideChecked).toHaveClass('text-gray-700');
+		expect(inactiveHideChecked).toHaveClass('text-label');
 		expect(inactiveHideChecked).not.toHaveClass('text-menu-selected');
 
 		await fireEvent.click(inactiveHideChecked);
 
-		const activeHideChecked = screen.getByRole('button', { name: 'Hide checked ✓' });
+		const activeHideChecked = screen.getByRole('button', { name: 'Hide checked' });
 		expect(activeHideChecked).toHaveClass('text-menu-selected');
-		expect(activeHideChecked.querySelector('span:last-child')).toHaveTextContent('✓');
-		expect(activeHideChecked.querySelector('span:last-child')).not.toHaveAttribute('class');
+		expect(activeHideChecked.querySelector('svg')).toHaveClass('lucide-check');
 	});
 
 	it('shows summary state and opens sort controls from the summary', async () => {
 		render(ListPage, { props: { data: mockData } });
 
 		expect(screen.getByText('0 items')).toBeInTheDocument();
-		const summarySort = screen.getByRole('button', { name: 'Change sort order: Manual ↑' });
-		expect(summarySort).toHaveTextContent('Sort: Manual ↑');
+		const summarySort = screen.getByRole('button', { name: 'Change sort order: Manual ascending' });
+		expect(summarySort).toHaveTextContent('Sort: Manual');
 		expect(screen.queryByRole('button', { name: /Clear .* filter/ })).not.toBeInTheDocument();
 
 		await fireEvent.click(summarySort);
 		expect(screen.queryByRole('button', { name: 'Filter' })).not.toBeInTheDocument();
-		expect(screen.getByText('Sort by')).toBeInTheDocument();
+		const sortHeading = screen.getByText('Sort by');
+		expect(sortHeading).toBeInTheDocument();
+		expect(sortHeading.parentElement).toHaveClass('top-full', 'mt-1');
 		await fireEvent.click(screen.getByRole('button', { name: 'Created' }));
-		expect(screen.getByRole('button', { name: 'Change sort order: Created ↑' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Change sort order: Created ascending' })).toBeInTheDocument();
 
-		await fireEvent.click(screen.getByRole('button', { name: '↑ Ascending' }));
-		expect(screen.getByRole('button', { name: 'Change sort order: Created ↓' })).toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: 'Ascending' }));
+		expect(screen.getByRole('button', { name: 'Change sort order: Created descending' })).toBeInTheDocument();
 	});
 
 	it('shows active filter chips and resets only the selected filter', async () => {
@@ -564,9 +603,9 @@ describe('ListPage menu presentation', () => {
 		render(ListPage, { props: { data: mockData } });
 
 		await waitFor(() => expect(deleteListItemDefaults).toHaveBeenCalledWith('list-1'));
-		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.click(screen.getByRole('button', { name: '+ add item' }));
 
-		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Uncategorized');
+		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('assign category');
 		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 			target: { value: 'Fallback item' },
 		});
@@ -580,34 +619,36 @@ describe('ListPage menu presentation', () => {
 		const externalElement = document.createElement('button');
 		document.body.appendChild(externalElement);
 
-		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.click(screen.getByRole('button', { name: '+ add item' }));
 		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 			target: { value: 'Preserved title' },
 		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
 		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
 			target: { value: 'Preserved notes' },
 		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 		await fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
 			relatedTarget: externalElement,
 		});
 
 		expect(screen.queryByPlaceholderText('Item title')).not.toBeInTheDocument();
-		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.click(screen.getByRole('button', { name: '+ add item' }));
 
 		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Preserved title');
-		expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Preserved notes');
+		expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Preserved notes');
 		externalElement.remove();
 	});
 
 	it('clears an add-item draft after explicit cancellation', async () => {
 		render(ListPage, { props: { data: mockData } });
 
-		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.click(screen.getByRole('button', { name: '+ add item' }));
 		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 			target: { value: 'Discarded title' },
 		});
 		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.click(screen.getByRole('button', { name: '+ add item' }));
 
 		expect(screen.getByPlaceholderText('Item title')).toHaveValue('');
 	});
@@ -618,7 +659,7 @@ describe('ListPage menu presentation', () => {
 		const externalElement = document.createElement('button');
 		document.body.appendChild(externalElement);
 
-		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.click(screen.getByRole('button', { name: '+ add item' }));
 		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 			target: { value: 'Submitted title' },
 		});
@@ -630,10 +671,27 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
 			relatedTarget: externalElement,
 		});
-		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.click(screen.getByRole('button', { name: '+ add item' }));
 
 		expect(screen.getByPlaceholderText('Item title')).toHaveValue('');
 		externalElement.remove();
+	});
+
+	it('passes the selected completion state when creating an item', async () => {
+		const { createItem } = await import('$lib/stores/items.svelte');
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ add item' }));
+		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
+			target: { value: 'Already checked' },
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Mark done' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+		expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({
+			title: 'Already checked',
+			done: true,
+		}));
 	});
 
 	it('keeps an add-item draft available after failed submission', async () => {
@@ -643,18 +701,20 @@ describe('ListPage menu presentation', () => {
 		vi.mocked(createItem).mockRejectedValueOnce(new Error('boom'));
 		render(ListPage, { props: { data: mockData } });
 
-		await fireEvent.click(screen.getByRole('button', { name: '+ Add item' }));
+		await fireEvent.click(screen.getByRole('button', { name: '+ add item' }));
 		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 			target: { value: 'Retry title' },
 		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
 		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
 			target: { value: 'Retry notes' },
 		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
 		await waitFor(() => expect(alert).toHaveBeenCalledWith('Error: boom'));
 		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Retry title');
-		expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Retry notes');
+		expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Retry notes');
 		vi.unstubAllGlobals();
 	});
 });

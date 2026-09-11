@@ -233,7 +233,7 @@ test.describe('Passkey registration', () => {
 		await page.getByRole('button', { name: /Register passkey/ }).click();
 
 		// Ceremony fails — error message appears; user is orphaned in the DB
-		await expect(page.getByText(/Cancelled|try again/i)).toBeVisible({ timeout: 15000 });
+		await expect(page.getByText(/Cancelled|try again/i)).toBeVisible();
 
 		// Retry: same email is still in the form (mode === 'error' keeps the form visible)
 		await page.getByRole('button', { name: /Register passkey/ }).click();

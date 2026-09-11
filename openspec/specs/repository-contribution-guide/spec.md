@@ -96,7 +96,7 @@ The contribution guide SHALL document repository-specific coding and documentati
 
 #### Scenario: Contributor edits implementation code
 - **WHEN** a contributor reads coding conventions
-- **THEN** the guide covers backend Testcontainers expectations, frontend component reuse, Svelte/SvelteKit validation, client-side filtering expectations, SSE awareness for list updates, and zsh helper compatibility
+- **THEN** the guide covers backend Testcontainers expectations, frontend component reuse, Svelte/SvelteKit validation, client-side filtering expectations, unused import removal, SSE awareness for list updates, and zsh helper compatibility
 
 ### Requirement: Contribution guide documents security expectations
 The contribution guide SHALL document security-sensitive contribution expectations.

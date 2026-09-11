@@ -6,6 +6,7 @@
   import Button from './Button.svelte';
   import ColorSwatchButton from './ColorSwatchButton.svelte';
   import TextInput from './TextInput.svelte';
+  import Icon from './Icon.svelte';
 
   const CATEGORY_DND_TYPE = 'configure-category';
 
@@ -113,7 +114,7 @@
 </script>
 
 <div
-  class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-overlay/40"
   role="dialog"
   aria-modal="true"
   aria-label="Category configuration"
@@ -128,21 +129,23 @@
     onclick={onclose}
   ></Button>
 
-  <div class="relative z-10 w-full max-w-sm mx-4 bg-white rounded-2xl shadow-xl flex flex-col max-h-[80vh]">
+  <div class="relative z-10 w-full max-w-sm mx-4 bg-surface rounded-2xl shadow-xl flex flex-col max-h-[80vh]">
     <!-- Header -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-      <h2 class="font-semibold text-gray-900">Categories</h2>
-      <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={onclose} aria-label="Close">✕</Button>
+    <div class="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
+      <h2 class="font-semibold text-heading">Categories</h2>
+      <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={onclose} aria-label="Close">
+        <Icon name="close" size="controlCompact" />
+      </Button>
     </div>
 
     {#if error}
-      <p class="px-4 py-2 text-sm text-red-600 bg-red-50 border-b border-red-100">{error}</p>
+      <p class="px-4 py-2 text-sm text-danger bg-danger-surface border-b border-danger-subtle">{error}</p>
     {/if}
 
     <!-- List -->
     <div class="overflow-y-auto flex-1 px-2 py-2">
       {#if sorted.length === 0}
-        <p class="text-center text-sm text-gray-400 py-6">No categories yet.</p>
+        <p class="text-center text-sm text-subdued py-6">No categories yet.</p>
       {:else}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
@@ -153,18 +156,14 @@
           data-testid="category-reorder-zone"
         >
           {#each dndCategories as cat (cat.id)}
-            <div class="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-gray-50 group {(cat as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME] ? 'opacity-40' : ''}">
+            <div class="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-canvas group {(cat as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME] ? 'opacity-40' : ''}">
               <div
                 use:dragHandle
-                class="flex-shrink-0 flex items-center justify-center w-8 h-8 cursor-grab active:cursor-grabbing touch-none text-gray-300 hover:text-gray-500"
+                class="flex-shrink-0 flex items-center justify-center w-8 h-8 cursor-grab active:cursor-grabbing touch-none text-faint hover:text-muted"
                 aria-label="Drag to reorder category"
                 tabindex="-1"
               >
-                <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">
-                  <circle cx="3" cy="3" r="1.5"/><circle cx="7" cy="3" r="1.5"/>
-                  <circle cx="3" cy="8" r="1.5"/><circle cx="7" cy="8" r="1.5"/>
-                  <circle cx="3" cy="13" r="1.5"/><circle cx="7" cy="13" r="1.5"/>
-                </svg>
+                <Icon name="drag" size="controlCompact" />
               </div>
 
               {#if editingId === cat.id}
@@ -192,23 +191,31 @@
                     {/if}
                   </div>
                 </div>
-                <Button tone="success" appearance="bare" size="icon" onclick={() => commitEdit(cat)} aria-label="Save">✓</Button>
-                <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={cancelEdit} aria-label="Cancel">✕</Button>
+                <Button tone="success" appearance="bare" size="icon" onclick={() => commitEdit(cat)} aria-label="Save">
+                  <Icon name="save" size="controlCompact" />
+                </Button>
+                <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={cancelEdit} aria-label="Cancel">
+                  <Icon name="cancel" size="controlCompact" />
+                </Button>
               {:else}
                 <div class="flex-1 flex items-center gap-2 min-w-0">
                   {#if cat.color}
                     <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: {cat.color}"></span>
                   {/if}
                   <span
-                    class="text-sm text-gray-800 cursor-pointer truncate"
+                    class="text-sm text-value cursor-pointer truncate"
                     role="button"
                     tabindex="0"
                     onclick={() => startEdit(cat)}
                     onkeydown={(e) => { if (e.key === 'Enter') startEdit(cat); }}
                   >{cat.name}</span>
                 </div>
-                <Button tone="neutral" appearance="bare" size="icon" emphasis="subtle" onclick={() => startEdit(cat)} class="sm:opacity-0 sm:group-hover:opacity-100" aria-label="Rename">✏️</Button>
-                <Button tone="danger" appearance="bare" size="icon" onclick={() => removeCat(cat)} class="sm:opacity-0 sm:group-hover:opacity-100" aria-label="Delete">🗑</Button>
+                <Button tone="neutral" appearance="bare" size="icon" emphasis="subtle" onclick={() => startEdit(cat)} class="sm:opacity-0 sm:group-hover:opacity-100" aria-label="Rename">
+                  <Icon name="edit" size="controlCompact" />
+                </Button>
+                <Button tone="danger" appearance="bare" size="icon" onclick={() => removeCat(cat)} class="sm:opacity-0 sm:group-hover:opacity-100" aria-label="Delete">
+                  <Icon name="delete" size="controlCompact" />
+                </Button>
               {/if}
             </div>
           {/each}
@@ -217,7 +224,7 @@
     </div>
 
     <!-- Footer: add new -->
-    <div class="flex flex-col gap-2 px-4 py-3 border-t border-gray-100">
+    <div class="flex flex-col gap-2 px-4 py-3 border-t border-border-subtle">
       <div class="flex gap-1">
         {#each COLOR_SWATCHES as swatch}
           <ColorSwatchButton

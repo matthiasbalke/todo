@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { getItems, loadItemsForList, updateItem, deleteItem } from '$lib/stores/items.svelte';
+  import { getItems, loadItemsForList, updateItem, deleteItem, toggleDone, toggleStarred } from '$lib/stores/items.svelte';
   import { getList, getCategoriesForList, loadCategoriesForList } from '$lib/stores/lists.svelte';
   import type { TodoItem, User } from '$lib/mock-data';
   import ItemForm from '$lib/components/ItemForm.svelte';
@@ -8,6 +8,7 @@
   import { friendlyError } from '$lib/api/errors';
   import { getMembers } from '$lib/api/lists';
   import Button from '$lib/components/Button.svelte';
+  import Icon from '$lib/components/Icon.svelte';
   import ItemDetails from '$lib/components/ItemDetails.svelte';
   import { getListCapabilities } from '$lib/listCapabilities';
 
@@ -47,6 +48,24 @@
     }
   }
 
+  async function handleDoneChange() {
+    try {
+      await toggleDone(data.id, data.iid);
+    } catch (e) {
+      alert(friendlyError(e, 'Failed to update item status'));
+      throw e;
+    }
+  }
+
+  async function handleStarredChange() {
+    try {
+      await toggleStarred(data.id, data.iid);
+    } catch (e) {
+      alert(friendlyError(e, 'Failed to update item star'));
+      throw e;
+    }
+  }
+
   function handleCancel() {
     goto(returnDestination);
   }
@@ -64,9 +83,11 @@
 
 <div>
   <div class="flex items-center gap-3 mb-6">
-    <a href={returnDestination} class="text-gray-400 hover:text-gray-600">←</a>
+    <a href={returnDestination} class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-surface-subtle hover:text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-2" aria-label="Back">
+      <Icon name="back" size="header" />
+    </a>
     {#if list}
-      <span class="text-sm text-gray-400">{list.emoji} {list.name}</span>
+      <span class="text-sm text-subdued">{list.emoji} {list.name}</span>
     {/if}
   </div>
 
@@ -79,6 +100,8 @@
         users={members}
         onsubmit={handleSave}
         oncancel={handleCancel}
+        onDoneChange={handleDoneChange}
+        onStarredChange={handleStarredChange}
       />
       <div class="mt-4">
         <Button tone="danger" appearance="ghost"
@@ -93,6 +116,6 @@
       <ItemDetails {item} {categories} users={members} />
     {/if}
   {:else}
-    <div class="text-center py-12 text-gray-400">Item not found.</div>
+    <div class="text-center py-12 text-subdued">Item not found.</div>
   {/if}
 </div>

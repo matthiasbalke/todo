@@ -6,6 +6,7 @@
   import { moveItemsToCategoryOptimistic } from '$lib/stores/items.svelte';
   import { friendlyError } from '$lib/api/errors';
   import Button from './Button.svelte';
+  import Icon from './Icon.svelte';
 
   const ITEM_DND_TYPE = 'category-item';
 
@@ -91,7 +92,7 @@
         {/if}
         {category?.name ?? 'Uncategorized'}
       </span>
-      <span class="font-normal normal-case tracking-normal" aria-hidden="true">{collapsed ? '▶' : '▼'}</span>
+      <Icon name={collapsed ? 'collapse' : 'expand'} size="compact" class="flex-shrink-0" />
     </Button>
   </h3>
   {#if !collapsed}
@@ -121,12 +122,14 @@
       <Button
         tone="neutral" appearance="bare"
         size="compact"
+        align="between"
         emphasis="muted"
         onclick={() => { doneCollapsed = !doneCollapsed; ondonecollapsedchange?.(doneCollapsed); }}
-        class="mt-2"
+        aria-expanded={!doneCollapsed}
+        class="mt-2 w-full"
       >
-        <span>{doneCollapsed ? '▶' : '▼'}</span>
         <span>{doneItems.length} checked</span>
+        <Icon name={doneCollapsed ? 'collapse' : 'expand'} size="compact" class="flex-shrink-0" />
       </Button>
       {#if !doneCollapsed}
         <div class="space-y-2 mt-1">

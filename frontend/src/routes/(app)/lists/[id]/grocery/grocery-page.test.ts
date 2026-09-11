@@ -125,6 +125,21 @@ describe('Grocery page capabilities', () => {
 });
 
 describe('Grocery page menu presentation', () => {
+	it('renders Lucide back and menu controls while preserving menu behavior', async () => {
+		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
+
+		const back = screen.getByRole('link', { name: 'Back to list' });
+		const menu = screen.getByRole('button', { name: 'List options' });
+		expect(back.querySelector('svg')).not.toBeNull();
+		expect(menu).toHaveClass('h-11', 'w-11');
+		expect(menu.querySelector('svg')).not.toBeNull();
+
+		await fireEvent.click(menu);
+		const standardMode = screen.getByRole('link', { name: 'Standard mode' });
+		expect(standardMode).toBeInTheDocument();
+		expect(standardMode.parentElement).toHaveClass('top-full', 'mt-1');
+	});
+
 	it('uses blue text and inherited check marks for selected menu choices', async () => {
 		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
 
@@ -143,15 +158,14 @@ describe('Grocery page menu presentation', () => {
 		expect(sortButton).toHaveClass('justify-between', 'font-normal');
 		await fireEvent.click(sortButton);
 
-		const selected = screen.getByRole('button', { name: 'Manual ✓' });
+		const selected = screen.getByRole('button', { name: 'Manual' });
 		const unselected = screen.getByRole('button', { name: 'Created' });
 		expect(selected).toHaveClass('justify-between', 'font-normal', 'text-menu-selected');
-		expect(selected.querySelector('span:last-child')).toHaveTextContent('✓');
-		expect(selected.querySelector('span:last-child')).not.toHaveAttribute('class');
+		expect(selected.querySelector('svg')).toHaveClass('lucide-check');
 		expect(selected).not.toHaveClass('font-medium');
-		expect(unselected).toHaveClass('font-normal', 'text-gray-700');
+		expect(unselected).toHaveClass('font-normal', 'text-label');
 		expect(unselected).not.toHaveClass('text-menu-selected', 'font-medium');
-		expect(screen.getByRole('button', { name: '↑ Ascending' })).toHaveClass(
+		expect(screen.getByRole('button', { name: 'Ascending' })).toHaveClass(
 			'justify-start',
 			'font-normal'
 		);
@@ -160,39 +174,40 @@ describe('Grocery page menu presentation', () => {
 		const filterButton = screen.getByRole('button', { name: /Filter/ });
 		await fireEvent.click(filterButton);
 
-		const selectedFilter = screen.getAllByRole('button', { name: 'All items ✓' })[0];
+		const selectedFilter = screen.getAllByRole('button', { name: 'All items' })[0];
 		expect(selectedFilter).toHaveClass('text-menu-selected');
-		expect(selectedFilter.querySelector('span:last-child')).toHaveTextContent('✓');
-		expect(screen.getByRole('button', { name: 'Starred only' })).toHaveClass('text-gray-700');
+		expect(selectedFilter.querySelector('svg')).toHaveClass('lucide-check');
+		expect(screen.getByRole('button', { name: 'Starred only' })).toHaveClass('text-label');
 
 		const inactiveHideChecked = screen.getByRole('button', { name: 'Hide checked' });
-		expect(inactiveHideChecked).toHaveClass('text-gray-700');
+		expect(inactiveHideChecked).toHaveClass('text-label');
 		expect(inactiveHideChecked).not.toHaveClass('text-menu-selected');
 
 		await fireEvent.click(inactiveHideChecked);
 
-		const activeHideChecked = screen.getByRole('button', { name: 'Hide checked ✓' });
+		const activeHideChecked = screen.getByRole('button', { name: 'Hide checked' });
 		expect(activeHideChecked).toHaveClass('text-menu-selected');
-		expect(activeHideChecked.querySelector('span:last-child')).toHaveTextContent('✓');
-		expect(activeHideChecked.querySelector('span:last-child')).not.toHaveAttribute('class');
+		expect(activeHideChecked.querySelector('svg')).toHaveClass('lucide-check');
 	});
 
 	it('shows summary state and opens sort controls from the summary', async () => {
 		render(GroceryPage, { props: { data: { id: 'list-1', buildNumber: '0' } } });
 
 		expect(screen.getByText('0 items')).toBeInTheDocument();
-		const summarySort = screen.getByRole('button', { name: 'Change sort order: Manual ↑' });
-		expect(summarySort).toHaveTextContent('Sort: Manual ↑');
+		const summarySort = screen.getByRole('button', { name: 'Change sort order: Manual ascending' });
+		expect(summarySort).toHaveTextContent('Sort: Manual');
 		expect(screen.queryByRole('button', { name: /Clear .* filter/ })).not.toBeInTheDocument();
 
 		await fireEvent.click(summarySort);
 		expect(screen.queryByRole('button', { name: 'Filter' })).not.toBeInTheDocument();
-		expect(screen.getByText('Sort by')).toBeInTheDocument();
+		const sortHeading = screen.getByText('Sort by');
+		expect(sortHeading).toBeInTheDocument();
+		expect(sortHeading.parentElement).toHaveClass('top-full', 'mt-1');
 		await fireEvent.click(screen.getByRole('button', { name: 'Created' }));
-		expect(screen.getByRole('button', { name: 'Change sort order: Created ↑' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Change sort order: Created ascending' })).toBeInTheDocument();
 
-		await fireEvent.click(screen.getByRole('button', { name: '↑ Ascending' }));
-		expect(screen.getByRole('button', { name: 'Change sort order: Created ↓' })).toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: 'Ascending' }));
+		expect(screen.getByRole('button', { name: 'Change sort order: Created descending' })).toBeInTheDocument();
 	});
 
 	it('shows supported filter chips and resets one filter at a time', async () => {
@@ -239,7 +254,7 @@ describe('Grocery page menu presentation', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked items' }));
 
 		expect(screen.getByRole('dialog', { name: 'Delete all checked items?' })).toBeInTheDocument();
-		expect(screen.getByText(/permanently delete 1 checked item/)).toHaveClass('font-semibold', 'text-red-600');
+		expect(screen.getByText(/permanently delete 1 checked item/)).toHaveClass('font-semibold', 'text-danger');
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Delete checked' }));
 

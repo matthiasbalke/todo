@@ -44,3 +44,28 @@ test.describe('Component showcase controls', () => {
 		);
 	});
 });
+
+
+for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+	test(`section navigation reaches content at ${viewport.width}px`, async ({ page }) => {
+		await page.setViewportSize(viewport);
+		await page.goto('/components');
+		await waitForHydration(page);
+		const navigation = page.getByRole('navigation', { name: 'Component sections' });
+		await expect(navigation.getByRole('link')).toHaveCount(15);
+		await navigation.getByRole('link', { name: 'MultiSelect', exact: true }).click();
+		await expect(page).toHaveURL(/#multi-select$/);
+		const heading = page.getByRole('heading', { name: 'MultiSelect Component', exact: true });
+		await expect(heading).toBeInViewport();
+		await expect(navigation).toBeInViewport();
+		const navBox = (await navigation.boundingBox())!;
+		const headingBox = (await heading.boundingBox())!;
+		if (viewport.width < 1024) {
+			expect(headingBox.y).toBeGreaterThanOrEqual(navBox.y + navBox.height);
+		} else {
+			expect(navBox.x + navBox.width).toBeLessThanOrEqual(headingBox.x);
+		}
+		await navigation.getByRole('link', { name: 'Button', exact: true }).click();
+		await expect(page.getByRole('heading', { name: 'Button Component', exact: true })).toBeInViewport();
+	});
+}

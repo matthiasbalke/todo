@@ -26,17 +26,16 @@ describe('DatePicker', () => {
 		});
 
 		const trigger = screen.getByRole('button', { name: 'Due date' });
-		expect(trigger).toHaveTextContent('Jun 9, 2026');
-		expect(trigger).toHaveClass('min-h-10', 'w-full');
-		const arrow = trigger.querySelector('svg[aria-hidden="true"]');
-		expect(arrow).toHaveClass('h-4', 'w-4', 'flex-shrink-0', 'transition-transform');
-		expect(arrow?.querySelector('path')).toHaveAttribute('d', 'M19 14l-7 7m0 0l-7-7m7 7V3');
-		await fireEvent.click(trigger);
+			expect(trigger).toHaveTextContent('Jun 9, 2026');
+			expect(trigger).toHaveClass('min-h-10', 'w-full');
+			const arrow = trigger.querySelector('svg[aria-hidden="true"]');
+			expect(arrow).toHaveClass('lucide-chevron-down', 'flex-shrink-0');
+			await fireEvent.click(trigger);
 
 		expect(
 			screen.getByRole('gridcell', { name: 'Tuesday, June 9, 2026' })
 		).toHaveAttribute('aria-selected', 'true');
-		expect(arrow).toHaveClass('rotate-180');
+			expect(trigger.querySelector('svg[aria-hidden="true"]')).toHaveClass('lucide-chevron-up');
 	});
 
 	it('shows a placeholder for null and renders a Monday-first 42-cell grid', async () => {
@@ -46,6 +45,10 @@ describe('DatePicker', () => {
 
 		const trigger = screen.getByRole('button', { name: 'Pick date' });
 		expect(trigger).toHaveTextContent('Choose date');
+		expect(trigger).toHaveClass('typography-control');
+		expect(trigger.querySelector('span')).toHaveClass(
+			'typography-placeholder'
+		);
 		await fireEvent.click(trigger);
 
 		const dialog = screen.getByRole('dialog', { name: 'Calendar' });
@@ -102,6 +105,9 @@ describe('DatePicker', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
 
 		expect(trigger).toHaveTextContent('No due date');
+		expect(trigger.querySelector('span')).toHaveClass(
+			'typography-placeholder'
+		);
 	});
 
 	it('selects Today using the local calendar date', async () => {

@@ -1,11 +1,21 @@
 <script lang="ts">
+	import Icon from './Icon.svelte';
+
+	type Size = 'card' | 'form';
+
 	interface Props {
 		done: boolean;
 		disabled?: boolean;
+		size?: Size;
 		onactivate?: (event: Event) => void;
 	}
 
-	let { done, disabled = false, onactivate }: Props = $props();
+	let { done, disabled = false, size = 'card', onactivate }: Props = $props();
+
+	const sizeClasses: Record<Size, string> = {
+		card: 'h-6 w-6',
+		form: 'h-10 w-10'
+	};
 
 	function activate(event: Event) {
 		if (disabled) return;
@@ -24,13 +34,9 @@
 		event.preventDefault();
 		activate(event);
 	}}
-	class="h-5 w-5 flex-shrink-0 rounded-full border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 {done
-		? 'border-green-500 bg-green-500'
-		: 'border-gray-300 hover:border-green-400'}"
+	class="{sizeClasses[size]} flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-success focus-visible:ring-offset-1 control-focus control-disabled {done
+		? 'text-success-indicator'
+		: 'text-faint hover:text-success-highlight'}"
 >
-	{#if done}
-		<svg class="mx-auto h-3 w-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-		</svg>
-	{/if}
+	<Icon name={done ? 'done' : 'status'} size="itemStatus" />
 </button>

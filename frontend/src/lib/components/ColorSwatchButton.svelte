@@ -30,8 +30,8 @@
 		onmousedown?.(event);
 	}}
 	onclick={() => onselect?.(color)}
-	class="h-4 w-4 rounded-full border-2 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 {selected
-		? 'scale-110 border-gray-700'
+	class="h-4 w-4 rounded-full border-2 transition-all focus:outline-none focus:ring-2 focus:ring-focus-primary focus:ring-offset-1 control-disabled {selected
+		? 'scale-110 border-border-emphasis'
 		: 'border-transparent'}"
 	style:background-color={color}
 ></button>

@@ -5,10 +5,12 @@
   import { isDraggingAny } from '$lib/stores/drag.svelte';
   import ListForm from '$lib/components/ListForm.svelte';
   import ListGroupSection from '$lib/components/ListGroupSection.svelte';
+  import FixedActionFooter from '$lib/components/FixedActionFooter.svelte';
   import { dragHandleZone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { friendlyError } from '$lib/api/errors';
   import Button from '$lib/components/Button.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
+  import Icon from '$lib/components/Icon.svelte';
   import { getProfile } from '$lib/stores/preferences.svelte';
   import { getTodayUnfinishedCount, loadTodayCount } from '$lib/stores/today.svelte';
   import { onMount, untrack } from 'svelte';
@@ -127,30 +129,30 @@
   }
 </script>
 
-<div class="pb-20">
+<div class="pb-32">
   {#if isLoading()}
     <div class="space-y-3">
       {#each [1, 2, 3] as _}
-        <div class="h-16 bg-gray-100 rounded-xl animate-pulse"></div>
+        <div class="h-16 bg-surface-subtle rounded-xl animate-pulse"></div>
       {/each}
     </div>
   {:else}
     <div class="space-y-2">
       {#if profile?.todayViewEnabled}
-        <div class="flex items-center gap-4 p-4 rounded-xl border border-blue-100 bg-blue-50 hover:border-blue-200 hover:shadow-sm transition-all mb-4">
+        <div class="flex items-center gap-4 p-4 rounded-xl border border-primary-subtle bg-primary-surface hover:border-primary-soft hover:shadow-sm transition-all mb-4">
           <div class="flex-shrink-0 w-5" aria-hidden="true"></div>
           <a href="/today" class="flex items-center gap-4 flex-1 min-w-0">
             <span class="text-3xl">📆</span>
             <div class="flex-1 min-w-0">
-              <h2 class="font-semibold text-blue-900">Today</h2>
+              <h2 class="font-semibold text-primary-heading">Today</h2>
             </div>
-            <span class="rounded-full bg-blue-100 px-2 py-0.5 text-sm text-blue-800">{todayCount}</span>
-            <span class="text-gray-300">›</span>
+            <span class="rounded-full bg-primary-subtle px-2 py-0.5 text-sm text-primary-emphasis">{todayCount}</span>
+            <Icon name="next" size="compact" tone="muted" class="flex-shrink-0" />
           </a>
         </div>
       {/if}
       {#if groupError}
-        <p class="px-1 text-sm text-red-600">{groupError}</p>
+        <p class="px-1 text-sm text-danger">{groupError}</p>
       {/if}
 
       <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -185,17 +187,14 @@
   {/if}
 </div>
 
-<div class="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gray-100 shadow-lg">
-  <div class="max-w-2xl mx-auto px-4 py-3">
-    {#if showAddForm}
-      <div class="max-h-[70vh] overflow-y-auto">
+<FixedActionFooter expanded={showAddForm || addingGroup}>
+  {#if showAddForm}
         <ListForm
           onsubmit={handleSave}
           oncancel={() => { showAddForm = false; error = null; }}
         />
-      </div>
-    {:else if addingGroup}
-      <div class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+  {:else if addingGroup}
+      <div class="bg-surface rounded-xl border border-border p-4 space-y-3">
         <TextInput
           bind:element={groupInput}
           bind:value={newGroupName}
@@ -218,29 +217,31 @@
           </Button>
         </div>
         {#if groupError}
-          <p class="text-sm text-red-600">{groupError}</p>
+          <p class="text-sm text-danger">{groupError}</p>
         {/if}
       </div>
-    {:else}
-      <div class="flex gap-2">
-        <Button tone="neutral" appearance="outline"
-          size="empty"
+  {:else}
+      <div class="flex items-center gap-3">
+        <Button tone="neutral" appearance="bare"
+          size="large"
+          align="start"
           onclick={() => { showAddForm = true; }}
           disabled={saving}
-          class="flex-1"
+          class="flex-1 rounded-xl px-4 py-3"
         >
-          + New list
+          <Icon name="plus" size="action" />
+          <span>new list</span>
         </Button>
         <Button tone="neutral" appearance="outline"
-          size="empty"
+          size="icon-standard"
           onclick={() => { addingGroup = true; }}
+          aria-label="Create group"
         >
-          + New group
+          <Icon name="group" size="control" />
         </Button>
       </div>
-    {/if}
-    {#if error}
-      <p class="mt-2 text-sm text-red-600">{error}</p>
-    {/if}
-  </div>
-</div>
+  {/if}
+  {#if error}
+    <p class="mt-2 text-sm text-danger">{error}</p>
+  {/if}
+</FixedActionFooter>

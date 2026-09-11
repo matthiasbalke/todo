@@ -191,6 +191,9 @@ describe('ComponentsPage Button showcase', () => {
 		expect(loadingButton).toBeDisabled();
 		expect(loadingButton).toHaveAttribute('aria-busy', 'true');
 		expect(screen.getByRole('button', { name: 'Full-width button' })).toHaveClass('w-full');
+		expect(screen.getByRole('button', { name: 'Compact icon action' })).toHaveClass('h-8');
+		expect(screen.getByRole('button', { name: 'Standard icon action' })).toHaveClass('h-10');
+		expect(screen.getByRole('button', { name: 'Header icon action' })).toHaveClass('h-11');
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Submit example' }));
 		expect(screen.getByText('Last action:').parentElement).toHaveTextContent('Submit');
@@ -221,7 +224,43 @@ describe('ComponentsPage Button showcase', () => {
 		expect(showcase.getByText(/standard native button attributes and handlers/i)).toBeInTheDocument();
 		expect(showcase.getByText('Tone, appearance, and click handling:')).toBeInTheDocument();
 		expect(showcase.getByText('States, type, and layout classes:')).toBeInTheDocument();
+		expect(showcase.getByText('Icon Touch Targets')).toBeInTheDocument();
 		expect(showcase.getByText(/selected options use blue text/i)).toBeInTheDocument();
+	});
+});
+
+describe('ComponentsPage Icon showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('renders semantic icons, sizing presets, and accessible example', () => {
+		render(ComponentsPage);
+
+		const section = screen.getByRole('heading', { name: 'Icon Component' }).closest('section');
+		expect(section).not.toBeNull();
+		const showcase = within(section!);
+
+		for (const label of [
+			'back',
+			'menu',
+			'plus',
+			'group',
+			'expand',
+			'collapse',
+			'status',
+			'done',
+			'metadata',
+			'compact',
+			'action',
+			'header',
+			'itemStatus'
+		]) {
+			expect(showcase.getByText(label)).toBeInTheDocument();
+		}
+
+		expect(showcase.getByRole('img', { name: 'Open menu example' })).toBeInTheDocument();
+		expect(section).toHaveTextContent('<Icon name="menu" label="Open menu" size="header" />');
 	});
 });
 
@@ -341,11 +380,14 @@ describe('ComponentsPage specialized controls showcase', () => {
 			'true'
 		);
 
-		await fireEvent.click(showcase.getByRole('button', { name: 'Mark done' }));
-		await fireEvent.click(showcase.getByRole('button', { name: 'Star' }));
-		expect(showcase.getByRole('button', { name: 'Mark undone' })).toBeInTheDocument();
-		expect(showcase.getByRole('button', { name: 'Unstar' })).toBeInTheDocument();
-		expect(showcase.getByRole('button', { name: 'Delete example item' })).toHaveClass('bg-red-600');
+		expect(showcase.getAllByRole('button', { name: 'Mark done' })).toHaveLength(2);
+		expect(showcase.getAllByRole('button', { name: 'Star' })).toHaveLength(2);
+
+		await fireEvent.click(showcase.getAllByRole('button', { name: 'Mark done' })[0]);
+		await fireEvent.click(showcase.getAllByRole('button', { name: 'Star' })[0]);
+		expect(showcase.getAllByRole('button', { name: 'Mark undone' })).toHaveLength(2);
+		expect(showcase.getAllByRole('button', { name: 'Unstar' })).toHaveLength(2);
+		expect(showcase.getByRole('button', { name: 'Delete example item' })).toHaveClass('bg-danger');
 	});
 });
 
@@ -370,6 +412,66 @@ describe('ComponentsPage Select showcase', () => {
 
 		expect(trigger).toHaveValue('Banana');
 		expect(showcase.getAllByText('Selected:')[0].parentElement).toHaveTextContent('Banana');
+	});
+});
+
+describe('ComponentsPage MultiSelect showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('demonstrates empty, selected, custom avatar rendering, and callback feedback', async () => {
+		render(ComponentsPage);
+		const section = screen.getByRole('heading', { name: 'MultiSelect Component' }).closest('section')!;
+		const showcase = within(section);
+
+		const fruits = showcase.getByRole('combobox', { name: 'Favorite fruits' });
+		expect(fruits).toHaveAttribute('placeholder', 'Choose fruits...');
+		await fireEvent.click(fruits);
+		await fireEvent.click(showcase.getByRole('option', { name: 'Banana' }));
+		await fireEvent.click(showcase.getByRole('option', { name: 'Cherry' }));
+		expect(showcase.getByText('Selected:').parentElement).toHaveTextContent('Banana, Cherry');
+		expect(showcase.getByRole('listbox', { name: 'Favorite fruits' })).toHaveAttribute(
+			'aria-multiselectable',
+			'true'
+		);
+		await fireEvent.keyDown(fruits, { key: 'Escape' });
+
+		const groupSelect = showcase.getByRole('combobox', { name: 'List groups' });
+		expect(groupSelect.parentElement).toHaveTextContent('Home');
+		expect(groupSelect.parentElement).toHaveTextContent('Shopping');
+
+		const assignees = showcase.getByRole('combobox', { name: 'Assignees' });
+		expect(assignees.parentElement).toHaveTextContent('Riley Chen');
+		expect(assignees.parentElement).toHaveTextContent('Morgan Reed');
+		await fireEvent.click(assignees);
+		expect(showcase.getByRole('option', { name: 'Casey Stone' })).toHaveTextContent('C');
+		await fireEvent.click(showcase.getByRole('option', { name: 'Casey Stone' }));
+		expect(showcase.getByText('Selected IDs:').parentElement).toHaveTextContent(
+			'showcase-riley, showcase-morgan, showcase-casey'
+		);
+	});
+
+	it('documents MultiSelect usage and props', () => {
+		render(ComponentsPage);
+		const section = screen.getByRole('heading', { name: 'MultiSelect Component' }).closest('section')!;
+		const showcase = within(section);
+
+		expect(showcase.getByText('Usage Example')).toBeInTheDocument();
+		expect(section).toHaveTextContent('<MultiSelect');
+		for (const prop of [
+			'options',
+			'selected',
+			'label',
+			'placeholder',
+			'getOptionLabel',
+			'optionKey',
+			'selectedContent',
+			'optionContent',
+			'onChange'
+		]) {
+			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
+		}
 	});
 });
 
@@ -487,5 +589,27 @@ describe('ComponentsPage TimezonePicker showcase', () => {
 		for (const prop of ['selected', 'label', 'placeholder', 'disabled', 'onSelect']) {
 			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
 		}
+	});
+});
+
+
+describe('ComponentsPage section navigation', () => {
+	afterEach(cleanup);
+
+	it('links to every documented section in display order with unique targets', () => {
+		render(ComponentsPage);
+		const navigation = screen.getByRole('navigation', { name: 'Component sections' });
+		const links = within(navigation).getAllByRole('link');
+		const headings = screen.getAllByRole('heading', { level: 2 });
+		expect(headings).toHaveLength(15);
+		expect(links).toHaveLength(headings.length);
+		expect(new Set(links.map((link) => link.getAttribute('href'))).size).toBe(links.length);
+		for (const [index, link] of links.entries()) {
+			const section = headings[index].closest('section')!;
+			expect(link).toHaveAttribute('href', '#' + section.id);
+			expect(section).toHaveAttribute('aria-labelledby', headings[index].id);
+			expect(section).toHaveAccessibleName(headings[index].textContent!);
+		}
+		expect(within(navigation).getByRole('link', { name: /^MultiSelect$/ })).toHaveAttribute('href', '#multi-select');
 	});
 });

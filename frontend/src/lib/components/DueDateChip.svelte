@@ -6,7 +6,7 @@
 {#if dueDate}
   {@const overdue = isDueDateOverdue(dueDate)}
   {@const isToday = isDueDateToday(dueDate)}
-  <span class="text-xs font-medium {overdue ? 'text-red-600' : isToday ? 'text-orange-500' : 'text-gray-500'}">
+  <span class="text-xs font-medium {overdue ? 'text-danger' : isToday ? 'text-due-today-indicator' : 'text-muted'}">
     {formatDueDate(dueDate)}
   </span>
 {/if}

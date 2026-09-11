@@ -123,6 +123,16 @@ Replacing native controls with shared components SHALL NOT change authentication
 - **WHEN** an existing focused component or route workflow is performed
 - **THEN** its submitted data, API calls, state transitions, cancellation behavior, and error handling remain unchanged
 
+### Requirement: New shared components are added to the component showcase
+Every new reusable shared frontend component SHALL be represented on the development component showcase before the component is considered complete.
+
+#### Scenario: Developer adds a reusable shared component
+- **WHEN** a new reusable shared component is added under the frontend shared components area
+- **THEN** the `/components` development showcase includes a section or example for that component
+- **AND** the showcase renders the real component rather than a static mock
+- **AND** the showcase demonstrates the component's primary states, interactive behavior, and any custom rendering API that consumers are expected to use
+- **AND** frontend tests cover the presence of the new showcase example
+
 ### Requirement: Native-control adoption guard
 The frontend SHALL automatically detect newly introduced consumer-level native controls when a matching shared component exists.
 

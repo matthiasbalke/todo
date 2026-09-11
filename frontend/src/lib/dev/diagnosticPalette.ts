@@ -1,0 +1,92 @@
+// Loaded only through a dev-gated dynamic import. Never import from production code directly.
+const diagnosticPalette = {
+  "--ui-border": "#9674b0",
+  "--ui-border-emphasis": "#44205f",
+  "--ui-border-strong": "#76518f",
+  "--ui-border-subtle": "#bca2cf",
+  "--ui-canvas": "#e9ddfa",
+  "--ui-danger": "#9c235f",
+  "--ui-danger-border": "#9c235f",
+  "--ui-danger-indicator": "#9c235f",
+  "--ui-danger-soft": "#f6d0e1",
+  "--ui-danger-strong": "#9c235f",
+  "--ui-danger-subtle": "#f6d0e1",
+  "--ui-danger-surface": "#f6d0e1",
+  "--ui-due-today-indicator": "#875010",
+  "--ui-faint": "#957caa",
+  "--ui-focus-danger": "#9c235f",
+  "--ui-focus-neutral": "#583078",
+  "--ui-focus-primary": "#075e55",
+  "--ui-focus-success": "#41601a",
+  "--ui-focus-warning": "#875010",
+  "--ui-heading": "#321047",
+  "--ui-inactive": "#957caa",
+  "--ui-info-strong": "#493888",
+  "--ui-info-subtle": "#d6d3f7",
+  "--ui-label": "#54266e",
+  "--ui-menu-selected": "#075e55",
+  "--ui-muted": "#735581",
+  "--ui-neutral": "#583078",
+  "--ui-neutral-hover": "#583078",
+  "--ui-on-action": "#fff9e8",
+  "--ui-on-inverse": "#fff9e8",
+  "--ui-overlay": "#27113f",
+  "--ui-placeholder": "#735581",
+  "--ui-primary": "#075e55",
+  "--ui-primary-border": "#487f70",
+  "--ui-primary-emphasis": "#075e55",
+  "--ui-primary-heading": "#075e55",
+  "--ui-primary-indicator": "#075e55",
+  "--ui-primary-soft": "#b6e5d5",
+  "--ui-primary-strong": "#075e55",
+  "--ui-primary-subtle": "#b6e5d5",
+  "--ui-primary-surface": "#b6e5d5",
+  "--ui-subdued": "#79548b",
+  "--ui-success": "#41601a",
+  "--ui-success-border": "#41601a",
+  "--ui-success-highlight": "#41601a",
+  "--ui-success-indicator": "#41601a",
+  "--ui-success-strong": "#41601a",
+  "--ui-success-subtle": "#d3e3a0",
+  "--ui-success-surface": "#d3e3a0",
+  "--ui-supporting": "#604172",
+  "--ui-surface": "#fff4cf",
+  "--ui-surface-hover": "#d5c1ef",
+  "--ui-surface-inverse": "#27113f",
+  "--ui-surface-subtle": "#ead5b6",
+  "--ui-track-disabled": "#957caa",
+  "--ui-value": "#46205c",
+  "--ui-warning-border": "#875010",
+  "--ui-warning-emphasis": "#875010",
+  "--ui-warning-heading": "#875010",
+  "--ui-warning-highlight": "#875010",
+  "--ui-warning-indicator": "#875010",
+  "--ui-warning-soft": "#ffe0a3",
+  "--ui-warning-surface": "#ffe0a3",
+  "--ui-shadow": "rgb(71 20 103 / 0.22)",
+  "--ui-shadow-soft": "rgb(71 20 103 / 0.12)"
+} as const;
+
+export function installDiagnosticPalette(): () => void {
+ const root = document.documentElement;
+ const style = document.createElement('style');
+ style.dataset.diagnosticPalette = 'true';
+ style.textContent = ':root[data-diagnostic-palette="true"] {' +
+  Object.entries(diagnosticPalette).map(([name, value]) => `${name}: ${value};`).join('') + '}';
+ document.head.append(style);
+ const button = document.createElement('button');
+ button.type = 'button';
+ button.dataset.diagnosticPaletteControl = 'true';
+ button.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:100;padding:8px 12px;border:2px solid var(--ui-border-emphasis);border-radius:8px;background:var(--ui-surface);color:var(--ui-value);font:14px system-ui;';
+ let active = new URL(location.href).searchParams.get('palette') === 'diagnostic';
+ function update() {
+  if (active) root.dataset.diagnosticPalette = 'true';
+  else delete root.dataset.diagnosticPalette;
+  button.textContent = active ? 'Restore default palette' : 'Use diagnostic palette';
+  button.setAttribute('aria-pressed', String(active));
+ }
+ button.addEventListener('click', () => { active = !active; update(); });
+ document.body.append(button);
+ update();
+ return () => { delete root.dataset.diagnosticPalette; style.remove(); button.remove(); };
+}

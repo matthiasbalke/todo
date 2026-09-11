@@ -73,6 +73,7 @@ A native button wrapper with semantic tone and appearance, consistent focus trea
 ```svelte
 <script lang="ts">
   import Button from '$lib/components/Button.svelte';
+  import Icon from '$lib/components/Icon.svelte';
 
   let saving = false;
 </script>
@@ -80,7 +81,9 @@ A native button wrapper with semantic tone and appearance, consistent focus trea
 <Button onclick={() => console.log('Saved')}>Save</Button>
 <Button tone="neutral" appearance="outline">Cancel</Button>
 <Button tone="danger" appearance="solid">Delete</Button>
-<Button tone="neutral" appearance="ghost" size="icon" aria-label="Open menu">⋮</Button>
+<Button tone="neutral" appearance="ghost" size="icon" aria-label="Open menu">
+  <Icon name="menu" size="control" />
+</Button>
 <Button tone="neutral" appearance="bare" size="menu" align="start" weight="normal">Menu item</Button>
 <Button tone="neutral" appearance="bare" size="menu" align="between" weight="normal" selected>
   <span>Filter</span><span>Off</span>

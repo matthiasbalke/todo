@@ -74,7 +74,13 @@ describe('Today page', () => {
 	it('uses the common burger menu with Filter and Sort submenus', async () => {
 		render(TodayPage);
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Today options' }));
+		const back = screen.getByRole('link', { name: 'Back to lists' });
+		const menu = screen.getByRole('button', { name: 'Today options' });
+		expect(back.querySelector('svg')).not.toBeNull();
+		expect(menu).toHaveClass('h-11', 'w-11');
+		expect(menu.querySelector('svg')).not.toBeNull();
+
+		await fireEvent.click(menu);
 		expect(screen.getByRole('button', { name: /Filter/ })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: /Sort/ })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Delete checked items' })).not.toBeInTheDocument();
@@ -86,7 +92,7 @@ describe('Today page', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: /Sort/ }));
 		const alphabetical = screen.getByRole('button', { name: 'Alphabetical' });
-		const dueDate = screen.getByRole('button', { name: /^Due date ✓$/ });
+		const dueDate = screen.getByRole('button', { name: /^Due date$/ });
 		expect(alphabetical.compareDocumentPosition(dueDate) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Manual' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Starred only' })).not.toBeInTheDocument();
@@ -96,18 +102,18 @@ describe('Today page', () => {
 		render(TodayPage);
 
 		expect(screen.getByText('3 items')).toBeInTheDocument();
-		const summarySort = screen.getByRole('button', { name: 'Change sort order: Due date ↑' });
-		expect(summarySort).toHaveTextContent('Sort: Due date ↑');
+		const summarySort = screen.getByRole('button', { name: 'Change sort order: Due date ascending' });
+		expect(summarySort).toHaveTextContent('Sort: Due date');
 		expect(screen.queryByRole('button', { name: /Clear .* filter/ })).not.toBeInTheDocument();
 
 		await fireEvent.click(summarySort);
 		expect(screen.queryByRole('button', { name: 'Filter' })).not.toBeInTheDocument();
 		expect(screen.getByText('Sort by')).toBeInTheDocument();
 		await fireEvent.click(screen.getByRole('button', { name: 'Alphabetical' }));
-		expect(screen.getByRole('button', { name: 'Change sort order: Alphabetical ↑' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Change sort order: Alphabetical ascending' })).toBeInTheDocument();
 
-		await fireEvent.click(screen.getByRole('button', { name: '↑ Ascending' }));
-		expect(screen.getByRole('button', { name: 'Change sort order: Alphabetical ↓' })).toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: 'Ascending' }));
+		expect(screen.getByRole('button', { name: 'Change sort order: Alphabetical descending' })).toBeInTheDocument();
 	});
 
 	it('shows supported filter chips and resets one Today filter at a time', async () => {

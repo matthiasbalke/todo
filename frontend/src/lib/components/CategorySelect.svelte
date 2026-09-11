@@ -2,16 +2,24 @@
 	import type { Category } from '$lib/mock-data';
 	import Select from './Select.svelte';
 
+	type Size = 'default' | 'compact' | 'dense' | 'display';
+	type Appearance = 'default' | 'inline';
+
 	interface Props {
 		categories: Category[];
 		selectedCategoryId?: string | null;
 		disabled?: boolean;
 		label?: string;
+		ariaLabel?: string;
 		placeholder?: string;
 		labelId?: string;
 		id?: string;
 		listboxId?: string;
 		class?: string;
+		size?: Size;
+		appearance?: Appearance;
+		emptyLabel?: string;
+		emptySelectedLabel?: string;
 		onSelect?: (categoryId: string | null) => void;
 	}
 
@@ -20,11 +28,16 @@
 		selectedCategoryId = $bindable(null),
 		disabled = false,
 		label = 'Category',
+		ariaLabel = '',
 		placeholder = 'Select a category',
 		labelId = '',
 		id = '',
 		listboxId = '',
 		class: className = '',
+		size = 'default',
+		appearance = 'default',
+		emptyLabel = 'Uncategorized',
+		emptySelectedLabel = emptyLabel,
 		onSelect
 	}: Props = $props();
 
@@ -37,8 +50,17 @@
 	}
 
 	function getCategoryLabel(categoryId: string): string {
-		if (!categoryId) return 'Uncategorized';
+		if (!categoryId) return emptyLabel;
 		return findCategory(categoryId)?.name ?? categoryId;
+	}
+
+	function getSelectedCategoryLabel(categoryId: string): string {
+		if (!categoryId) return emptySelectedLabel;
+		return getCategoryLabel(categoryId);
+	}
+
+	function isSelectedCategoryMuted(categoryId: string): boolean {
+		return !categoryId;
 	}
 
 	function getCategoryColor(categoryId: string): string | null {
@@ -67,16 +89,23 @@
 	selected={selectValue}
 	{disabled}
 	{label}
+	{ariaLabel}
 	{placeholder}
 	{labelId}
 	id={id}
 	listboxId={listboxId}
 	class={className}
+	{size}
+	{appearance}
 	getOptionLabel={getCategoryLabel}
+	getSelectedLabel={getSelectedCategoryLabel}
+	isSelectedMuted={isSelectedCategoryMuted}
 	onSelect={handleSelect}
 >
 	{#snippet selectedContent(categoryId)}
-		{@render categorySwatch(categoryId)}
+		{#if getCategoryColor(categoryId)}
+			{@render categorySwatch(categoryId)}
+		{/if}
 	{/snippet}
 
 	{#snippet optionContent(categoryId)}

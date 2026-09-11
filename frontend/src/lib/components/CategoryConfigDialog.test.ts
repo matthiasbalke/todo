@@ -92,6 +92,8 @@ describe('CategoryConfigDialog category reordering', () => {
 		});
 
 		expect(container.querySelectorAll('[aria-label="Drag to reorder category"]')).toHaveLength(2);
+		expect(container.querySelector('[aria-label="Drag to reorder category"]')?.querySelector('svg')).not.toBeNull();
+		expect(container.querySelector('[aria-label="Drag to reorder category"] svg')).toHaveClass('lucide-grip-vertical');
 		expect(screen.queryByRole('button', { name: 'Move up' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Move down' })).not.toBeInTheDocument();
 	});

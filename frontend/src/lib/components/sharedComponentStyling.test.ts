@@ -46,8 +46,8 @@ describe('shared component semantic styling', () => {
 		['sm:group-hover:opacity-100', true],
 		['flex-1', true],
 		['min-w-0', true],
-		['text-red-600', false],
-		['hover:bg-red-50', false],
+		['text-danger', false],
+		['hover:bg-danger-surface', false],
 		['px-4', false],
 		['rounded-lg', false],
 		['focus:ring-[3px]', false]
@@ -56,21 +56,21 @@ describe('shared component semantic styling', () => {
 	});
 
 	it('normalizes responsive and state prefixes', () => {
-		expect(baseUtility('sm:group-hover:text-red-500')).toBe('text-red-500');
+		expect(baseUtility('sm:group-hover:text-danger-indicator')).toBe('text-danger-indicator');
 		expect(baseUtility('focus:!ring-[3px]')).toBe('!ring-[3px]');
 	});
 
 	it('finds static, conditional, state-prefixed, and arbitrary visual utilities', () => {
 		expect(
 			forbiddenClassTokens(
-				"w-full custom-class {selected ? 'text-red-600 hover:bg-red-50' : 'sm:border-gray-300'} focus:ring-[3px]"
+				"w-full custom-class {selected ? 'text-danger hover:bg-danger-surface' : 'sm:border-border-strong'} focus:ring-[3px]"
 			)
 		).toEqual([
 			'custom-class',
 			'focus:ring-[3px]',
-			'text-red-600',
-			'hover:bg-red-50',
-			'sm:border-gray-300'
+			'text-danger',
+			'hover:bg-danger-surface',
+			'sm:border-border-strong'
 		]);
 	});
 
@@ -103,10 +103,10 @@ describe('shared component semantic styling', () => {
 		'Toggle'
 	])('guards specialized control consumers: %s', (component) => {
 		expect(sharedControlNames).toContain(component);
-		const source = `<${component} class="text-red-600 rounded-full" style="color: red" />`;
+		const source = `<${component} class="text-danger rounded-full" style="color: red" />`;
 		const match = [...source.matchAll(new RegExp(sharedTag.source, 'g'))][0];
 		expect(match?.[1]).toBe(component);
-		expect(forbiddenClassTokens(source)).toContain('text-red-600');
+		expect(forbiddenClassTokens(source)).toContain('text-danger');
 		expect(source).toMatch(/\bstyle\s*=/);
 	});
 

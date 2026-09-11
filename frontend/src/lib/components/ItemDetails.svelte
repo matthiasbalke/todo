@@ -4,6 +4,7 @@
   import CategorySelect from './CategorySelect.svelte';
   import DatePicker from './DatePicker.svelte';
   import ItemAuditMetadata from './ItemAuditMetadata.svelte';
+  import Icon from './Icon.svelte';
   import Select from './Select.svelte';
   import StarToggle from './StarToggle.svelte';
   import Textarea from './Textarea.svelte';
@@ -40,7 +41,7 @@
   }
 </script>
 
-<article class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+<article class="bg-surface rounded-xl border border-border p-4 space-y-3">
   <div class="flex items-center gap-3">
     <TextInput
       value={item.title}
@@ -52,9 +53,11 @@
       containerClass="min-w-0 flex-1"
     />
     <span
-      class="flex-shrink-0 text-lg leading-none {item.starred ? 'text-yellow-400' : 'text-gray-200'}"
+      class="flex-shrink-0 {item.starred ? 'text-warning-highlight' : 'text-inactive'}"
       aria-label={item.starred ? 'Starred' : 'Not starred'}
-    >★</span>
+    >
+      <Icon name="star" size="action" />
+    </span>
   </div>
 
   <CategorySelect
@@ -77,9 +80,9 @@
   />
 
   <fieldset class="border-0 p-0">
-    <legend class="text-xs text-gray-500 mb-1">Assign to</legend>
+    <legend class="text-xs text-muted mb-1">Assign to</legend>
     {#if users.length === 0}
-      <p class="text-xs text-gray-400 italic">No members</p>
+      <p class="text-xs text-subdued italic">No members</p>
     {:else}
       <div class="flex flex-wrap gap-1">
         {#each users as user}

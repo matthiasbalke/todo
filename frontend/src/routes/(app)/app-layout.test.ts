@@ -54,6 +54,6 @@ describe('App layout account menu presentation', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'User menu' }));
 		const adminLink = screen.getByRole('link', { name: 'Admin' });
 		expect(adminLink).toHaveAttribute('href', '/admin');
-		expect(adminLink).toHaveClass('text-red-700', 'hover:bg-red-50');
+		expect(adminLink).toHaveClass('text-danger-strong', 'hover:bg-danger-surface');
 	});
 });

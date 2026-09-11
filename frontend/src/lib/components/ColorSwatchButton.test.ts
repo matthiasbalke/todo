@@ -11,7 +11,7 @@ describe('ColorSwatchButton', () => {
 
 		expect(swatch).toHaveAttribute('aria-pressed', 'true');
 		expect(swatch).toHaveStyle({ backgroundColor: 'oklch(70% 0.2 40)' });
-		expect(swatch).toHaveClass('scale-110', 'border-gray-700', 'focus:ring-2');
+		expect(swatch).toHaveClass('scale-110', 'border-border-emphasis', 'focus:ring-2');
 	});
 
 	it('reports its color and preserves an active editor on pointer activation', async () => {

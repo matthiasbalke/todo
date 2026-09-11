@@ -13,7 +13,7 @@ describe('Button', () => {
 
 		const button = screen.getByRole('button', { name: 'Continue' });
 		expect(button).toHaveAttribute('type', 'button');
-		expect(button).toHaveClass('bg-blue-600');
+		expect(button).toHaveClass('bg-primary');
 		expect(button).toHaveClass('justify-center');
 		expect(button).toHaveClass('font-medium');
 	});
@@ -106,26 +106,26 @@ describe('Button', () => {
 	});
 
 	it.each([
-		['primary', 'solid', 'bg-blue-600'],
-		['primary', 'outline', 'border-blue-300'],
-		['primary', 'soft', 'bg-blue-50'],
-		['primary', 'ghost', 'hover:bg-blue-50'],
-		['primary', 'bare', 'text-blue-600'],
-		['neutral', 'solid', 'bg-gray-700'],
-		['neutral', 'outline', 'border-gray-300'],
-		['neutral', 'soft', 'bg-gray-50'],
-		['neutral', 'ghost', 'hover:bg-gray-100'],
-		['neutral', 'bare', 'text-gray-700'],
-		['danger', 'solid', 'bg-red-600'],
-		['danger', 'outline', 'border-red-300'],
-		['danger', 'soft', 'bg-red-50'],
-		['danger', 'ghost', 'hover:bg-red-50'],
-		['danger', 'bare', 'text-red-600'],
-		['success', 'solid', 'bg-green-600'],
-		['success', 'outline', 'border-green-300'],
-		['success', 'soft', 'bg-green-50'],
-		['success', 'ghost', 'hover:bg-green-50'],
-		['success', 'bare', 'text-green-600']
+		['primary', 'solid', 'bg-primary'],
+		['primary', 'outline', 'border-primary-border'],
+		['primary', 'soft', 'bg-primary-surface'],
+		['primary', 'ghost', 'hover:bg-primary-surface'],
+		['primary', 'bare', 'text-primary'],
+		['neutral', 'solid', 'bg-neutral'],
+		['neutral', 'outline', 'border-border-strong'],
+		['neutral', 'soft', 'bg-canvas'],
+		['neutral', 'ghost', 'hover:bg-surface-subtle'],
+		['neutral', 'bare', 'text-label'],
+		['danger', 'solid', 'bg-danger'],
+		['danger', 'outline', 'border-danger-border'],
+		['danger', 'soft', 'bg-danger-surface'],
+		['danger', 'ghost', 'hover:bg-danger-surface'],
+		['danger', 'bare', 'text-danger'],
+		['success', 'solid', 'bg-success'],
+		['success', 'outline', 'border-success-border'],
+		['success', 'soft', 'bg-success-surface'],
+		['success', 'ghost', 'hover:bg-success-surface'],
+		['success', 'bare', 'text-success']
 	] as const)('renders the %s %s presentation', (tone, appearance, expectedClass) => {
 		render(Button, {
 			props: {
@@ -157,10 +157,10 @@ describe('Button', () => {
 		const { rerender } = render(Button, {
 			props: { children: text('Stateful'), tone: 'neutral', appearance: 'bare', active: true }
 		});
-		expect(screen.getByRole('button')).toHaveClass('bg-blue-100');
+		expect(screen.getByRole('button')).toHaveClass('bg-primary-subtle');
 
 		await rerender({ children: text('Stateful'), tone: 'neutral', appearance: 'outline', invalid: true });
-		expect(screen.getByRole('button')).toHaveClass('border-red-500', 'bg-red-50');
+		expect(screen.getByRole('button')).toHaveClass('border-danger-indicator', 'bg-danger-surface');
 
 		await rerender({
 			children: text('Stateful'),
@@ -170,7 +170,7 @@ describe('Button', () => {
 			active: false,
 			invalid: false
 		});
-		expect(screen.getByRole('button')).toHaveClass('text-gray-500', 'hover:text-gray-700');
+		expect(screen.getByRole('button')).toHaveClass('text-muted', 'hover:text-label');
 	});
 
 	it.each([
@@ -179,6 +179,9 @@ describe('Button', () => {
 		['small', 'px-3'],
 		['compact', 'text-xs'],
 		['icon', 'p-1'],
+		['icon-compact', 'h-8'],
+		['icon-standard', 'h-10'],
+		['icon-header', 'h-11'],
 		['menu', 'rounded-none'],
 		['menu-indented', 'px-6'],
 		['chip', 'rounded-full'],
@@ -197,8 +200,8 @@ describe('Button', () => {
 	});
 
 	it('supports accessible icon-only usage', () => {
-		render(Button, { props: { children: text('★'), size: 'icon', 'aria-label': 'Star item' } });
-		expect(screen.getByRole('button', { name: 'Star item' })).toBeInTheDocument();
+		render(Button, { props: { children: text('Icon'), size: 'icon', 'aria-label': 'Run action' } });
+		expect(screen.getByRole('button', { name: 'Run action' })).toBeInTheDocument();
 	});
 
 	it('prevents clicks while disabled', async () => {
@@ -240,7 +243,7 @@ describe('Button', () => {
 
 		expect(screen.getByRole('button')).toHaveClass(
 			'inline-flex',
-			'bg-blue-600',
+			'bg-primary',
 			'w-full',
 			'justify-between'
 		);

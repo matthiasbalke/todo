@@ -4,9 +4,11 @@
 
 <script lang="ts">
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
+	import { controlTypographyPresets, controlGeometryPresets } from './controlStyles';
 
 	type Resize = 'none' | 'vertical' | 'horizontal' | 'both';
 	type Size = 'default' | 'compact';
+	type Appearance = 'default' | 'inline';
 
 	interface Props
 		extends Omit<
@@ -17,7 +19,9 @@
 			| 'class'
 			| 'disabled'
 			| 'onblur'
+			| 'onfocus'
 			| 'oninput'
+			| 'onkeydown'
 			| 'placeholder'
 			| 'required'
 			| 'rows'
@@ -32,13 +36,17 @@
 		rows?: number;
 		resize?: Resize;
 		size?: Size;
+		appearance?: Appearance;
 		validate?: ((value: string) => string | null) | null;
 		ariaLabel?: string;
 		class?: string;
+		element?: HTMLTextAreaElement | null;
 		'aria-describedby'?: string;
 		'aria-label'?: string;
 		oninput?: HTMLTextareaAttributes['oninput'];
 		onblur?: HTMLTextareaAttributes['onblur'];
+		onfocus?: HTMLTextareaAttributes['onfocus'];
+		onkeydown?: HTMLTextareaAttributes['onkeydown'];
 	}
 
 	let {
@@ -51,13 +59,17 @@
 		rows = 3,
 		resize = 'vertical',
 		size = 'default',
+		appearance = 'default',
 		validate = null,
 		ariaLabel,
 		class: className = '',
+		element = $bindable(null),
 		'aria-describedby': consumerDescribedBy,
 		'aria-label': nativeAriaLabel,
 		oninput,
 		onblur,
+		onfocus,
+		onkeydown,
 		...restProps
 	}: Props = $props();
 
@@ -73,11 +85,20 @@
 		both: 'resize'
 	};
 	const sizeClasses: Record<Size, string> = {
-		default: 'px-3 py-2 text-sm',
-		compact: 'px-2 py-1 text-xs'
+		default: `${controlGeometryPresets.default} ${controlTypographyPresets.default}`,
+		compact: `${controlGeometryPresets.compact} ${controlTypographyPresets.default}`
 	};
 
 	const isError = $derived(Boolean(errorMessage));
+	const presentationClasses = $derived.by(() => {
+		if (isError) {
+			return 'border-danger-indicator bg-danger-surface focus:ring-focus-danger';
+		}
+		if (appearance === 'inline') {
+			return 'border-transparent bg-transparent hover:bg-canvas focus:ring-focus-primary';
+		}
+		return 'border-border-strong bg-surface hover:bg-canvas focus:ring-focus-primary';
+	});
 	const describedBy = $derived(
 		[consumerDescribedBy, description ? descriptionId : null, isError ? errorId : null]
 			.filter(Boolean)
@@ -111,17 +132,18 @@
 
 <div class="flex flex-col gap-1">
 	{#if label}
-		<label for={instanceId} class="text-sm font-medium text-gray-700">
+		<label for={instanceId} class="typography-label">
 			{label}
-			{#if required}<span class="text-red-500" aria-hidden="true">*</span>{/if}
+			{#if required}<span class="text-danger-indicator" aria-hidden="true">*</span>{/if}
 		</label>
 	{/if}
 
 	{#if description}
-		<p id={descriptionId} class="text-sm text-gray-500">{description}</p>
+		<p id={descriptionId} class="typography-supporting">{description}</p>
 	{/if}
 
 	<textarea
+		bind:this={element}
 		id={instanceId}
 		{value}
 		{placeholder}
@@ -133,15 +155,15 @@
 		aria-describedby={describedBy}
 		oninput={handleInput}
 		onblur={handleBlur}
-		class="w-full rounded border transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {isError
-			? 'border-red-500 bg-red-50 focus:ring-red-500'
-			: 'border-gray-300 bg-white hover:bg-gray-50 focus:ring-blue-500'} disabled:cursor-not-allowed disabled:bg-white disabled:hover:bg-gray-50 disabled:opacity-50 {resizeClasses[
+		onfocus={onfocus}
+		onkeydown={onkeydown}
+		class="native-placeholder text-value w-full rounded border transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {presentationClasses} disabled:cursor-not-allowed disabled:bg-surface disabled:hover:bg-canvas control-disabled {resizeClasses[
 			resize
 		]} {className}"
 		{...restProps}
 	></textarea>
 
 	{#if errorMessage}
-		<p id={errorId} class="text-sm text-red-600">{errorMessage}</p>
+		<p id={errorId} class="typography-error">{errorMessage}</p>
 	{/if}
 </div>

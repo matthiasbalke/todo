@@ -18,6 +18,7 @@
   import { friendlyError } from '$lib/api/errors';
   import { ApiError } from '$lib/api/client';
   import Button from '$lib/components/Button.svelte';
+  import Icon from '$lib/components/Icon.svelte';
   import EditableLabel from '$lib/components/EditableLabel.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
   import TimezonePicker from '$lib/components/TimezonePicker.svelte';
@@ -233,17 +234,19 @@
 
 <div class="space-y-8">
   <div class="flex items-center gap-3">
-    <a href="/lists" class="text-gray-400 hover:text-gray-600">←</a>
-    <h1 class="text-xl font-bold text-gray-900">Account</h1>
+    <a href="/lists" class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-surface-subtle hover:text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-2" aria-label="Back to lists">
+      <Icon name="back" size="header" />
+    </a>
+    <h1 class="text-xl font-bold text-heading">Account</h1>
   </div>
 
   <!-- Profile section -->
-  <section class="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Profile</h2>
+  <section class="bg-surface rounded-xl border border-border p-6 space-y-5">
+    <h2 class="text-sm font-semibold text-muted uppercase tracking-wide">Profile</h2>
 
     <!-- Display name -->
     <div>
-      <p class="block text-sm font-medium text-gray-700 mb-1">Display name</p>
+      <p class="block text-sm font-medium text-label mb-1">Display name</p>
       <EditableLabel
         value={profile.displayName}
         ariaLabel={profile.displayName}
@@ -256,13 +259,13 @@
         }}
       />
       {#if nameError}
-        <p class="mt-1 text-xs text-red-600">{nameError}</p>
+        <p class="mt-1 text-xs text-danger">{nameError}</p>
       {/if}
     </div>
 
     <!-- Email -->
     <div>
-      <p class="block text-sm font-medium text-gray-700 mb-1">Email</p>
+      <p class="block text-sm font-medium text-label mb-1">Email</p>
       <EditableLabel
         id="email"
         type="email"
@@ -280,16 +283,16 @@
         }}
       />
       {#if emailError}
-        <p class="mt-1 text-xs text-red-600">{emailError}</p>
+        <p class="mt-1 text-xs text-danger">{emailError}</p>
       {/if}
       {#if emailSuccess}
-        <p class="mt-1 text-xs text-green-600">Email updated.</p>
+        <p class="mt-1 text-xs text-success">Email updated.</p>
       {/if}
     </div>
   </section>
 
-  <section class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Settings</h2>
+  <section class="bg-surface rounded-xl border border-border p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-muted uppercase tracking-wide">Settings</h2>
     <div>
       <TimezonePicker
         bind:selected={timeZone}
@@ -298,7 +301,7 @@
       />
     </div>
     <div class="flex items-center justify-between gap-4">
-      <span id="today-view-label" class="text-sm font-medium text-gray-700">Show Today View</span>
+      <span id="today-view-label" class="text-sm font-medium text-label">Show Today View</span>
       <Toggle
         bind:checked={todayViewEnabled}
         disabled={preferencesSaving}
@@ -306,21 +309,21 @@
         onchange={handlePreferenceChange}
       />
     </div>
-    {#if preferencesError}<p class="text-sm text-red-600">{preferencesError}</p>{/if}
-    {#if preferencesSaved}<p class="text-sm text-green-600">Preferences saved.</p>{/if}
+    {#if preferencesError}<p class="text-sm text-danger">{preferencesError}</p>{/if}
+    {#if preferencesSaved}<p class="text-sm text-success">Preferences saved.</p>{/if}
   </section>
 
   <!-- Security section -->
-  <section class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Security</h2>
+  <section class="bg-surface rounded-xl border border-border p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-muted uppercase tracking-wide">Security</h2>
 
     <ul class="space-y-2">
       {#each passkeys as passkey (passkey.id)}
-        <li class="py-2 border-b border-gray-100 last:border-0">
+        <li class="py-2 border-b border-border-subtle last:border-0">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-gray-800">{passkey.label ?? 'Passkey'}</p>
-              <p class="text-xs text-gray-400">Added {formatDate(passkey.createdAt)}</p>
+              <p class="text-sm font-medium text-value">{passkey.label ?? 'Passkey'}</p>
+              <p class="text-xs text-subdued">Added {formatDate(passkey.createdAt)}</p>
             </div>
             {#if passkeyToRemove !== passkey.id}
               <Button tone="danger" appearance="bare"
@@ -335,9 +338,9 @@
           </div>
           {#if passkeyToRemove === passkey.id}
             <div class="mt-3 space-y-3">
-              <p class="text-sm font-medium text-gray-800">Remove <span class="font-semibold">"{passkey.label ?? 'Passkey'}"</span>? This can't be undone.</p>
+              <p class="text-sm font-medium text-value">Remove <span class="font-semibold">"{passkey.label ?? 'Passkey'}"</span>? This can't be undone.</p>
               {#if removePasskeyError}
-                <p class="text-sm text-red-600">{removePasskeyError}</p>
+                <p class="text-sm text-danger">{removePasskeyError}</p>
               {/if}
               <div class="flex items-center gap-3">
                 <Button tone="danger" appearance="solid"
@@ -357,13 +360,13 @@
         </li>
       {/each}
       {#if passkeys.length === 0}
-        <li class="text-sm text-gray-400 py-2">No passkeys registered.</li>
+        <li class="text-sm text-subdued py-2">No passkeys registered.</li>
       {/if}
     </ul>
 
     {#if showAddPasskey}
-      <div class="border border-gray-200 rounded-lg p-4 space-y-3">
-        <p class="text-sm font-medium text-gray-700">Add passkey for this device</p>
+      <div class="border border-border rounded-lg p-4 space-y-3">
+        <p class="text-sm font-medium text-label">Add passkey for this device</p>
         <TextInput
           bind:value={newLabel}
           placeholder="Label (optional, e.g. My Laptop)"
@@ -371,7 +374,7 @@
           class="w-full"
         />
         {#if addPasskeyError}
-          <p class="text-xs text-red-600">{addPasskeyError}</p>
+          <p class="text-xs text-danger">{addPasskeyError}</p>
         {/if}
         <div class="flex gap-2">
           <Button tone="primary" appearance="solid"
@@ -399,8 +402,8 @@
   </section>
 
   <!-- Danger zone -->
-  <section class="bg-white rounded-xl border border-red-200 p-6 space-y-4">
-    <h2 class="text-sm font-semibold text-red-500 uppercase tracking-wide">Danger zone</h2>
+  <section class="bg-surface rounded-xl border border-danger-soft p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-danger-indicator uppercase tracking-wide">Danger zone</h2>
 
     {#if !showDeleteConfirm}
       <Button tone="danger" appearance="solid"
@@ -411,18 +414,18 @@
     {:else}
       <div class="space-y-4">
         {#if loadingPreview}
-          <p class="text-sm text-gray-500">Loading…</p>
+          <p class="text-sm text-muted">Loading…</p>
         {:else if deleteError}
-          <p class="text-sm text-red-600">{deleteError}</p>
+          <p class="text-sm text-danger">{deleteError}</p>
         {:else if deletionPreview}
-          <p class="text-sm font-medium text-gray-800">This will permanently delete your account.</p>
+          <p class="text-sm font-medium text-value">This will permanently delete your account.</p>
 
           {#if deletionPreview.listsToDelete.length > 0}
             <div>
-              <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Lists that will be deleted</p>
-              <ul class="text-sm text-gray-700 space-y-0.5">
+              <p class="text-xs font-semibold text-muted uppercase mb-1">Lists that will be deleted</p>
+              <ul class="text-sm text-label space-y-0.5">
                 {#each deletionPreview.listsToDelete as l}
-                  <li class="text-red-700">— {l.name}</li>
+                  <li class="text-danger-strong">— {l.name}</li>
                 {/each}
               </ul>
             </div>
@@ -430,8 +433,8 @@
 
           {#if deletionPreview.listsToLeave.length > 0}
             <div>
-              <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Lists you will be removed from</p>
-              <ul class="text-sm text-gray-700 space-y-0.5">
+              <p class="text-xs font-semibold text-muted uppercase mb-1">Lists you will be removed from</p>
+              <ul class="text-sm text-label space-y-0.5">
                 {#each deletionPreview.listsToLeave as l}
                   <li>— {l.name}</li>
                 {/each}
@@ -440,7 +443,7 @@
           {/if}
 
           {#if deleteError}
-            <p class="text-sm text-red-600">{deleteError}</p>
+            <p class="text-sm text-danger">{deleteError}</p>
           {/if}
 
           <div class="flex items-center gap-3">

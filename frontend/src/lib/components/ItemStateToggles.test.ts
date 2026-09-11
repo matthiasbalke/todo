@@ -10,7 +10,8 @@ describe('CompletionToggle', () => {
 		const toggle = screen.getByRole('button', { name: 'Mark done' });
 
 		expect(toggle).toHaveAttribute('aria-pressed', 'false');
-		expect(toggle).toHaveClass('border-gray-300');
+		expect(toggle).toHaveClass('text-faint');
+		expect(toggle.querySelector('svg.lucide-circle')).not.toBeNull();
 		await fireEvent.click(toggle);
 		expect(onactivate).toHaveBeenCalledOnce();
 
@@ -19,7 +20,9 @@ describe('CompletionToggle', () => {
 		expect(onactivate).toHaveBeenCalledOnce();
 
 		await rerender({ done: true, onactivate });
-		expect(screen.getByRole('button', { name: 'Mark undone' })).toHaveClass('bg-green-500');
+		const doneToggle = screen.getByRole('button', { name: 'Mark undone' });
+		expect(doneToggle).toHaveClass('text-success-indicator');
+		expect(doneToggle.querySelector('svg.lucide-circle-check')).not.toBeNull();
 	});
 
 	it('does not activate while disabled', async () => {
@@ -37,7 +40,8 @@ describe('StarToggle', () => {
 		const toggle = screen.getByRole('button', { name: 'Star' });
 
 		expect(toggle).toHaveAttribute('aria-pressed', 'false');
-		expect(toggle).toHaveClass('text-gray-200');
+		expect(toggle).toHaveClass('text-inactive');
+		expect(toggle.querySelector('svg.lucide-star')).not.toBeNull();
 		await fireEvent.click(toggle);
 		expect(onactivate).toHaveBeenCalledOnce();
 
@@ -46,7 +50,9 @@ describe('StarToggle', () => {
 		expect(onactivate).toHaveBeenCalledOnce();
 
 		await rerender({ starred: true, onactivate });
-		expect(screen.getByRole('button', { name: 'Unstar' })).toHaveClass('text-yellow-400');
+		const starredToggle = screen.getByRole('button', { name: 'Unstar' });
+		expect(starredToggle).toHaveClass('text-warning-highlight');
+		expect(starredToggle.querySelector('svg.lucide-star')).toHaveAttribute('fill', 'currentColor');
 	});
 
 	it('shows focus treatment only for keyboard-visible focus', () => {
@@ -56,10 +62,10 @@ describe('StarToggle', () => {
 		expect(toggle).toHaveClass(
 			'focus:outline-none',
 			'focus-visible:ring-2',
-			'focus-visible:ring-yellow-400',
+			'focus-visible:ring-focus-warning',
 			'focus-visible:ring-offset-1'
 		);
-		expect(toggle).not.toHaveClass('focus:ring-2', 'focus:ring-yellow-400');
+		expect(toggle).not.toHaveClass('focus:ring-2', 'focus:ring-focus-warning');
 	});
 
 	it('stops touch propagation and does not activate while disabled', async () => {

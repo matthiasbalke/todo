@@ -71,9 +71,9 @@
 </script>
 
 <div>
-  <header class="bg-white border-b border-gray-100 sticky top-0 z-10">
+  <header class="bg-surface border-b border-border-subtle sticky top-0 z-10">
     <div class="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-      <a href="/lists" class="text-lg font-bold text-gray-900">Todo</a>
+      <a href="/lists" class="text-lg font-bold text-heading">Todo</a>
 
       {#if userMenuOpen}
         <div
@@ -100,18 +100,18 @@
           onclick={() => (userMenuOpen = !userMenuOpen)}
           aria-label="User menu"
         >
-          <span class="text-sm text-gray-500">{user?.displayName ?? ''}</span>
-          <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold select-none">
+          <span class="text-sm text-muted">{user?.displayName ?? ''}</span>
+          <div class="w-8 h-8 rounded-full bg-primary-subtle text-primary-strong flex items-center justify-center text-sm font-semibold select-none">
             {(user?.displayName ?? '?')[0]}
           </div>
         </Button>
 
         {#if userMenuOpen}
-          <div class="absolute right-0 top-10 z-20 w-44 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+          <div class="absolute right-0 top-10 z-20 w-44 bg-surface border border-border rounded-lg shadow-lg py-1">
             <a
               href="/account"
               onclick={() => (userMenuOpen = false)}
-              class="block w-full text-left px-4 py-2 text-sm font-normal text-gray-700 hover:bg-gray-50"
+              class="block w-full text-left px-4 py-2 text-sm font-normal text-label hover:bg-canvas"
             >
               Account
             </a>
@@ -119,12 +119,12 @@
               <a
                 href="/admin"
                 onclick={() => (userMenuOpen = false)}
-                class="block w-full text-left px-4 py-2 text-sm font-normal text-red-700 hover:bg-red-50"
+                class="block w-full text-left px-4 py-2 text-sm font-normal text-danger-strong hover:bg-danger-surface"
               >
                 Admin
               </a>
             {/if}
-            <div class="border-t border-gray-100 my-1"></div>
+            <div class="border-t border-border-subtle my-1"></div>
             <Button tone="neutral" appearance="bare"
               size="menu"
               align="start"
@@ -139,11 +139,11 @@
     </div>
   </header>
   {#if syncing}
-    <div class="bg-blue-50 border-b border-blue-200 text-blue-800 text-sm text-center py-2 px-4">
+    <div class="bg-primary-surface border-b border-primary-soft text-primary-emphasis text-sm text-center py-2 px-4">
       Syncing…
     </div>
   {:else if offline}
-    <div class="bg-yellow-50 border-b border-yellow-200 text-yellow-800 text-sm text-center py-2 px-4">
+    <div class="bg-warning-surface border-b border-warning-soft text-warning-emphasis text-sm text-center py-2 px-4">
       You're offline — changes won't be saved until you reconnect.
     </div>
   {/if}

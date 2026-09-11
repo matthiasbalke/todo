@@ -30,7 +30,7 @@
   }
 </script>
 
-<form onsubmit={handleSubmit} class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+<form onsubmit={handleSubmit} class="bg-surface rounded-xl border border-border p-4 space-y-3">
   <TextInput
     bind:element={nameInput}
     bind:value={name}

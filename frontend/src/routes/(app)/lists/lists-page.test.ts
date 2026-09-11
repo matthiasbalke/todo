@@ -105,17 +105,15 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 
 	async function openAddGroupForm() {
 		const { container } = render(ListsPage, { props: { } });
-		const newGroupBtn = Array.from(container.querySelectorAll('button')).find(
-			(b) => b.textContent?.trim() === '+ New group',
-		)!;
+		const newGroupBtn = container.querySelector('button[aria-label="Create group"]')!;
 		await fireEvent.click(newGroupBtn);
 		return container;
 	}
 
-	it('add-group form should have card container (bg-white rounded-xl border border-gray-200 p-4)', async () => {
+	it('add-group form should have card container (bg-surface rounded-xl border border-border p-4)', async () => {
 		const container = await openAddGroupForm();
-		// ListForm wraps everything in a card: bg-white rounded-xl border border-gray-200 p-4
-		const card = container.querySelector('.bg-white.rounded-xl.border.border-gray-200.p-4');
+		// ListForm wraps everything in a card: bg-surface rounded-xl border border-border p-4
+		const card = container.querySelector('.bg-surface.rounded-xl.border.border-border.p-4');
 		expect(card).not.toBeNull();
 	});
 
@@ -143,6 +141,56 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		expect(document.activeElement).toBe(input);
 	});
 
+	it('renders creation actions inside the shared fixed action footer with safe-area spacing', () => {
+		const { container } = render(ListsPage, { props: { } });
+
+		const footer = container.querySelector('[data-testid="fixed-action-footer"]') as HTMLElement;
+		const content = container.querySelector('[data-testid="fixed-action-footer-content"]') as HTMLElement;
+		const pageReserve = container.querySelector('.pb-32');
+		expect(footer).not.toBeNull();
+		expect(footer).toHaveClass('fixed', 'bottom-0', 'border-t', 'bg-surface', 'shadow-lg');
+		expect(content).toHaveClass('px-4', 'pt-3', 'max-w-2xl');
+		expect(content.className).toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
+		expect(pageReserve).not.toBeNull();
+	});
+
+	it('renders list and group creation actions with Lucide icons and without old labels', () => {
+		const { container } = render(ListsPage, { props: { } });
+		const newListButton = Array.from(container.querySelectorAll('button')).find((button) =>
+			button.textContent?.trim() === 'new list'
+		)!;
+		const groupButton = container.querySelector('button[aria-label="Create group"]') as HTMLButtonElement;
+
+		expect(newListButton).not.toBeNull();
+		expect(newListButton).toHaveClass('justify-start', 'flex-1');
+		expect(newListButton).not.toHaveClass('border', 'border-2', 'border-dashed');
+		expect(newListButton.querySelector('svg')).not.toBeNull();
+		expect(groupButton).not.toBeNull();
+		expect(groupButton.querySelector('svg')).not.toBeNull();
+		expect(container.textContent).not.toContain('+ New list');
+		expect(container.textContent).not.toContain('+ New group');
+	});
+
+	it('opens the list creation form from the left-aligned new list action', async () => {
+		const { container, getByPlaceholderText } = render(ListsPage, { props: { } });
+		const newListButton = Array.from(container.querySelectorAll('button')).find((button) =>
+			button.textContent?.trim() === 'new list'
+		)!;
+
+		await fireEvent.click(newListButton);
+
+		expect(getByPlaceholderText('List name')).toBeInTheDocument();
+	});
+
+	it('bounds expanded group creation content inside the fixed action footer', async () => {
+		const container = await openAddGroupForm();
+
+		const scrollArea = container.querySelector('[data-testid="fixed-action-footer-scroll"]') as HTMLElement;
+		expect(scrollArea).not.toBeNull();
+		expect(scrollArea).toHaveClass('overflow-y-auto');
+		expect(scrollArea.className).toContain('max-h-[min(70vh,calc(100vh-2rem))]');
+	});
+
 	it('refreshes the Today count when the page mounts', () => {
 		render(ListsPage, { props: { } });
 
@@ -162,8 +210,11 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		expect(zone.textContent).not.toContain('Ungrouped');
 		expect(container.querySelectorAll('[aria-label="Drag to reorder list group"]')).toHaveLength(2);
 
-		const sectionLabels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => button.textContent);
-		expect(sectionLabels).toEqual(['▼ Home', '▼ Work', '▼ Ungrouped']);
+		const sectionLabels = Array.from(container.querySelectorAll('button[aria-expanded]'))
+			.map(button => button.textContent?.trim())
+			.filter(Boolean);
+		expect(sectionLabels).toEqual(['Home', 'Work', 'Ungrouped']);
+		expect(container.querySelectorAll('button[aria-expanded] svg').length).toBeGreaterThanOrEqual(3);
 	});
 
 	it('persists finalized list group wrapper order without affecting list-card drag handles', async () => {
@@ -195,16 +246,18 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		storeMocks.getLists.mockReturnValue(lists);
 		saveListGroupState({ collapsed: { 'group-home': true } });
 
-		const { container } = render(ListsPage, { props: { } });
-		const labels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => ({
-			text: button.textContent,
-			expanded: button.getAttribute('aria-expanded'),
-		}));
+			const { container } = render(ListsPage, { props: { } });
+			const labels = Array.from(container.querySelectorAll('button[aria-expanded]'))
+				.map(button => ({
+					text: button.textContent?.trim(),
+					expanded: button.getAttribute('aria-expanded'),
+				}))
+				.filter(label => label.text);
 
 		expect(labels).toEqual([
-			{ text: '▶ Home', expanded: 'false' },
-			{ text: '▼ Work', expanded: 'true' },
-			{ text: '▼ Ungrouped', expanded: 'true' },
+			{ text: 'Home', expanded: 'false' },
+			{ text: 'Work', expanded: 'true' },
+			{ text: 'Ungrouped', expanded: 'true' },
 		]);
 		expect(container.querySelector('a[href="/lists/list-home"]')).toBeNull();
 		expect(container.querySelector('a[href="/lists/list-work"]')).not.toBeNull();
@@ -215,16 +268,18 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		storeMocks.getLists.mockReturnValue(lists);
 		saveListGroupState({ collapsed: { [UNGROUPED_LIST_GROUP_STATE_KEY]: true } });
 
-		const { container } = render(ListsPage, { props: { } });
-		const labels = Array.from(container.querySelectorAll('button[aria-expanded]')).map(button => ({
-			text: button.textContent,
-			expanded: button.getAttribute('aria-expanded'),
-		}));
+			const { container } = render(ListsPage, { props: { } });
+			const labels = Array.from(container.querySelectorAll('button[aria-expanded]'))
+				.map(button => ({
+					text: button.textContent?.trim(),
+					expanded: button.getAttribute('aria-expanded'),
+				}))
+				.filter(label => label.text);
 
 		expect(labels).toEqual([
-			{ text: '▼ Home', expanded: 'true' },
-			{ text: '▼ Work', expanded: 'true' },
-			{ text: '▶ Ungrouped', expanded: 'false' },
+			{ text: 'Home', expanded: 'true' },
+			{ text: 'Work', expanded: 'true' },
+			{ text: 'Ungrouped', expanded: 'false' },
 		]);
 		expect(container.querySelector('a[href="/lists/list-ungrouped"]')).toBeNull();
 	});

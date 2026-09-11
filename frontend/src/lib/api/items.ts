@@ -29,6 +29,7 @@ export interface CreateItemRequest {
 	notes?: string | null;
 	categoryId?: string | null;
 	dueDate?: string | null;
+	done?: boolean;
 	starred?: boolean;
 	recurrenceRule?: RecurrenceRuleDto | null;
 	assignedUserIds?: string[];

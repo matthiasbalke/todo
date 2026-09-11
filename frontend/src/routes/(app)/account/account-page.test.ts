@@ -88,7 +88,7 @@ describe('AccountPage email inline-edit', () => {
 		render(AccountPage, { props: { data: mockData } });
 
 		const deleteButton = screen.getByRole('button', { name: 'Delete my account' });
-		expect(deleteButton).toHaveClass('bg-red-600', 'text-white', 'hover:bg-red-700');
+		expect(deleteButton).toHaveClass('bg-danger', 'text-on-action', 'hover:bg-danger-strong');
 		expect(deleteButton).not.toHaveClass('bg-transparent');
 	});
 

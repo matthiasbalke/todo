@@ -4,6 +4,7 @@
 
 <script lang="ts">
 	import type { HTMLInputAttributes } from 'svelte/elements';
+	import { controlTypographyPresets, controlGeometryPresets } from './controlStyles';
 
 	type Size = 'default' | 'small' | 'compact' | 'title';
 	type Appearance = 'default' | 'inline';
@@ -81,23 +82,23 @@
 			.join(' ') || undefined
 	);
 	const sizeClasses: Record<Size, string> = {
-		default: 'px-3 py-2 text-sm',
-		small: 'px-3 py-1.5 text-sm',
-		compact: 'px-2 py-0.5 text-xs',
-		title: 'px-0 py-0 text-xl font-bold'
+		default: `${controlGeometryPresets.default} ${controlTypographyPresets.default}`,
+		small: `${controlGeometryPresets.small} ${controlTypographyPresets.default}`,
+		compact: `px-2 py-0.5 ${controlTypographyPresets.default}`,
+		title: `px-0 py-0 ${controlTypographyPresets.title} font-bold`
 	};
 	const appearanceClasses: Record<Appearance, string> = {
 		default: 'rounded border',
-		inline: 'rounded-none border-0 border-b bg-transparent focus:ring-0'
+		inline: 'rounded border border-transparent bg-transparent'
 	};
 	const stateClasses = $derived(
 		appearance === 'inline'
 			? isError
-				? 'border-red-500 focus:border-red-500'
-				: 'border-gray-300 focus:border-blue-500'
+				? 'border-danger-indicator focus:ring-focus-danger'
+				: 'hover:bg-canvas focus:ring-focus-primary'
 			: isError
-				? 'border-red-500 bg-red-50 focus:ring-red-500'
-				: 'border-gray-300 bg-white hover:bg-gray-50 focus:ring-blue-500'
+				? 'border-danger-indicator bg-danger-surface focus:ring-focus-danger'
+				: 'border-border-strong bg-surface hover:bg-canvas focus:ring-focus-primary'
 	);
 
 	function runValidation() {
@@ -126,14 +127,14 @@
 
 <div class="flex flex-col gap-1 {containerClass}">
 	{#if label}
-		<label for={inputId} class="text-sm font-medium text-gray-700">
+		<label for={inputId} class="typography-label">
 			{label}
-			{#if required}<span class="text-red-500" aria-hidden="true">*</span>{/if}
+			{#if required}<span class="text-danger-indicator" aria-hidden="true">*</span>{/if}
 		</label>
 	{/if}
 
 	{#if description}
-		<p id={descriptionId} class="text-sm text-gray-500">{description}</p>
+		<p id={descriptionId} class="typography-supporting">{description}</p>
 	{/if}
 
 	<input
@@ -149,13 +150,13 @@
 		oninput={handleInput}
 		onblur={handleBlur}
 		{onfocus}
-		class="transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {appearanceClasses[
+		class="native-placeholder text-value transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {appearanceClasses[
 			appearance
-		]} {stateClasses} disabled:bg-white disabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 {className}"
+		]} {stateClasses} disabled:bg-surface disabled:hover:bg-canvas disabled:cursor-not-allowed control-disabled {className}"
 		{...restProps}
 	/>
 
 	{#if errorMessage}
-		<p id={errorId} class="text-sm text-red-600">{errorMessage}</p>
+		<p id={errorId} class="typography-error">{errorMessage}</p>
 	{/if}
 </div>

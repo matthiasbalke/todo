@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Button from './Button.svelte';
+	import Icon from './Icon.svelte';
 
 	type Width = 'default' | 'wide';
 
@@ -33,5 +34,5 @@
 	{disabled}
 	onclick={() => onactivate?.()}
 >
-	<span class="text-lg text-white" aria-hidden="true">🗑</span>
+	<Icon name="delete" size="action" />
 </Button>

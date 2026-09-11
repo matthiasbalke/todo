@@ -27,6 +27,8 @@
   import Button from '$lib/components/Button.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
   import DeleteCheckedItemsDialog from '$lib/components/DeleteCheckedItemsDialog.svelte';
+  import FixedActionFooter from '$lib/components/FixedActionFooter.svelte';
+  import Icon from '$lib/components/Icon.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -146,7 +148,7 @@
   const visibleItemCount = $derived(
     hideDone ? filtered.filter((item) => !item.done).length : filtered.length
   );
-  const sortLabel = $derived(`${sortFields.find(f => f.value === sortField)?.label} ${sortDirection === 'ASC' ? '↑' : '↓'}`);
+  const sortLabel = $derived(sortFields.find(f => f.value === sortField)?.label ?? sortField);
   const activeFilterChips = $derived.by((): FilterChip[] => {
     const chips: FilterChip[] = [];
     if (filters.starredOnly) {
@@ -197,6 +199,7 @@
         notes: item.notes,
         categoryId: item.categoryId,
         dueDate: item.dueDate,
+        done: item.done,
         starred: item.starred,
         recurrenceRule: item.recurrenceRule,
         assignedUserIds: item.assignedUserIds,
@@ -295,11 +298,13 @@
 </script>
 
 {#if !list}
-  <div class="text-center py-12 text-gray-400">List not found.</div>
+  <div class="text-center py-12 text-subdued">List not found.</div>
 {:else}
-<div class="pb-20">
+<div class="pb-32">
   <div class="flex items-center gap-3 mb-4">
-    <a href="/lists" class="text-gray-400 hover:text-gray-600">←</a>
+    <a href="/lists" class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-surface-subtle hover:text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-2" aria-label="Back to lists">
+      <Icon name="back" size="header" />
+    </a>
     {#if editingTitle}
       <TextInput
         bind:element={titleInput}
@@ -324,18 +329,18 @@
         {list.emoji ?? '📋'} {list.name}
       </Button>
     {:else}
-      <h1 class="flex-1 min-w-0 text-xl font-bold text-gray-900">
+      <h1 class="flex-1 min-w-0 text-xl font-bold text-heading">
         {list.emoji ?? '📋'} {list.name}
       </h1>
     {/if}
       <div class="relative ml-auto">
         <Button tone="neutral" appearance="bare"
-          size="icon"
+          size="icon-header"
           emphasis="muted"
           onclick={() => { menuOpen = !menuOpen; sortSubmenuOpen = false; filterSubmenuOpen = false; }}
           aria-label="List options"
         >
-          ⋮
+          <Icon name="menu" size="header" />
         </Button>
         {#if menuOpen}
           <div
@@ -343,7 +348,7 @@
             onclick={() => { menuOpen = false; sortSubmenuOpen = false; filterSubmenuOpen = false; }}
             role="presentation"
           ></div>
-          <div class="absolute right-0 top-8 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+          <div class="absolute right-0 top-full mt-1 z-20 w-48 bg-surface border border-border rounded-lg shadow-lg py-1">
             <Button tone="neutral" appearance="bare"
               size="menu"
               align="start"
@@ -370,7 +375,7 @@
             >
               Members
             </Button>
-            <div class="border-t border-gray-100 mt-1 pt-1">
+            <div class="border-t border-border-subtle mt-1 pt-1">
               <Button tone="neutral" appearance="bare"
                 size="menu"
                 align="between"
@@ -378,11 +383,11 @@
                 onclick={() => { filterSubmenuOpen = !filterSubmenuOpen; sortSubmenuOpen = false; }}
               >
                 <span>Filter</span>
-                <span class="text-gray-400 text-xs">{activeFilterCount > 0 ? `${activeFilterCount} active` : 'Off'}</span>
+                <span class="text-subdued text-xs">{activeFilterCount > 0 ? `${activeFilterCount} active` : 'Off'}</span>
               </Button>
               {#if filterSubmenuOpen}
-                <div class="bg-gray-50 border-t border-gray-100">
-                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Starred</p>
+                <div class="bg-canvas border-t border-border-subtle">
+                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Starred</p>
                   {#each [{ value: false, label: 'All items' }, { value: true, label: 'Starred only' }] as opt}
                     <Button tone="neutral" appearance="bare"
                       size="menu-indented"
@@ -392,10 +397,10 @@
                       onclick={() => { filters = { ...filters, starredOnly: opt.value }; }}
                     >
                       {opt.label}
-                      {#if filters.starredOnly === opt.value}<span>✓</span>{/if}
+                      {#if filters.starredOnly === opt.value}<Icon name="check" size="metadata" />{/if}
                     </Button>
                   {/each}
-                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Due date</p>
+                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Due date</p>
                   {#each dueDateOptions as opt}
                     <Button tone="neutral" appearance="bare"
                       size="menu-indented"
@@ -405,10 +410,10 @@
                       onclick={() => { filters = { ...filters, hideFuture: opt.value === 'hideFuture', hideUndated: opt.value === 'hideUndated' }; }}
                     >
                       {opt.label}
-                      {#if dueDateValue === opt.value}<span>✓</span>{/if}
+                      {#if dueDateValue === opt.value}<Icon name="check" size="metadata" />{/if}
                     </Button>
                   {/each}
-                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Assigned</p>
+                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Assigned</p>
                   <Button tone="neutral" appearance="bare"
                     size="menu-indented"
                     align="between"
@@ -417,7 +422,7 @@
                     onclick={() => { filters = { ...filters, assigneeFilters: [] }; }}
                   >
                     All items
-                    {#if filters.assigneeFilters.length === 0}<span>✓</span>{/if}
+                    {#if filters.assigneeFilters.length === 0}<Icon name="check" size="metadata" />{/if}
                   </Button>
                   {#each assigneeFilterOptions as opt}
                     <Button tone="neutral" appearance="bare"
@@ -428,10 +433,10 @@
                       onclick={() => { toggleAssigneeFilter(opt.value); }}
                     >
                       {opt.label}
-                      {#if filters.assigneeFilters.includes(opt.value)}<span>✓</span>{/if}
+                      {#if filters.assigneeFilters.includes(opt.value)}<Icon name="check" size="metadata" />{/if}
                     </Button>
                   {/each}
-                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Checked</p>
+                  <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Checked</p>
                   <Button tone="neutral" appearance="bare"
                     size="menu-indented"
                     align="between"
@@ -440,7 +445,7 @@
                     onclick={() => { updateHideDone(false); }}
                   >
                     Show checked
-                    {#if !hideDone}<span>✓</span>{/if}
+                    {#if !hideDone}<Icon name="check" size="metadata" />{/if}
                   </Button>
                   <Button tone="neutral" appearance="bare"
                     size="menu-indented"
@@ -450,12 +455,12 @@
                     onclick={() => { updateHideDone(true); }}
                   >
                     Hide checked
-                    {#if hideDone}<span>✓</span>{/if}
+                    {#if hideDone}<Icon name="check" size="metadata" />{/if}
                   </Button>
                 </div>
               {/if}
             </div>
-            <div class="border-t border-gray-100 mt-1 pt-1">
+            <div class="border-t border-border-subtle mt-1 pt-1">
               <Button tone="neutral" appearance="bare"
                 size="menu"
                 align="between"
@@ -463,10 +468,13 @@
                 onclick={() => { sortSubmenuOpen = !sortSubmenuOpen; filterSubmenuOpen = false; }}
               >
                 <span>Sort</span>
-                <span class="text-gray-400 text-xs">{sortFields.find(f => f.value === sortField)?.label} {sortDirection === 'ASC' ? '↑' : '↓'}</span>
+                <span class="text-subdued text-xs inline-flex items-center gap-1">
+                  {sortFields.find(f => f.value === sortField)?.label}
+                  <Icon name={sortDirection === 'ASC' ? 'sortAscending' : 'sortDescending'} size="metadata" />
+                </span>
               </Button>
               {#if sortSubmenuOpen}
-                <div class="bg-gray-50 border-t border-gray-100">
+                <div class="bg-canvas border-t border-border-subtle">
                   {#each sortFields as f}
                     <Button tone="neutral" appearance="bare"
                       size="menu-indented"
@@ -477,24 +485,25 @@
                     >
                       {f.label}
                       {#if sortField === f.value}
-                        <span>✓</span>
+                        <Icon name="check" size="metadata" />
                       {/if}
                     </Button>
                   {/each}
-                  <div class="border-t border-gray-200 mx-4 my-1"></div>
+                  <div class="border-t border-border mx-4 my-1"></div>
                   <Button tone="neutral" appearance="bare"
                     size="menu-indented"
                     align="start"
                     weight="normal"
                     onclick={() => { sortDirection = sortDirection === 'ASC' ? 'DESC' : 'ASC'; }}
                   >
-                    {sortDirection === 'ASC' ? '↑ Ascending' : '↓ Descending'}
+                    <Icon name={sortDirection === 'ASC' ? 'sortAscending' : 'sortDescending'} size="metadata" />
+                    {sortDirection === 'ASC' ? 'Ascending' : 'Descending'}
                   </Button>
                 </div>
               {/if}
             </div>
             {#if capabilities.canEditItems}
-              <div class="border-t border-gray-100 mt-1 pt-1">
+              <div class="border-t border-border-subtle mt-1 pt-1">
                 <Button tone="danger" appearance="ghost"
                   size="menu"
                   align="start"
@@ -507,7 +516,7 @@
               </div>
             {/if}
             {#if capabilities.canDuplicateList || capabilities.canEditList}
-              <div class="border-t border-gray-100 mt-1 pt-1">
+              <div class="border-t border-border-subtle mt-1 pt-1">
                 {#if capabilities.canDuplicateList}
                   <Button tone="neutral" appearance="bare"
                     size="menu"
@@ -600,10 +609,8 @@
 {/if}
 
 {#if capabilities.canEditItems}
-  <div class="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gray-100 shadow-lg">
-    <div class="max-w-2xl mx-auto px-4 py-3">
-      {#if showAddForm}
-        <div class="max-h-[70vh] overflow-y-auto">
+  <FixedActionFooter expanded={showAddForm}>
+    {#if showAddForm}
           <ItemForm
             listId={data.id}
             {categories}
@@ -614,17 +621,16 @@
             onDraftChange={(draft) => { addItemDraft = draft; }}
             {defaultCategoryId}
           />
-        </div>
-      {:else}
-        <Button tone="neutral" appearance="outline"
-          size="empty"
+    {:else}
+        <Button tone="neutral" appearance="bare"
+          size="large"
+          align="start"
           onclick={() => { showAddForm = true; }}
-          class="w-full"
+          class="w-full rounded-xl px-4 py-3"
         >
-          + Add item
+          + add item
         </Button>
-      {/if}
-    </div>
-  </div>
+    {/if}
+  </FixedActionFooter>
 {/if}
 {/if}

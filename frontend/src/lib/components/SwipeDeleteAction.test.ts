@@ -8,7 +8,7 @@ describe('SwipeDeleteAction', () => {
 		render(SwipeDeleteAction, { props: { onactivate } });
 		const action = screen.getByRole('button', { name: 'Delete item' });
 
-		expect(action).toHaveClass('bg-red-600', 'text-white', 'w-20', 'h-full');
+		expect(action).toHaveClass('bg-danger', 'text-on-action', 'w-20', 'h-full');
 		await fireEvent.click(action);
 		expect(onactivate).toHaveBeenCalledOnce();
 	});

@@ -39,24 +39,24 @@
   }
 </script>
 
-<div class="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-  <div class="w-full max-w-sm bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+<div class="min-h-screen flex items-center justify-center p-4 bg-canvas">
+  <div class="w-full max-w-sm bg-surface rounded-lg border border-border p-6 space-y-4">
     {#if success}
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Passkey registered</h1>
-        <p class="text-sm text-gray-500 mt-2">Your new passkey was added. Sign in with it from the login page.</p>
+        <h1 class="text-2xl font-bold text-heading">Passkey registered</h1>
+        <p class="text-sm text-muted mt-2">Your new passkey was added. Sign in with it from the login page.</p>
       </div>
-      <a href="/auth" class="block text-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 px-4 py-2.5 text-sm font-medium">
+      <a href="/auth" class="block text-center rounded-lg bg-primary text-on-action hover:bg-primary-strong px-4 py-2.5 text-sm font-medium">
         Go to login
       </a>
     {:else}
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Recover access</h1>
-        <p class="text-sm text-gray-500 mt-2">Register a new passkey for {data.recovery.email}.</p>
+        <h1 class="text-2xl font-bold text-heading">Recover access</h1>
+        <p class="text-sm text-muted mt-2">Register a new passkey for {data.recovery.email}.</p>
       </div>
 
       {#if errorMessage}
-        <div class="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">{errorMessage}</div>
+        <div class="p-3 bg-danger-surface border border-danger-soft rounded text-sm text-danger-strong">{errorMessage}</div>
       {/if}
 
       <TextInput id="recovery-passkey-label" bind:value={passkeyLabel} label="Passkey name (optional)" placeholder="e.g. My phone" class="w-full" />

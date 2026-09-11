@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
   import Button from '$lib/components/Button.svelte';
+  import Icon from '$lib/components/Icon.svelte';
   import ListStateSummary from '$lib/components/ListStateSummary.svelte';
   import type { FilterChip } from '$lib/components/ListStateSummary.svelte';
   import { getProfile } from '$lib/stores/preferences.svelte';
@@ -90,7 +91,7 @@
   const visibleItemCount = $derived(
     entries.filter((entry) => (!starredOnly || entry.starred) && (!hideDone || !entry.done)).length
   );
-  const sortLabel = $derived(`${sortFields.find(field => field.value === sortField)?.label} ${sortDirection === 'ASC' ? '↑' : '↓'}`);
+  const sortLabel = $derived(sortFields.find(field => field.value === sortField)?.label ?? sortField);
   const activeFilterChips = $derived.by((): FilterChip[] => {
     const chips: FilterChip[] = [];
     if (starredOnly) {
@@ -133,13 +134,15 @@
 
 <div class="space-y-5">
   <div class="flex items-center gap-3">
-    <a href="/lists" class="text-gray-400 hover:text-gray-600">←</a>
-    <h1 class="text-xl font-bold text-gray-900">📆 Today</h1>
+    <a href="/lists" class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-surface-subtle hover:text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-2" aria-label="Back to lists">
+      <Icon name="back" size="header" />
+    </a>
+    <h1 class="text-xl font-bold text-heading">📆 Today</h1>
     <div class="relative ml-auto">
       <Button
         tone="neutral"
         appearance="bare"
-        size="icon"
+        size="icon-header"
         emphasis="muted"
         onclick={() => {
           menuOpen = !menuOpen;
@@ -148,7 +151,7 @@
         }}
         aria-label="Today options"
       >
-        ⋮
+        <Icon name="menu" size="header" />
       </Button>
       {#if menuOpen}
         <div
@@ -160,7 +163,7 @@
           }}
           role="presentation"
         ></div>
-        <div class="absolute right-0 top-8 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+        <div class="absolute right-0 top-8 z-20 w-48 bg-surface border border-border rounded-lg shadow-lg py-1">
           <div>
             <Button
               tone="neutral"
@@ -174,11 +177,11 @@
               }}
             >
               <span>Filter</span>
-              <span class="text-gray-400 text-xs">{activeFilterCount > 0 ? `${activeFilterCount} active` : 'Off'}</span>
+              <span class="text-subdued text-xs">{activeFilterCount > 0 ? `${activeFilterCount} active` : 'Off'}</span>
             </Button>
             {#if filterSubmenuOpen}
-              <div class="bg-gray-50 border-t border-gray-100">
-                <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Starred</p>
+              <div class="bg-canvas border-t border-border-subtle">
+                <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Starred</p>
                 {#each [{ value: false, label: 'All items' }, { value: true, label: 'Starred only' }] as option}
                   <Button
                     tone="neutral"
@@ -190,10 +193,10 @@
                     onclick={() => { starredOnly = option.value; }}
                   >
                     {option.label}
-                    {#if starredOnly === option.value}<span>✓</span>{/if}
+                    {#if starredOnly === option.value}<Icon name="check" size="metadata" />{/if}
                   </Button>
                 {/each}
-                <p class="px-6 pt-2 pb-1 text-xs font-medium text-gray-400 uppercase tracking-wide">Checked</p>
+                <p class="px-6 pt-2 pb-1 text-xs font-medium text-subdued uppercase tracking-wide">Checked</p>
                 <Button
                   tone="neutral"
                   appearance="bare"
@@ -204,7 +207,7 @@
                   onclick={() => { hideDone = false; }}
                 >
                   Show checked
-                  {#if !hideDone}<span>✓</span>{/if}
+                  {#if !hideDone}<Icon name="check" size="metadata" />{/if}
                 </Button>
                 <Button
                   tone="neutral"
@@ -216,12 +219,12 @@
                   onclick={() => { hideDone = true; }}
                 >
                   Hide checked
-                  {#if hideDone}<span>✓</span>{/if}
+                  {#if hideDone}<Icon name="check" size="metadata" />{/if}
                 </Button>
               </div>
             {/if}
           </div>
-          <div class="border-t border-gray-100 mt-1 pt-1">
+          <div class="border-t border-border-subtle mt-1 pt-1">
             <Button
               tone="neutral"
               appearance="bare"
@@ -234,10 +237,13 @@
               }}
             >
               <span>Sort</span>
-              <span class="text-gray-400 text-xs">{sortFields.find(field => field.value === sortField)?.label} {sortDirection === 'ASC' ? '↑' : '↓'}</span>
+              <span class="text-subdued text-xs inline-flex items-center gap-1">
+                {sortFields.find(field => field.value === sortField)?.label}
+                <Icon name={sortDirection === 'ASC' ? 'sortAscending' : 'sortDescending'} size="metadata" />
+              </span>
             </Button>
             {#if sortSubmenuOpen}
-              <div class="bg-gray-50 border-t border-gray-100">
+              <div class="bg-canvas border-t border-border-subtle">
                 {#each sortFields as field}
                   <Button
                     tone="neutral"
@@ -249,10 +255,10 @@
                     onclick={() => { sortField = field.value; }}
                   >
                     {field.label}
-                    {#if sortField === field.value}<span>✓</span>{/if}
+                    {#if sortField === field.value}<Icon name="check" size="metadata" />{/if}
                   </Button>
                 {/each}
-                <div class="border-t border-gray-200 mx-4 my-1"></div>
+                <div class="border-t border-border mx-4 my-1"></div>
                 <Button
                   tone="neutral"
                   appearance="bare"
@@ -261,7 +267,8 @@
                   weight="normal"
                   onclick={() => { sortDirection = sortDirection === 'ASC' ? 'DESC' : 'ASC'; }}
                 >
-                  {sortDirection === 'ASC' ? '↑ Ascending' : '↓ Descending'}
+                  <Icon name={sortDirection === 'ASC' ? 'sortAscending' : 'sortDescending'} size="metadata" />
+                  {sortDirection === 'ASC' ? 'Ascending' : 'Descending'}
                 </Button>
               </div>
             {/if}
@@ -283,13 +290,13 @@
   />
 
   {#if isTodayLoading() && entries.length === 0}
-    <p class="text-center py-12 text-gray-400">Loading…</p>
+    <p class="text-center py-12 text-subdued">Loading…</p>
   {:else if listGroups.length === 0}
-    <p class="text-center py-12 text-gray-400">No items due today or overdue.</p>
+    <p class="text-center py-12 text-subdued">No items due today or overdue.</p>
   {:else}
     {#each listGroups as group (group.listId)}
-      <section class="rounded-xl border border-gray-200 bg-gray-50 p-4">
-        <a href="/lists/{group.listId}" class="font-semibold text-gray-900 hover:text-blue-700">
+      <section class="rounded-xl border border-border bg-canvas p-4">
+        <a href="/lists/{group.listId}" class="font-semibold text-heading hover:text-primary-strong">
           {group.first.sourceListEmoji ?? '📋'} {group.first.sourceListName}
         </a>
         <div class="mt-4">

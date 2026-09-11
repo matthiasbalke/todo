@@ -61,34 +61,45 @@ describe('Textarea', () => {
 		expect(textarea).toHaveClass(
 			'w-full',
 			'min-h-40',
-			'hover:bg-gray-50',
-			'disabled:bg-white',
-			'disabled:hover:bg-gray-50',
+			'hover:bg-canvas',
+			'disabled:bg-surface',
+			'disabled:hover:bg-canvas',
 			'disabled:cursor-not-allowed',
-			'disabled:opacity-50'
+			'control-disabled'
 		);
-		expect(textarea).not.toHaveClass('disabled:bg-gray-100');
-		expect(textarea).not.toHaveClass('disabled:text-gray-500', 'disabled:border-gray-300');
+		expect(textarea).not.toHaveClass('disabled:bg-surface-subtle');
+		expect(textarea).not.toHaveClass('disabled:text-muted', 'disabled:border-border-strong');
 		expect(screen.getByText('Details').parentElement).toHaveTextContent('*');
 	});
 
-	it('forwards native input, focus, and blur handlers', async () => {
+	it('forwards native input, focus, blur, and keydown handlers', async () => {
 		const oninput = vi.fn();
 		const onfocus = vi.fn();
 		const onblur = vi.fn();
+		const onkeydown = vi.fn();
 		render(Textarea, {
-			props: { ariaLabel: 'Notes', oninput, onfocus, onblur }
+			props: { ariaLabel: 'Notes', oninput, onfocus, onblur, onkeydown }
 		});
 		const textarea = screen.getByRole('textbox', { name: 'Notes' });
 
 		await fireEvent.focus(textarea);
 		await fireEvent.input(textarea, { target: { value: 'Updated' } });
+		await fireEvent.keyDown(textarea, { key: 'Escape' });
 		await fireEvent.blur(textarea);
 
 		expect(onfocus).toHaveBeenCalledOnce();
 		expect(oninput).toHaveBeenCalledOnce();
+		expect(onkeydown).toHaveBeenCalledOnce();
 		expect(onblur).toHaveBeenCalledOnce();
 		expect(oninput.mock.calls[0][0]).toBeInstanceOf(Event);
+	});
+
+	it('supports borderless inline presentation for fullscreen editing', () => {
+		render(Textarea, { props: { ariaLabel: 'Notes', appearance: 'inline', class: 'min-h-[70vh]' } });
+		const textarea = screen.getByRole('textbox', { name: 'Notes' });
+
+		expect(textarea).toHaveClass('border-transparent', 'bg-transparent', 'min-h-[70vh]');
+		expect(textarea).not.toHaveClass('border-border-strong');
 	});
 
 	it('associates a visible label and description with the textarea', () => {
@@ -158,7 +169,7 @@ describe('Textarea', () => {
 		expect(validate).toHaveBeenCalledWith('x');
 		expect(textarea).toHaveAttribute('aria-invalid', 'true');
 		expect(textarea).toHaveAttribute('aria-describedby', error.id);
-		expect(textarea).toHaveClass('border-red-500');
+		expect(textarea).toHaveClass('border-danger-indicator');
 
 		await fireEvent.input(textarea, { target: { value: 'valid' } });
 		expect(screen.queryByText('Use at least 3 characters')).not.toBeInTheDocument();

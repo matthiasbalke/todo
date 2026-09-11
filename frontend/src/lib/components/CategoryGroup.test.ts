@@ -75,12 +75,12 @@ describe('CategoryGroup header alignment', () => {
 		const header = screen.getByRole('button', { name: 'Household' });
 		expect(header).toHaveClass('justify-between');
 		expect(header).toHaveAttribute('aria-expanded', 'true');
-		expect(header).toHaveTextContent('▼');
+		expect(header.querySelector('svg')).not.toBeNull();
 
 		await fireEvent.click(header);
 
 		expect(header).toHaveAttribute('aria-expanded', 'false');
-		expect(header).toHaveTextContent('▶');
+		expect(header.querySelector('svg')).not.toBeNull();
 		expect(oncollapsedchange).toHaveBeenCalledWith(true);
 	});
 
@@ -102,13 +102,32 @@ describe('CategoryGroup header alignment', () => {
 		const header = screen.getByRole('button', { name: 'Uncategorized' });
 		expect(header).toHaveClass('justify-between');
 		expect(header).toHaveAttribute('aria-expanded', 'false');
-		expect(header).toHaveTextContent('▶');
+		expect(header.querySelector('svg')).not.toBeNull();
 
 		await fireEvent.click(header);
 
 		expect(header).toHaveAttribute('aria-expanded', 'true');
-		expect(header).toHaveTextContent('▼');
+		expect(header.querySelector('svg')).not.toBeNull();
 		expect(oncollapsedchange).toHaveBeenCalledWith(false);
+	});
+
+	it('uses a right-aligned Lucide disclosure icon for checked items', () => {
+		render(CategoryGroup, {
+			props: {
+				categoryId: category.id,
+				category,
+				items: [{ ...makeItem('done-1', category.id), done: true }],
+				allCategories: [category],
+				users: [],
+				listId: 'list-1',
+				doneCollapsed: true
+			}
+		});
+
+		const checkedToggle = screen.getByRole('button', { name: '1 checked' });
+		expect(checkedToggle).toHaveClass('justify-between');
+		expect(checkedToggle).toHaveAttribute('aria-expanded', 'false');
+		expect(checkedToggle.querySelector('svg')).not.toBeNull();
 	});
 });
 

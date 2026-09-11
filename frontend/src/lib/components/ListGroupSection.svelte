@@ -6,6 +6,7 @@
   import { dragHandleZone, dragHandle, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { friendlyError } from '$lib/api/errors';
   import Button from './Button.svelte';
+  import Icon from './Icon.svelte';
   import TextInput from './TextInput.svelte';
 
   let {
@@ -114,23 +115,18 @@
 </script>
 
 <div class="mb-4">
-  <div class="flex items-center justify-between px-1 mb-2">
-    <div class="flex items-center min-w-0">
+  <div class="flex items-center justify-between gap-1 px-1 mb-2">
+    <div class="flex min-w-0 flex-1 items-center gap-1">
       {#if showGroupDragHandle && group !== null}
         <Button
           bind:element={groupDragHandleElement}
           tone="neutral"
           appearance="bare"
-          size="icon"
+          size="icon-compact"
           emphasis="subtle"
-          class="flex-shrink-0 w-7 h-8"
           aria-label="Drag to reorder list group"
         >
-          <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">
-            <circle cx="3" cy="3" r="1.5"/><circle cx="7" cy="3" r="1.5"/>
-            <circle cx="3" cy="8" r="1.5"/><circle cx="7" cy="8" r="1.5"/>
-            <circle cx="3" cy="13" r="1.5"/><circle cx="7" cy="13" r="1.5"/>
-          </svg>
+          <Icon name="drag" size="controlCompact" />
         </Button>
       {/if}
       <Button
@@ -140,13 +136,16 @@
         emphasis="muted"
         onclick={toggleCollapsed}
         aria-expanded={!collapsed}
+        class="min-w-0 flex-1"
       >
-        <span class="font-normal normal-case tracking-normal">{collapsed ? '▶' : '▼'}</span>
-        {#if group !== null && !renaming}
-          <span>{group.name}</span>
-        {:else if group === null}
-          <span>Ungrouped</span>
-        {/if}
+        <span class="flex min-w-0 items-center gap-2">
+          <Icon name="group" size="compact" class="flex-shrink-0" />
+          {#if group !== null && !renaming}
+            <span class="truncate">{group.name}</span>
+          {:else if group === null}
+            <span class="truncate">Ungrouped</span>
+          {/if}
+        </span>
       </Button>
     </div>
 
@@ -167,12 +166,12 @@
         <div class="relative">
           <Button
             tone="neutral" appearance="bare"
-            size="icon"
+            size="icon-header"
             onclick={(e) => { e.stopPropagation(); showMenu = !showMenu; }}
             emphasis="subtle"
             aria-label="Group options"
           >
-            ⋯
+            <Icon name="ellipsis" size="header" />
           </Button>
           {#if showMenu}
             <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -181,7 +180,7 @@
               onclick={() => { showMenu = false; }}
               onkeydown={() => {}}
             ></div>
-            <div class="absolute right-0 mt-1 z-20 bg-white border border-gray-100 rounded-lg shadow-lg py-1 min-w-[120px]">
+            <div class="absolute right-0 mt-1 z-20 bg-surface border border-border-subtle rounded-lg shadow-lg py-1 min-w-[120px]">
               <Button
                 tone="neutral" appearance="bare"
                 size="menu"
@@ -205,10 +204,21 @@
         </div>
       {/if}
     {/if}
+
+    <Button
+      tone="neutral" appearance="bare"
+      size="icon-header"
+      onclick={toggleCollapsed}
+      emphasis="muted"
+      aria-label={collapsed ? 'Expand section' : 'Collapse section'}
+      aria-expanded={!collapsed}
+    >
+      <Icon name={collapsed ? 'collapse' : 'expand'} size="compact" class="flex-shrink-0" />
+    </Button>
   </div>
 
   {#if error}
-    <p class="px-1 mb-2 text-xs text-red-600">{error}</p>
+    <p class="px-1 mb-2 text-xs text-danger">{error}</p>
   {/if}
 
   {#if !collapsed}
@@ -220,32 +230,28 @@
       class="space-y-2 min-h-[4px]"
     >
       {#if dndItems.length === 0 && draggingAny}
-        <div class="min-h-[52px] border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center pointer-events-none">
-          <span class="text-xs text-gray-300">Drop here</span>
+        <div class="min-h-[52px] border-2 border-dashed border-border rounded-xl flex items-center justify-center pointer-events-none">
+          <span class="text-xs text-faint">Drop here</span>
         </div>
       {/if}
       {#each dndItems as list (list.id)}
         <div
-          class="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all {(list as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME] ? 'opacity-40' : ''}"
+          class="flex items-center gap-4 p-4 bg-surface rounded-xl border border-border-subtle hover:border-border hover:shadow-sm transition-all {(list as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME] ? 'opacity-40' : ''}"
         >
           <div
             use:dragHandle
-            class="flex-shrink-0 flex items-center justify-center w-5 self-center cursor-grab active:cursor-grabbing touch-none text-gray-300 hover:text-gray-400"
+            class="flex-shrink-0 flex items-center justify-center w-5 self-center cursor-grab active:cursor-grabbing touch-none text-faint hover:text-subdued"
             aria-label="Drag to reorder"
             tabindex="-1"
           >
-            <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">
-              <circle cx="3" cy="3" r="1.5"/><circle cx="7" cy="3" r="1.5"/>
-              <circle cx="3" cy="8" r="1.5"/><circle cx="7" cy="8" r="1.5"/>
-              <circle cx="3" cy="13" r="1.5"/><circle cx="7" cy="13" r="1.5"/>
-            </svg>
+            <Icon name="drag" size="controlCompact" />
           </div>
           <a href="/lists/{list.id}" class="flex items-center gap-4 flex-1 min-w-0" draggable="false" oncontextmenu={(e) => e.preventDefault()}>
             <span class="text-3xl">{list.emoji ?? '📋'}</span>
             <div class="flex-1 min-w-0">
-              <h2 class="font-semibold text-gray-900">{list.name}</h2>
+              <h2 class="font-semibold text-heading">{list.name}</h2>
             </div>
-            <span class="text-gray-300">›</span>
+            <Icon name="next" size="compact" tone="muted" class="flex-shrink-0" />
           </a>
         </div>
       {/each}

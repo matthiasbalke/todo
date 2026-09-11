@@ -148,6 +148,7 @@ Backend integration tests use Testcontainers with a real PostgreSQL instance. Do
 ## Coding Conventions
 
 Keep changes focused. Avoid unrelated refactors unless they are needed for the change.
+Always remove unused imports from implementation and test files when creating or modifying code.
 
 Backend:
 

@@ -236,7 +236,7 @@ describe('TextInput', () => {
 			await fireEvent.input(input, { target: { value: 'test' } });
 			await tick();
 			// Check that the class contains error-related styling
-			expect(input.className).toContain('border-red-500');
+			expect(input.className).toContain('border-danger-indicator');
 		});
 
 		it('should apply normal styles when validation passes', async () => {
@@ -249,8 +249,8 @@ describe('TextInput', () => {
 			await fireEvent.input(input, { target: { value: 'test' } });
 			await tick();
 			// When no error, should have gray border
-			expect(input.className).toContain('border-gray-300');
-			expect(input.className).toContain('hover:bg-gray-50');
+			expect(input.className).toContain('border-border-strong');
+			expect(input.className).toContain('hover:bg-canvas');
 		});
 
 		it('should apply disabled styles when disabled', () => {
@@ -260,13 +260,13 @@ describe('TextInput', () => {
 			const input = container.querySelector('input');
 			expect(input?.disabled).toBe(true);
 			expect(input).toHaveClass(
-				'disabled:bg-white',
-				'disabled:hover:bg-gray-50',
+				'disabled:bg-surface',
+				'disabled:hover:bg-canvas',
 				'disabled:cursor-not-allowed',
-				'disabled:opacity-50'
+				'control-disabled'
 			);
-			expect(input).not.toHaveClass('disabled:bg-gray-100');
-			expect(input).not.toHaveClass('disabled:text-gray-500', 'disabled:border-gray-300');
+			expect(input).not.toHaveClass('disabled:bg-surface-subtle');
+			expect(input).not.toHaveClass('disabled:text-muted', 'disabled:border-border-strong');
 		});
 	});
 

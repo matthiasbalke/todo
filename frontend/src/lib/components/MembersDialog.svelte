@@ -14,6 +14,7 @@
   import { friendlyError } from '$lib/api/errors';
   import { formatListRole } from '$lib/listRoles';
   import Button from './Button.svelte';
+  import Icon from './Icon.svelte';
   import MemberInviteEmailInput from './MemberInviteEmailInput.svelte';
   import Select from './Select.svelte';
 
@@ -113,35 +114,37 @@
   }
 
   const roleColors: Record<ListRole, string> = {
-    OWNER: 'bg-purple-100 text-purple-700',
-    EDITOR: 'bg-blue-100 text-blue-700',
-    VIEWER: 'bg-gray-100 text-gray-600',
+    OWNER: 'bg-info-subtle text-info-strong',
+    EDITOR: 'bg-primary-subtle text-primary-strong',
+    VIEWER: 'bg-surface-subtle text-supporting',
   };
 </script>
 
 <!-- Backdrop -->
 <div
-  class="fixed inset-0 z-30 bg-black/40"
+  class="fixed inset-0 z-30 bg-overlay/40"
   onclick={onclose}
   role="presentation"
 ></div>
 
 <!-- Dialog -->
-<div class="fixed inset-x-4 top-1/2 z-40 -translate-y-1/2 max-w-md mx-auto bg-white rounded-2xl shadow-xl p-6">
+<div class="fixed inset-x-4 top-1/2 z-40 -translate-y-1/2 max-w-md mx-auto bg-surface rounded-2xl shadow-xl p-6">
   <div class="flex items-center justify-between mb-4">
-    <h2 class="text-lg font-semibold text-gray-900">Members</h2>
-    <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={onclose} aria-label="Close">✕</Button>
+    <h2 class="text-lg font-semibold text-heading">Members</h2>
+    <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={onclose} aria-label="Close">
+      <Icon name="close" size="controlCompact" />
+    </Button>
   </div>
 
   {#if loadError}
-    <p class="text-sm text-red-600 mb-4">{loadError}</p>
+    <p class="text-sm text-danger mb-4">{loadError}</p>
   {:else}
     <ul class="space-y-2 mb-4">
       {#each members as member (member.userId)}
         <li class="flex items-center gap-3">
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-gray-900 truncate">{member.displayName}</p>
-            <p class="text-xs text-gray-500 truncate">{member.email}</p>
+            <p class="text-sm font-medium text-heading truncate">{member.displayName}</p>
+            <p class="text-xs text-muted truncate">{member.email}</p>
           </div>
           {#if canManageMembers && member.userId !== currentUser?.id}
             <Select
@@ -169,12 +172,12 @@
     </ul>
 
     {#if actionError}
-      <p class="text-sm text-red-600 mb-3">{actionError}</p>
+      <p class="text-sm text-danger mb-3">{actionError}</p>
     {/if}
 
     {#if canManageMembers}
-      <form onsubmit={handleInvite} class="border-t border-gray-100 pt-4 space-y-3">
-        <p class="text-sm font-medium text-gray-700">Invite member</p>
+      <form onsubmit={handleInvite} class="border-t border-border-subtle pt-4 space-y-3">
+        <p class="text-sm font-medium text-label">Invite member</p>
         {#if suggestionsError}
           <p class="text-xs text-amber-700">{suggestionsError}</p>
         {/if}

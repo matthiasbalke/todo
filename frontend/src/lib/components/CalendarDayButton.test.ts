@@ -21,7 +21,7 @@ describe('CalendarDayButton', () => {
 		expect(day).toHaveAttribute('aria-selected', 'true');
 		expect(day).toHaveAttribute('aria-current', 'date');
 		expect(day).toHaveAttribute('tabindex', '0');
-		expect(day).toHaveClass('bg-blue-600', 'focus:ring-2');
+		expect(day).toHaveClass('bg-primary', 'focus:ring-2');
 		expect(container.querySelector('button')).toBe(day);
 	});
 
@@ -65,7 +65,7 @@ describe('CalendarDayButton', () => {
 		const day = screen.getByRole('gridcell');
 
 		expect(day).toBeDisabled();
-		expect(day).toHaveClass('text-gray-400', 'disabled:opacity-30');
+		expect(day).toHaveClass('text-subdued', 'disabled:opacity-30');
 		await fireEvent.click(day);
 		expect(onclick).not.toHaveBeenCalled();
 	});

@@ -7,8 +7,11 @@
 	import { onMount, tick } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import Button from './Button.svelte';
+	import { controlTypographyPresets, controlGeometryPresets } from './controlStyles';
+	import Icon from './Icon.svelte';
 
-	type Size = 'default' | 'compact' | 'dense';
+	type Size = 'default' | 'compact' | 'dense' | 'display';
+	type Appearance = 'default' | 'inline';
 
 	interface Props<T> {
 		options: T[];
@@ -17,17 +20,23 @@
 		disabled?: boolean;
 		required?: boolean;
 		label?: string;
+		ariaLabel?: string;
 		placeholder?: string;
 		labelId?: string;
 		id?: string;
 		listboxId?: string;
 		class?: string;
 		size?: Size;
+		appearance?: Appearance;
+		mutedValue?: boolean;
 		type?: HTMLInputAttributes['type'];
 		errorMessage?: string | null;
 		emptyMessage?: string;
 		noMatchMessage?: string;
+		closeOnSelect?: boolean;
+		multiselectable?: boolean;
 		optionKey?: (option: T, index: number) => string;
+		isOptionSelected?: (option: T) => boolean;
 		getOptionLabel?: (option: T) => string;
 		selectedContent?: Snippet;
 		optionContent?: Snippet<[T]>;
@@ -46,17 +55,23 @@
 		disabled = false,
 		required = false,
 		label = '',
+		ariaLabel = '',
 		placeholder = 'Select an option',
 		labelId = '',
 		id = '',
 		listboxId = '',
 		class: className = '',
 		size = 'default',
+		appearance = 'default',
+		mutedValue = false,
 		type = 'text',
 		errorMessage = null,
 		emptyMessage = 'No options available',
 		noMatchMessage = 'No matching options',
+		closeOnSelect = true,
+		multiselectable = false,
 		optionKey = (_option: any, index: number) => String(index),
+		isOptionSelected = (option: any) => selectedOption === option,
 		getOptionLabel = (option: any) => String(option),
 		selectedContent,
 		optionContent,
@@ -78,12 +93,26 @@
 	const accessibleName = $derived(label || placeholder);
 	const isError = $derived(Boolean(errorMessage));
 	const inputSizeClasses = $derived(
-		size === 'default'
-			? 'min-h-10 px-3 py-2 text-sm'
+		size === 'display'
+			? `min-h-10 ${controlGeometryPresets.default} ${controlTypographyPresets.default}`
+			: size === 'default'
+			? `min-h-10 ${controlGeometryPresets.default} ${controlTypographyPresets.default}`
 			: size === 'compact'
-				? 'px-3 py-1.5 text-sm'
-				: 'px-2 py-1 text-xs'
+				? `${controlGeometryPresets.small} ${controlTypographyPresets.default}`
+				: `${controlGeometryPresets.compact} ${controlTypographyPresets.default}`
 	);
+	const inputTextClasses = $derived(
+		`${controlTypographyPresets.default} font-normal`
+	);
+	const presentationClasses = $derived.by(() => {
+		if (isError) {
+			return 'border-danger-indicator bg-danger-surface focus-within:ring-focus-danger';
+		}
+		if (appearance === 'inline') {
+			return 'border-transparent bg-transparent hover:bg-canvas focus-within:ring-focus-primary';
+		}
+		return 'border-border-strong bg-surface hover:bg-canvas focus-within:ring-focus-primary';
+	});
 	const inputCharacterWidth = $derived.by(() => {
 		const visibleLength = Math.max(1, inputValue.length || placeholder.length);
 		const maxWidth = size === 'dense' ? 6 : size === 'compact' ? 14 : 24;
@@ -112,7 +141,9 @@
 
 	function selectOption(option: any) {
 		onoptionselect?.(option);
-		closeDropdown();
+		if (closeOnSelect) {
+			closeDropdown();
+		}
 	}
 
 	function handleTriggerClick() {
@@ -212,17 +243,15 @@
 
 <div bind:this={containerElement} class="flex flex-col gap-1 {className}">
 	{#if label}
-		<label for={triggerId} class="text-sm font-medium text-gray-700">
+		<label for={triggerId} class="typography-label">
 			{label}
-			{#if required}<span class="text-red-500" aria-hidden="true">*</span>{/if}
+			{#if required}<span class="text-danger-indicator" aria-hidden="true">*</span>{/if}
 		</label>
 	{/if}
 
 	<div class="relative" onfocusout={handleFocusOut}>
 		<div
-			class="flex w-full items-center gap-2 rounded border bg-white text-gray-700 transition-colors focus-within:ring-2 focus-within:ring-offset-2 disabled:cursor-not-allowed {isError
-				? 'border-red-500 bg-red-50 focus-within:ring-red-500'
-				: 'border-gray-300 hover:bg-gray-50 focus-within:ring-blue-500'} {disabled ? 'cursor-not-allowed opacity-50' : ''} {inputSizeClasses}"
+			class="flex w-full items-center gap-2 rounded border text-label transition-colors focus-within:ring-2 focus-within:ring-offset-2 control-focus disabled:cursor-not-allowed {presentationClasses} {disabled ? 'cursor-not-allowed opacity-50' : ''} {inputSizeClasses}"
 		>
 			{#if selectedContent}
 				{@render selectedContent()}
@@ -238,7 +267,7 @@
 				{disabled}
 				{required}
 				aria-autocomplete="list"
-				aria-label={label ? undefined : placeholder}
+				aria-label={ariaLabel || (label ? undefined : placeholder)}
 				aria-haspopup="listbox"
 				aria-expanded={isOpen}
 				aria-controls={isOpen ? resolvedListboxId : undefined}
@@ -250,17 +279,11 @@
 				oninput={handleInput}
 				onkeydown={handleKeyDown}
 				onblur={onblur}
-				class="min-w-0 flex-1 bg-transparent p-0 text-left font-normal outline-none placeholder:text-gray-500 placeholder:italic disabled:cursor-not-allowed"
+				class="min-w-0 flex-1 bg-transparent p-0 text-left outline-none native-placeholder disabled:cursor-not-allowed {inputTextClasses} {mutedValue
+					? 'typography-placeholder'
+					: 'text-label'}"
 			/>
-			<svg
-				class="h-4 w-4 flex-shrink-0 transition-transform {isOpen ? 'rotate-180' : ''}"
-				fill="none"
-				stroke="currentColor"
-				viewBox="0 0 24 24"
-				aria-hidden="true"
-			>
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-			</svg>
+			<Icon name={isOpen ? 'collapse' : 'expand'} size="compact" class="flex-shrink-0" />
 		</div>
 
 		{#if isOpen}
@@ -269,13 +292,14 @@
 				id={resolvedListboxId}
 				role="listbox"
 				aria-label={accessibleName}
-				class="absolute left-0 top-full z-50 max-h-60 w-full overflow-y-auto rounded border border-gray-300 bg-white shadow-lg"
+				aria-multiselectable={multiselectable || undefined}
+				class="absolute left-0 top-full z-50 max-h-60 w-full overflow-y-auto rounded border border-border-strong bg-surface shadow-lg"
 			>
 				{#each options as option, index (optionKey(option, index))}
 					<Button
 						id={`${resolvedListboxId}-option-${index}`}
 						role="option"
-						aria-selected={selectedOption === option}
+						aria-selected={isOptionSelected(option)}
 						onpointerdown={(event) => event.preventDefault()}
 						onclick={() => selectOption(option)}
 						onmouseenter={() => (focusedIndex = index)}
@@ -283,8 +307,8 @@
 						appearance="bare"
 						size="menu"
 						align="start"
-						weight={selectedOption === option ? 'medium' : 'normal'}
-						selected={selectedOption === option}
+						weight={isOptionSelected(option) ? 'medium' : 'normal'}
+						selected={isOptionSelected(option)}
 						active={focusedIndex === index}
 					>
 						{#if optionContent}
@@ -296,7 +320,7 @@
 				{/each}
 
 				{#if options.length === 0}
-					<div class="px-3 py-2 text-center text-gray-500">
+					<div class="px-3 py-2 text-center text-muted">
 						{inputValue.trim() ? noMatchMessage : emptyMessage}
 					</div>
 				{/if}
@@ -305,7 +329,7 @@
 	</div>
 
 	{#if errorMessage}
-		<p id={`${triggerId}-error`} class="text-sm text-red-600">
+		<p id={`${triggerId}-error`} class="typography-error">
 			{errorMessage}
 		</p>
 	{/if}
