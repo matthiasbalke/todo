@@ -2,6 +2,35 @@ import { expect, test } from '@playwright/test';
 import { waitForHydration } from './helpers';
 
 test.describe('Component showcase controls', () => {
+	test('theme selector applies local system, light, dark, and diagnostic modes', async ({ page }) => {
+		await page.emulateMedia({ colorScheme: 'dark' });
+		await page.goto('/components');
+		await waitForHydration(page);
+
+		const root = page.locator('html');
+		const selector = page.getByRole('combobox', { name: 'Theme' });
+
+		await expect(selector).toHaveValue('System');
+		await expect(root).toHaveAttribute('data-theme', 'dark');
+
+		await selector.click();
+		await page.getByRole('option', { name: 'Light' }).click();
+		await expect(selector).toHaveValue('Light');
+		await expect(root).toHaveAttribute('data-theme', 'light');
+		await expect(root).not.toHaveAttribute('data-diagnostic-palette', 'true');
+
+		await selector.click();
+		await page.getByRole('option', { name: 'Diagnostic' }).click();
+		await expect(selector).toHaveValue('Diagnostic');
+		await expect(root).toHaveAttribute('data-diagnostic-palette', 'true');
+
+		await selector.click();
+		await page.getByRole('option', { name: 'Dark' }).click();
+		await expect(selector).toHaveValue('Dark');
+		await expect(root).toHaveAttribute('data-theme', 'dark');
+		await expect(root).not.toHaveAttribute('data-diagnostic-palette', 'true');
+	});
+
 	test('basic Select filters and selects predefined options', async ({ page }) => {
 		await page.goto('/components');
 		await waitForHydration(page);

@@ -71,6 +71,74 @@
   --ui-disabled-opacity: 0.5;
 }
 
+:root[data-theme="dark"] {
+  --ui-border: var(--color-gray-700);
+  --ui-border-emphasis: var(--color-gray-300);
+  --ui-border-strong: var(--color-gray-600);
+  --ui-border-subtle: var(--color-gray-800);
+  --ui-canvas: var(--color-gray-950);
+  --ui-danger: var(--color-red-400);
+  --ui-danger-border: var(--color-red-700);
+  --ui-danger-indicator: var(--color-red-400);
+  --ui-danger-soft: var(--color-red-800);
+  --ui-danger-strong: var(--color-red-300);
+  --ui-danger-subtle: var(--color-red-950);
+  --ui-danger-surface: rgb(69 10 10 / 0.35);
+  --ui-due-today-indicator: var(--color-orange-400);
+  --ui-faint: var(--color-gray-700);
+  --ui-focus-danger: var(--color-red-400);
+  --ui-focus-neutral: var(--color-gray-400);
+  --ui-focus-primary: var(--color-blue-400);
+  --ui-focus-success: var(--color-green-400);
+  --ui-focus-warning: var(--color-yellow-300);
+  --ui-heading: var(--color-gray-100);
+  --ui-inactive: var(--color-gray-800);
+  --ui-info-strong: var(--color-purple-300);
+  --ui-info-subtle: rgb(88 28 135 / 0.35);
+  --ui-label: var(--color-gray-200);
+  --ui-menu-selected: var(--color-blue-300);
+  --ui-muted: var(--color-gray-400);
+  --ui-neutral: var(--color-gray-200);
+  --ui-neutral-hover: var(--color-gray-100);
+  --ui-on-action: var(--color-gray-950);
+  --ui-on-inverse: var(--color-gray-100);
+  --ui-overlay: black;
+  --ui-placeholder: var(--color-gray-400);
+  --ui-primary: var(--color-blue-400);
+  --ui-primary-border: var(--color-blue-700);
+  --ui-primary-emphasis: var(--color-blue-200);
+  --ui-primary-heading: var(--color-blue-100);
+  --ui-primary-indicator: var(--color-blue-400);
+  --ui-primary-soft: rgb(30 64 175 / 0.65);
+  --ui-primary-strong: var(--color-blue-300);
+  --ui-primary-subtle: rgb(30 64 175 / 0.28);
+  --ui-primary-surface: rgb(30 64 175 / 0.2);
+  --ui-subdued: var(--color-gray-500);
+  --ui-success: var(--color-green-400);
+  --ui-success-border: var(--color-green-700);
+  --ui-success-highlight: var(--color-green-400);
+  --ui-success-indicator: var(--color-green-400);
+  --ui-success-strong: var(--color-green-300);
+  --ui-success-subtle: rgb(22 101 52 / 0.35);
+  --ui-success-surface: rgb(20 83 45 / 0.25);
+  --ui-supporting: var(--color-gray-300);
+  --ui-surface: var(--color-gray-900);
+  --ui-surface-hover: var(--color-gray-800);
+  --ui-surface-inverse: var(--color-gray-950);
+  --ui-surface-subtle: var(--color-gray-800);
+  --ui-track-disabled: var(--color-gray-700);
+  --ui-value: var(--color-gray-100);
+  --ui-warning-border: var(--color-yellow-700);
+  --ui-warning-emphasis: var(--color-yellow-200);
+  --ui-warning-heading: var(--color-yellow-100);
+  --ui-warning-highlight: var(--color-yellow-300);
+  --ui-warning-indicator: var(--color-yellow-300);
+  --ui-warning-soft: rgb(161 98 7 / 0.45);
+  --ui-warning-surface: rgb(113 63 18 / 0.35);
+  --ui-shadow: rgb(0 0 0 / 0.35);
+  --ui-shadow-soft: rgb(0 0 0 / 0.25);
+}
+
 @theme inline {
   --color-border: var(--ui-border);
   --color-border-emphasis: var(--ui-border-emphasis);

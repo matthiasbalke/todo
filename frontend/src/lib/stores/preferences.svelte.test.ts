@@ -15,6 +15,7 @@ const profile = {
 	timeZone: 'UTC',
 	timeZoneInitialized: false,
 	todayViewEnabled: true,
+	themePreference: 'SYSTEM' as const,
 };
 
 describe('preference initialization', () => {
@@ -25,12 +26,22 @@ describe('preference initialization', () => {
 		vi.mocked(updatePreferences).mockResolvedValue({ ...profile, timeZone: 'Europe/Berlin', timeZoneInitialized: true });
 		vi.spyOn(Intl, 'DateTimeFormat').mockReturnValue({ resolvedOptions: () => ({ timeZone: 'Europe/Berlin' }) } as Intl.DateTimeFormat);
 		await loadPreferences();
-		expect(updatePreferences).toHaveBeenCalledWith({ timeZone: 'Europe/Berlin', todayViewEnabled: true });
+		expect(updatePreferences).toHaveBeenCalledWith({ timeZone: 'Europe/Berlin', todayViewEnabled: true, themePreference: 'SYSTEM' });
 	});
 
 	it('preserves an initialized explicit timezone', async () => {
 		vi.mocked(getMe).mockResolvedValue({ ...profile, timeZone: 'UTC', timeZoneInitialized: true });
 		await loadPreferences();
 		expect(updatePreferences).not.toHaveBeenCalled();
+	});
+
+	it('normalizes missing theme values from older-looking test data', async () => {
+		vi.mocked(getMe).mockResolvedValue({
+			...profile,
+			themePreference: undefined,
+			timeZoneInitialized: true,
+		} as never);
+		const loaded = await loadPreferences();
+		expect(loaded.themePreference).toBe('SYSTEM');
 	});
 });

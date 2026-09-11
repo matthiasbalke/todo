@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/environment', () => ({
@@ -9,6 +9,45 @@ vi.mock('$app/environment', () => ({
 }));
 
 import ComponentsPage from './+page.svelte';
+
+describe('ComponentsPage theme selector', () => {
+	afterEach(() => {
+		cleanup();
+		document.documentElement.removeAttribute('data-theme');
+		document.documentElement.removeAttribute('data-diagnostic-palette');
+		document.documentElement.style.removeProperty('color-scheme');
+	});
+
+	it('offers local system, light, dark, and diagnostic modes', async () => {
+		render(ComponentsPage);
+		const selector = screen.getByRole('combobox', { name: 'Theme' });
+
+		expect(selector).toHaveValue('System');
+		await waitFor(() => expect(document.documentElement).toHaveAttribute('data-theme', 'light'));
+
+		await fireEvent.click(selector);
+		expect(screen.getByRole('option', { name: 'System' })).toBeInTheDocument();
+		expect(screen.getByRole('option', { name: 'Light' })).toBeInTheDocument();
+		expect(screen.getByRole('option', { name: 'Dark' })).toBeInTheDocument();
+		expect(screen.getByRole('option', { name: 'Diagnostic' })).toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('option', { name: 'Dark' }));
+		expect(selector).toHaveValue('Dark');
+		expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+		expect(document.documentElement).not.toHaveAttribute('data-diagnostic-palette');
+
+		await fireEvent.click(selector);
+		await fireEvent.click(screen.getByRole('option', { name: 'Diagnostic' }));
+		expect(selector).toHaveValue('Diagnostic');
+		expect(document.documentElement).toHaveAttribute('data-diagnostic-palette', 'true');
+
+		await fireEvent.click(selector);
+		await fireEvent.click(screen.getByRole('option', { name: 'Light' }));
+		expect(selector).toHaveValue('Light');
+		expect(document.documentElement).toHaveAttribute('data-theme', 'light');
+		expect(document.documentElement).not.toHaveAttribute('data-diagnostic-palette');
+	});
+});
 
 describe('ComponentsPage Textarea showcase', () => {
 	afterEach(() => {

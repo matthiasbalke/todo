@@ -11,6 +11,7 @@
     getDeletionPreview,
     deleteAccount,
     updatePreferences,
+    type ThemePreference,
     type PasskeyDto,
     type DeletionPreviewDto,
   } from '$lib/api/users';
@@ -21,6 +22,7 @@
   import Icon from '$lib/components/Icon.svelte';
   import EditableLabel from '$lib/components/EditableLabel.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
+  import Select from '$lib/components/Select.svelte';
   import TimezonePicker from '$lib/components/TimezonePicker.svelte';
   import Toggle from '$lib/components/Toggle.svelte';
   import { setProfile } from '$lib/stores/preferences.svelte';
@@ -32,29 +34,40 @@
   let passkeys = $state<PasskeyDto[]>(untrack(() => [...data.passkeys]));
   let timeZone = $state(untrack(() => profile.timeZone));
   let todayViewEnabled = $state(untrack(() => profile.todayViewEnabled));
+  let themePreference = $state<ThemePreference>(untrack(() => profile.themePreference));
   let persistedTimeZone = $state(untrack(() => profile.timeZone));
   let persistedTodayViewEnabled = $state(untrack(() => profile.todayViewEnabled));
+  let persistedThemePreference = $state<ThemePreference>(untrack(() => profile.themePreference));
   let preferencesSaving = $state(false);
   let preferencesError = $state('');
   let preferencesSaved = $state(false);
+  const themeOptions: ThemePreference[] = ['SYSTEM', 'LIGHT', 'DARK'];
+  const themeLabels: Record<ThemePreference, string> = {
+    SYSTEM: 'System',
+    LIGHT: 'Light',
+    DARK: 'Dark'
+  };
 
   async function saveFeaturePreferences() {
     preferencesSaving = true;
     preferencesError = '';
     preferencesSaved = false;
     try {
-      const updated = await updatePreferences({ timeZone, todayViewEnabled });
+      const updated = await updatePreferences({ timeZone, todayViewEnabled, themePreference });
       profile = updated;
       timeZone = updated.timeZone;
       todayViewEnabled = updated.todayViewEnabled;
+      themePreference = updated.themePreference;
       persistedTimeZone = updated.timeZone;
       persistedTodayViewEnabled = updated.todayViewEnabled;
+      persistedThemePreference = updated.themePreference;
       setProfile(updated);
       await refreshToday();
       preferencesSaved = true;
     } catch (e) {
       timeZone = persistedTimeZone;
       todayViewEnabled = persistedTodayViewEnabled;
+      themePreference = persistedThemePreference;
       preferencesError = friendlyError(e, 'Failed to save preferences');
     } finally {
       preferencesSaving = false;
@@ -297,6 +310,17 @@
       <TimezonePicker
         bind:selected={timeZone}
         disabled={preferencesSaving}
+        onSelect={handlePreferenceChange}
+      />
+    </div>
+    <div>
+      <Select
+        options={themeOptions}
+        bind:selected={themePreference}
+        label="Theme"
+        disabled={preferencesSaving}
+        getOptionLabel={(option) => themeLabels[option as ThemePreference]}
+        getSelectedLabel={(option) => themeLabels[option as ThemePreference]}
         onSelect={handlePreferenceChange}
       />
     </div>

@@ -1,5 +1,8 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { controlTextRoles } from '$lib/components/controlStyles';
+	import type { ThemePreference } from '$lib/api/users';
+	import { clearThemeOverride, setThemeOverride } from '$lib/stores/theme.svelte';
 	import { dev } from '$app/environment';
 	import TextInput from '$lib/components/TextInput.svelte';
 	import CategorySelect from '$lib/components/CategorySelect.svelte';
@@ -45,6 +48,8 @@
 	let validatedEditableName = 'Taylor';
 	let disabledEditableName = 'Editing disabled';
 	let savingEditableName = 'Saving in progress';
+	type ShowcaseThemeMode = ThemePreference | 'DIAGNOSTIC';
+	let selectedShowcaseThemeMode: ShowcaseThemeMode = 'SYSTEM';
 
 	let selectedFruit: string | null = null;
 	let selectedFruits: string[] = [];
@@ -77,6 +82,41 @@
 		{ id: 'showcase-morgan', name: 'Morgan Reed' },
 		{ id: 'showcase-taylor', name: 'Taylor Brooks' }
 	];
+	const showcaseThemeModes: ShowcaseThemeMode[] = ['SYSTEM', 'LIGHT', 'DARK', 'DIAGNOSTIC'];
+	const showcaseThemeModeLabels: Record<ShowcaseThemeMode, string> = {
+		SYSTEM: 'System',
+		LIGHT: 'Light',
+		DARK: 'Dark',
+		DIAGNOSTIC: 'Diagnostic'
+	};
+
+	function applyShowcaseThemeMode(mode: ShowcaseThemeMode) {
+		if (mode === 'DIAGNOSTIC') {
+			setThemeOverride('SYSTEM');
+			document.documentElement.dataset.diagnosticPalette = 'true';
+			return;
+		}
+		delete document.documentElement.dataset.diagnosticPalette;
+		setThemeOverride(mode);
+	}
+
+	function handleShowcaseThemeMode(mode: ShowcaseThemeMode) {
+		selectedShowcaseThemeMode = mode;
+		applyShowcaseThemeMode(mode);
+	}
+
+	onMount(() => {
+		let cleanupDiagnosticPaletteStyles: (() => void) | undefined;
+		void import('$lib/dev/diagnosticPalette').then(({ installDiagnosticPaletteStyles }) => {
+			cleanupDiagnosticPaletteStyles = installDiagnosticPaletteStyles();
+		});
+		applyShowcaseThemeMode(selectedShowcaseThemeMode);
+		return () => {
+			delete document.documentElement.dataset.diagnosticPalette;
+			cleanupDiagnosticPaletteStyles?.();
+			clearThemeOverride();
+		};
+	});
 
 	function handleButtonAction(action: string) {
 		lastButtonAction = action;
@@ -2231,6 +2271,15 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					</span>
 				{/if}
 			</p>
+		</div>
+		<div class="mb-8 max-w-xs">
+			<Select
+				label="Theme"
+				options={showcaseThemeModes}
+				bind:selected={selectedShowcaseThemeMode}
+				getOptionLabel={(mode: ShowcaseThemeMode) => showcaseThemeModeLabels[mode]}
+				onSelect={handleShowcaseThemeMode}
+			/>
 		</div>
 
 		<div class="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-8">

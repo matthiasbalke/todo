@@ -10,7 +10,7 @@ test('Today preferences, count, completion, and source navigation', async ({ pag
 		const me = await fetch('/api/users/me', { headers }).then(r => r.json());
 		await fetch('/api/users/me/preferences', {
 			method: 'PUT', headers,
-			body: JSON.stringify({ timeZone: 'UTC', todayViewEnabled: true }),
+			body: JSON.stringify({ timeZone: 'UTC', todayViewEnabled: true, themePreference: 'SYSTEM' }),
 		});
 		const list = await fetch('/api/lists', {
 			method: 'POST', headers, body: JSON.stringify({ name: 'Today Source' }),

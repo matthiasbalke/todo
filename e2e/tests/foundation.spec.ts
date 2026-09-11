@@ -30,8 +30,12 @@ for (const width of [1280, 390]) {
   const initialSelected = await appearance(selected);
   const initialInvalid = await appearance(invalid);
   const initialPlaceholder = await appearance(input, '::placeholder');
+  const themeSelector = page.getByRole('combobox', { name: 'Theme' });
   for (const alternate of [false, true]) {
-   if (alternate) await page.getByRole('button', { name: 'Use diagnostic palette' }).click();
+   if (alternate) {
+    await themeSelector.click();
+    await page.getByRole('option', { name: 'Diagnostic' }).click();
+   }
    if (alternate) await expect(page.locator('html')).toHaveAttribute('data-diagnostic-palette', 'true');
    else await expect(page.locator('html')).not.toHaveAttribute('data-diagnostic-palette', 'true');
    const preview = await appearance(rendered);
@@ -79,12 +83,13 @@ for (const width of [1280, 390]) {
   await page.evaluate(() => document.documentElement.style.setProperty('--ui-control-size', '18px'));
   for (const locator of [input, textarea, rendered]) expect((await appearance(locator)).size).toBe('18px');
   await page.evaluate(() => document.documentElement.style.removeProperty('--ui-control-size'));
-  await page.getByRole('button', { name: 'Restore default palette' }).click();
+  await themeSelector.click();
+  await page.getByRole('option', { name: 'System' }).click();
   expect((await appearance(input, '::placeholder')).color).toBe(initialPlaceholder.color);
   expect((await appearance(section)).background).toBe(initialSurface.background);
  });
 
- test(`app surfaces and fullscreen notes use the palette at ${width}px`, async ({ page, context }, testInfo) => {
+ test(`app surfaces and fullscreen notes use the production dark palette at ${width}px`, async ({ page, context }, testInfo) => {
   test.setTimeout(60000);
   await page.setViewportSize({ width, height: 844 });
   await registerPasskey(page, context, 'Palette Reviewer', uniqueEmail('palette'));
@@ -94,7 +99,14 @@ for (const width of [1280, 390]) {
   await page.addStyleTag({ content: '* { transition: none !important; }' });
   const footer = page.getByTestId('fixed-action-footer');
   const original = await appearance(footer);
-  await page.getByRole('button', { name: 'Use diagnostic palette' }).click();
+  await page.goto('/account');
+  await waitForHydration(page);
+  await page.getByRole('combobox', { name: 'Theme' }).click();
+  await page.getByRole('option', { name: 'Dark' }).click();
+  await expect(page.getByText('Preferences saved.')).toBeVisible();
+  await page.goto(`/lists/${listId}`);
+  await waitForHydration(page);
+  await page.addStyleTag({ content: '* { transition: none !important; }' });
   expect((await appearance(footer)).background).not.toBe(original.background);
   await page.getByRole('button', { name: 'List options' }).click();
   const members = page.getByRole('button', { name: 'Members', exact: true });
@@ -116,7 +128,5 @@ for (const width of [1280, 390]) {
   await notes.fill('Palette notes\nSecond line');
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByTestId('item-form-notes-preview')).toContainText('Palette notes');
-  await page.getByRole('button', { name: 'Restore default palette' }).click();
-  expect((await appearance(footer)).background).toBe(original.background);
  });
 }

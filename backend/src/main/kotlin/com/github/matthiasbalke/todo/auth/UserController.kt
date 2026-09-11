@@ -51,10 +51,15 @@ class UserController(
         val timeZone: String,
         val timeZoneInitialized: Boolean,
         val todayViewEnabled: Boolean,
+        val themePreference: ThemePreference,
         val admin: Boolean,
     )
     data class UpdateProfileRequest(val displayName: String, val email: String)
-    data class UpdatePreferencesRequest(val timeZone: String, val todayViewEnabled: Boolean)
+    data class UpdatePreferencesRequest(
+        val timeZone: String,
+        val todayViewEnabled: Boolean,
+        val themePreference: ThemePreference,
+    )
     data class PasskeyDto(val id: UUID, val label: String?, val createdAt: Instant)
     data class AddPasskeyRequest(val credential: PublicKeyCredential<AuthenticatorAttestationResponse>, val label: String?)
     data class ListNameDto(val id: UUID, val name: String)
@@ -105,6 +110,7 @@ class UserController(
         user.timeZone = body.timeZone
         user.timeZoneInitialized = true
         user.todayViewEnabled = body.todayViewEnabled
+        user.themePreference = body.themePreference
         return ResponseEntity.ok(userRepository.save(user).toDto())
     }
 
@@ -216,6 +222,7 @@ class UserController(
         timeZone = timeZone,
         timeZoneInitialized = timeZoneInitialized,
         todayViewEnabled = todayViewEnabled,
+        themePreference = themePreference,
         admin = admin,
     )
 

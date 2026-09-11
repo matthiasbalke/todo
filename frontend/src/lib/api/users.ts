@@ -1,6 +1,8 @@
 import type { PublicKeyCredentialCreationOptionsJSON, RegistrationResponseJSON } from '@simplewebauthn/browser';
 import { authedFetch } from './authedClient';
 
+export type ThemePreference = 'SYSTEM' | 'LIGHT' | 'DARK';
+
 export interface UserProfileDto {
 	id: string;
 	email: string;
@@ -8,6 +10,7 @@ export interface UserProfileDto {
 	timeZone: string;
 	timeZoneInitialized: boolean;
 	todayViewEnabled: boolean;
+	themePreference: ThemePreference;
 	admin?: boolean;
 }
 
@@ -36,6 +39,7 @@ export async function updateMe(req: { displayName: string; email: string }): Pro
 export async function updatePreferences(req: {
 	timeZone: string;
 	todayViewEnabled: boolean;
+	themePreference: ThemePreference;
 }): Promise<UserProfileDto> {
 	return authedFetch('/api/users/me/preferences', {
 		method: 'PUT',

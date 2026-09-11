@@ -56,6 +56,7 @@ vi.mock('$lib/stores/today.svelte', () => ({
 import AccountPage from './+page.svelte';
 import { updateMe, updatePreferences } from '$lib/api/users';
 import { refreshToday } from '$lib/stores/today.svelte';
+import { setProfile } from '$lib/stores/preferences.svelte';
 
 const mockProfile = {
 	id: 'user-1',
@@ -64,6 +65,7 @@ const mockProfile = {
 	timeZone: 'UTC',
 	timeZoneInitialized: true,
 	todayViewEnabled: true,
+	themePreference: 'SYSTEM' as const,
 };
 
 const mockData = {
@@ -138,12 +140,14 @@ describe('AccountPage settings', () => {
 			screen.queryByText(/timezone determines which calendar date is considered today/i)
 		).not.toBeInTheDocument();
 		expect(screen.getByText('Show Today View')).toBeInTheDocument();
+		expect(screen.getByRole('combobox', { name: 'Theme' })).toHaveValue('System');
 		expect(screen.getByRole('switch', { name: 'Show Today View' })).toHaveAttribute(
 			'aria-checked',
 			'true'
 		);
 		expect(screen.queryByText(/Today view: Enabled|Today view: Disabled/)).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Save Today preferences' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Save theme' })).not.toBeInTheDocument();
 	});
 
 	it('saves a Today View change immediately and refreshes Today on success', async () => {
@@ -158,6 +162,7 @@ describe('AccountPage settings', () => {
 		expect(updatePreferences).toHaveBeenCalledWith({
 			timeZone: 'UTC',
 			todayViewEnabled: false,
+			themePreference: 'SYSTEM',
 		});
 		expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
 		expect(refreshToday).toHaveBeenCalledOnce();
@@ -180,9 +185,30 @@ describe('AccountPage settings', () => {
 		expect(updatePreferences).toHaveBeenCalledWith({
 			timeZone: 'Europe/Berlin',
 			todayViewEnabled: true,
+			themePreference: 'SYSTEM',
 		});
 		expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
 	}, 10000);
+
+	it('saves theme changes immediately with all current values', async () => {
+		vi.mocked(updatePreferences).mockResolvedValueOnce({
+			...mockProfile,
+			themePreference: 'DARK',
+		});
+		render(AccountPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Theme' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'Dark' }));
+
+		expect(updatePreferences).toHaveBeenCalledWith({
+			timeZone: 'UTC',
+			todayViewEnabled: true,
+			themePreference: 'DARK',
+		});
+		expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
+		expect(screen.getByRole('combobox', { name: 'Theme' })).toHaveValue('Dark');
+		expect(setProfile).toHaveBeenCalledWith(expect.objectContaining({ themePreference: 'DARK' }));
+	});
 
 	it('disables both controls and clears prior feedback while a new save is pending', async () => {
 		vi.mocked(updatePreferences).mockResolvedValueOnce({
@@ -204,6 +230,7 @@ describe('AccountPage settings', () => {
 		expect(screen.queryByText('Preferences saved.')).not.toBeInTheDocument();
 		expect(toggle).toBeDisabled();
 		expect(screen.getByRole('combobox', { name: 'Timezone' })).toBeDisabled();
+		expect(screen.getByRole('combobox', { name: 'Theme' })).toBeDisabled();
 
 		resolveSave(mockProfile);
 		expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
@@ -222,5 +249,6 @@ describe('AccountPage settings', () => {
 			'true'
 		);
 		expect(screen.getByRole('combobox', { name: 'Timezone' })).toHaveValue('UTC');
+		expect(screen.getByRole('combobox', { name: 'Theme' })).toHaveValue('System');
 	});
 });
