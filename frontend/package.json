@@ -14,7 +14,7 @@
 		"test": "vitest"
 	},
 	"dependencies": {
-		"@lucide/svelte": "1.43.0",
+		"@lucide/svelte": "1.45.0",
 		"@simplewebauthn/browser": "^14.0.0",
 		"svelte-dnd-action": "^0.9.69"
 	},
