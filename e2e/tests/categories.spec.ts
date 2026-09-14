@@ -148,11 +148,11 @@ test.describe('Category config dialog', () => {
 
 	test('existing categories are displayed', async ({ page }) => {
 		await openCategoryDialog(page);
-		const dialog = page.locator('[role="dialog"]');
-		await expect(dialog.getByRole('button', { name: 'Produce' })).toBeVisible();
-		await expect(dialog.getByRole('button', { name: 'Dairy' })).toBeVisible();
-		await expect(dialog.getByRole('button', { name: 'Bakery' })).toBeVisible();
-		await expect(dialog.getByRole('button', { name: 'Meat' })).toBeVisible();
+		const dialog = page.getByRole('dialog', { name: 'Category configuration' });
+		await expect(dialog.getByRole('button', { name: 'Edit category name Produce', exact: true })).toBeVisible();
+		await expect(dialog.getByRole('button', { name: 'Edit category name Dairy', exact: true })).toBeVisible();
+		await expect(dialog.getByRole('button', { name: 'Edit category name Bakery', exact: true })).toBeVisible();
+		await expect(dialog.getByRole('button', { name: 'Edit category name Meat', exact: true })).toBeVisible();
 	});
 
 	test('drag handles are shown instead of up and down reorder buttons', async ({ page }) => {
@@ -170,77 +170,77 @@ test.describe('Category config dialog', () => {
 
 	test('add new category via button', async ({ page }) => {
 		await openCategoryDialog(page);
-		const dialog = page.locator('[role="dialog"]');
+		const dialog = page.getByRole('dialog', { name: 'Category configuration' });
 		await page.getByPlaceholder('New category name').fill('Frozen');
 		await page.getByRole('button', { name: 'Add', exact: true }).click();
-		await expect(dialog.getByRole('button', { name: 'Frozen' })).toBeVisible();
+		await expect(dialog.getByRole('button', { name: 'Edit category name Frozen', exact: true })).toBeVisible();
 		await expect(page.getByPlaceholder('New category name')).toHaveValue('');
 	});
 
 	test('add new category via Enter key', async ({ page }) => {
 		await openCategoryDialog(page);
-		const dialog = page.locator('[role="dialog"]');
+		const dialog = page.getByRole('dialog', { name: 'Category configuration' });
 		await page.getByPlaceholder('New category name').fill('Beverages');
 		await page.getByPlaceholder('New category name').press('Enter');
-		await expect(dialog.getByRole('button', { name: 'Beverages' })).toBeVisible();
+		await expect(dialog.getByRole('button', { name: 'Edit category name Beverages', exact: true })).toBeVisible();
 	});
 
 	test('inline rename via name click — commit with Enter', async ({ page }) => {
 		await openCategoryDialog(page);
-		const dialog = page.locator('[role="dialog"]');
-		await dialog.getByRole('button', { name: 'Produce' }).click();
-		// Inline edit input has no placeholder; the footer input has placeholder="New category name"
-		const inlineInput = dialog.locator('input:not([placeholder])');
+		const dialog = page.getByRole('dialog', { name: 'Category configuration' });
+		await dialog.getByRole('button', { name: 'Edit category name Produce', exact: true }).click();
+		const inlineInput = dialog.getByRole('textbox', { name: 'Edit category name Produce', exact: true });
 		await expect(inlineInput).toBeVisible();
 		await expect(inlineInput).toHaveValue('Produce');
 		await inlineInput.fill('Fresh Produce');
 		await inlineInput.press('Enter');
-		await expect(dialog.getByRole('button', { name: 'Fresh Produce' })).toBeVisible();
+		await expect(dialog.getByRole('button', { name: 'Edit category name Fresh Produce', exact: true })).toBeVisible();
 		await expect(inlineInput).not.toBeVisible();
 	});
 
-	test('inline rename via ✏️ button — commit with ✓', async ({ page }) => {
+	test('inline rename via name click — commit with blur', async ({ page }) => {
 		await openCategoryDialog(page);
-		const dialog = page.locator('[role="dialog"]');
-		// Rename buttons ordered: Produce(0), Dairy(1), Bakery(2), Meat(3)
-		await dialog.getByRole('button', { name: 'Rename' }).nth(1).click({ force: true });
-		const inlineInput = dialog.locator('input:not([placeholder])');
+		const dialog = page.getByRole('dialog', { name: 'Category configuration' });
+		await dialog.getByRole('button', { name: 'Edit category name Dairy', exact: true }).click({ force: true });
+		const inlineInput = dialog.getByRole('textbox', { name: 'Edit category name Dairy', exact: true });
 		await inlineInput.fill('Dairy & Eggs');
-		await dialog.getByRole('button', { name: 'Save' }).click();
-		await expect(dialog.getByRole('button', { name: 'Dairy & Eggs' })).toBeVisible();
+		await page.getByRole('button', { name: 'Close' }).focus();
+		await expect(dialog.getByRole('button', { name: 'Edit category name Dairy & Eggs', exact: true })).toBeVisible();
 	});
 
 	test('cancel inline rename with Escape', async ({ page }) => {
 		await openCategoryDialog(page);
-		const dialog = page.locator('[role="dialog"]');
-		await dialog.getByRole('button', { name: 'Rename' }).nth(2).click({ force: true });
-		const inlineInput = dialog.locator('input:not([placeholder])');
+		const dialog = page.getByRole('dialog', { name: 'Category configuration' });
+		await dialog.getByRole('button', { name: 'Edit category name Bakery', exact: true }).click({ force: true });
+		const inlineInput = dialog.getByRole('textbox', { name: 'Edit category name Bakery', exact: true });
 		await inlineInput.fill('Baked Goods');
 		await page.keyboard.press('Escape');
-		await expect(dialog.getByRole('button', { name: 'Bakery' })).toBeVisible();
-		await expect(dialog.getByRole('button', { name: 'Baked Goods' })).not.toBeVisible();
+		await expect(dialog.getByRole('button', { name: 'Edit category name Bakery', exact: true })).toBeVisible();
+		await expect(dialog.getByRole('button', { name: 'Edit category name Baked Goods', exact: true })).not.toBeVisible();
 	});
 
 	test('delete a category', async ({ page }) => {
 		await openCategoryDialog(page);
-		const dialog = page.locator('[role="dialog"]');
+		const dialog = page.getByRole('dialog', { name: 'Category configuration' });
 		await dialog.getByRole('button', { name: 'Delete' }).last().click({ force: true });
-		await expect(dialog.getByRole('button', { name: 'Meat' })).not.toBeVisible();
+		const confirmation = page.getByRole('dialog', { name: 'Delete category?' });
+		await expect(confirmation.getByText('delete category Meat')).toBeVisible();
+		await confirmation.getByRole('button', { name: 'Delete', exact: true }).click();
+		await expect(dialog.getByRole('button', { name: 'Edit category name Meat', exact: true })).not.toBeVisible();
 	});
 
 	test('reorder — drag Produce below Dairy', async ({ page }) => {
 		await openCategoryDialog(page);
-		const dialog = page.locator('[role="dialog"]');
-		// Use span[role="button"] to target only category name spans (not action buttons)
-		const nameSpans = dialog.locator('span[role="button"]');
+		const dialog = page.getByRole('dialog', { name: 'Category configuration' });
+		const nameButtons = dialog.getByRole('button', { name: /^Edit category name / });
 		const handles = dialog.locator('[aria-label="Drag to reorder category"]');
 
 		// Verify initial order before moving
-		await expect(nameSpans.nth(0)).toHaveText('Produce');
-		await expect(nameSpans.nth(1)).toHaveText('Dairy');
+		await expect(nameButtons.nth(0)).toHaveText('Produce');
+		await expect(nameButtons.nth(1)).toHaveText('Dairy');
 
 		const handleBox = await handles.nth(0).boundingBox();
-		const targetRow = nameSpans.nth(1).locator('xpath=ancestor::div[contains(@class,"rounded-lg")]');
+		const targetRow = nameButtons.nth(1).locator('xpath=ancestor::div[contains(@class,"rounded-lg")]');
 		const targetBox = await targetRow.boundingBox();
 		if (!handleBox || !targetBox) throw new Error('Missing drag geometry');
 
@@ -250,18 +250,18 @@ test.describe('Category config dialog', () => {
 		await page.mouse.up();
 
 		// Wait for re-render after API call completes (Playwright retries automatically)
-		await expect(nameSpans.nth(0)).toHaveText('Dairy');
-		await expect(nameSpans.nth(1)).toHaveText('Produce');
+		await expect(nameButtons.nth(0)).toHaveText('Dairy');
+		await expect(nameButtons.nth(1)).toHaveText('Produce');
 	});
 
 	test('renamed category reflected in group header after closing dialog', async ({ page }) => {
 		await openCategoryDialog(page);
-		const dialog = page.locator('[role="dialog"]');
-		await dialog.getByRole('button', { name: 'Produce' }).click();
-		const inlineInput = dialog.locator('input:not([placeholder])');
+		const dialog = page.getByRole('dialog', { name: 'Category configuration' });
+		await dialog.getByRole('button', { name: 'Edit category name Produce', exact: true }).click();
+		const inlineInput = dialog.getByRole('textbox', { name: 'Edit category name Produce', exact: true });
 		await inlineInput.fill('Fresh Produce');
 		await inlineInput.press('Enter');
-		await expect(dialog.getByRole('button', { name: 'Fresh Produce' })).toBeVisible();
+		await expect(dialog.getByRole('button', { name: 'Edit category name Fresh Produce', exact: true })).toBeVisible();
 		await page.getByRole('button', { name: 'Close' }).click();
 		await expect(page.getByRole('heading', { name: /Fresh Produce/i })).toBeVisible();
 	});

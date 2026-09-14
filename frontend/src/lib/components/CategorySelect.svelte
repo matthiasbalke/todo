@@ -68,6 +68,10 @@
 		return findCategory(categoryId)?.color ?? null;
 	}
 
+	function hasCategoryColor(categoryId: string): boolean {
+		return Boolean(getCategoryColor(categoryId));
+	}
+
 	function handleSelect(categoryId: string) {
 		const nextCategoryId = categoryId || null;
 		selectedCategoryId = nextCategoryId;
@@ -78,7 +82,7 @@
 {#snippet categorySwatch(categoryId: string)}
 	<span
 		data-testid={`category-select-swatch-${categoryId || 'uncategorized'}`}
-		class="h-3 w-3 shrink-0 {getCategoryColor(categoryId) ? 'rounded-full' : ''}"
+		class="h-3 w-3 shrink-0 rounded-full {hasCategoryColor(categoryId) ? '' : 'border border-dashed border-muted'}"
 		style={getCategoryColor(categoryId) ? `background-color: ${getCategoryColor(categoryId)}` : undefined}
 		aria-hidden="true"
 	></span>
@@ -103,9 +107,7 @@
 	onSelect={handleSelect}
 >
 	{#snippet selectedContent(categoryId)}
-		{#if getCategoryColor(categoryId)}
-			{@render categorySwatch(categoryId)}
-		{/if}
+		{@render categorySwatch(categoryId)}
 	{/snippet}
 
 	{#snippet optionContent(categoryId)}
