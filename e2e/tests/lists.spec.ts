@@ -75,8 +75,8 @@ test.describe('List detail — add item form', () => {
 		await waitForHydration(page);
 	});
 
-	test('clicking + Add item reveals the form', async ({ page }) => {
-		await page.getByRole('button', { name: '+ Add item' }).click();
+	test('clicking add item reveals the form', async ({ page }) => {
+		await page.getByRole('button', { name: 'add item' }).click();
 
 		await expect(page.getByPlaceholder('Item title')).toBeVisible();
 		await expect(page.getByTestId('item-form-notes-preview')).toHaveText('add note');
@@ -85,7 +85,7 @@ test.describe('List detail — add item form', () => {
 	});
 
 	test('filling and submitting the form adds the new item to the list', async ({ page }) => {
-		await page.getByRole('button', { name: '+ Add item' }).click();
+		await page.getByRole('button', { name: 'add item' }).click();
 		await page.getByPlaceholder('Item title').fill('Test Item E2E');
 		await page.getByRole('button', { name: 'Add' }).click();
 
@@ -93,7 +93,7 @@ test.describe('List detail — add item form', () => {
 	});
 
 	test('preserves the draft when focus loss minimizes the form', async ({ page }) => {
-		await page.getByRole('button', { name: '+ Add item' }).click();
+		await page.getByRole('button', { name: 'add item' }).click();
 		await page.getByPlaceholder('Item title').fill('Draft Item E2E');
 		await page.getByTestId('item-form-notes-preview').click();
 		await page.getByRole('textbox', { name: 'Notes' }).fill('Draft note E2E');
@@ -101,7 +101,7 @@ test.describe('List detail — add item form', () => {
 		await page.getByRole('button', { name: 'List options' }).click();
 
 		await expect(page.getByPlaceholder('Item title')).not.toBeVisible();
-		await page.getByRole('button', { name: '+ Add item' }).click();
+		await page.getByRole('button', { name: 'add item' }).click();
 
 		await expect(page.getByPlaceholder('Item title')).toHaveValue('Draft Item E2E');
 		await expect(page.getByTestId('item-form-notes-preview')).toHaveText('Draft note E2E');
@@ -448,7 +448,7 @@ test.describe('Viewer read-only list UI', () => {
 
 			await expect(viewerPage.getByRole('heading', { name: /Shared Groceries/ })).toBeVisible();
 			await expect(viewerPage.getByText('Apples')).toBeVisible();
-			await expect(viewerPage.getByRole('button', { name: '+ Add item' })).not.toBeVisible();
+			await expect(viewerPage.getByRole('button', { name: 'add item' })).not.toBeVisible();
 			await expect(viewerPage.getByRole('button', { name: 'Mark done' })).not.toBeVisible();
 			await expect(viewerPage.getByRole('button', { name: 'Unstar' })).not.toBeVisible();
 			await expect(viewerPage.getByLabel('Drag to reorder')).not.toBeVisible();

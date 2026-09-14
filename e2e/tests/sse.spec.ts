@@ -24,8 +24,8 @@ test.describe('SSE real-time sync', () => {
 
 			// Create a new item in tab 2 via the UI
 			const newItemTitle = `SSE-Item-${Date.now()}`;
-			await page2.getByRole('button', { name: '+ Add item' }).click();
-			await page2.getByPlaceholder('Title').fill(newItemTitle);
+			await page2.getByRole('button', { name: 'add item' }).click();
+			await page2.getByPlaceholder('Item title').fill(newItemTitle);
 			await page2.getByRole('button', { name: 'Add' }).click();
 
 			// Assert the submitting tab has exactly one copy (guards against each_key_duplicate race)
