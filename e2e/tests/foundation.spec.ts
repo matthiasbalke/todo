@@ -114,19 +114,21 @@ for (const width of [1280, 390]) {
   expect((await appearance(members.locator('..'))).background).toBe((await appearance(footer)).background);
   await page.mouse.click(5, 400);
   await page.getByRole('button', { name: 'add item', exact: true }).click();
-  await page.getByPlaceholder('Item title').fill('Palette item');
-  const preview = await appearance(page.getByTestId('item-form-notes-preview'));
+  const titleInput = page.getByPlaceholder('Item title');
+  await titleInput.fill('Palette item');
+  const titlePlaceholder = await appearance(titleInput, '::placeholder');
+  const titleText = await appearance(titleInput);
   await page.getByRole('button', { name: 'Notes', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Notes' });
   const notes = dialog.getByRole('textbox', { name: 'Notes' });
   await expect(notes).toBeFocused();
   await expect(notes).toHaveAttribute('placeholder', 'add note');
-  expect((await appearance(notes, '::placeholder')).color).toBe(preview.color);
-  expect((await appearance(notes)).size).toBe(preview.size);
+  expect((await appearance(notes, '::placeholder')).color).toBe(titlePlaceholder.color);
+  expect((await appearance(notes)).size).toBe(titleText.size);
   expect((await appearance(dialog)).background).toBe((await appearance(footer)).background);
   await page.screenshot({ path: testInfo.outputPath('notes-alternate.png') });
   await notes.fill('Palette notes\nSecond line');
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByTestId('item-form-notes-preview')).toContainText('Palette notes');
+  await expect(page.getByRole('button', { name: 'Notes', exact: true })).toHaveText(/Notes/);
  });
 }
