@@ -151,7 +151,7 @@ describe('DatePicker', () => {
 		});
 		const trigger = screen.getByRole('button', { name: 'Due date' });
 		await fireEvent.click(trigger);
-		await fireEvent.mouseDown(document.body);
+		await fireEvent.pointerDown(document.body);
 		expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 		expect(trigger).toHaveTextContent('Jun 9, 2026');
 
@@ -163,6 +163,27 @@ describe('DatePicker', () => {
 		await vi.runAllTimersAsync();
 		expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 		expect(document.activeElement).toBe(trigger);
+	});
+
+	it('consumes the outside pointer press used to dismiss the calendar', async () => {
+		const backgroundPointerDown = vi.fn();
+		const backgroundClick = vi.fn();
+		render(DatePicker, {
+			props: { value: '2026-06-09', label: 'Due date', locale: 'en-US' }
+		});
+		const backgroundButton = document.createElement('button');
+		backgroundButton.addEventListener('pointerdown', backgroundPointerDown);
+		backgroundButton.addEventListener('click', backgroundClick);
+		document.body.appendChild(backgroundButton);
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Due date' }));
+		await fireEvent.pointerDown(backgroundButton);
+		await fireEvent.click(backgroundButton);
+
+		expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+		expect(backgroundPointerDown).not.toHaveBeenCalled();
+		expect(backgroundClick).not.toHaveBeenCalled();
+		backgroundButton.remove();
 	});
 
 	it.each([

@@ -55,6 +55,7 @@
 	let displayedMonth = $state(todayCalendarDate().month);
 	let focusedDate = $state<CalendarDate>(todayCalendarDate());
 	let dateButtons = $state<Record<string, HTMLButtonElement>>({});
+	let suppressNextOutsideClick = false;
 	const instanceId = `datepicker-${nextDatePickerId++}`;
 	const labelId = `${instanceId}-label`;
 
@@ -133,6 +134,13 @@
 		isOpen = false;
 		if (returnFocus) {
 			tick().then(() => triggerElement?.focus());
+		}
+	}
+
+	function blurActiveElement() {
+		const activeElement = document.activeElement;
+		if (activeElement instanceof HTMLElement && containerElement?.contains(activeElement)) {
+			activeElement.blur();
 		}
 	}
 
@@ -224,15 +232,38 @@
 		moveFocus(candidate, direction);
 	}
 
-	function handleDocumentPointer(event: MouseEvent) {
+	function handleDocumentPointer(event: PointerEvent) {
 		if (isOpen && containerElement && !containerElement.contains(event.target as Node)) {
+			event.preventDefault();
+			event.stopPropagation();
+			suppressNextOutsideClick = true;
+			setTimeout(() => {
+				suppressNextOutsideClick = false;
+			}, 350);
 			closeCalendar();
+			blurActiveElement();
 		}
 	}
 
+	function handleDocumentClick(event: MouseEvent) {
+		if (!suppressNextOutsideClick) return;
+		if (containerElement?.contains(event.target as Node)) {
+			suppressNextOutsideClick = false;
+			return;
+		}
+		suppressNextOutsideClick = false;
+		event.preventDefault();
+		event.stopPropagation();
+	}
+
 	onMount(() => {
-		document.addEventListener('mousedown', handleDocumentPointer);
-		return () => document.removeEventListener('mousedown', handleDocumentPointer);
+		const pointerOptions = { capture: true };
+		document.addEventListener('pointerdown', handleDocumentPointer, pointerOptions);
+		document.addEventListener('click', handleDocumentClick, pointerOptions);
+		return () => {
+			document.removeEventListener('pointerdown', handleDocumentPointer, pointerOptions);
+			document.removeEventListener('click', handleDocumentClick, pointerOptions);
+		};
 	});
 </script>
 

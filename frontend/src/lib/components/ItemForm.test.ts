@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Category, TodoItem, User } from '$lib/mock-data';
 import { setProfile } from '$lib/stores/preferences.svelte';
@@ -52,6 +52,10 @@ const categories: Category[] = [
 	{ id: 'category-2', listId: 'list-1', name: 'Household', color: null, sortOrder: 2 }
 ];
 
+async function createNewItem() {
+	await fireEvent.keyDown(screen.getByRole('textbox', { name: 'Item title' }), { key: 'Enter' });
+}
+
 describe('ItemForm', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
@@ -87,7 +91,7 @@ describe('ItemForm', () => {
 			await fireEvent.input(titleInput, { target: { value: 'Stateful item' } });
 			await fireEvent.click(doneButton);
 			await fireEvent.click(starButton);
-			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+			await createNewItem();
 
 			expect(onsubmit.mock.calls[0][0]).toMatchObject({
 				title: 'Stateful item',
@@ -104,12 +108,84 @@ describe('ItemForm', () => {
 
 			await fireEvent.click(screen.getByRole('button', { name: 'Mark undone' }));
 			await fireEvent.click(screen.getByRole('button', { name: 'Unstar' }));
-			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-			expect(onsubmit.mock.calls[0][0]).toMatchObject({
+			await waitFor(() => expect(onsubmit).toHaveBeenCalledTimes(2));
+			expect(onsubmit.mock.calls.at(-1)?.[0]).toMatchObject({
 				done: false,
 				starred: false
 			});
+		});
+	});
+
+	describe('existing item autosave', () => {
+		it('commits a changed title once across Enter and follow-up blur', async () => {
+			const onsubmit = vi.fn().mockResolvedValue(undefined);
+			render(ItemForm, {
+				props: { ...defaultProps, item: itemWithDueDate(null), onsubmit }
+			});
+
+			const title = screen.getByRole('textbox', { name: 'Item title' });
+			await fireEvent.input(title, { target: { value: 'Updated item' } });
+			await fireEvent.keyDown(title, { key: 'Enter' });
+			await waitFor(() => expect(onsubmit).toHaveBeenCalledOnce());
+			await waitFor(() => expect(document.activeElement).not.toBe(title));
+			await fireEvent.blur(title);
+
+			expect(onsubmit).toHaveBeenCalledOnce();
+			expect(onsubmit.mock.calls[0][0]).toMatchObject({ title: 'Updated item' });
+		});
+
+		it('keeps the editor open and reports an error when a title autosave fails', async () => {
+			const onsubmit = vi.fn().mockRejectedValue(new Error('boom'));
+			render(ItemForm, {
+				props: { ...defaultProps, item: itemWithDueDate(null), onsubmit }
+			});
+
+			const title = screen.getByRole('textbox', { name: 'Item title' });
+			await fireEvent.input(title, { target: { value: 'Unsaved item' } });
+			await fireEvent.blur(title);
+
+			await waitFor(() => expect(screen.getByText('Changes could not be saved.')).toBeInTheDocument());
+			expect(title).toHaveValue('Unsaved item');
+		});
+
+		it('scrolls edited metadata controls into the upper third before opening them', async () => {
+			const scrollTopDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
+			let scrollTop = 0;
+			Object.defineProperty(document.documentElement, 'scrollTop', {
+				configurable: true,
+				get: () => scrollTop,
+				set: (value) => { scrollTop = value; }
+			});
+
+			render(ItemForm, {
+				props: { ...defaultProps, item: itemWithDueDate(null) }
+			});
+			const recurrence = screen.getByRole('combobox', { name: 'Recurrence' });
+			const recurrenceRow = recurrence.closest('.rounded-lg') as HTMLElement;
+			recurrenceRow.getBoundingClientRect = vi.fn(() => ({
+				x: 0,
+				y: 600,
+				top: 600,
+				left: 0,
+				right: 300,
+				bottom: 640,
+				width: 300,
+				height: 40,
+				toJSON: () => {}
+			}));
+
+			await fireEvent.pointerDown(recurrence);
+
+			expect(scrollTop).toBeCloseTo(600 - 96);
+			await fireEvent.click(recurrence);
+			await fireEvent.pointerDown(screen.getByRole('option', { name: 'Every day' }));
+			expect(scrollTop).toBeCloseTo(600 - 96);
+			if (scrollTopDescriptor) {
+				Object.defineProperty(document.documentElement, 'scrollTop', scrollTopDescriptor);
+			} else {
+				Reflect.deleteProperty(document.documentElement, 'scrollTop');
+			}
 		});
 	});
 
@@ -191,7 +267,7 @@ describe('ItemForm', () => {
 			await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 				target: { value: 'Uncategorized fallback item' }
 			});
-			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+			await createNewItem();
 
 			expect(onsubmit.mock.calls[0][0].categoryId).toBeNull();
 		});
@@ -209,7 +285,7 @@ describe('ItemForm', () => {
 			const trigger = screen.getByRole('combobox', { name: 'Category' });
 			await fireEvent.click(trigger);
 			await fireEvent.click(screen.getByRole('option', { name: 'Household' }));
-			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+			await createNewItem();
 
 			expect(onsubmit.mock.calls[0][0].categoryId).toBe('category-2');
 			expect(oncancel).not.toHaveBeenCalled();
@@ -230,7 +306,7 @@ describe('ItemForm', () => {
 			});
 			await fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
 			await fireEvent.click(screen.getAllByRole('option', { name: 'Duplicate' })[1]);
-			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+			await createNewItem();
 
 			expect(onsubmit.mock.calls[0][0].categoryId).toBe('second-id');
 		});
@@ -247,10 +323,11 @@ describe('ItemForm', () => {
 			});
 
 			await fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
+			const trigger = screen.getByRole('combobox', { name: 'Category' });
 			await fireEvent.click(screen.getByRole('option', { name: 'Uncategorized' }));
-			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-			expect(onsubmit.mock.calls[0][0].categoryId).toBeNull();
+			await waitFor(() => expect(onsubmit.mock.calls[0][0].categoryId).toBeNull());
+			await waitFor(() => expect(document.activeElement).not.toBe(trigger));
 		});
 
 		it.each([
@@ -269,7 +346,7 @@ describe('ItemForm', () => {
 			const trigger = screen.getByRole('combobox', { name: 'Category' });
 			await fireEvent.click(trigger);
 			await fireEvent.click(screen.getByRole('option', { name: 'Household' }));
-			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+			await createNewItem();
 
 			expect(trigger).toHaveValue(label);
 		});
@@ -352,7 +429,7 @@ describe('ItemForm', () => {
 			});
 			await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
 			await fireEvent.click(screen.getByRole('option', { name: label }));
-			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+			await createNewItem();
 
 			expect(onsubmit.mock.calls[0][0].recurrenceRule).toEqual({
 				intervalValue,
@@ -372,9 +449,8 @@ describe('ItemForm', () => {
 
 			await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
 			await fireEvent.click(screen.getByRole('option', { name: 'No recurrence' }));
-			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-			expect(onsubmit.mock.calls[0][0].recurrenceRule).toBeNull();
+			await waitFor(() => expect(onsubmit.mock.calls[0][0].recurrenceRule).toBeNull());
 		});
 
 		it('selects with a pointer without cancelling and resets after creation', async () => {
@@ -392,7 +468,7 @@ describe('ItemForm', () => {
 			expect(trigger).not.toHaveClass('typography-placeholder');
 			expect(oncancel).not.toHaveBeenCalled();
 
-			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+			await createNewItem();
 
 			expect(onsubmit.mock.calls[0][0].recurrenceRule).toEqual({
 				intervalValue: 1,
@@ -446,6 +522,24 @@ describe('ItemForm', () => {
 			await fireEvent.click(screen.getByRole('option', { name: 'Alice' }));
 			expect(trigger.parentElement).not.toHaveTextContent('Alice');
 		});
+
+		it('autosaves assignee changes for existing items while keeping the picker open', async () => {
+			const onsubmit = vi.fn();
+			const user = { id: 'u1', name: 'Alice', email: 'alice@example.com' };
+			render(ItemForm, {
+				props: { ...defaultProps, item: itemWithDueDate(null), users: [user], onsubmit }
+			});
+
+			const trigger = screen.getByRole('combobox', { name: 'Assignees' });
+			trigger.focus();
+			await fireEvent.click(trigger);
+			await fireEvent.click(screen.getByRole('option', { name: 'Alice' }));
+
+			await waitFor(() => expect(onsubmit.mock.calls[0][0].assignedUserIds).toEqual(['u1']));
+			await vi.runAllTimersAsync();
+			expect(screen.getByRole('listbox')).toBeInTheDocument();
+			expect(document.activeElement).toBe(trigger);
+		});
 	});
 
 	describe('due date', () => {
@@ -490,7 +584,7 @@ describe('ItemForm', () => {
 			await fireEvent.click(
 				screen.getByRole('gridcell', { name: 'Monday, June 15, 2026' })
 			);
-			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+			await createNewItem();
 
 			expect(onsubmit).toHaveBeenCalledOnce();
 			expect(onsubmit.mock.calls[0][0]).toMatchObject({
@@ -507,9 +601,8 @@ describe('ItemForm', () => {
 
 			await fireEvent.click(screen.getByRole('button', { name: 'Due Date' }));
 			await fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
-			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-			expect(onsubmit).toHaveBeenCalledOnce();
+			await waitFor(() => expect(onsubmit).toHaveBeenCalledOnce());
 			expect(onsubmit.mock.calls[0][0].dueDate).toBeNull();
 		});
 
@@ -525,9 +618,21 @@ describe('ItemForm', () => {
 			await fireEvent.click(
 				screen.getByRole('gridcell', { name: 'Monday, June 15, 2026' })
 			);
-			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+			await createNewItem();
 
 			expect(trigger).toHaveTextContent('set due date');
+		});
+
+		it('closes the open date picker when interacting with the category surface', async () => {
+			render(ItemForm, { props: { ...defaultProps, categories } });
+
+			await fireEvent.click(screen.getByRole('button', { name: 'Due Date' }));
+			expect(screen.getByRole('dialog', { name: 'Calendar' })).toBeInTheDocument();
+
+			const category = screen.getByRole('combobox', { name: 'Category' });
+			await fireEvent.pointerDown(category.parentElement!);
+
+			expect(screen.queryByRole('dialog', { name: 'Calendar' })).not.toBeInTheDocument();
 		});
 	});
 
@@ -543,22 +648,27 @@ describe('ItemForm', () => {
 			const notes = screen.getByRole('textbox', { name: 'Notes' });
 			await fireEvent.input(notes, { target: { value: 'First line\nSecond line' } });
 			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+			await createNewItem();
 
 			expect(notes).toHaveAttribute('rows', '14');
 			expect(notes).toHaveClass('resize-none');
 			expect(onsubmit.mock.calls[0][0].notes).toBe('First line\nSecond line');
 		});
 
-		it('submits null for empty notes', async () => {
+		it('submits null for emptied existing notes', async () => {
 			const onsubmit = vi.fn();
 			render(ItemForm, {
-				props: { ...defaultProps, item: itemWithDueDate(null), onsubmit }
+				props: { ...defaultProps, item: { ...itemWithDueDate(null), notes: 'Existing notes' }, onsubmit }
 			});
 
-			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
+			const dialog = screen.getByRole('dialog', { name: 'Notes' });
+			await fireEvent.input(within(dialog).getByRole('textbox', { name: 'Notes' }), {
+				target: { value: '' }
+			});
+			await fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
 
-			expect(onsubmit.mock.calls[0][0].notes).toBeNull();
+			await waitFor(() => expect(onsubmit.mock.calls[0][0].notes).toBeNull());
 		});
 
 		it('does not cancel when focus moves between notes and another form control', async () => {
@@ -759,14 +869,14 @@ describe('ItemForm', () => {
 			externalElement.remove();
 		});
 
-		it('cancels with an explicit reason when Cancel is activated', async () => {
+		it('does not render ordinary save, add, or cancel buttons', () => {
 			const oncancel = vi.fn();
 			render(ItemForm, { props: { ...defaultProps, oncancel } });
 
-			await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-
-			expect(oncancel).toHaveBeenCalledOnce();
-			expect(oncancel).toHaveBeenCalledWith({ reason: 'explicit' });
+			expect(screen.queryByRole('button', { name: 'Add' })).not.toBeInTheDocument();
+			expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
+			expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+			expect(oncancel).not.toHaveBeenCalled();
 		});
 
 		it('keeps draft values visible when new-item submission fails', async () => {
@@ -781,7 +891,7 @@ describe('ItemForm', () => {
 				target: { value: 'Still needed' }
 			});
 			await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-			await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+			await createNewItem();
 
 			expect(screen.getByPlaceholderText('Item title')).toHaveValue('Retry this item');
 			expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Still needed');

@@ -42,9 +42,9 @@
         assignedUserIds: updated.assignedUserIds,
         sortOrder: updated.sortOrder,
       });
-      goto(returnDestination);
     } catch (e) {
       alert(friendlyError(e, 'Failed to save item'));
+      throw e;
     }
   }
 

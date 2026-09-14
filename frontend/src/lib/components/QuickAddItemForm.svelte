@@ -402,13 +402,6 @@
 			containerClass="min-w-0 flex-1"
 			class="w-full"
 		/>
-		<Button type="button" tone="neutral" appearance="bare" size="icon-standard" aria-label="Cancel" onclick={() => oncancel({ reason: 'explicit' })}>
-			<Icon name="cancel" size="compact" />
-		</Button>
-		<Button type="submit" loading={submitting} loadingLabel="Adding..." aria-label="Add">
-			<Icon name="plus" size="compact" />
-			<span>Add</span>
-		</Button>
 	</div>
 
 	{#if activeDetail}

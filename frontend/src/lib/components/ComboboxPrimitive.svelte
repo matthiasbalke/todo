@@ -139,6 +139,13 @@
 		onclose?.();
 	}
 
+	function blurActiveElement() {
+		const activeElement = document.activeElement;
+		if (activeElement instanceof HTMLElement && containerElement?.contains(activeElement)) {
+			activeElement.blur();
+		}
+	}
+
 	function selectOption(option: any) {
 		onoptionselect?.(option);
 		if (closeOnSelect) {
@@ -148,6 +155,15 @@
 
 	function handleTriggerClick() {
 		if (!isOpen) openDropdown();
+	}
+
+	function handleTriggerSurfacePointerDown(event: PointerEvent) {
+		if (disabled) return;
+		const target = event.target as Node;
+		if (dropdownElement?.contains(target) || target === inputElement) return;
+		event.preventDefault();
+		inputElement?.focus();
+		openDropdown();
 	}
 
 	async function handleInput(event: Event) {
@@ -206,6 +222,16 @@
 		}
 	}
 
+	function handleDocumentPointerDown(event: PointerEvent) {
+		if (!isOpen || !containerElement?.contains || containerElement.contains(event.target as Node)) {
+			return;
+		}
+		event.preventDefault();
+		event.stopPropagation();
+		closeDropdown();
+		blurActiveElement();
+	}
+
 	function handleFocusOut() {
 		setTimeout(() => {
 			if (containerElement && !containerElement.contains(document.activeElement)) {
@@ -215,8 +241,11 @@
 	}
 
 	onMount(() => {
+		const pointerOptions = { capture: true };
+		document.addEventListener('pointerdown', handleDocumentPointerDown, pointerOptions);
 		document.addEventListener('click', handleClickOutside);
 		return () => {
+			document.removeEventListener('pointerdown', handleDocumentPointerDown, pointerOptions);
 			document.removeEventListener('click', handleClickOutside);
 		};
 	});
@@ -250,7 +279,9 @@
 	{/if}
 
 	<div class="relative" onfocusout={handleFocusOut}>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
+			onpointerdown={handleTriggerSurfacePointerDown}
 			class="flex w-full items-center gap-2 rounded border text-label transition-colors focus-within:ring-2 focus-within:ring-offset-2 control-focus disabled:cursor-not-allowed {presentationClasses} {disabled ? 'cursor-not-allowed opacity-50' : ''} {inputSizeClasses}"
 		>
 			{#if selectedContent}

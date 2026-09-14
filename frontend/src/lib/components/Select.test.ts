@@ -149,6 +149,21 @@ describe('Select Component', () => {
 			expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
 			expect(trigger).toHaveFocus();
 		});
+
+		it('consumes the outside pointer press used to dismiss the dropdown', async () => {
+			const backgroundPointerDown = vi.fn();
+			render(Select, { props: { options: testOptions, label: 'Dismissible select' } });
+			const backgroundButton = document.createElement('button');
+			backgroundButton.addEventListener('pointerdown', backgroundPointerDown);
+			document.body.appendChild(backgroundButton);
+
+			await fireEvent.click(screen.getByRole('combobox', { name: 'Dismissible select' }));
+			await fireEvent.pointerDown(backgroundButton);
+
+			expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+			expect(backgroundPointerDown).not.toHaveBeenCalled();
+			backgroundButton.remove();
+		});
 	});
 
 	describe('Dropdown Positioning', () => {

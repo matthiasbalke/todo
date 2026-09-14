@@ -113,7 +113,7 @@ vi.mock('$lib/api/errors', () => ({
 
 import ListPage from './+page.svelte';
 
-const mockData = { id: 'list-1', users: [], buildNumber: '0' };
+const mockData = { id: 'list-1', users: [], buildNumber: '0', focusTitle: false };
 
 function makeItem(id: string, title: string, done = false, starred = false) {
 	return {
@@ -134,6 +134,10 @@ function makeItem(id: string, title: string, done = false, starred = false) {
 		createdAt: '2026-01-01T00:00:00Z',
 		updatedAt: '2026-01-01T00:00:00Z',
 	};
+}
+
+async function createQuickAddItem() {
+	await fireEvent.keyDown(screen.getByRole('textbox', { name: 'Item title' }), { key: 'Enter' });
 }
 
 describe('ListPage title emoji extraction', () => {
@@ -158,6 +162,16 @@ describe('ListPage title emoji extraction', () => {
 		await fireEvent.keyDown(input, { key: 'Enter' });
 
 		expect(updateList).toHaveBeenCalledWith('list-1', { name: 'SSE Test', emoji: '🏞️' });
+	});
+
+	it('focuses and selects the title editor when opened for a newly created list', async () => {
+		render(ListPage, { props: { data: { ...mockData, focusTitle: true } } });
+
+		const input = screen.getByRole('textbox') as HTMLInputElement;
+		await waitFor(() => expect(document.activeElement).toBe(input));
+		expect(input).toHaveValue('🛒 Groceries');
+		expect(input.selectionStart).toBe(0);
+		expect(input.selectionEnd).toBe(input.value.length);
 	});
 });
 
@@ -617,7 +631,7 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
 		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Uncategorized');
 		await fireEvent.click(within(screen.getByRole('dialog', { name: 'Category' })).getByRole('button', { name: 'Save' }));
-		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+		await createQuickAddItem();
 
 		expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({ categoryId: null }));
 	});
@@ -648,17 +662,25 @@ describe('ListPage menu presentation', () => {
 		externalElement.remove();
 	});
 
-	it('clears an add-item draft after explicit cancellation', async () => {
+	it('preserves an add-item draft without creating when the title loses focus', async () => {
+		const { createItem } = await import('$lib/stores/items.svelte');
 		render(ListPage, { props: { data: mockData } });
+		const externalElement = document.createElement('button');
+		document.body.appendChild(externalElement);
 
 		await fireEvent.click(screen.getByRole('button', { name: 'add item' }));
 		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
-			target: { value: 'Discarded title' },
+			target: { value: 'Preserved blur title' },
 		});
-		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+		await fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
+			relatedTarget: externalElement,
+		});
+
+		expect(createItem).not.toHaveBeenCalled();
 		await fireEvent.click(screen.getByRole('button', { name: 'add item' }));
 
-		expect(screen.getByPlaceholderText('Item title')).toHaveValue('');
+		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Preserved blur title');
+		externalElement.remove();
 	});
 
 	it('clears an add-item draft after successful submission', async () => {
@@ -671,7 +693,7 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 			target: { value: 'Submitted title' },
 		});
-		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+		await createQuickAddItem();
 
 		await waitFor(() => expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({
 			title: 'Submitted title',
@@ -695,7 +717,7 @@ describe('ListPage menu presentation', () => {
 		});
 		expect(screen.queryByRole('button', { name: 'Mark done' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Star' })).not.toBeInTheDocument();
-		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+		await createQuickAddItem();
 
 		expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({
 			title: 'Unchecked quick-add item',
@@ -720,7 +742,7 @@ describe('ListPage menu presentation', () => {
 			target: { value: 'Retry notes' },
 		});
 		await fireEvent.click(within(screen.getByRole('dialog', { name: 'Notes' })).getByRole('button', { name: 'Save' }));
-		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+		await createQuickAddItem();
 
 		await waitFor(() => expect(alert).toHaveBeenCalledWith('Error: boom'));
 		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Retry title');

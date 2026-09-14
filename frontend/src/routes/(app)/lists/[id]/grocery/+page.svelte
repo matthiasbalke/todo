@@ -3,13 +3,13 @@
   import { getItems, loadItemsForList, deleteFinishedItems } from '$lib/stores/items.svelte';
   import { getList, updateList, getCategoriesForList, loadCategoriesForList, isHideDone, setHideDone } from '$lib/stores/lists.svelte';
   import { applyFilters, applySort, groupByCategory } from '$lib/utils';
+  import { extractEmoji } from '$lib/utils/emoji';
   import type { Filters } from '$lib/utils';
   import { untrack } from 'svelte';
   import type { SortField, SortDirection } from '$lib/mock-data';
   import { loadListPrefs, saveListPrefs, deleteListPrefs } from '$lib/listPrefs';
   import { loadListCategoryState, saveListCategoryState, deleteListCategoryState } from '$lib/listCategoryState';
   import GroceryCategorySection from '$lib/components/GroceryCategorySection.svelte';
-  import ListForm from '$lib/components/ListForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
   import ListStateSummary from '$lib/components/ListStateSummary.svelte';
   import type { FilterChip } from '$lib/components/ListStateSummary.svelte';
@@ -18,6 +18,7 @@
   import Icon from '$lib/components/Icon.svelte';
   import { getListCapabilities } from '$lib/listCapabilities';
   import DeleteCheckedItemsDialog from '$lib/components/DeleteCheckedItemsDialog.svelte';
+  import TextInput from '$lib/components/TextInput.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -28,7 +29,9 @@
   let menuOpen = $state(false);
   let sortSubmenuOpen = $state(false);
   let filterSubmenuOpen = $state(false);
-  let showEditForm = $state(false);
+  let editingTitle = $state(false);
+  let titleEditValue = $state('');
+  let titleInput = $state<HTMLInputElement | null>(null);
   let showCategoryDialog = $state(false);
   let deletingFinished = $state(false);
   let showDeleteCheckedDialog = $state(false);
@@ -117,10 +120,19 @@
     return chips;
   });
 
-  async function handleEditList({ name, emoji }: { name: string; emoji: string }) {
+  $effect(() => {
+    if (editingTitle) titleInput?.focus();
+  });
+
+  async function saveTitleEdit() {
+    editingTitle = false;
+    const trimmed = titleEditValue.trim();
+    const emoji = extractEmoji(trimmed);
+    const displayName = emoji ? trimmed.slice(emoji.length).trimStart() : trimmed;
+    if (!displayName) return;
+    if (displayName === list?.name && (emoji || '📋') === (list?.emoji ?? '📋')) return;
     try {
-      await updateList(data.id, { name, emoji });
-      showEditForm = false;
+      await updateList(data.id, { name: displayName, emoji: emoji || '📋' });
     } catch (e) {
       alert(friendlyError(e, 'Failed to update list'));
     }
@@ -175,14 +187,20 @@
     <a href="/lists/{data.id}" class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-surface-subtle hover:text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-2" aria-label="Back to list">
       <Icon name="back" size="header" />
     </a>
-    {#if showEditForm}
-      <div class="flex-1">
-        <ListForm
-          {list}
-          onsubmit={handleEditList}
-          oncancel={() => { showEditForm = false; }}
-        />
-      </div>
+    {#if editingTitle}
+      <TextInput
+        bind:element={titleInput}
+        bind:value={titleEditValue}
+        onblur={saveTitleEdit}
+        onkeydown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); saveTitleEdit(); }
+          if (e.key === 'Escape') { editingTitle = false; }
+        }}
+        containerClass="flex-1 min-w-0"
+        size="title"
+        appearance="inline"
+        class="w-full min-w-0"
+      />
     {:else}
       <h1 class="text-xl font-bold text-heading">{list?.emoji} {list?.name}</h1>
       <span class="text-sm text-subdued">Grocery mode</span>
@@ -217,7 +235,7 @@
                 size="menu"
                 align="start"
                 weight="normal"
-                onclick={() => { showEditForm = true; menuOpen = false; }}
+                onclick={() => { titleEditValue = `${list?.emoji ?? '📋'} ${list?.name ?? ''}`; editingTitle = true; menuOpen = false; }}
               >
                 Edit list
               </Button>
