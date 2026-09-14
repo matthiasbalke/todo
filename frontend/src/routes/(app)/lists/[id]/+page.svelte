@@ -12,7 +12,7 @@
   import { loadListCategoryState, saveListCategoryState, deleteListCategoryState } from '$lib/listCategoryState';
   import { deleteListItemDefaults, loadListItemDefaults, saveListItemDefaults } from '$lib/listItemDefaults';
   import CategoryGroup from '$lib/components/CategoryGroup.svelte';
-  import ItemForm from '$lib/components/ItemForm.svelte';
+  import QuickAddItemForm from '$lib/components/QuickAddItemForm.svelte';
   import type { ItemFormCancelContext, ItemFormDraft } from '$lib/components/ItemForm.svelte';
   import CategoryConfigDialog from '$lib/components/CategoryConfigDialog.svelte';
   import MembersDialog from '$lib/components/MembersDialog.svelte';
@@ -611,7 +611,7 @@
 {#if capabilities.canEditItems}
   <FixedActionFooter expanded={showAddForm}>
     {#if showAddForm}
-          <ItemForm
+          <QuickAddItemForm
             listId={data.id}
             {categories}
             users={members}

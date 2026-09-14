@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Button from './Button.svelte';
 	import Icon from './Icon.svelte';
+	import RemovableChip from './RemovableChip.svelte';
 
 	export interface FilterChip {
 		id: string;
@@ -46,9 +47,7 @@
 		<span>{visibleCount} {visibleCount === 1 ? 'item' : 'items'}</span>
 	{/if}
 	<span class="relative inline-flex">
-		<button
-			type="button"
-			class="inline-flex h-6 items-center rounded-full border border-primary-soft bg-primary-surface px-2 text-xs text-primary-strong hover:bg-primary-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-1 control-focus"
+		<RemovableChip
 			onclick={() => { sortOpen = !sortOpen; }}
 			aria-label="Change sort order: {sortLabel} {sortDirectionLabel}"
 			aria-haspopup="menu"
@@ -56,7 +55,7 @@
 		>
 			Sort: {sortLabel}
 			<Icon name={sortDirectionIcon} size="metadata" />
-		</button>
+		</RemovableChip>
 		{#if sortOpen}
 			<button
 				type="button"
@@ -98,18 +97,11 @@
 		{/if}
 	</span>
 	{#each filters as filter (filter.id)}
-		<span
-			class="inline-flex items-center overflow-hidden rounded-full border border-primary-soft bg-primary-surface text-xs text-primary-strong"
+		<RemovableChip
+			removeLabel="Clear {filter.label} filter"
+			onremove={filter.onreset}
 		>
 			<span class="px-2 py-0.5">{filter.label}</span>
-			<button
-				type="button"
-				class="flex h-6 w-6 items-center justify-center border-l border-primary-soft text-primary hover:bg-primary-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-1 control-focus"
-				aria-label="Clear {filter.label} filter"
-				onclick={filter.onreset}
-			>
-				<Icon name="close" size="metadata" />
-			</button>
-		</span>
+		</RemovableChip>
 	{/each}
 </div>

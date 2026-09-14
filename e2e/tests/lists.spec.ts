@@ -79,7 +79,11 @@ test.describe('List detail — add item form', () => {
 		await page.getByRole('button', { name: 'add item' }).click();
 
 		await expect(page.getByPlaceholder('Item title')).toBeVisible();
-		await expect(page.getByTestId('item-form-notes-preview')).toHaveText('add note');
+		await expect(page.getByRole('button', { name: 'Category' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Due date' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Recurrence' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Assignees' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Notes' })).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Add' })).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
 	});
@@ -95,16 +99,16 @@ test.describe('List detail — add item form', () => {
 	test('preserves the draft when focus loss minimizes the form', async ({ page }) => {
 		await page.getByRole('button', { name: 'add item' }).click();
 		await page.getByPlaceholder('Item title').fill('Draft Item E2E');
-		await page.getByTestId('item-form-notes-preview').click();
+		await page.getByRole('button', { name: 'Notes' }).click();
 		await page.getByRole('textbox', { name: 'Notes' }).fill('Draft note E2E');
-		await page.getByRole('button', { name: 'Save' }).click();
+		await page.getByRole('dialog', { name: 'Notes' }).getByRole('button', { name: 'Save' }).click();
 		await page.getByRole('button', { name: 'List options' }).click();
 
 		await expect(page.getByPlaceholder('Item title')).not.toBeVisible();
 		await page.getByRole('button', { name: 'add item' }).click();
 
 		await expect(page.getByPlaceholder('Item title')).toHaveValue('Draft Item E2E');
-		await expect(page.getByTestId('item-form-notes-preview')).toHaveText('Draft note E2E');
+		await expect(page.getByRole('button', { name: 'Notes', exact: true })).toHaveText(/Notes/);
 	});
 });
 

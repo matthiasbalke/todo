@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const listStoreState = vi.hoisted(() => ({
@@ -611,10 +611,12 @@ describe('ListPage menu presentation', () => {
 		await waitFor(() => expect(deleteListItemDefaults).toHaveBeenCalledWith('list-1'));
 		await fireEvent.click(screen.getByRole('button', { name: 'add item' }));
 
-		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('assign category');
 		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
 			target: { value: 'Fallback item' },
 		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
+		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Uncategorized');
+		await fireEvent.click(within(screen.getByRole('dialog', { name: 'Category' })).getByRole('button', { name: 'Save' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
 		expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({ categoryId: null }));
@@ -633,7 +635,7 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
 			target: { value: 'Preserved notes' },
 		});
-		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+		await fireEvent.click(within(screen.getByRole('dialog', { name: 'Notes' })).getByRole('button', { name: 'Save' }));
 		await fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
 			relatedTarget: externalElement,
 		});
@@ -642,7 +644,7 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'add item' }));
 
 		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Preserved title');
-		expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Preserved notes');
+		expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Notes');
 		externalElement.remove();
 	});
 
@@ -683,20 +685,22 @@ describe('ListPage menu presentation', () => {
 		externalElement.remove();
 	});
 
-	it('passes the selected completion state when creating an item', async () => {
+	it('creates quick-add items with default unchecked and unstarred state', async () => {
 		const { createItem } = await import('$lib/stores/items.svelte');
 		render(ListPage, { props: { data: mockData } });
 
 		await fireEvent.click(screen.getByRole('button', { name: 'add item' }));
 		await fireEvent.input(screen.getByPlaceholderText('Item title'), {
-			target: { value: 'Already checked' },
+			target: { value: 'Unchecked quick-add item' },
 		});
-		await fireEvent.click(screen.getByRole('button', { name: 'Mark done' }));
+		expect(screen.queryByRole('button', { name: 'Mark done' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Star' })).not.toBeInTheDocument();
 		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
 		expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({
-			title: 'Already checked',
-			done: true,
+			title: 'Unchecked quick-add item',
+			done: false,
+			starred: false,
 		}));
 	});
 
@@ -715,12 +719,12 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
 			target: { value: 'Retry notes' },
 		});
-		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+		await fireEvent.click(within(screen.getByRole('dialog', { name: 'Notes' })).getByRole('button', { name: 'Save' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
 		await waitFor(() => expect(alert).toHaveBeenCalledWith('Error: boom'));
 		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Retry title');
-		expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Retry notes');
+		expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Notes');
 		vi.unstubAllGlobals();
 	});
 });

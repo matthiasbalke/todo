@@ -87,7 +87,7 @@
       <Icon name="back" size="header" />
     </a>
     {#if list}
-      <span class="text-sm text-subdued">{list.emoji} {list.name}</span>
+      <h1 class="flex-1 min-w-0 text-xl font-bold text-heading">{list.emoji} {list.name}</h1>
     {/if}
   </div>
 
