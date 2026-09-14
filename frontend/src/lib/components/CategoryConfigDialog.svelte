@@ -4,7 +4,8 @@
   import { friendlyError } from '$lib/api/errors';
   import { dragHandleZone, dragHandle, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import Button from './Button.svelte';
-  import ColorSwatchButton from './ColorSwatchButton.svelte';
+  import CategoryColorPicker from './CategoryColorPicker.svelte';
+  import EditableLabel from './EditableLabel.svelte';
   import TextInput from './TextInput.svelte';
   import Icon from './Icon.svelte';
 
@@ -25,10 +26,10 @@
 
   let newName = $state('');
   let newColor = $state<string | null>(null);
-  let editingId = $state<string | null>(null);
-  let editingName = $state('');
-  let editingColor = $state<string | null>(null);
-  let cancelling = false;
+  let colorEditorCategoryId = $state<string | null>(null);
+  let colorEditorValue = $state<string | null>(null);
+  let pendingDeleteCategory = $state<Category | null>(null);
+  let isDeletingCategory = $state(false);
   let error = $state<string | null>(null);
   let isDragging = $state(false);
   let dndCategories = $state<Category[]>([]);
@@ -55,32 +56,39 @@
     }
   }
 
-  function startEdit(cat: Category) {
-    editingId = cat.id;
-    editingName = cat.name;
-    editingColor = cat.color;
+  function validateCategoryName(value: string) {
+    return value.trim() ? null : 'Category name is required';
   }
 
-  async function commitEdit(cat: Category) {
-    if (cancelling) {
-      cancelling = false;
-      editingId = null;
-      return;
-    }
-    const trimmed = editingName.trim();
-    if (!trimmed) { editingId = null; return; }
+  async function renameCategory(cat: Category, name: string) {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === cat.name) return;
     error = null;
     try {
-      await saveCategory({ ...cat, name: trimmed, color: editingColor });
+      await saveCategory({ ...cat, name: trimmed });
     } catch (e) {
       error = friendlyError(e, 'Failed to update category');
     }
-    editingId = null;
   }
 
-  function cancelEdit() {
-    cancelling = true;
-    editingId = null;
+  function toggleColorEditor(cat: Category) {
+    if (colorEditorCategoryId === cat.id) {
+      colorEditorCategoryId = null;
+      return;
+    }
+    colorEditorCategoryId = cat.id;
+    colorEditorValue = cat.color;
+  }
+
+  async function updateCategoryColor(cat: Category, color: string | null) {
+    colorEditorValue = color;
+    if (color === cat.color) return;
+    error = null;
+    try {
+      await saveCategory({ ...cat, color });
+    } catch (e) {
+      error = friendlyError(e, 'Failed to update category');
+    }
   }
 
   function handleConsider(e: CustomEvent<{ items: Category[] }>) {
@@ -103,12 +111,28 @@
     }
   }
 
-  async function removeCat(cat: Category) {
+  function requestDeleteCategory(cat: Category) {
     error = null;
+    pendingDeleteCategory = cat;
+  }
+
+  function cancelDeleteCategory() {
+    if (isDeletingCategory) return;
+    pendingDeleteCategory = null;
+  }
+
+  async function confirmDeleteCategory() {
+    if (!pendingDeleteCategory) return;
+    const cat = pendingDeleteCategory;
+    error = null;
+    isDeletingCategory = true;
     try {
       await deleteCategory(cat.listId, cat.id);
+      pendingDeleteCategory = null;
     } catch (e) {
       error = friendlyError(e, 'Failed to delete category');
+    } finally {
+      isDeletingCategory = false;
     }
   }
 </script>
@@ -156,66 +180,61 @@
           data-testid="category-reorder-zone"
         >
           {#each dndCategories as cat (cat.id)}
-            <div class="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-canvas group {(cat as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME] ? 'opacity-40' : ''}">
-              <div
-                use:dragHandle
-                class="flex-shrink-0 flex items-center justify-center w-8 h-8 cursor-grab active:cursor-grabbing touch-none text-faint hover:text-muted"
-                aria-label="Drag to reorder category"
-                tabindex="-1"
-              >
-                <Icon name="drag" size="controlCompact" />
-              </div>
+            <div class="rounded-lg hover:bg-canvas group {(cat as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME] ? 'opacity-40' : ''}">
+              <div class="flex items-center gap-1 px-2 py-1.5">
+                <div
+                  use:dragHandle
+                  class="flex-shrink-0 flex items-center justify-center w-8 h-8 cursor-grab active:cursor-grabbing touch-none text-faint hover:text-muted"
+                  aria-label="Drag to reorder category"
+                  tabindex="-1"
+                >
+                  <Icon name="drag" size="controlCompact" />
+                </div>
 
-              {#if editingId === cat.id}
-                <!-- Inline edit -->
-                <div class="flex-1 flex flex-col gap-1">
-                  <!-- svelte-ignore a11y_autofocus -->
-                  <TextInput
-                    class="w-full"
-                    size="compact"
-                    bind:value={editingName}
-                    onkeydown={(e) => { if (e.key === 'Enter') commitEdit(cat); if (e.key === 'Escape') cancelEdit(); }}
-                    onblur={() => commitEdit(cat)}
-                    autofocus
-                  />
-                  <div class="flex gap-1">
-                    {#each COLOR_SWATCHES as swatch}
-                      <ColorSwatchButton
-                        color={swatch}
-                        selected={editingColor === swatch}
-                        onselect={() => { editingColor = editingColor === swatch ? null : swatch; }}
-                      />
-                    {/each}
-                    {#if editingColor}
-                      <span class="w-4 h-4 rounded-full" style="background-color: {editingColor}"></span>
-                    {/if}
-                  </div>
-                </div>
-                <Button tone="success" appearance="bare" size="icon" onclick={() => commitEdit(cat)} aria-label="Save">
-                  <Icon name="save" size="controlCompact" />
-                </Button>
-                <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={cancelEdit} aria-label="Cancel">
-                  <Icon name="cancel" size="controlCompact" />
-                </Button>
-              {:else}
-                <div class="flex-1 flex items-center gap-2 min-w-0">
+                <Button
+                  tone="neutral"
+                  appearance="bare"
+                  size="icon"
+                  class="h-8 w-8 flex-shrink-0"
+                  aria-label={`Edit color for ${cat.name}`}
+                  aria-expanded={colorEditorCategoryId === cat.id}
+                  onclick={() => toggleColorEditor(cat)}
+                  data-testid={`category-color-control-${cat.id}`}
+                >
                   {#if cat.color}
-                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: {cat.color}"></span>
+                    <span class="h-4 w-4 rounded-full" style="background-color: {cat.color}"></span>
+                  {:else}
+                    <span class="h-4 w-4 rounded-full border border-dashed border-muted"></span>
                   {/if}
-                  <span
-                    class="text-sm text-value cursor-pointer truncate"
-                    role="button"
-                    tabindex="0"
-                    onclick={() => startEdit(cat)}
-                    onkeydown={(e) => { if (e.key === 'Enter') startEdit(cat); }}
-                  >{cat.name}</span>
-                </div>
-                <Button tone="neutral" appearance="bare" size="icon" emphasis="subtle" onclick={() => startEdit(cat)} class="sm:opacity-0 sm:group-hover:opacity-100" aria-label="Rename">
-                  <Icon name="edit" size="controlCompact" />
                 </Button>
-                <Button tone="danger" appearance="bare" size="icon" onclick={() => removeCat(cat)} class="sm:opacity-0 sm:group-hover:opacity-100" aria-label="Delete">
+
+                <div class="min-w-0 flex-1">
+                  <EditableLabel
+                    value={cat.name}
+                    label="Category name"
+                    ariaLabel={`Edit category name ${cat.name}`}
+                    validate={validateCategoryName}
+                    inputSize="compact"
+                    displayAppearance="plain"
+                    containerClass="w-full"
+                    onchange={(value) => renameCategory(cat, value)}
+                  />
+                </div>
+
+                <Button tone="danger" appearance="bare" size="icon" onclick={() => requestDeleteCategory(cat)} class="sm:opacity-0 sm:group-hover:opacity-100" aria-label="Delete">
                   <Icon name="delete" size="controlCompact" />
                 </Button>
+              </div>
+
+              {#if colorEditorCategoryId === cat.id}
+                <div class="px-2 pb-2 pl-20">
+                  <CategoryColorPicker
+                    bind:value={colorEditorValue}
+                    presets={COLOR_SWATCHES}
+                    label={`Color for ${cat.name}`}
+                    onselect={(color) => updateCategoryColor(cat, color)}
+                  />
+                </div>
               {/if}
             </div>
           {/each}
@@ -225,19 +244,28 @@
 
     <!-- Footer: add new -->
     <div class="flex flex-col gap-2 px-4 py-3 border-t border-border-subtle">
-      <div class="flex gap-1">
-        {#each COLOR_SWATCHES as swatch}
-          <ColorSwatchButton
-            color={swatch}
-            selected={newColor === swatch}
-            onselect={() => { newColor = newColor === swatch ? null : swatch; }}
-          />
-        {/each}
-      </div>
+      <CategoryColorPicker
+        bind:value={newColor}
+        presets={COLOR_SWATCHES}
+        label="New category color"
+        showPreview={false}
+      />
       <div class="flex gap-2">
-        {#if newColor}
-          <span class="w-5 h-5 rounded-full self-center flex-shrink-0" style="background-color: {newColor}"></span>
-        {/if}
+        <Button
+          tone="neutral"
+          appearance="bare"
+          size="icon"
+          class="h-9 w-9 flex-shrink-0"
+          aria-label="New category color no color"
+          aria-pressed={newColor === null}
+          onclick={() => { newColor = null; }}
+        >
+          {#if newColor}
+            <span class="h-5 w-5 rounded-full" style="background-color: {newColor}"></span>
+          {:else}
+            <span class="h-5 w-5 rounded-full border border-dashed border-muted"></span>
+          {/if}
+        </Button>
         <TextInput
           class="flex-1"
           size="small"
@@ -253,4 +281,39 @@
       </div>
     </div>
   </div>
+
+  {#if pendingDeleteCategory}
+    <div class="fixed inset-0 z-[60] flex items-center justify-center bg-overlay/40 px-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-category-title"
+        class="w-full max-w-sm rounded-lg bg-surface p-5 shadow-xl"
+      >
+        <h2 id="delete-category-title" class="text-base font-semibold text-heading">
+          Delete category?
+        </h2>
+        <p class="mt-2 text-sm text-supporting">
+          This will <strong class="font-semibold text-danger">delete category {pendingDeleteCategory.name}</strong> from this list.
+        </p>
+        {#if error}
+          <p class="mt-3 text-sm text-danger">{error}</p>
+        {/if}
+        <div class="mt-5 flex justify-end gap-2">
+          <Button tone="neutral" appearance="outline" onclick={cancelDeleteCategory} disabled={isDeletingCategory}>
+            Cancel
+          </Button>
+          <Button
+            tone="danger"
+            appearance="solid"
+            onclick={confirmDeleteCategory}
+            loading={isDeletingCategory}
+            loadingLabel="Deleting..."
+          >
+            Delete
+          </Button>
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>

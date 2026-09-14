@@ -35,7 +35,7 @@ describe('CategorySelect', () => {
 		const trigger = screen.getByRole('combobox', { name: 'Category' });
 		expect(trigger).toHaveValue('assign category');
 		expect(trigger).toHaveClass('typography-placeholder');
-		expect(screen.queryByTestId('category-select-swatch-uncategorized')).not.toBeInTheDocument();
+		expect(screen.getByTestId('category-select-swatch-uncategorized')).toHaveClass('rounded-full', 'border-dashed');
 
 		await fireEvent.click(trigger);
 		expect(screen.getByRole('option', { name: 'Uncategorized' })).toBeInTheDocument();
@@ -53,15 +53,13 @@ describe('CategorySelect', () => {
 
 		const household = screen.getByRole('option', { name: 'Household' });
 		const householdSwatch = within(household).getByTestId('category-select-swatch-category-2');
-		expect(householdSwatch).toHaveClass('h-3', 'w-3');
-		expect(householdSwatch).not.toHaveClass('rounded-full');
+		expect(householdSwatch).toHaveClass('h-3', 'w-3', 'rounded-full', 'border-dashed');
 		expect(householdSwatch).not.toHaveAttribute('style');
 
 		const uncategorizedSwatch = within(
 			screen.getByRole('option', { name: 'Uncategorized' })
 		).getByTestId('category-select-swatch-uncategorized');
-		expect(uncategorizedSwatch).toHaveClass('h-3', 'w-3');
-		expect(uncategorizedSwatch).not.toHaveClass('rounded-full');
+		expect(uncategorizedSwatch).toHaveClass('h-3', 'w-3', 'rounded-full', 'border-dashed');
 		expect(uncategorizedSwatch).not.toHaveAttribute('style');
 	});
 
@@ -78,11 +76,11 @@ describe('CategorySelect', () => {
 
 		await rerender({ categories, selectedCategoryId: 'category-2', label: 'Category' });
 		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Household');
-		expect(screen.queryByTestId('category-select-swatch-category-2')).not.toBeInTheDocument();
+		expect(screen.getByTestId('category-select-swatch-category-2')).toHaveClass('rounded-full', 'border-dashed');
 
 		await rerender({ categories, selectedCategoryId: null, label: 'Category' });
 		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Uncategorized');
-		expect(screen.queryByTestId('category-select-swatch-uncategorized')).not.toBeInTheDocument();
+		expect(screen.getByTestId('category-select-swatch-uncategorized')).toHaveClass('rounded-full', 'border-dashed');
 	});
 
 	it('emits category IDs and null for Uncategorized', async () => {

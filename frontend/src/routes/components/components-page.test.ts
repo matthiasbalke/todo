@@ -581,7 +581,7 @@ describe('ComponentsPage CategorySelect showcase', () => {
 			'category-select-swatch-uncategorized'
 		);
 		expect(uncategorizedSwatch).toHaveClass('h-3', 'w-3');
-		expect(uncategorizedSwatch).not.toHaveClass('rounded-full');
+		expect(uncategorizedSwatch).toHaveClass('rounded-full', 'border-dashed');
 		expect(
 			within(showcase.getByRole('option', { name: 'Produce' })).getByTestId(
 				'category-select-swatch-showcase-produce'
@@ -591,7 +591,7 @@ describe('ComponentsPage CategorySelect showcase', () => {
 			'category-select-swatch-showcase-household'
 		);
 		expect(colorlessSwatch).toHaveClass('h-3', 'w-3');
-		expect(colorlessSwatch).not.toHaveClass('rounded-full');
+		expect(colorlessSwatch).toHaveClass('rounded-full', 'border-dashed');
 
 		await fireEvent.click(showcase.getByRole('option', { name: 'Uncategorized' }));
 		expect(showcase.getByText('Selected category ID:').parentElement).toHaveTextContent('null');
