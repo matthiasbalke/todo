@@ -12,6 +12,8 @@ Save/cancel editing flows add extra friction for routine household list maintena
 - Make the add-list action immediately create a list named `unnamed list` with the default emoji, open it, focus the title editor, and select the placeholder text.
 - Make the add-group action immediately create a group named `unnamed group`, focus its name editor, and select the placeholder text.
 - Preserve validation and backend authorization behavior for item, list, and group writes.
+- Align activated existing-item edit fields 96 CSS pixels below the visible viewport top, including after mobile keyboard resizing, while preserving intentional manual scrolling.
+- Coordinate dropdown, calendar, fullscreen notes, and asynchronous autosave focus behavior so they do not displace or blur the field currently being edited.
 
 ## Capabilities
 
@@ -22,7 +24,7 @@ Save/cancel editing flows add extra friction for routine household list maintena
 ### Modified Capabilities
 
 - `list-ui-capabilities`: List and group creation/editing behavior changes from explicit confirmation to immediate creation plus autosaved inline edits.
-- `item-form-overhaul`: New-item and existing-item form value edits autosave without visible form-level save/cancel controls, while fullscreen notes editing keeps its current workflow.
+- `item-form-overhaul`: New-item and existing-item form value edits autosave without visible form-level save/cancel controls. Existing-item editing gains keyboard-aware field alignment; fullscreen notes retain explicit Save/Cancel with viewport-aware sizing.
 - `add-item-draft-preservation`: Quick-add draft preservation remains required while draft reset behavior aligns with autosave, because ordinary save/cancel buttons are no longer available in the normal new-item editing flow.
 
 ## Impact
@@ -32,3 +34,4 @@ Save/cancel editing flows add extra friction for routine household list maintena
 - Frontend stores and API clients that currently wait for explicit submit/save actions.
 - Existing backend write endpoints and role checks remain authoritative; endpoint contracts should only change if implementation discovers a missing mutation primitive.
 - Unit/component tests and Playwright coverage for list creation, group creation, item creation, item editing, and autosave failure handling.
+- Item editor scroll coordination, edit-page trailing scroll space, shared combobox/calendar scrolling, and real-device verification on iOS Safari/PWA and Android Chrome.

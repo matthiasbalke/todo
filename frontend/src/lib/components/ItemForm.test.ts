@@ -149,44 +149,22 @@ describe('ItemForm', () => {
 			expect(title).toHaveValue('Unsaved item');
 		});
 
-		it('scrolls edited metadata controls into the upper third before opening them', async () => {
-			const scrollTopDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
-			let scrollTop = 0;
-			Object.defineProperty(document.documentElement, 'scrollTop', {
-				configurable: true,
-				get: () => scrollTop,
-				set: (value) => { scrollTop = value; }
-			});
-
-			render(ItemForm, {
-				props: { ...defaultProps, item: itemWithDueDate(null) }
-			});
-			const recurrence = screen.getByRole('combobox', { name: 'Recurrence' });
-			const recurrenceRow = recurrence.closest('.rounded-lg') as HTMLElement;
-			recurrenceRow.getBoundingClientRect = vi.fn(() => ({
-				x: 0,
-				y: 600,
-				top: 600,
-				left: 0,
-				right: 300,
-				bottom: 640,
-				width: 300,
-				height: 40,
-				toJSON: () => {}
-			}));
-
-			await fireEvent.pointerDown(recurrence);
-
-			expect(scrollTop).toBeCloseTo(600 - 96);
-			await fireEvent.click(recurrence);
-			await fireEvent.pointerDown(screen.getByRole('option', { name: 'Every day' }));
-			expect(scrollTop).toBeCloseTo(600 - 96);
-			if (scrollTopDescriptor) {
-				Object.defineProperty(document.documentElement, 'scrollTop', scrollTopDescriptor);
-			} else {
-				Reflect.deleteProperty(document.documentElement, 'scrollTop');
-			}
+		it.each([false, true])('a slow title save preserves a later focus session (return=%s)', async (returnToTitle) => {
+			let finish!: () => void;
+			const onsubmit = vi.fn(() => new Promise<void>((resolve) => { finish = resolve; }));
+			render(ItemForm, { props: { ...defaultProps, item: itemWithDueDate(null), onsubmit } });
+			const title = screen.getByRole('textbox', { name: 'Item title' });
+			const category = screen.getByRole('combobox', { name: 'Category' });
+			await fireEvent.input(title, { target: { value: 'Saved title' } });
+			await fireEvent.keyDown(title, { key: 'Enter' });
+			category.focus();
+			if (returnToTitle) title.focus();
+			finish();
+			await waitFor(() => expect(document.activeElement).toBe(returnToTitle ? title : category));
+			await vi.runAllTimersAsync();
+			expect(document.activeElement).toBe(returnToTitle ? title : category);
 		});
+
 	});
 
 	describe('category', () => {

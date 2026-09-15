@@ -20,6 +20,9 @@
 
 <script lang="ts">
   import { untrack, onMount, tick } from 'svelte';
+  import { itemEditorScroll } from '$lib/utils/itemEditorScroll';
+  import { focusSession } from '$lib/utils/focusSession';
+  import { notesViewport } from '$lib/utils/notesViewport';
   import type { TodoItem, Category, User, RecurrenceRule } from '$lib/mock-data';
   import CategorySelect from './CategorySelect.svelte';
   import CompletionToggle from './CompletionToggle.svelte';
@@ -45,6 +48,7 @@
     onStarredChange,
     draft,
     onDraftChange,
+    scrollSpacer = null,
     defaultCategoryId = ''
   }: {
     item?: TodoItem | null;
@@ -57,6 +61,7 @@
     onStarredChange?: (starred: boolean) => Promise<void> | void;
     draft?: ItemFormDraft | null;
     onDraftChange?: (draft: ItemFormDraft) => void;
+    scrollSpacer?: HTMLElement | null;
     defaultCategoryId?: string;
   } = $props();
 
@@ -96,11 +101,16 @@
   let returningNotesFocus = false;
   let suppressNextDraftChange = false;
 
+  let formElement: HTMLFormElement;
+  let sessions: ReturnType<typeof focusSession> | undefined;
+
   onMount(() => {
-    titleInput?.focus();
+    sessions = focusSession(formElement);
+    titleInput?.focus({ preventScroll: !isNew });
     lastCommittedSelectionState = selectionStateKey();
     if (item) lastCommittedItemState = itemStateKey(item);
     mounted = true;
+    return () => sessions?.destroy();
   });
 
   function getEffectiveDefaultCategoryId(): string | null {
@@ -186,7 +196,7 @@
     notesEditorDraft = notes;
     notesEditorOpen = true;
     ignoreNextFocusOut = true;
-    tick().then(() => notesTextarea?.focus());
+    tick().then(() => notesTextarea?.focus({ preventScroll: true }));
   }
 
   function closeNotesEditor({ returnFocus = true }: { returnFocus?: boolean } = {}) {
@@ -194,7 +204,7 @@
     notesEditorOpen = false;
     if (returnFocus) {
       tick().then(() => {
-        notesTrigger?.focus();
+        notesTrigger?.focus({ preventScroll: true });
         returningNotesFocus = false;
       });
     }
@@ -278,38 +288,6 @@
     });
   }
 
-  function releaseActiveFocus() {
-    if (typeof document === 'undefined') return;
-    const active = document.activeElement;
-    if (active instanceof HTMLElement) active.blur();
-  }
-
-  function scrollEditControlIntoView(element: HTMLElement) {
-    if (isNew || typeof window === 'undefined') return;
-    const viewport = window.visualViewport;
-    const visibleTop = viewport?.offsetTop ?? 0;
-    const targetTop = visibleTop + 96;
-    const currentTop = element.getBoundingClientRect().top;
-    const scroller = document.scrollingElement ?? document.documentElement;
-    scroller.scrollTop += currentTop - targetTop;
-  }
-
-  function scrollEditControlOnInteraction(element: HTMLElement) {
-    const scroll = (event: Event) => {
-      if ((event.target as Element | null)?.closest('[role="listbox"]')) return;
-      scrollEditControlIntoView(element);
-    };
-    const pointerOptions = { capture: true };
-    element.addEventListener('pointerdown', scroll, pointerOptions);
-    element.addEventListener('focusin', scroll);
-    return {
-      destroy() {
-        element.removeEventListener('pointerdown', scroll, pointerOptions);
-        element.removeEventListener('focusin', scroll);
-      }
-    };
-  }
-
   $effect(() => {
     const nextKey = selectionStateKey();
     if (!mounted || isNew) {
@@ -349,9 +327,10 @@
     options: { releaseFocus?: boolean } = {}
   ) {
     if (isNew || submitting) return;
+    const releaseFocus = options.releaseFocus ? sessions?.capture() : undefined;
     const submitted = buildTodoItem(overrides);
     if (itemStateKey(submitted) === lastCommittedItemState) {
-      if (options.releaseFocus) releaseActiveFocus();
+      releaseFocus?.();
       return;
     }
 
@@ -363,7 +342,7 @@
       if (token === saveToken) {
         lastCommittedSelectionState = selectionStateKey();
         lastCommittedItemState = itemStateKey(submitted);
-        if (options.releaseFocus) releaseActiveFocus();
+        releaseFocus?.();
       }
     } catch {
       if (token === saveToken) saveError = 'Changes could not be saved.';
@@ -394,16 +373,15 @@
     const trimmed = title.trim();
     if (!trimmed) return;
     title = trimmed;
-    if (isNew) {
-      if (options.releaseFocus) releaseActiveFocus();
-      return;
-    }
+    if (isNew) return;
     await commitExisting({ title: trimmed }, options);
   }
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form
+  bind:this={formElement}
+  use:itemEditorScroll={{ enabled: !isNew && !notesEditorOpen, spacer: scrollSpacer }}
   onsubmit={handleSubmit}
   onmousedown={() => {
     ignoreNextFocusOut = true;
@@ -416,7 +394,7 @@
   }}
   class="bg-surface rounded-xl border border-border p-4 space-y-4"
 >
-  <div class="flex items-center gap-2">
+  <div data-item-edit-field="title" class="flex items-center gap-2">
     <CompletionToggle size="form" {done} onactivate={toggleDoneState} />
     <TextInput
       bind:element={titleInput}
@@ -442,7 +420,7 @@
 
   <div class="space-y-1">
     <div
-      use:scrollEditControlOnInteraction
+      data-item-edit-field="category"
       class="flex items-start gap-3 rounded-lg px-1 py-1"
     >
       <Icon name="category" size="action" tone="muted" class="mt-3 flex-shrink-0" />
@@ -462,7 +440,7 @@
     </div>
 
     <div
-      use:scrollEditControlOnInteraction
+      data-item-edit-field="due-date"
       class="flex items-start gap-3 rounded-lg px-1 py-1"
     >
       <Icon name="date" size="action" tone="muted" class="mt-3 flex-shrink-0" />
@@ -472,7 +450,7 @@
     </div>
 
     <div
-      use:scrollEditControlOnInteraction
+      data-item-edit-field="recurrence"
       class="flex items-start gap-3 rounded-lg px-1 py-1"
     >
       <Icon name="recurrence" size="action" tone="muted" class="mt-3 flex-shrink-0" />
@@ -494,7 +472,7 @@
     </div>
 
     <div
-      use:scrollEditControlOnInteraction
+      data-item-edit-field="assignees"
       class="flex items-start gap-3 rounded-lg px-1 py-1"
     >
       <Icon name="assignee" size="action" tone="muted" class="mt-3 flex-shrink-0" />
@@ -533,7 +511,6 @@
     </div>
 
     <div
-      use:scrollEditControlOnInteraction
       class="flex items-start gap-3 rounded-lg px-1 py-1"
     >
       <Icon name="notes" size="action" tone="muted" class="mt-2.5 flex-shrink-0" />
@@ -576,13 +553,14 @@
 
   {#if notesEditorOpen}
     <div
+      use:notesViewport
       role="dialog"
       aria-modal="true"
       aria-labelledby="notes-editor-title"
-      class="fixed inset-0 z-50 bg-surface"
+      class="fixed z-50 overflow-hidden overscroll-contain bg-surface"
     >
-      <div class="mx-auto flex min-h-screen max-w-2xl flex-col">
-        <div class="grid grid-cols-[1fr_auto_1fr] items-center border-b border-border px-4 py-3">
+      <div class="mx-auto h-full min-h-0 flex max-w-2xl flex-col">
+        <div class="shrink-0 grid grid-cols-[1fr_auto_1fr] items-center border-b border-border px-4 py-3">
           <Button
             type="button"
             tone="neutral"
@@ -608,7 +586,7 @@
           </Button>
         </div>
 
-        <div class="flex-1 p-4">
+        <div class="min-h-0 flex-1 p-4 [&>div]:h-full [&>div]:min-h-0">
           <Textarea
             bind:element={notesTextarea}
             bind:value={notesEditorDraft}
@@ -618,7 +596,7 @@
             resize="none"
             appearance="inline"
             onkeydown={handleNotesEditorKeydown}
-            class="min-h-[70vh]"
+            class="h-full min-h-0"
           />
         </div>
       </div>

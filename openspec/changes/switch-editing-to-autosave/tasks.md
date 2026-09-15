@@ -27,3 +27,19 @@
 - [x] 4.2 Run frontend checks with `cd frontend && bun run check` and `cd frontend && bun run test -- --run`; verify both commands pass.
 - [x] 4.3 Run relevant backend tests only if endpoint behavior changed; otherwise verify no backend contract changes were made.
 - [x] 4.4 Run `openspec validate switch-editing-to-autosave --strict` and verify the change validates before implementation is considered complete.
+
+## 5. Stable Item Editor Scrolling
+
+The following tasks were added after the original autosave work. They are not implemented or verified by the earlier completed checks.
+
+- [x] 5.1 Replace per-row immediate scrolling with one existing-item coordinator and explicit title/metadata anchors; verify mouse, touch, keyboard, repeated activation, pointer/focus deduplication, and canceled gestures without moving the target during pointer down.
+- [x] 5.2 Implement 96 CSS pixel visual-viewport alignment with event-driven keyboard corrections, frame coalescing, tolerance, active-session guards, fallback geometry, and cleanup; verify delayed viewport changes, manual scrolling and pinch-zoom suspension, and absence of correction loops.
+- [x] 5.3 Add measured trailing scroll space to the item detail page and retain it until editor exit; verify the lowest field reaches the target on short documents and keyboard dismissal or field switching does not collapse the reserved space.
+- [x] 5.4 Confine combobox option scrolling to its listbox and constrain listbox/calendar height to the visible viewport; prevent calendar focus from unnecessarily scrolling the document and verify pointer/keyboard selection plus other shared-component consumers.
+- [x] 5.5 Scope asynchronous focus release to the originating control and editing session; verify slow saves cannot blur a newer field or a later editing session on the same control.
+- [x] 5.6 Make fullscreen notes fit the visual viewport with visible Save/Cancel and an internally scrolling textarea; suspend background alignment and verify long notes, keyboard transitions, focus/document-position restoration, and teardown.
+- [x] 5.7 Add browser coverage that asserts actual final field geometry and scroll containment; run the reachable shared HTTPS deployment workflow, frontend checks, and relevant unit/component regressions, including quick-add draft preservation. Record any unavailable environment rather than claiming validation.
+- [ ] 5.8 Verify and record results on real iOS Safari, installed iOS PWA, and Android Chrome for keyboard opening/dismissal, rapid field changes during slow saves, manual scrolling, orientation changes, and notes editing; leave this task pending if real-device verification is unavailable.
+- [x] 5.9 Re-run `openspec validate switch-editing-to-autosave --strict` after implementation and reconcile follow-up task status with actual verification results.
+
+Verification results and outstanding real-device checks are recorded in [verification.md](verification.md).

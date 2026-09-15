@@ -5,6 +5,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { onMount, tick } from 'svelte';
+	import { revealInPanel, viewportPanel } from '$lib/utils/viewportPanel';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import Button from './Button.svelte';
 	import { controlTypographyPresets, controlGeometryPresets } from './controlStyles';
@@ -155,7 +156,7 @@
 		const target = event.target as Node;
 		if (dropdownElement?.contains(target) || target === inputElement) return;
 		event.preventDefault();
-		inputElement?.focus();
+		inputElement?.focus({ preventScroll: true });
 		openDropdown();
 	}
 
@@ -204,7 +205,7 @@
 			case 'Escape':
 				event.preventDefault();
 				closeDropdown();
-				inputElement?.focus();
+				inputElement?.focus({ preventScroll: true });
 				break;
 		}
 	}
@@ -243,9 +244,7 @@
 		if (dropdownElement && focusedIndex >= 0) {
 			const optionElements = dropdownElement.querySelectorAll('[role="option"]');
 			const element = optionElements[focusedIndex] as HTMLElement;
-			if (element && typeof element.scrollIntoView === 'function') {
-				element.scrollIntoView({ block: 'nearest' });
-			}
+			if (element) revealInPanel(dropdownElement, element);
 		}
 	});
 </script>
@@ -300,20 +299,22 @@
 		{#if isOpen}
 			<div
 				bind:this={dropdownElement}
+				use:viewportPanel={240}
 				id={resolvedListboxId}
 				role="listbox"
 				aria-label={accessibleName}
 				aria-multiselectable={multiselectable || undefined}
-				class="absolute left-0 top-full z-50 max-h-60 w-full overflow-y-auto rounded border border-border-strong bg-surface shadow-lg"
+				class="absolute left-0 top-full z-50 max-h-60 w-full overflow-y-auto overscroll-contain rounded border border-border-strong bg-surface shadow-lg"
 			>
 				{#each options as option, index (optionKey(option, index))}
 					<Button
 						id={`${resolvedListboxId}-option-${index}`}
 						role="option"
+						data-highlighted={focusedIndex === index}
 						aria-selected={isOptionSelected(option)}
 						onpointerdown={(event) => event.preventDefault()}
 						onclick={() => selectOption(option)}
-						onmouseenter={() => (focusedIndex = index)}
+						onpointermove={() => (focusedIndex = index)}
 						tone="neutral"
 						appearance="bare"
 						size="menu"
