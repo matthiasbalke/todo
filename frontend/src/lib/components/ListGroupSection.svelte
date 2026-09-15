@@ -36,6 +36,7 @@
   let error = $state<string | null>(null);
   let localDragging = $state(false);
   let groupDragHandleElement = $state<HTMLButtonElement | null>(null);
+  let renameContainer = $state<HTMLElement | null>(null);
   let renameInput = $state<HTMLInputElement | null>(null);
   let renameRequestHandled = $state(false);
 
@@ -107,7 +108,20 @@
     renaming = true;
     newName = group.name;
     showMenu = false;
-    tick().then(() => focusTextInput(renameInput, selectText, { preventScroll: !selectText }));
+    tick().then(() => {
+      scrollRenameContainerIntoView();
+      focusTextInput(renameInput, selectText, { preventScroll: !selectText });
+    });
+  }
+
+  function scrollRenameContainerIntoView() {
+    if (!renameContainer || !renameInput || typeof window === 'undefined') return;
+    const viewport = window.visualViewport;
+    const visibleTop = viewport?.offsetTop ?? 0;
+    const targetTop = visibleTop + 96;
+    const currentTop = renameContainer.getBoundingClientRect().top;
+    const scroller = document.scrollingElement ?? document.documentElement;
+    scroller.scrollTop += currentTop - targetTop;
   }
 
   async function handleRename() {
@@ -182,13 +196,13 @@
 
     {#if group !== null}
       {#if renaming}
-        <div class="flex items-center gap-2 flex-1 ml-2">
+        <div bind:this={renameContainer} class="flex items-center gap-2 flex-1 ml-2">
           <TextInput
             bind:element={renameInput}
             bind:value={newName}
             containerClass="flex-1"
             size="compact"
-            class="w-full scroll-mt-24"
+            class="w-full"
             onblur={handleRename}
             onkeydown={(e) => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') { renaming = false; newName = group?.name ?? ''; } }}
           />

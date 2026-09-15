@@ -178,6 +178,7 @@ describe('ItemForm', () => {
 			await fireEvent.pointerDown(recurrence);
 
 			expect(scrollTop).toBeCloseTo(600 - 96);
+			await fireEvent.click(recurrence);
 			await fireEvent.pointerDown(screen.getByRole('option', { name: 'Every day' }));
 			expect(scrollTop).toBeCloseTo(600 - 96);
 			if (scrollTopDescriptor) {

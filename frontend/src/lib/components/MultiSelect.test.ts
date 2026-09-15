@@ -137,4 +137,21 @@ describe('MultiSelect', () => {
 		expect(screen.getByText('Selected count: 2')).toBeInTheDocument();
 		expect(screen.getByText('Latest ids: casey,riley')).toBeInTheDocument();
 	});
+
+	it('opens from selected chip content when all visible options are selected', async () => {
+		render(MultiSelectSnippetFixture);
+
+		const trigger = screen.getByRole('combobox', { name: 'Assignees' });
+		await fireEvent.click(trigger);
+		await fireEvent.click(screen.getByRole('option', { name: 'Casey Stone' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'Riley Chen' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'Morgan Reed' }));
+		await fireEvent.keyDown(trigger, { key: 'Escape' });
+		expect(screen.queryByRole('listbox', { name: 'Assignees' })).not.toBeInTheDocument();
+
+		await fireEvent.pointerDown(screen.getByTestId('selected-casey'));
+
+		expect(screen.getByRole('listbox', { name: 'Assignees' })).toBeInTheDocument();
+		expect(screen.getByRole('option', { name: 'Casey Stone' })).toHaveAttribute('aria-selected', 'true');
+	});
 });

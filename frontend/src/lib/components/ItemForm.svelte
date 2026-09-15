@@ -295,25 +295,17 @@
   }
 
   function scrollEditControlOnInteraction(element: HTMLElement) {
-    let armed = true;
-    const scroll = () => {
-      if (!armed) return;
-      armed = false;
+    const scroll = (event: Event) => {
+      if ((event.target as Element | null)?.closest('[role="listbox"]')) return;
       scrollEditControlIntoView(element);
     };
-    const rearm = () => {
-      window.setTimeout(() => {
-        if (!element.contains(document.activeElement)) armed = true;
-      }, 0);
-    };
-    element.addEventListener('pointerdown', scroll);
+    const pointerOptions = { capture: true };
+    element.addEventListener('pointerdown', scroll, pointerOptions);
     element.addEventListener('focusin', scroll);
-    element.addEventListener('focusout', rearm);
     return {
       destroy() {
-        element.removeEventListener('pointerdown', scroll);
+        element.removeEventListener('pointerdown', scroll, pointerOptions);
         element.removeEventListener('focusin', scroll);
-        element.removeEventListener('focusout', rearm);
       }
     };
   }

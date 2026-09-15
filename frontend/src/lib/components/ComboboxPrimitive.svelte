@@ -150,6 +150,15 @@
 		if (!isOpen) openDropdown();
 	}
 
+	function handleTriggerSurfacePointerDown(event: PointerEvent) {
+		if (disabled) return;
+		const target = event.target as Node;
+		if (dropdownElement?.contains(target) || target === inputElement) return;
+		event.preventDefault();
+		inputElement?.focus();
+		openDropdown();
+	}
+
 	async function handleInput(event: Event) {
 		if (disabled) return;
 		oninputvalue?.((event.currentTarget as HTMLInputElement).value, event);
@@ -250,7 +259,9 @@
 	{/if}
 
 	<div class="relative" onfocusout={handleFocusOut}>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
+			onpointerdown={handleTriggerSurfacePointerDown}
 			class="flex w-full items-center gap-2 rounded border text-label transition-colors focus-within:ring-2 focus-within:ring-offset-2 control-focus disabled:cursor-not-allowed {presentationClasses} {disabled ? 'cursor-not-allowed opacity-50' : ''} {inputSizeClasses}"
 		>
 			{#if selectedContent}
