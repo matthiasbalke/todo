@@ -30,9 +30,9 @@
   import Select from './Select.svelte';
   import StarToggle from './StarToggle.svelte';
   import Textarea from './Textarea.svelte';
-  import Button from './Button.svelte';
   import { controlPlaceholderTextClasses, controlValueTextClasses } from './controlStyles';
   import TextInput from './TextInput.svelte';
+  import Button from './Button.svelte';
 
   let {
     item,
@@ -87,11 +87,21 @@
   let notesEditorOpen = $state(false);
   let notesEditorDraft = $state('');
   let submitting = $state(false);
+  let saveError = $state<string | null>(null);
+  let mounted = $state(false);
+  let lastCommittedSelectionState = $state('');
+  let lastCommittedItemState = $state('');
+  let saveToken = 0;
   let ignoreNextFocusOut = false;
   let returningNotesFocus = false;
   let suppressNextDraftChange = false;
 
-  onMount(() => titleInput?.focus());
+  onMount(() => {
+    titleInput?.focus();
+    lastCommittedSelectionState = selectionStateKey();
+    if (item) lastCommittedItemState = itemStateKey(item);
+    mounted = true;
+  });
 
   function getEffectiveDefaultCategoryId(): string | null {
     return defaultCategoryId && categories.some((category) => category.id === defaultCategoryId)
@@ -190,8 +200,12 @@
     }
   }
 
-  function saveNotesEditor() {
-    notes = notesEditorDraft;
+  async function saveNotesEditor() {
+    const nextNotes = notesEditorDraft;
+    notes = nextNotes;
+    if (!isNew) {
+      await commitExisting({ notes: nextNotes || null });
+    }
     closeNotesEditor();
   }
 
@@ -210,7 +224,8 @@
     const nextDone = !done;
     done = nextDone;
     try {
-      await onDoneChange?.(nextDone);
+      if (onDoneChange) await onDoneChange(nextDone);
+      else if (!isNew) await commitExisting({ done: nextDone });
     } catch {
       done = !nextDone;
     }
@@ -220,7 +235,8 @@
     const nextStarred = !starred;
     starred = nextStarred;
     try {
-      await onStarredChange?.(nextStarred);
+      if (onStarredChange) await onStarredChange(nextStarred);
+      else if (!isNew) await commitExisting({ starred: nextStarred });
     } catch {
       starred = !nextStarred;
     }
@@ -235,30 +251,141 @@
     onDraftChange?.(currentDraft());
   });
 
+  function selectionStateKey(): string {
+    return JSON.stringify({
+      categoryId,
+      dueDate,
+      assignedUserIds: [...assignedUserIds].sort(),
+      recurrencePreset
+    });
+  }
+
+  function recurrenceKey(rule: RecurrenceRule | null): string {
+    return rule ? `${rule.intervalValue}_${rule.intervalUnit}` : '';
+  }
+
+  function itemStateKey(value: TodoItem): string {
+    return JSON.stringify({
+      title: value.title,
+      notes: value.notes ?? null,
+      categoryId: value.categoryId,
+      dueDate: value.dueDate,
+      done: value.done,
+      starred: value.starred,
+      recurrenceRule: recurrenceKey(value.recurrenceRule),
+      assignedUserIds: [...(value.assignedUserIds ?? [])].sort(),
+      sortOrder: value.sortOrder
+    });
+  }
+
+  function releaseActiveFocus() {
+    if (typeof document === 'undefined') return;
+    const active = document.activeElement;
+    if (active instanceof HTMLElement) active.blur();
+  }
+
+  function scrollEditControlIntoView(element: HTMLElement) {
+    if (isNew || typeof window === 'undefined') return;
+    const viewport = window.visualViewport;
+    const visibleTop = viewport?.offsetTop ?? 0;
+    const targetTop = visibleTop + 96;
+    const currentTop = element.getBoundingClientRect().top;
+    const scroller = document.scrollingElement ?? document.documentElement;
+    scroller.scrollTop += currentTop - targetTop;
+  }
+
+  function scrollEditControlOnInteraction(element: HTMLElement) {
+    let armed = true;
+    const scroll = () => {
+      if (!armed) return;
+      armed = false;
+      scrollEditControlIntoView(element);
+    };
+    const rearm = () => {
+      window.setTimeout(() => {
+        if (!element.contains(document.activeElement)) armed = true;
+      }, 0);
+    };
+    element.addEventListener('pointerdown', scroll);
+    element.addEventListener('focusin', scroll);
+    element.addEventListener('focusout', rearm);
+    return {
+      destroy() {
+        element.removeEventListener('pointerdown', scroll);
+        element.removeEventListener('focusin', scroll);
+        element.removeEventListener('focusout', rearm);
+      }
+    };
+  }
+
+  $effect(() => {
+    const nextKey = selectionStateKey();
+    if (!mounted || isNew) {
+      lastCommittedSelectionState = nextKey;
+      return;
+    }
+    if (nextKey === lastCommittedSelectionState) return;
+    lastCommittedSelectionState = nextKey;
+    commitExisting({}, { releaseFocus: true });
+  });
+
+  function buildTodoItem(overrides: Partial<TodoItem> = {}): TodoItem {
+    const now = new Date().toISOString().split('T')[0];
+    return {
+      id: item?.id ?? (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)),
+      listId,
+      categoryId,
+      title,
+      notes: notes || null,
+      done,
+      starred,
+      dueDate,
+      assignedUserIds: [...assignedUserIds],
+      recurrenceRule: parseRecurrencePreset(recurrencePreset),
+      parentItemId: item?.parentItemId ?? null,
+      createdByUserId: item?.createdByUserId ?? null,
+      updatedByUserId: item?.updatedByUserId ?? null,
+      sortOrder: item?.sortOrder ?? 999,
+      createdAt: item?.createdAt ?? now,
+      updatedAt: item?.updatedAt ?? now,
+      ...overrides
+    };
+  }
+
+  async function commitExisting(
+    overrides: Partial<TodoItem> = {},
+    options: { releaseFocus?: boolean } = {}
+  ) {
+    if (isNew || submitting) return;
+    const submitted = buildTodoItem(overrides);
+    if (itemStateKey(submitted) === lastCommittedItemState) {
+      if (options.releaseFocus) releaseActiveFocus();
+      return;
+    }
+
+    const token = ++saveToken;
+    submitting = true;
+    saveError = null;
+    try {
+      await onsubmit(submitted);
+      if (token === saveToken) {
+        lastCommittedSelectionState = selectionStateKey();
+        lastCommittedItemState = itemStateKey(submitted);
+        if (options.releaseFocus) releaseActiveFocus();
+      }
+    } catch {
+      if (token === saveToken) saveError = 'Changes could not be saved.';
+    } finally {
+      if (token === saveToken) submitting = false;
+    }
+  }
+
   async function handleSubmit(e: Event) {
     e.preventDefault();
     if (submitting) return;
     submitting = true;
     try {
-      const now = new Date().toISOString().split('T')[0];
-      const submitted: TodoItem = {
-        id: item?.id ?? (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)),
-        listId,
-        categoryId,
-        title,
-        notes: notes || null,
-        done,
-        starred,
-        dueDate,
-        assignedUserIds: [...assignedUserIds],
-        recurrenceRule: parseRecurrencePreset(recurrencePreset),
-        parentItemId: item?.parentItemId ?? null,
-        createdByUserId: item?.createdByUserId ?? null,
-        updatedByUserId: item?.updatedByUserId ?? null,
-        sortOrder: item?.sortOrder ?? 999,
-        createdAt: item?.createdAt ?? now,
-        updatedAt: item?.updatedAt ?? now
-      };
+      const submitted = buildTodoItem();
       await onsubmit(submitted);
       if (isNew) {
         resetNewItemDraft();
@@ -269,6 +396,17 @@
     } finally {
       submitting = false;
     }
+  }
+
+  async function commitTitle(options: { releaseFocus?: boolean } = {}) {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    title = trimmed;
+    if (isNew) {
+      if (options.releaseFocus) releaseActiveFocus();
+      return;
+    }
+    await commitExisting({ title: trimmed }, options);
   }
 </script>
 
@@ -291,7 +429,14 @@
     <TextInput
       bind:element={titleInput}
       bind:value={title}
-      onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit(e); } }}
+      onblur={() => { commitTitle(); }}
+      onkeydown={async (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (isNew) handleSubmit(e);
+          else await commitTitle({ releaseFocus: true });
+        }
+      }}
       placeholder="Item title"
       ariaLabel="Item title"
       appearance="inline"
@@ -304,7 +449,10 @@
   </div>
 
   <div class="space-y-1">
-    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
+    <div
+      use:scrollEditControlOnInteraction
+      class="flex items-start gap-3 rounded-lg px-1 py-1"
+    >
       <Icon name="category" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
     <CategorySelect
@@ -321,14 +469,20 @@
       </div>
     </div>
 
-    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
+    <div
+      use:scrollEditControlOnInteraction
+      class="flex items-start gap-3 rounded-lg px-1 py-1"
+    >
       <Icon name="date" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
         <DatePicker bind:value={dueDate} ariaLabel="Due Date" placeholder="set due date" appearance="inline" />
       </div>
     </div>
 
-    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
+    <div
+      use:scrollEditControlOnInteraction
+      class="flex items-start gap-3 rounded-lg px-1 py-1"
+    >
       <Icon name="recurrence" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
     <Select
@@ -347,7 +501,10 @@
       </div>
     </div>
 
-    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
+    <div
+      use:scrollEditControlOnInteraction
+      class="flex items-start gap-3 rounded-lg px-1 py-1"
+    >
       <Icon name="assignee" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
         <MultiSelect
@@ -383,7 +540,10 @@
       </div>
     </div>
 
-    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
+    <div
+      use:scrollEditControlOnInteraction
+      class="flex items-start gap-3 rounded-lg px-1 py-1"
+    >
       <Icon name="notes" size="action" tone="muted" class="mt-2.5 flex-shrink-0" />
       <div class="min-w-0 flex-1">
         <Button
@@ -418,23 +578,9 @@
     <ItemAuditMetadata {item} {users} />
   {/if}
 
-  <div class="flex justify-end gap-2 pt-1">
-    <Button
-      type="button"
-      tone="neutral" appearance="bare"
-      onclick={() => { oncancel({ reason: 'explicit' }); }}
-      emphasis="muted"
-    >
-      Cancel
-    </Button>
-    <Button
-      type="submit"
-      loading={submitting}
-      loadingLabel={isNew ? 'Adding…' : 'Saving…'}
-    >
-      {isNew ? 'Add' : 'Save'}
-    </Button>
-  </div>
+  {#if saveError}
+    <p class="text-sm text-danger">{saveError}</p>
+  {/if}
 
   {#if notesEditorOpen}
     <div

@@ -3,17 +3,16 @@
   import type { List, ListGroup } from '$lib/mock-data';
   import { getLists, getListGroups, createList, createListGroup, isLoading, reorderListGroupsOptimistic } from '$lib/stores/lists.svelte';
   import { isDraggingAny } from '$lib/stores/drag.svelte';
-  import ListForm from '$lib/components/ListForm.svelte';
   import ListGroupSection from '$lib/components/ListGroupSection.svelte';
   import FixedActionFooter from '$lib/components/FixedActionFooter.svelte';
   import { dragHandleZone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { friendlyError } from '$lib/api/errors';
   import Button from '$lib/components/Button.svelte';
-  import TextInput from '$lib/components/TextInput.svelte';
   import Icon from '$lib/components/Icon.svelte';
   import { getProfile } from '$lib/stores/preferences.svelte';
   import { getTodayUnfinishedCount, loadTodayCount } from '$lib/stores/today.svelte';
   import { onMount, untrack } from 'svelte';
+  import { primeMobileKeyboard } from '$lib/utils/focus';
   import {
     deleteListGroupState,
     loadListGroupState,
@@ -44,13 +43,11 @@
     lists: lists.filter(list => list.groupId === group.id),
   })));
 
-  let showAddForm = $state(false);
-  let saving = $state(false);
+  let creatingList = $state(false);
   let error = $state<string | null>(null);
-  let addingGroup = $state(false);
-  let newGroupName = $state('');
+  let creatingGroup = $state(false);
+  let focusGroupId = $state<string | null>(null);
   let groupError = $state<string | null>(null);
-  let groupInput = $state<HTMLInputElement | null>(null);
   let localGroupDragging = $state(false);
   let dndGroupWrappers = $state<{ id: string; group: ListGroup; lists: List[] }[]>([]);
   const savedListGroupState = untrack(() => loadListGroupState());
@@ -68,35 +65,35 @@
     else saveListGroupState({ collapsed });
   });
 
-  $effect(() => {
-    if (addingGroup) {
-      groupInput?.focus();
-    }
-  });
-
-  async function handleSave({ name, emoji }: { name: string; emoji: string }) {
-    saving = true;
+  async function handleCreateList() {
+    if (creatingList) return;
+    const releaseKeyboardBridge = primeMobileKeyboard();
+    creatingList = true;
     error = null;
     try {
-      const created = await createList({ name, emoji });
-      showAddForm = false;
-      goto(`/lists/${created.id}`);
+      const created = await createList({ name: 'unnamed list', emoji: '📋' });
+      goto(`/lists/${created.id}?focusTitle=1`);
     } catch (e) {
+      releaseKeyboardBridge();
       error = friendlyError(e, 'Failed to create list');
     } finally {
-      saving = false;
+      creatingList = false;
     }
   }
 
-  async function handleAddGroup() {
-    if (!newGroupName.trim()) return;
+  async function handleCreateGroup() {
+    if (creatingGroup) return;
+    const releaseKeyboardBridge = primeMobileKeyboard();
+    creatingGroup = true;
     groupError = null;
     try {
-      await createListGroup(newGroupName.trim());
-      newGroupName = '';
-      addingGroup = false;
+      const created = await createListGroup('unnamed group');
+      focusGroupId = created.id;
     } catch (e) {
+      releaseKeyboardBridge();
       groupError = friendlyError(e, 'Failed to create group');
+    } finally {
+      creatingGroup = false;
     }
   }
 
@@ -168,6 +165,8 @@
               group={wrapper.group}
               lists={wrapper.lists}
               showGroupDragHandle={true}
+              startRenaming={focusGroupId === wrapper.id}
+              onrenamestarted={() => { if (focusGroupId === wrapper.id) focusGroupId = null; }}
               collapsed={collapsedGroups[wrapper.id] ?? false}
               oncollapsedchange={(value) => setGroupCollapsed(wrapper.id, value)}
             />
@@ -187,60 +186,27 @@
   {/if}
 </div>
 
-<FixedActionFooter expanded={showAddForm || addingGroup}>
-  {#if showAddForm}
-        <ListForm
-          onsubmit={handleSave}
-          oncancel={() => { showAddForm = false; error = null; }}
-        />
-  {:else if addingGroup}
-      <div class="bg-surface rounded-xl border border-border p-4 space-y-3">
-        <TextInput
-          bind:element={groupInput}
-          bind:value={newGroupName}
-          placeholder="Group name"
-          class="w-full"
-          onkeydown={(e) => { if (e.key === 'Enter') handleAddGroup(); if (e.key === 'Escape') { addingGroup = false; newGroupName = ''; } }}
-        />
-        <div class="flex justify-end gap-2 pt-1">
-          <Button tone="neutral" appearance="bare"
-            type="button"
-            onclick={() => { addingGroup = false; newGroupName = ''; groupError = null; }}
-            emphasis="muted"
-          >
-            Cancel
-          </Button>
-          <Button tone="primary" appearance="solid"
-            onclick={handleAddGroup}
-          >
-            Add
-          </Button>
-        </div>
-        {#if groupError}
-          <p class="text-sm text-danger">{groupError}</p>
-        {/if}
-      </div>
-  {:else}
+<FixedActionFooter>
       <div class="flex items-center gap-3">
         <Button tone="neutral" appearance="bare"
           size="large"
           align="start"
-          onclick={() => { showAddForm = true; }}
-          disabled={saving}
-          class="flex-1 rounded-xl px-4 py-3"
+	          onclick={handleCreateList}
+	          disabled={creatingList}
+	          class="flex-1"
         >
           <Icon name="plus" size="action" />
           <span>new list</span>
         </Button>
         <Button tone="neutral" appearance="outline"
           size="icon-standard"
-          onclick={() => { addingGroup = true; }}
+          onclick={handleCreateGroup}
+          disabled={creatingGroup}
           aria-label="Create group"
         >
           <Icon name="group" size="control" />
         </Button>
       </div>
-  {/if}
   {#if error}
     <p class="mt-2 text-sm text-danger">{error}</p>
   {/if}

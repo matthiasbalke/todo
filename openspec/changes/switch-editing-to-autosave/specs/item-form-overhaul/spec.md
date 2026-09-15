@@ -34,9 +34,15 @@ The item form SHALL persist add-item and edit-item value changes automatically w
 - **THEN** the changed value is persisted for that item without requiring a separate save action
 
 #### Scenario: New item is created from entered values
-- **WHEN** an editable user enters the required new-item title and completes the add-item creation using the implementation-defined creation event
+- **WHEN** an editable user enters the required new-item title and completes the add-item creation using an intentional creation event
 - **THEN** a new item is created with the current form values
 - **AND** the add-item form does not require or display separate save or cancel controls
+
+#### Scenario: Title blur preserves quick-add draft
+- **WHEN** an editable user enters a title in the quick-add item form
+- **AND** the title input loses focus before an intentional creation event occurs
+- **THEN** no new item is created
+- **AND** the quick-add draft remains available when the user reopens the quick-add form
 
 #### Scenario: New item optional edits are included
 - **WHEN** an editable user changes optional values before the new item is created

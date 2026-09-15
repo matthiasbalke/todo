@@ -21,6 +21,7 @@ The `/lists` overview SHALL display a Lucide plus icon with a list creation labe
 - **WHEN** a signed-in user activates the group creation action
 - **THEN** a new list group named `unnamed group` is created
 - **AND** the group name editor receives focus with the complete placeholder name selected
+- **AND** on mobile browsers the editor uses native focus scrolling so the focused input remains visible when the on-screen keyboard opens
 
 #### Scenario: User views footer actions on a rounded mobile display
 - **WHEN** fixed footer actions are displayed on a mobile viewport

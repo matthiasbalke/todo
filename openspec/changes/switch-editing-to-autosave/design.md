@@ -1,6 +1,6 @@
 ## Context
 
-See proposal.md for motivation. The frontend currently has a mixed model: category management already persists ordinary edits without save/discard buttons, while list creation, group creation, and item forms still expose explicit action buttons. `ItemForm` owns new-item draft preservation and existing-item submission, and the list overview owns list/group creation plus navigation after list creation.
+See proposal.md for motivation. The frontend currently has a mixed model where list creation, group creation, and item forms still expose explicit action buttons. `ItemForm` owns new-item draft preservation and existing-item submission, and the list overview owns list/group creation plus navigation after list creation.
 
 The existing backend endpoints already support create/update operations for lists, groups, and items. Backend authorization must remain the source of truth; this change should primarily reshape frontend commit timing and recovery behavior.
 
@@ -12,6 +12,7 @@ The existing backend endpoints already support create/update operations for list
 - Create placeholder lists and groups immediately, then focus/select their placeholder names so the first typed text replaces them.
 - Cover routine list organization editors that still use explicit controls: list titles from overview/detail/grocery views and list group names.
 - Keep the quick-add item form's existing draft preservation when focus leaves or the form is minimized before creation.
+- Prevent title blur from creating a quick-add item; quick-add creation requires an intentional creation event such as Enter or another explicit non-button gesture chosen during implementation.
 - Keep the existing fullscreen notes editor workflow, including its Save and Cancel controls, because it is a field-specific long-form editor rather than the ordinary item form save/cancel flow.
 - Keep failed saves recoverable by preserving the user's current draft and surfacing the error near the affected editor.
 - Keep API writes idempotent from the user's perspective by avoiding duplicate commits for unchanged values.
@@ -22,7 +23,6 @@ The existing backend endpoints already support create/update operations for list
 - Replacing backend list, group, or item endpoint contracts unless an existing operation is missing.
 - Autosaving every keystroke to the backend for text fields.
 - Removing explicit confirmation from destructive actions such as delete flows.
-- Changing category management flows, which already use automatic persistence for ordinary category edits.
 - Reworking fullscreen notes editing into blur/Enter autosave.
 - Changing admin, account settings, authentication, member invitation, passkey, destructive confirmation, or component showcase explicit-save examples unless directly required by shared component changes.
 
@@ -42,13 +42,15 @@ The existing backend endpoints already support create/update operations for list
 
 3. New-item creation remains a distinct commit once the required title is valid.
 
-   The add-item form should collect draft values locally until the implementation-defined creation event, expected to be title blur or Enter once the title is non-empty. If focus leaves before creation or the quick-add form is minimized, the existing draft must remain available when the user reopens quick add. After successful creation, the draft resets. If creation fails, the draft stays in place with an error.
+   The add-item form should collect draft values locally until an intentional creation event, expected to be Enter in the title field or another explicit non-button gesture chosen during implementation. Title blur MUST NOT create the item. If focus leaves before creation or the quick-add form is minimized, the existing draft must remain available when the user reopens quick add. After successful creation, the draft resets. If creation fails, the draft stays in place with an error.
 
    Alternative considered: create an empty placeholder item as soon as the add-item action opens. That would mirror lists and groups, but it risks cluttering household lists with unnamed items and changes backend/list semantics more than the issue requires.
 
 4. Placeholder list and group creation happens before name editing.
 
    Activating `new list` should call create-list with `unnamed list` and the default emoji, then navigate to the created list and focus/select the title. Activating create-group should call create-group with `unnamed group`, then focus/select that group's inline name editor in the overview.
+
+   For newly created groups on mobile, the group name input should rely on the browser's native focused-input scrolling so the on-screen keyboard keeps the selected placeholder visible. Avoid custom repeated scroll timers here; allowing the focus operation to scroll has been verified to behave well.
 
    Alternative considered: keep local creation forms and autosave them on blur. That would remove buttons, but it would not satisfy the requested immediate-create behavior or direct navigation to the new list.
 
@@ -69,6 +71,6 @@ The existing backend endpoints already support create/update operations for list
 ## Migration Plan
 
 1. Update frontend components and stores behind the existing routes.
-2. Add focused unit/component tests for autosave commit events, unchanged-value guards, validation failures, placeholder creation focus/selection behavior, and category-management regressions where item category selection touches existing category controls.
+2. Add focused unit/component tests for autosave commit events, unchanged-value guards, validation failures, placeholder creation focus/selection behavior, and quick-add draft preservation when focus leaves.
 3. Add or update Playwright coverage for creating a list, creating a group, adding an item, and editing an existing item without save/cancel controls.
 4. Roll back by restoring the previous explicit button flows in the frontend; backend data does not need migration.

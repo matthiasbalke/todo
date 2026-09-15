@@ -7,10 +7,10 @@ Save/cancel editing flows add extra friction for routine household list maintena
 - Remove visible save/cancel controls from add-item, edit-item, list creation, list editing, group creation, and group editing flows where the user is editing ordinary field values.
 - Persist edited values automatically at implementation-defined commit points, such as blur, Enter, control selection, debounce, or another event that preserves user intent and avoids partial invalid saves.
 - Keep quick-add item draft preservation when the form is minimized or focus leaves before an item is created.
+- Do not create a quick-add item when the title input blurs; leaving the quick-add form preserves the draft.
 - Keep the existing fullscreen notes editor workflow, including its field-specific Save and Cancel controls.
 - Make the add-list action immediately create a list named `unnamed list` with the default emoji, open it, focus the title editor, and select the placeholder text.
 - Make the add-group action immediately create a group named `unnamed group`, focus its name editor, and select the placeholder text.
-- Leave category management unchanged because it already uses automatic persistence for ordinary category edits; item category selection still participates in item autosave.
 - Preserve validation and backend authorization behavior for item, list, and group writes.
 
 ## Capabilities

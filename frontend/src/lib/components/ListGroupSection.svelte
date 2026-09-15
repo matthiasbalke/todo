@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import type { List, ListGroup } from '$lib/mock-data';
   import { renameListGroup, deleteListGroup, assignListGroup, reorderListInGroup } from '$lib/stores/lists.svelte';
   import { isDraggingAny, setDraggingAny } from '$lib/stores/drag.svelte';
@@ -8,17 +8,22 @@
   import Button from './Button.svelte';
   import Icon from './Icon.svelte';
   import TextInput from './TextInput.svelte';
+  import { focusTextInput } from '$lib/utils/focus';
 
   let {
     group,
     lists,
     showGroupDragHandle = false,
+    startRenaming = false,
+    onrenamestarted,
     collapsed: collapsedProp,
     oncollapsedchange,
   }: {
     group: ListGroup | null;
     lists: List[];
     showGroupDragHandle?: boolean;
+    startRenaming?: boolean;
+    onrenamestarted?: () => void;
     collapsed?: boolean;
     oncollapsedchange?: (value: boolean) => void;
   } = $props();
@@ -31,6 +36,8 @@
   let error = $state<string | null>(null);
   let localDragging = $state(false);
   let groupDragHandleElement = $state<HTMLButtonElement | null>(null);
+  let renameInput = $state<HTMLInputElement | null>(null);
+  let renameRequestHandled = $state(false);
 
   const sortedLists = $derived(lists.slice().sort((a, b) => a.sortOrderInGroup - b.sortOrderInGroup));
   let dndItems = $state<List[]>([]);
@@ -45,6 +52,17 @@
     if (!localDragging) {
       dndItems = sortedLists.slice();
     }
+  });
+
+  $effect(() => {
+    if (!startRenaming) {
+      renameRequestHandled = false;
+      return;
+    }
+    if (renameRequestHandled || !group) return;
+    beginRename(true);
+    renameRequestHandled = true;
+    onrenamestarted?.();
   });
 
   const draggingAny = $derived(isDraggingAny());
@@ -84,10 +102,23 @@
     }
   }
 
+  function beginRename(selectText = false) {
+    if (!group) return;
+    renaming = true;
+    newName = group.name;
+    showMenu = false;
+    tick().then(() => focusTextInput(renameInput, selectText, { preventScroll: !selectText }));
+  }
+
   async function handleRename() {
     if (!group || !newName.trim()) return;
+    const trimmed = newName.trim();
+    if (trimmed === group.name) {
+      renaming = false;
+      return;
+    }
     try {
-      await renameListGroup(group.id, newName.trim());
+      await renameListGroup(group.id, trimmed);
       renaming = false;
       showMenu = false;
     } catch (e) {
@@ -153,14 +184,14 @@
       {#if renaming}
         <div class="flex items-center gap-2 flex-1 ml-2">
           <TextInput
+            bind:element={renameInput}
             bind:value={newName}
             containerClass="flex-1"
             size="compact"
-            class="w-full"
+            class="w-full scroll-mt-24"
+            onblur={handleRename}
             onkeydown={(e) => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') { renaming = false; newName = group?.name ?? ''; } }}
           />
-          <Button tone="primary" appearance="bare" size="compact" onclick={handleRename}>Save</Button>
-          <Button tone="neutral" appearance="bare" size="compact" emphasis="muted" onclick={() => { renaming = false; newName = group?.name ?? ''; }}>Cancel</Button>
         </div>
       {:else}
         <div class="relative">
@@ -186,7 +217,7 @@
                 size="menu"
                 align="start"
                 weight="normal"
-                onclick={() => { renaming = true; newName = group?.name ?? ''; showMenu = false; }}
+                onclick={() => { beginRename(true); }}
               >
                 Rename
               </Button>
