@@ -5,6 +5,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { onMount, tick } from 'svelte';
+	import { revealInPanel, viewportPanel } from '$lib/utils/viewportPanel';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import Button from './Button.svelte';
 	import { controlTypographyPresets, controlGeometryPresets } from './controlStyles';
@@ -150,6 +151,15 @@
 		if (!isOpen) openDropdown();
 	}
 
+	function handleTriggerSurfacePointerDown(event: PointerEvent) {
+		if (disabled) return;
+		const target = event.target as Node;
+		if (dropdownElement?.contains(target) || target === inputElement) return;
+		event.preventDefault();
+		inputElement?.focus({ preventScroll: true });
+		openDropdown();
+	}
+
 	async function handleInput(event: Event) {
 		if (disabled) return;
 		oninputvalue?.((event.currentTarget as HTMLInputElement).value, event);
@@ -195,7 +205,7 @@
 			case 'Escape':
 				event.preventDefault();
 				closeDropdown();
-				inputElement?.focus();
+				inputElement?.focus({ preventScroll: true });
 				break;
 		}
 	}
@@ -234,9 +244,7 @@
 		if (dropdownElement && focusedIndex >= 0) {
 			const optionElements = dropdownElement.querySelectorAll('[role="option"]');
 			const element = optionElements[focusedIndex] as HTMLElement;
-			if (element && typeof element.scrollIntoView === 'function') {
-				element.scrollIntoView({ block: 'nearest' });
-			}
+			if (element) revealInPanel(dropdownElement, element);
 		}
 	});
 </script>
@@ -250,7 +258,9 @@
 	{/if}
 
 	<div class="relative" onfocusout={handleFocusOut}>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
+			onpointerdown={handleTriggerSurfacePointerDown}
 			class="flex w-full items-center gap-2 rounded border text-label transition-colors focus-within:ring-2 focus-within:ring-offset-2 control-focus disabled:cursor-not-allowed {presentationClasses} {disabled ? 'cursor-not-allowed opacity-50' : ''} {inputSizeClasses}"
 		>
 			{#if selectedContent}
@@ -289,20 +299,22 @@
 		{#if isOpen}
 			<div
 				bind:this={dropdownElement}
+				use:viewportPanel={240}
 				id={resolvedListboxId}
 				role="listbox"
 				aria-label={accessibleName}
 				aria-multiselectable={multiselectable || undefined}
-				class="absolute left-0 top-full z-50 max-h-60 w-full overflow-y-auto rounded border border-border-strong bg-surface shadow-lg"
+				class="absolute left-0 top-full z-50 max-h-60 w-full overflow-y-auto overscroll-contain rounded border border-border-strong bg-surface shadow-lg"
 			>
 				{#each options as option, index (optionKey(option, index))}
 					<Button
 						id={`${resolvedListboxId}-option-${index}`}
 						role="option"
+						data-highlighted={focusedIndex === index}
 						aria-selected={isOptionSelected(option)}
 						onpointerdown={(event) => event.preventDefault()}
 						onclick={() => selectOption(option)}
-						onmouseenter={() => (focusedIndex = index)}
+						onpointermove={() => (focusedIndex = index)}
 						tone="neutral"
 						appearance="bare"
 						size="menu"

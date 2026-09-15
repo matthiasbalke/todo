@@ -164,7 +164,9 @@ describe('Select Component', () => {
 			expect(listbox.parentElement).toBe(wrapper);
 			expect(listbox).toHaveClass('absolute', 'left-0', 'top-full', 'w-full');
 			expect(listbox).not.toHaveClass('fixed');
-			expect(listbox).not.toHaveAttribute('style');
+			expect(listbox.style.top).toBe('');
+			expect(listbox.style.left).toBe('');
+			expect(listbox.style.maxHeight).toBe('240px');
 		});
 
 		it('uses the same trigger-relative placement in a normal form', async () => {
@@ -439,7 +441,7 @@ describe('Select Component', () => {
 	});
 
 	describe('Mouse Hover Navigation', () => {
-		it('updates active descendant on mouse enter to options', async () => {
+		it('updates active descendant when the pointer moves over options', async () => {
 			render(Select, {
 				props: {
 					options: testOptions
@@ -450,7 +452,7 @@ describe('Select Component', () => {
 			await fireEvent.click(trigger);
 
 			const options = screen.getAllByRole('option');
-			await fireEvent.mouseEnter(options[1]);
+			await fireEvent.pointerMove(options[1]);
 
 			expect(trigger).toHaveAttribute(
 				'aria-activedescendant',

@@ -1,4 +1,4 @@
-import { render, fireEvent } from '@testing-library/svelte';
+import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi } from 'vitest';
 import ListGroupSection from './ListGroupSection.svelte';
 import type { List, ListGroup } from '$lib/mock-data';
@@ -98,6 +98,20 @@ describe('ListGroupSection', () => {
     expect(getAllByText('Home').length).toBeGreaterThan(0);
     expect(getByRole('button', { name: /home/i })).toHaveClass('justify-start');
     expect(container.querySelectorAll('button[aria-expanded="true"] svg')).toHaveLength(2);
+  });
+
+  it('focuses and selects the group name when rename starts from creation', async () => {
+    const onrenamestarted = vi.fn();
+    const { getByRole } = render(ListGroupSection, {
+      props: { group: { ...group, name: 'unnamed group' }, lists: [], startRenaming: true, onrenamestarted },
+    });
+
+    const input = getByRole('textbox') as HTMLInputElement;
+    await waitFor(() => expect(document.activeElement).toBe(input));
+    await waitFor(() => expect(input).toHaveValue('unnamed group'));
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe('unnamed group'.length);
+    expect(onrenamestarted).toHaveBeenCalledOnce();
   });
 
   it('places group options before the collapse chevron without toggling collapse', async () => {

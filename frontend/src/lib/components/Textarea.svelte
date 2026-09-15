@@ -157,7 +157,7 @@
 		onblur={handleBlur}
 		onfocus={onfocus}
 		onkeydown={onkeydown}
-		class="native-placeholder text-value w-full rounded border transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {presentationClasses} disabled:cursor-not-allowed disabled:bg-surface disabled:hover:bg-canvas control-disabled {resizeClasses[
+		class="overflow-y-auto overscroll-contain native-placeholder text-value w-full rounded border transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {presentationClasses} disabled:cursor-not-allowed disabled:bg-surface disabled:hover:bg-canvas control-disabled {resizeClasses[
 			resize
 		]} {className}"
 		{...restProps}

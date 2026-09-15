@@ -20,6 +20,9 @@
 
 <script lang="ts">
   import { untrack, onMount, tick } from 'svelte';
+  import { itemEditorScroll } from '$lib/utils/itemEditorScroll';
+  import { focusSession } from '$lib/utils/focusSession';
+  import { notesViewport } from '$lib/utils/notesViewport';
   import type { TodoItem, Category, User, RecurrenceRule } from '$lib/mock-data';
   import CategorySelect from './CategorySelect.svelte';
   import CompletionToggle from './CompletionToggle.svelte';
@@ -30,9 +33,9 @@
   import Select from './Select.svelte';
   import StarToggle from './StarToggle.svelte';
   import Textarea from './Textarea.svelte';
-  import Button from './Button.svelte';
   import { controlPlaceholderTextClasses, controlValueTextClasses } from './controlStyles';
   import TextInput from './TextInput.svelte';
+  import Button from './Button.svelte';
 
   let {
     item,
@@ -45,6 +48,7 @@
     onStarredChange,
     draft,
     onDraftChange,
+    scrollSpacer = null,
     defaultCategoryId = ''
   }: {
     item?: TodoItem | null;
@@ -57,6 +61,7 @@
     onStarredChange?: (starred: boolean) => Promise<void> | void;
     draft?: ItemFormDraft | null;
     onDraftChange?: (draft: ItemFormDraft) => void;
+    scrollSpacer?: HTMLElement | null;
     defaultCategoryId?: string;
   } = $props();
 
@@ -87,11 +92,26 @@
   let notesEditorOpen = $state(false);
   let notesEditorDraft = $state('');
   let submitting = $state(false);
+  let saveError = $state<string | null>(null);
+  let mounted = $state(false);
+  let lastCommittedSelectionState = $state('');
+  let lastCommittedItemState = $state('');
+  let saveToken = 0;
   let ignoreNextFocusOut = false;
   let returningNotesFocus = false;
   let suppressNextDraftChange = false;
 
-  onMount(() => titleInput?.focus());
+  let formElement: HTMLFormElement;
+  let sessions: ReturnType<typeof focusSession> | undefined;
+
+  onMount(() => {
+    sessions = focusSession(formElement);
+    titleInput?.focus({ preventScroll: !isNew });
+    lastCommittedSelectionState = selectionStateKey();
+    if (item) lastCommittedItemState = itemStateKey(item);
+    mounted = true;
+    return () => sessions?.destroy();
+  });
 
   function getEffectiveDefaultCategoryId(): string | null {
     return defaultCategoryId && categories.some((category) => category.id === defaultCategoryId)
@@ -176,7 +196,7 @@
     notesEditorDraft = notes;
     notesEditorOpen = true;
     ignoreNextFocusOut = true;
-    tick().then(() => notesTextarea?.focus());
+    tick().then(() => notesTextarea?.focus({ preventScroll: true }));
   }
 
   function closeNotesEditor({ returnFocus = true }: { returnFocus?: boolean } = {}) {
@@ -184,14 +204,18 @@
     notesEditorOpen = false;
     if (returnFocus) {
       tick().then(() => {
-        notesTrigger?.focus();
+        notesTrigger?.focus({ preventScroll: true });
         returningNotesFocus = false;
       });
     }
   }
 
-  function saveNotesEditor() {
-    notes = notesEditorDraft;
+  async function saveNotesEditor() {
+    const nextNotes = notesEditorDraft;
+    notes = nextNotes;
+    if (!isNew) {
+      await commitExisting({ notes: nextNotes || null });
+    }
     closeNotesEditor();
   }
 
@@ -210,7 +234,8 @@
     const nextDone = !done;
     done = nextDone;
     try {
-      await onDoneChange?.(nextDone);
+      if (onDoneChange) await onDoneChange(nextDone);
+      else if (!isNew) await commitExisting({ done: nextDone });
     } catch {
       done = !nextDone;
     }
@@ -220,7 +245,8 @@
     const nextStarred = !starred;
     starred = nextStarred;
     try {
-      await onStarredChange?.(nextStarred);
+      if (onStarredChange) await onStarredChange(nextStarred);
+      else if (!isNew) await commitExisting({ starred: nextStarred });
     } catch {
       starred = !nextStarred;
     }
@@ -235,30 +261,102 @@
     onDraftChange?.(currentDraft());
   });
 
+  function selectionStateKey(): string {
+    return JSON.stringify({
+      categoryId,
+      dueDate,
+      assignedUserIds: [...assignedUserIds].sort(),
+      recurrencePreset
+    });
+  }
+
+  function recurrenceKey(rule: RecurrenceRule | null): string {
+    return rule ? `${rule.intervalValue}_${rule.intervalUnit}` : '';
+  }
+
+  function itemStateKey(value: TodoItem): string {
+    return JSON.stringify({
+      title: value.title,
+      notes: value.notes ?? null,
+      categoryId: value.categoryId,
+      dueDate: value.dueDate,
+      done: value.done,
+      starred: value.starred,
+      recurrenceRule: recurrenceKey(value.recurrenceRule),
+      assignedUserIds: [...(value.assignedUserIds ?? [])].sort(),
+      sortOrder: value.sortOrder
+    });
+  }
+
+  $effect(() => {
+    const nextKey = selectionStateKey();
+    if (!mounted || isNew) {
+      lastCommittedSelectionState = nextKey;
+      return;
+    }
+    if (nextKey === lastCommittedSelectionState) return;
+    lastCommittedSelectionState = nextKey;
+    commitExisting({}, { releaseFocus: true });
+  });
+
+  function buildTodoItem(overrides: Partial<TodoItem> = {}): TodoItem {
+    const now = new Date().toISOString().split('T')[0];
+    return {
+      id: item?.id ?? (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)),
+      listId,
+      categoryId,
+      title,
+      notes: notes || null,
+      done,
+      starred,
+      dueDate,
+      assignedUserIds: [...assignedUserIds],
+      recurrenceRule: parseRecurrencePreset(recurrencePreset),
+      parentItemId: item?.parentItemId ?? null,
+      createdByUserId: item?.createdByUserId ?? null,
+      updatedByUserId: item?.updatedByUserId ?? null,
+      sortOrder: item?.sortOrder ?? 999,
+      createdAt: item?.createdAt ?? now,
+      updatedAt: item?.updatedAt ?? now,
+      ...overrides
+    };
+  }
+
+  async function commitExisting(
+    overrides: Partial<TodoItem> = {},
+    options: { releaseFocus?: boolean } = {}
+  ) {
+    if (isNew || submitting) return;
+    const releaseFocus = options.releaseFocus ? sessions?.capture() : undefined;
+    const submitted = buildTodoItem(overrides);
+    if (itemStateKey(submitted) === lastCommittedItemState) {
+      releaseFocus?.();
+      return;
+    }
+
+    const token = ++saveToken;
+    submitting = true;
+    saveError = null;
+    try {
+      await onsubmit(submitted);
+      if (token === saveToken) {
+        lastCommittedSelectionState = selectionStateKey();
+        lastCommittedItemState = itemStateKey(submitted);
+        releaseFocus?.();
+      }
+    } catch {
+      if (token === saveToken) saveError = 'Changes could not be saved.';
+    } finally {
+      if (token === saveToken) submitting = false;
+    }
+  }
+
   async function handleSubmit(e: Event) {
     e.preventDefault();
     if (submitting) return;
     submitting = true;
     try {
-      const now = new Date().toISOString().split('T')[0];
-      const submitted: TodoItem = {
-        id: item?.id ?? (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)),
-        listId,
-        categoryId,
-        title,
-        notes: notes || null,
-        done,
-        starred,
-        dueDate,
-        assignedUserIds: [...assignedUserIds],
-        recurrenceRule: parseRecurrencePreset(recurrencePreset),
-        parentItemId: item?.parentItemId ?? null,
-        createdByUserId: item?.createdByUserId ?? null,
-        updatedByUserId: item?.updatedByUserId ?? null,
-        sortOrder: item?.sortOrder ?? 999,
-        createdAt: item?.createdAt ?? now,
-        updatedAt: item?.updatedAt ?? now
-      };
+      const submitted = buildTodoItem();
       await onsubmit(submitted);
       if (isNew) {
         resetNewItemDraft();
@@ -270,10 +368,20 @@
       submitting = false;
     }
   }
+
+  async function commitTitle(options: { releaseFocus?: boolean } = {}) {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    title = trimmed;
+    if (isNew) return;
+    await commitExisting({ title: trimmed }, options);
+  }
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form
+  bind:this={formElement}
+  use:itemEditorScroll={{ enabled: !isNew && !notesEditorOpen, spacer: scrollSpacer }}
   onsubmit={handleSubmit}
   onmousedown={() => {
     ignoreNextFocusOut = true;
@@ -286,12 +394,19 @@
   }}
   class="bg-surface rounded-xl border border-border p-4 space-y-4"
 >
-  <div class="flex items-center gap-2">
+  <div data-item-edit-field="title" class="flex items-center gap-2">
     <CompletionToggle size="form" {done} onactivate={toggleDoneState} />
     <TextInput
       bind:element={titleInput}
       bind:value={title}
-      onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit(e); } }}
+      onblur={() => { commitTitle(); }}
+      onkeydown={async (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (isNew) handleSubmit(e);
+          else await commitTitle({ releaseFocus: true });
+        }
+      }}
       placeholder="Item title"
       ariaLabel="Item title"
       appearance="inline"
@@ -304,7 +419,10 @@
   </div>
 
   <div class="space-y-1">
-    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
+    <div
+      data-item-edit-field="category"
+      class="flex items-start gap-3 rounded-lg px-1 py-1"
+    >
       <Icon name="category" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
     <CategorySelect
@@ -321,14 +439,20 @@
       </div>
     </div>
 
-    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
+    <div
+      data-item-edit-field="due-date"
+      class="flex items-start gap-3 rounded-lg px-1 py-1"
+    >
       <Icon name="date" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
         <DatePicker bind:value={dueDate} ariaLabel="Due Date" placeholder="set due date" appearance="inline" />
       </div>
     </div>
 
-    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
+    <div
+      data-item-edit-field="recurrence"
+      class="flex items-start gap-3 rounded-lg px-1 py-1"
+    >
       <Icon name="recurrence" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
     <Select
@@ -347,7 +471,10 @@
       </div>
     </div>
 
-    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
+    <div
+      data-item-edit-field="assignees"
+      class="flex items-start gap-3 rounded-lg px-1 py-1"
+    >
       <Icon name="assignee" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
         <MultiSelect
@@ -383,7 +510,9 @@
       </div>
     </div>
 
-    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
+    <div
+      class="flex items-start gap-3 rounded-lg px-1 py-1"
+    >
       <Icon name="notes" size="action" tone="muted" class="mt-2.5 flex-shrink-0" />
       <div class="min-w-0 flex-1">
         <Button
@@ -418,33 +547,20 @@
     <ItemAuditMetadata {item} {users} />
   {/if}
 
-  <div class="flex justify-end gap-2 pt-1">
-    <Button
-      type="button"
-      tone="neutral" appearance="bare"
-      onclick={() => { oncancel({ reason: 'explicit' }); }}
-      emphasis="muted"
-    >
-      Cancel
-    </Button>
-    <Button
-      type="submit"
-      loading={submitting}
-      loadingLabel={isNew ? 'Adding…' : 'Saving…'}
-    >
-      {isNew ? 'Add' : 'Save'}
-    </Button>
-  </div>
+  {#if saveError}
+    <p class="text-sm text-danger">{saveError}</p>
+  {/if}
 
   {#if notesEditorOpen}
     <div
+      use:notesViewport
       role="dialog"
       aria-modal="true"
       aria-labelledby="notes-editor-title"
-      class="fixed inset-0 z-50 bg-surface"
+      class="fixed z-50 overflow-hidden overscroll-contain bg-surface"
     >
-      <div class="mx-auto flex min-h-screen max-w-2xl flex-col">
-        <div class="grid grid-cols-[1fr_auto_1fr] items-center border-b border-border px-4 py-3">
+      <div class="mx-auto h-full min-h-0 flex max-w-2xl flex-col">
+        <div class="shrink-0 grid grid-cols-[1fr_auto_1fr] items-center border-b border-border px-4 py-3">
           <Button
             type="button"
             tone="neutral"
@@ -470,7 +586,7 @@
           </Button>
         </div>
 
-        <div class="flex-1 p-4">
+        <div class="min-h-0 flex-1 p-4 [&>div]:h-full [&>div]:min-h-0">
           <Textarea
             bind:element={notesTextarea}
             bind:value={notesEditorDraft}
@@ -480,7 +596,7 @@
             resize="none"
             appearance="inline"
             onkeydown={handleNotesEditorKeydown}
-            class="min-h-[70vh]"
+            class="h-full min-h-0"
           />
         </div>
       </div>

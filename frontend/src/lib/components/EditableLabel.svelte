@@ -4,6 +4,7 @@
 
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import { tick } from 'svelte';
 	import Button from './Button.svelte';
 	import TextInput from './TextInput.svelte';
 
@@ -26,6 +27,7 @@
 		oncancel?: () => void;
 		onchange?: (value: string) => void;
 		element?: HTMLInputElement | null;
+		selectOnEdit?: boolean;
 	}
 
 	let {
@@ -46,7 +48,8 @@
 		showCancel = false,
 		oncancel,
 		onchange,
-		element = $bindable(null)
+		element = $bindable(null),
+		selectOnEdit = false
 	}: Props = $props();
 
 	const dispatch = createEventDispatcher<{ change: { value: string } }>();
@@ -145,7 +148,10 @@
 
 	$effect(() => {
 		if (isEditing) {
-			element?.focus();
+			tick().then(() => {
+				element?.focus();
+				if (selectOnEdit) element?.select();
+			});
 		}
 	});
 </script>

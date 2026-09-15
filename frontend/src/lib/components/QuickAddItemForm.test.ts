@@ -54,6 +54,7 @@ describe('QuickAddItemForm', () => {
 		}
 		expect(screen.queryByRole('button', { name: 'Mark done' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Star' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Add' })).not.toBeInTheDocument();
 	});
 
 	it('initializes from a draft and emits cloned draft changes', async () => {
@@ -204,7 +205,7 @@ describe('QuickAddItemForm', () => {
 			target: { value: 'Retry notes' }
 		});
 		await saveDialog('Notes');
-		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+		await fireEvent.keyDown(screen.getByRole('textbox', { name: 'Item title' }), { key: 'Enter' });
 
 		expect(screen.getByRole('textbox', { name: 'Item title' })).toHaveValue('Retry item');
 		expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Notes');
@@ -329,7 +330,7 @@ describe('QuickAddItemForm', () => {
 		await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
 		await fireEvent.click(screen.getByRole('option', { name: 'No recurrence' }));
 		await saveDialog('Recurrence');
-		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+		await fireEvent.keyDown(screen.getByRole('textbox', { name: 'Item title' }), { key: 'Enter' });
 
 		expect(onsubmit.mock.calls[0][0].recurrenceRule).toBeNull();
 	});

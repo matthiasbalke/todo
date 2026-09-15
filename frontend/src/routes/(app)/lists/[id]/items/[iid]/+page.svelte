@@ -17,6 +17,8 @@
   $effect(() => { loadItemsForList(data.id); });
   $effect(() => { loadCategoriesForList(data.id); });
 
+  let scrollSpacer = $state<HTMLElement | null>(null);
+
   let members = $state<User[]>([]);
   $effect(() => {
     getMembers(data.id).then(ms => {
@@ -42,9 +44,9 @@
         assignedUserIds: updated.assignedUserIds,
         sortOrder: updated.sortOrder,
       });
-      goto(returnDestination);
     } catch (e) {
       alert(friendlyError(e, 'Failed to save item'));
+      throw e;
     }
   }
 
@@ -94,6 +96,7 @@
   {#if item}
     {#if capabilities.canEditItems}
       <ItemForm
+        {scrollSpacer}
         {item}
         listId={data.id}
         {categories}
@@ -112,6 +115,7 @@
           Delete item
         </Button>
       </div>
+      <div bind:this={scrollSpacer} data-testid="item-editor-scroll-space" aria-hidden="true" style="overflow-anchor: none; pointer-events: none"></div>
     {:else}
       <ItemDetails {item} {categories} users={members} />
     {/if}

@@ -4,6 +4,7 @@
 
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { revealInPanel, viewportPanel } from '$lib/utils/viewportPanel';
 	import Button from './Button.svelte';
 	import CalendarDayButton from './CalendarDayButton.svelte';
 	import { controlPlaceholderTextClasses, controlValueTextClasses } from './controlStyles';
@@ -49,6 +50,7 @@
 	}: Props = $props();
 
 	let isOpen = $state(false);
+	let panelElement = $state<HTMLElement>();
 	let containerElement = $state<HTMLElement>();
 	let triggerElement = $state<HTMLButtonElement | null>(null);
 	let displayedYear = $state(todayCalendarDate().year);
@@ -110,12 +112,19 @@
 		return findAllowedDate(firstOfMonth, minDate && compareDates(firstOfMonth, minDate) < 0 ? 1 : -1);
 	}
 
+	function focusDay(date: CalendarDate) {
+		if (!isOpen) return;
+		const button = dateButtons[toIsoDate(date)];
+		button?.focus({ preventScroll: true });
+		if (button && panelElement) revealInPanel(panelElement, button);
+	}
+
 	async function focusDate(date: CalendarDate) {
 		focusedDate = date;
 		displayedYear = date.year;
 		displayedMonth = date.month;
 		await tick();
-		dateButtons[toIsoDate(date)]?.focus();
+		focusDay(date);
 	}
 
 	async function openCalendar() {
@@ -126,13 +135,13 @@
 		focusedDate = initialFocusDate();
 		isOpen = true;
 		await tick();
-		dateButtons[toIsoDate(focusedDate)]?.focus();
+		focusDay(focusedDate);
 	}
 
 	function closeCalendar(returnFocus = false) {
 		isOpen = false;
 		if (returnFocus) {
-			tick().then(() => triggerElement?.focus());
+			tick().then(() => triggerElement?.focus({ preventScroll: true }));
 		}
 	}
 
@@ -167,7 +176,7 @@
 		focusedDate = isAllowed(preferred)
 			? preferred
 			: findAllowedDate(preferred, amount >= 0 ? 1 : -1);
-		tick().then(() => dateButtons[toIsoDate(focusedDate)]?.focus());
+		tick().then(() => focusDay(focusedDate));
 	}
 
 	function moveFocus(candidate: CalendarDate, direction: 1 | -1) {
@@ -266,8 +275,10 @@
 	{#if isOpen}
 		<div
 			role="dialog"
+			bind:this={panelElement}
+			use:viewportPanel
 			aria-label={label ? `${label} calendar` : 'Calendar'}
-			class="absolute left-0 top-full z-50 mt-1 w-full min-w-72 max-w-sm rounded-lg border border-border bg-surface p-3 shadow-lg"
+			class="overflow-y-auto overscroll-contain absolute left-0 top-full z-50 mt-1 w-full min-w-72 max-w-sm rounded-lg border border-border bg-surface p-3 shadow-lg"
 		>
 			<div class="mb-3 flex items-center justify-between">
 				<Button
