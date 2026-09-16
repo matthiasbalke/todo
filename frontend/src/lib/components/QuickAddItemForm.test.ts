@@ -54,6 +54,7 @@ describe('QuickAddItemForm', () => {
 		}
 		expect(screen.queryByRole('button', { name: 'Mark done' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Star' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Add' })).not.toBeInTheDocument();
 	});
 
 	it('initializes from a draft and emits cloned draft changes', async () => {
@@ -204,36 +205,28 @@ describe('QuickAddItemForm', () => {
 			target: { value: 'Retry notes' }
 		});
 		await saveDialog('Notes');
-		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+		await fireEvent.keyDown(screen.getByRole('textbox', { name: 'Item title' }), { key: 'Enter' });
 
 		expect(screen.getByRole('textbox', { name: 'Item title' })).toHaveValue('Retry item');
 		expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Notes');
 	});
 
-	it('saves, cancels, clears, and returns focus for detail dialogs', async () => {
+	it('applies single-value details immediately, closes their dialogs, and returns focus', async () => {
 		render(QuickAddItemForm, { props: defaultProps });
 
 		const categoryTrigger = screen.getByRole('button', { name: 'Category' });
 		await fireEvent.click(categoryTrigger);
 		await fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
 		await fireEvent.click(screen.getByRole('option', { name: 'Groceries' }));
-		await saveDialog('Category');
 		await vi.runAllTimersAsync();
 		const savedCategoryTrigger = screen.getByRole('button', { name: 'Category' });
 		expect(savedCategoryTrigger).toHaveTextContent('Groceries');
+		expect(screen.queryByRole('dialog', { name: 'Category' })).not.toBeInTheDocument();
 		expect(document.activeElement).toBe(savedCategoryTrigger);
 
 		await fireEvent.click(savedCategoryTrigger);
 		await fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
 		await fireEvent.click(screen.getByRole('option', { name: 'Uncategorized' }));
-		await cancelDialog('Category');
-		await vi.runAllTimersAsync();
-		expect(screen.getByRole('button', { name: 'Category' })).toHaveTextContent('Groceries');
-
-		await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
-		await fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
-		await fireEvent.click(screen.getByRole('option', { name: 'Uncategorized' }));
-		await saveDialog('Category');
 		await vi.runAllTimersAsync();
 		expect(screen.getByRole('button', { name: 'Category' })).not.toHaveTextContent('Groceries');
 
@@ -242,21 +235,20 @@ describe('QuickAddItemForm', () => {
 		let dialog = screen.getByRole('dialog', { name: 'Due date' });
 		await fireEvent.click(within(dialog).getByRole('button', { name: 'Due date' }));
 		await fireEvent.click(within(dialog).getByRole('gridcell', { name: 'Monday, June 15, 2026' }));
-		await saveDialog('Due date');
 		await vi.runAllTimersAsync();
 		const savedDueDateTrigger = screen.getByRole('button', { name: 'Due date' });
 		expect(savedDueDateTrigger).toHaveTextContent('Jun 15, 2026');
+		expect(screen.queryByRole('dialog', { name: 'Due date' })).not.toBeInTheDocument();
 		expect(document.activeElement).toBe(savedDueDateTrigger);
 
 		await fireEvent.click(savedDueDateTrigger);
 		dialog = screen.getByRole('dialog', { name: 'Due date' });
 		await fireEvent.click(within(dialog).getByRole('button', { name: 'Due date' }));
 		await fireEvent.click(within(dialog).getByRole('button', { name: 'Clear' }));
-		await saveDialog('Due date');
 		expect(dueDateTrigger).not.toHaveTextContent('Jun 15, 2026');
 	});
 
-	it('submits saved optional dialog details and discards canceled assignee and notes changes', async () => {
+	it('submits applied optional dialog details and preserves closed assignee changes', async () => {
 		const onsubmit = vi.fn();
 		render(QuickAddItemForm, { props: { ...defaultProps, onsubmit } });
 
@@ -266,16 +258,14 @@ describe('QuickAddItemForm', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
 		await fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
 		await fireEvent.click(screen.getByRole('option', { name: 'Household' }));
-		await saveDialog('Category');
 		await fireEvent.click(screen.getByRole('button', { name: 'Recurrence' }));
 		await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
 		await fireEvent.click(screen.getByRole('option', { name: 'Every month' }));
-		await saveDialog('Recurrence');
 		await fireEvent.click(screen.getByRole('button', { name: 'Assignees' }));
 		await fireEvent.keyDown(screen.getByRole('combobox', { name: 'Assignees' }), { key: 'Enter' });
 		await fireEvent.click(screen.getByRole('option', { name: 'Alice' }));
 		await fireEvent.click(screen.getByRole('option', { name: 'bob@example.com' }));
-		await saveDialog('Assignees');
+		await closeDialog('Assignees');
 		await openNotes();
 		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
 			target: { value: 'Saved notes' }
@@ -285,7 +275,7 @@ describe('QuickAddItemForm', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Assignees' }));
 		await fireEvent.keyDown(screen.getByRole('combobox', { name: 'Assignees' }), { key: 'Enter' });
 		await fireEvent.click(screen.getByRole('option', { name: 'Alice' }));
-		await cancelDialog('Assignees');
+		await closeDialog('Assignees');
 		await openNotes();
 		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
 			target: { value: 'Discarded notes' }
@@ -298,7 +288,7 @@ describe('QuickAddItemForm', () => {
 			title: 'Detailed item',
 			notes: 'Saved notes',
 			categoryId: 'category-2',
-			assignedUserIds: ['u1', 'u2'],
+			assignedUserIds: ['u2'],
 			recurrenceRule: { intervalValue: 1, intervalUnit: 'MONTHS' }
 		});
 	});
@@ -328,10 +318,24 @@ describe('QuickAddItemForm', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Recurrence' }));
 		await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
 		await fireEvent.click(screen.getByRole('option', { name: 'No recurrence' }));
-		await saveDialog('Recurrence');
-		await fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+		await fireEvent.keyDown(screen.getByRole('textbox', { name: 'Item title' }), { key: 'Enter' });
 
 		expect(onsubmit.mock.calls[0][0].recurrenceRule).toBeNull();
+	});
+
+	it('dismisses untouched dialogs outside and keeps already-applied assignee changes', async () => {
+		render(QuickAddItemForm, { props: defaultProps });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
+		await dismissOutside('Category');
+		expect(screen.queryByRole('dialog', { name: 'Category' })).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Category' })).not.toHaveTextContent('Groceries');
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Assignees' }));
+		await fireEvent.keyDown(screen.getByRole('combobox', { name: 'Assignees' }), { key: 'Enter' });
+		await fireEvent.click(screen.getByRole('option', { name: 'Alice' }));
+		await dismissOutside('Assignees');
+		expect(screen.getByRole('button', { name: 'Assignees' })).toHaveTextContent('Alice');
 	});
 });
 
@@ -344,8 +348,12 @@ async function saveDialog(name: string) {
 	await fireEvent.click(within(screen.getByRole('dialog', { name })).getByRole('button', { name: 'Save' }));
 }
 
-async function cancelDialog(name: string) {
+async function closeDialog(name: string) {
 	const dialog = screen.getByRole('dialog', { name });
-	const cancelButtons = within(dialog).getAllByRole('button', { name: 'Cancel' });
-	await fireEvent.click(cancelButtons.at(-1)!);
+	await fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+}
+
+async function dismissOutside(name: string) {
+	const dialog = screen.getByRole('dialog', { name });
+	await fireEvent.pointerDown(dialog.parentElement!);
 }

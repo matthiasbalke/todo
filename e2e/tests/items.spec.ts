@@ -36,7 +36,7 @@ test.describe('Item detail', () => {
 		await waitForHydration(page);
 
 		await expect(page.getByPlaceholder('Item title')).toHaveValue('Apples');
-		await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Save' })).not.toBeVisible();
 		await expect(page.getByTestId('item-form-notes-preview')).toHaveText(
 			'Get Braeburn if available',
 		);
@@ -49,15 +49,17 @@ test.describe('Item detail', () => {
 		);
 	});
 
-	test('editing the item title and saving navigates back and shows updated title', async ({
+	test('editing the item title autosaves in place and shows updated title on the list', async ({
 		page,
 	}) => {
 		await page.goto(`/lists/${listId}/items/${itemId}`);
 		await waitForHydration(page);
 
 		await page.getByPlaceholder('Item title').fill('Apples (Updated)');
-		await page.getByRole('button', { name: 'Save' }).click();
+		await page.getByPlaceholder('Item title').press('Enter');
 
+		await expect(page).toHaveURL(new RegExp(`/lists/${listId}/items/${itemId}$`));
+		await page.getByRole('link', { name: 'Back' }).click();
 		await page.waitForURL(`**/lists/${listId}`);
 		await expect(page.getByText('Apples (Updated)')).toBeVisible();
 	});

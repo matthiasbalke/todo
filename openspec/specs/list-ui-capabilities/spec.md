@@ -369,8 +369,16 @@ The `/lists` overview SHALL display a Lucide plus icon with a list creation labe
 
 #### Scenario: New list action remains primary and usable
 - **WHEN** a signed-in user activates the left-aligned `new list` action
-- **THEN** the list creation form opens as before
+- **THEN** a new list named `unnamed list` is created with the default emoji
+- **AND** the new list is opened after creation succeeds
+- **AND** the list title editor receives focus with the complete placeholder title selected
 - **AND** the action remains fully visible and tappable across supported viewport widths
+
+#### Scenario: New group action creates an editable placeholder group
+- **WHEN** a signed-in user activates the group creation action
+- **THEN** a new list group named `unnamed group` is created
+- **AND** the group name editor receives focus with the complete placeholder name selected
+- **AND** on mobile browsers the editor uses native focus scrolling so the focused input remains visible when the on-screen keyboard opens
 
 #### Scenario: User views footer actions on a rounded mobile display
 - **WHEN** fixed footer actions are displayed on a mobile viewport
@@ -388,6 +396,28 @@ The `/lists` overview SHALL display a Lucide plus icon with a list creation labe
 - **WHEN** a page uses a fixed action footer
 - **THEN** the page content reserves enough bottom space for final content to scroll above the footer
 - **AND** expanded footer form content remains bounded and scrollable without pushing action controls into display edges
+
+### Requirement: List and group text edits autosave
+The `/lists` overview SHALL persist editable list and list group text value changes automatically without showing save or cancel buttons for ordinary name/title editing.
+
+#### Scenario: List title edit is committed automatically
+- **WHEN** a signed-in user changes an editable list title and completes the edit using the implementation-defined commit event
+- **THEN** the changed title is persisted for that list
+- **AND** the list title editor does not require or display separate save or cancel controls
+
+#### Scenario: Group name edit is committed automatically
+- **WHEN** a signed-in user changes an editable list group name and completes the edit using the implementation-defined commit event
+- **THEN** the changed name is persisted for that list group
+- **AND** the group name editor does not require or display separate save or cancel controls
+
+#### Scenario: Invalid text is not persisted
+- **WHEN** a signed-in user enters an invalid list title or group name
+- **THEN** the invalid value is not persisted
+- **AND** the UI communicates the validation problem without requiring a cancel action to restore a valid saved value
+
+#### Scenario: Unauthorized writes remain rejected
+- **WHEN** a user without permission directly invokes a list or group write endpoint
+- **THEN** the backend rejects the request according to its existing authorization rules
 
 ### Requirement: List option overlays use consistent trigger spacing
 List option menu overlays and the sort summary pill menu SHALL use the same `top-full` plus small margin trigger-to-menu spacing pattern.

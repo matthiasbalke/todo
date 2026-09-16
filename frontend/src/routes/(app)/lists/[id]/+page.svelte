@@ -29,6 +29,7 @@
   import DeleteCheckedItemsDialog from '$lib/components/DeleteCheckedItemsDialog.svelte';
   import FixedActionFooter from '$lib/components/FixedActionFooter.svelte';
   import Icon from '$lib/components/Icon.svelte';
+  import { focusTextInput } from '$lib/utils/focus';
 
   let { data }: { data: PageData } = $props();
 
@@ -95,8 +96,21 @@
   let showDeleteCheckedDialog = $state(false);
   let deleteCheckedError = $state('');
   let titleInput = $state<HTMLInputElement | null>(null);
+  let handledInitialTitleFocus = $state(false);
   $effect(() => {
-    if (editingTitle && titleInput) titleInput.focus();
+    if (editingTitle && titleInput) {
+      if (data.focusTitle && !handledInitialTitleFocus) {
+        focusTextInput(titleInput, true);
+        handledInitialTitleFocus = true;
+      } else {
+        focusTextInput(titleInput);
+      }
+    }
+  });
+  $effect(() => {
+    if (handledInitialTitleFocus || !data.focusTitle || !list || !capabilities.canEditList) return;
+    titleEditValue = `${list.emoji ?? '📋'} ${list.name}`;
+    editingTitle = true;
   });
 
   // Populate real members for assignment and member display.
@@ -227,6 +241,7 @@
     const emoji = extractEmoji(trimmed);
     const displayName = emoji ? trimmed.slice(emoji.length).trimStart() : trimmed;
     if (!displayName) return;
+    if (displayName === list?.name && (emoji || '📋') === (list?.emoji ?? '📋')) return;
     try {
       await updateList(data.id, { name: displayName, emoji: emoji || '📋' });
     } catch (e) {

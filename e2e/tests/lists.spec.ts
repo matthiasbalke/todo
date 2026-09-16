@@ -84,14 +84,14 @@ test.describe('List detail — add item form', () => {
 		await expect(page.getByRole('button', { name: 'Recurrence' })).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Assignees' })).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Notes' })).toBeVisible();
-		await expect(page.getByRole('button', { name: 'Add' })).toBeVisible();
-		await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Add' })).not.toBeVisible();
+		await expect(page.getByRole('button', { name: 'Cancel' })).not.toBeVisible();
 	});
 
 	test('filling and submitting the form adds the new item to the list', async ({ page }) => {
 		await page.getByRole('button', { name: 'add item' }).click();
 		await page.getByPlaceholder('Item title').fill('Test Item E2E');
-		await page.getByRole('button', { name: 'Add' }).click();
+		await page.getByPlaceholder('Item title').press('Enter');
 
 		await expect(page.getByText('Test Item E2E')).toBeVisible();
 	});
@@ -109,6 +109,16 @@ test.describe('List detail — add item form', () => {
 
 		await expect(page.getByPlaceholder('Item title')).toHaveValue('Draft Item E2E');
 		await expect(page.getByRole('button', { name: 'Notes', exact: true })).toHaveText(/Notes/);
+	});
+
+	test('title blur preserves the quick-add draft without creating an item', async ({ page }) => {
+		await page.getByRole('button', { name: 'add item' }).click();
+		await page.getByPlaceholder('Item title').fill('Blur Draft E2E');
+		await page.getByRole('button', { name: 'List options' }).click();
+
+		await expect(page.getByText('Blur Draft E2E')).not.toBeVisible();
+		await page.getByRole('button', { name: 'add item' }).click();
+		await expect(page.getByPlaceholder('Item title')).toHaveValue('Blur Draft E2E');
 	});
 });
 

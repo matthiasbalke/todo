@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { List, ListGroup } from '$lib/mock-data';
 
@@ -46,6 +46,7 @@ vi.mock('svelte-dnd-action', () => ({
 }));
 
 import ListsPage from './+page.svelte';
+import { goto } from '$app/navigation';
 import { loadTodayCount } from '$lib/stores/today.svelte';
 import { saveListGroupState, UNGROUPED_LIST_GROUP_STATE_KEY } from '$lib/listGroupState';
 
@@ -93,7 +94,7 @@ const lists: List[] = [
 	},
 ];
 
-describe('ListsPage add-group form layout matches ListForm', () => {
+describe('ListsPage creation actions', () => {
 	afterEach(() => {
 		cleanup();
 		vi.clearAllMocks();
@@ -103,42 +104,27 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		storeMocks.reorderListGroupsOptimistic.mockResolvedValue(undefined);
 	});
 
-	async function openAddGroupForm() {
+	async function clickCreateGroup() {
 		const { container } = render(ListsPage, { props: { } });
 		const newGroupBtn = container.querySelector('button[aria-label="Create group"]')!;
 		await fireEvent.click(newGroupBtn);
 		return container;
 	}
 
-	it('add-group form should have card container (bg-surface rounded-xl border border-border p-4)', async () => {
-		const container = await openAddGroupForm();
-		// ListForm wraps everything in a card: bg-surface rounded-xl border border-border p-4
-		const card = container.querySelector('.bg-surface.rounded-xl.border.border-border.p-4');
-		expect(card).not.toBeNull();
-	});
+	it('creates an unnamed group immediately without opening the old form', async () => {
+		storeMocks.createListGroup.mockResolvedValue({
+			id: 'group-new',
+			userId: 'user-1',
+			name: 'unnamed group',
+			sortOrder: 2,
+			createdAt: '2026-01-01T00:00:00Z',
+		});
+		const container = await clickCreateGroup();
 
-	it('add-group form input should be full-width (w-full), not flex-1', async () => {
-		const container = await openAddGroupForm();
-		const input = container.querySelector('input[placeholder="Group name"]')!;
-		expect(input.className).toContain('w-full');
-		expect(input.className).not.toContain('flex-1');
-	});
-
-	it('add-group form Cancel button should appear before the Add button in the DOM', async () => {
-		const container = await openAddGroupForm();
-		const buttons = Array.from(container.querySelectorAll('button'));
-		const cancelIdx = buttons.findIndex((b) => b.textContent?.trim() === 'Cancel');
-		const addIdx = buttons.findIndex((b) => b.textContent?.trim() === 'Add');
-		expect(cancelIdx).toBeGreaterThan(-1);
-		expect(addIdx).toBeGreaterThan(-1);
-		expect(cancelIdx).toBeLessThan(addIdx);
-	});
-
-	it('add-group form input should receive focus when form is shown', async () => {
-		const container = await openAddGroupForm();
-		const input = container.querySelector('input[placeholder="Group name"]') as HTMLInputElement;
-		expect(input).not.toBeNull();
-		expect(document.activeElement).toBe(input);
+		await waitFor(() => expect(storeMocks.createListGroup).toHaveBeenCalledWith('unnamed group'));
+		expect(container.querySelector('input[placeholder="Group name"]')).not.toBeInTheDocument();
+		expect(Array.from(container.querySelectorAll('button')).map((button) => button.textContent?.trim())).not.toContain('Add');
+		expect(Array.from(container.querySelectorAll('button')).map((button) => button.textContent?.trim())).not.toContain('Cancel');
 	});
 
 	it('renders creation actions inside the shared fixed action footer with safe-area spacing', () => {
@@ -171,24 +157,29 @@ describe('ListsPage add-group form layout matches ListForm', () => {
 		expect(container.textContent).not.toContain('+ New group');
 	});
 
-	it('opens the list creation form from the left-aligned new list action', async () => {
-		const { container, getByPlaceholderText } = render(ListsPage, { props: { } });
+	it('creates an unnamed list from the left-aligned new list action and opens its title editor', async () => {
+		storeMocks.createList.mockResolvedValue({
+			id: 'list-new',
+			name: 'unnamed list',
+			emoji: '📋',
+			description: null,
+			defaultSortField: 'MANUAL',
+			defaultSortDirection: 'ASC',
+			createdAt: '2026-01-01T00:00:00Z',
+			groupId: null,
+			sortOrderInGroup: 0,
+			role: 'OWNER',
+		});
+		const { container, queryByPlaceholderText } = render(ListsPage, { props: { } });
 		const newListButton = Array.from(container.querySelectorAll('button')).find((button) =>
 			button.textContent?.trim() === 'new list'
 		)!;
 
 		await fireEvent.click(newListButton);
 
-		expect(getByPlaceholderText('List name')).toBeInTheDocument();
-	});
-
-	it('bounds expanded group creation content inside the fixed action footer', async () => {
-		const container = await openAddGroupForm();
-
-		const scrollArea = container.querySelector('[data-testid="fixed-action-footer-scroll"]') as HTMLElement;
-		expect(scrollArea).not.toBeNull();
-		expect(scrollArea).toHaveClass('overflow-y-auto');
-		expect(scrollArea.className).toContain('max-h-[min(70vh,calc(100vh-2rem))]');
+		await waitFor(() => expect(storeMocks.createList).toHaveBeenCalledWith({ name: 'unnamed list', emoji: '📋' }));
+		expect(goto).toHaveBeenCalledWith('/lists/list-new?focusTitle=1');
+		expect(queryByPlaceholderText('List name')).not.toBeInTheDocument();
 	});
 
 	it('refreshes the Today count when the page mounts', () => {

@@ -33,6 +33,7 @@
 		locale?: string;
 		ariaLabel?: string;
 		appearance?: 'default' | 'inline';
+		onSelect?: (value: string | null) => void;
 	}
 
 	let {
@@ -45,7 +46,8 @@
 		max = null,
 		locale,
 		ariaLabel,
-		appearance = 'default'
+		appearance = 'default',
+		onSelect
 	}: Props = $props();
 
 	let isOpen = $state(false);
@@ -55,6 +57,7 @@
 	let displayedMonth = $state(todayCalendarDate().month);
 	let focusedDate = $state<CalendarDate>(todayCalendarDate());
 	let dateButtons = $state<Record<string, HTMLButtonElement>>({});
+	let suppressNextOutsideClick = false;
 	const instanceId = `datepicker-${nextDatePickerId++}`;
 	const labelId = `${instanceId}-label`;
 
@@ -136,6 +139,13 @@
 		}
 	}
 
+	function blurActiveElement() {
+		const activeElement = document.activeElement;
+		if (activeElement instanceof HTMLElement && containerElement?.contains(activeElement)) {
+			activeElement.blur();
+		}
+	}
+
 	function toggleCalendar() {
 		if (isOpen) {
 			closeCalendar();
@@ -146,12 +156,15 @@
 
 	function selectDate(date: CalendarDate) {
 		if (!isAllowed(date)) return;
-		value = toIsoDate(date);
+		const nextValue = toIsoDate(date);
+		value = nextValue;
+		onSelect?.(nextValue);
 		closeCalendar(true);
 	}
 
 	function clearDate() {
 		value = null;
+		onSelect?.(null);
 		closeCalendar(true);
 	}
 
@@ -224,15 +237,38 @@
 		moveFocus(candidate, direction);
 	}
 
-	function handleDocumentPointer(event: MouseEvent) {
+	function handleDocumentPointer(event: PointerEvent) {
 		if (isOpen && containerElement && !containerElement.contains(event.target as Node)) {
+			event.preventDefault();
+			event.stopPropagation();
+			suppressNextOutsideClick = true;
+			setTimeout(() => {
+				suppressNextOutsideClick = false;
+			}, 350);
 			closeCalendar();
+			blurActiveElement();
 		}
 	}
 
+	function handleDocumentClick(event: MouseEvent) {
+		if (!suppressNextOutsideClick) return;
+		if (containerElement?.contains(event.target as Node)) {
+			suppressNextOutsideClick = false;
+			return;
+		}
+		suppressNextOutsideClick = false;
+		event.preventDefault();
+		event.stopPropagation();
+	}
+
 	onMount(() => {
-		document.addEventListener('mousedown', handleDocumentPointer);
-		return () => document.removeEventListener('mousedown', handleDocumentPointer);
+		const pointerOptions = { capture: true };
+		document.addEventListener('pointerdown', handleDocumentPointer, pointerOptions);
+		document.addEventListener('click', handleDocumentClick, pointerOptions);
+		return () => {
+			document.removeEventListener('pointerdown', handleDocumentPointer, pointerOptions);
+			document.removeEventListener('click', handleDocumentClick, pointerOptions);
+		};
 	});
 </script>
 

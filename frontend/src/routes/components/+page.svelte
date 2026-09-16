@@ -12,6 +12,7 @@
 	import Select from '$lib/components/Select.svelte';
 	import EditableLabel from '$lib/components/EditableLabel.svelte';
 	import Button from '$lib/components/Button.svelte';
+	import Dialog from '$lib/components/Dialog.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import CalendarDayButton from '$lib/components/CalendarDayButton.svelte';
 	import ColorSwatchButton from '$lib/components/ColorSwatchButton.svelte';
@@ -62,6 +63,8 @@
 		{ id: 'showcase-morgan', name: 'Morgan Reed' }
 	];
 	let latestAssigneeSelection = selectedAssignees.map((assignee) => assignee.id).join(', ');
+	let showcaseDialogOpen = false;
+	let showcaseDialogCloseCount = 0;
 
 	const fruits = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig'];
 	const priorities = ['Low', 'Medium', 'High', 'Urgent'];
@@ -175,6 +178,11 @@
 		latestAssigneeSelection = values.map((assignee) => assignee.id).join(', ') || '(none)';
 	}
 
+	function closeShowcaseDialog() {
+		showcaseDialogOpen = false;
+		showcaseDialogCloseCount += 1;
+	}
+
 	const basicInputCode = `<TextInput
   bind:value={myValue}
   label="Name"
@@ -210,6 +218,25 @@
 <Button type="submit" class="w-full">
   Submit form
 </Button>`;
+
+	const dialogCode = `<script lang="ts">
+  import Dialog from '$lib/components/Dialog.svelte';
+  import Button from '$lib/components/Button.svelte';
+
+  let open = false;
+<\/script>
+
+<Button onclick={() => { open = true; }}>Open dialog</Button>
+
+{#if open}
+  <Dialog title="Dialog preview" onclose={() => { open = false; }}>
+    <p>Dialog body content.</p>
+
+    {#snippet footer()}
+      <Button onclick={() => { open = false; }}>Confirm</Button>
+    {/snippet}
+  </Dialog>
+{/if}`;
 
 	const toggleCode = `<script lang="ts">
   import Toggle from '$lib/components/Toggle.svelte';
@@ -420,6 +447,7 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 	const sections = [
 		{ id: 'foundation', label: 'Style Foundation', title: 'Shared Style Foundation', content: foundationSection },
 		{ id: 'button', label: 'Button', title: 'Button Component', content: buttonSection },
+		{ id: 'dialog', label: 'Dialog', title: 'Dialog Component', content: dialogSection },
 		{ id: 'icon', label: 'Icon', title: 'Icon Component', content: iconSection },
 		{ id: 'toggle', label: 'Toggle', title: 'Toggle Component', content: toggleSection },
 		{ id: 'specialized-interaction-controls', label: 'Specialized Interaction Controls', title: 'Specialized Interaction Controls', content: specialized_interaction_controlsSection },
@@ -647,6 +675,69 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					Standard native button attributes and handlers such as <code>title</code>,
 					<code>aria-label</code>, <code>data-*</code>, and <code>onclick</code> are forwarded.
 				</p>
+			</div>
+{/snippet}
+
+{#snippet dialogSection()}
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+				<div>
+					<h3 class="text-lg font-semibold text-value mb-4">Modal Shell</h3>
+					<Button onclick={() => { showcaseDialogOpen = true; }}>Open dialog</Button>
+					<p class="text-xs text-muted mt-2">
+						Close count: <code>{showcaseDialogCloseCount}</code>
+					</p>
+				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-value mb-4">Structure</h3>
+					<div class="rounded-lg border border-border bg-surface-subtle p-4 text-sm text-supporting">
+						<p class="font-medium text-label">Dialog preview</p>
+						<p class="mt-2">Title bar, close action, body content, and optional footer actions share one shell.</p>
+					</div>
+				</div>
+			</div>
+
+			{#if showcaseDialogOpen}
+				<Dialog title="Dialog preview" onclose={closeShowcaseDialog}>
+					<p class="text-sm text-supporting">
+						Shared dialog content uses the same surface, overlay, keyboard dismissal, and close affordance as app dialogs.
+					</p>
+
+					{#snippet footer()}
+						<Button tone="neutral" appearance="outline" onclick={closeShowcaseDialog}>Secondary</Button>
+						<Button onclick={closeShowcaseDialog}>Confirm</Button>
+					{/snippet}
+				</Dialog>
+			{/if}
+
+			<div class="mt-12 pt-8 border-t border-border">
+				<h3 class="text-lg font-semibold text-value mb-4">Usage Example</h3>
+				<pre class="bg-surface-inverse text-on-inverse p-4 rounded text-sm overflow-x-auto"><code>{dialogCode}</code></pre>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-border">
+				<h3 class="text-lg font-semibold text-value mb-4">Props Reference</h3>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-border">
+								<th class="text-left px-4 py-2 font-semibold text-label">Prop</th>
+								<th class="text-left px-4 py-2 font-semibold text-label">Type</th>
+								<th class="text-left px-4 py-2 font-semibold text-label">Default</th>
+								<th class="text-left px-4 py-2 font-semibold text-label">Description</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-border">
+							<tr><td class="px-4 py-2 font-mono text-primary">title</td><td class="px-4 py-2 text-supporting">string</td><td class="px-4 py-2 text-supporting">required</td><td class="px-4 py-2 text-supporting">Dialog heading and accessible name.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-primary">onclose</td><td class="px-4 py-2 text-supporting">() =&gt; void</td><td class="px-4 py-2 text-supporting">required</td><td class="px-4 py-2 text-supporting">Called by title close, Escape, or outside dismissal.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-primary">returnFocusTo</td><td class="px-4 py-2 text-supporting">HTMLElement | null</td><td class="px-4 py-2 text-supporting">null</td><td class="px-4 py-2 text-supporting">Element restored after close.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-primary">closeLabel</td><td class="px-4 py-2 text-supporting">string</td><td class="px-4 py-2 text-supporting">'Close'</td><td class="px-4 py-2 text-supporting">Accessible label for the title-bar close action.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-primary">showFooter</td><td class="px-4 py-2 text-supporting">boolean</td><td class="px-4 py-2 text-supporting">Boolean(footer)</td><td class="px-4 py-2 text-supporting">Controls optional footer rendering.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-primary">children</td><td class="px-4 py-2 text-supporting">Snippet</td><td class="px-4 py-2 text-supporting">undefined</td><td class="px-4 py-2 text-supporting">Dialog body content.</td></tr>
+							<tr><td class="px-4 py-2 font-mono text-primary">footer</td><td class="px-4 py-2 text-supporting">Snippet</td><td class="px-4 py-2 text-supporting">undefined</td><td class="px-4 py-2 text-supporting">Optional action area.</td></tr>
+						</tbody>
+					</table>
+				</div>
 			</div>
 {/snippet}
 

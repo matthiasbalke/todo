@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TodoItem } from '$lib/mock-data';
 
@@ -146,27 +146,33 @@ describe('item detail capabilities', () => {
 		pageState.role = role;
 		render(ItemPage, { props: { data: { id: 'list-1', iid: 'item-1', returnTo: null, buildNumber: '0' } } });
 
-		expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Delete item' })).toBeInTheDocument();
 	});
 
-	it('returns to Today after cancel when opened from Today', async () => {
+	it('links back to Today when opened from Today', async () => {
 		render(ItemPage, {
 			props: { data: { id: 'list-1', iid: 'item-1', returnTo: '/today', buildNumber: '0' } },
 		});
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-		expect(goto).toHaveBeenCalledWith('/today');
+		expect(screen.getByRole('link', { name: 'Back' })).toHaveAttribute('href', '/today');
+		expect(goto).not.toHaveBeenCalled();
 	});
 
-	it('returns to the source list after save when opened from a list', async () => {
+	it('autosaves title edits in place when opened from a list', async () => {
 		vi.mocked(updateItem).mockResolvedValue(item);
 		render(ItemPage, {
 			props: { data: { id: 'list-1', iid: 'item-1', returnTo: null, buildNumber: '0' } },
 		});
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-		expect(goto).toHaveBeenCalledWith('/lists/list-1');
+		const title = screen.getByRole('textbox', { name: 'Item title' });
+		await fireEvent.input(title, { target: { value: 'Pears' } });
+		await fireEvent.keyDown(title, { key: 'Enter' });
+
+		await waitFor(() => expect(updateItem).toHaveBeenCalledOnce());
+		expect(updateItem).toHaveBeenCalledWith('list-1', 'item-1', expect.objectContaining({ title: 'Pears' }));
+		expect(goto).not.toHaveBeenCalled();
 	});
 
 	it('persists changed completion state immediately without saving', async () => {

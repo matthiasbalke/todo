@@ -5,6 +5,7 @@
 	import Button from './Button.svelte';
 	import CategorySelect from './CategorySelect.svelte';
 	import DatePicker from './DatePicker.svelte';
+	import Dialog from './Dialog.svelte';
 	import Icon from './Icon.svelte';
 	import MultiSelect from './MultiSelect.svelte';
 	import RemovableChip from './RemovableChip.svelte';
@@ -56,10 +57,6 @@
 	let notesTrigger = $state<HTMLButtonElement | null>(null);
 	let notesTextarea = $state<HTMLTextAreaElement | null>(null);
 	let activeDetail = $state<Detail | null>(null);
-	let dialogCategoryId = $state<string | null>(null);
-	let dialogDueDate = $state<string | null>(null);
-	let dialogRecurrencePreset = $state('');
-	let dialogAssignedUserIds = $state(new Set<string>());
 	let dialogNotes = $state('');
 	let submitting = $state(false);
 	let suppressNextDraftChange = false;
@@ -68,7 +65,6 @@
 	let ignoreNextFocusOut = false;
 
 	const selectedAssignees = $derived(users.filter((user) => assignedUserIds.has(user.id)));
-	const dialogSelectedAssignees = $derived(users.filter((user) => dialogAssignedUserIds.has(user.id)));
 	const selectedCategory = $derived(categories.find((category) => category.id === categoryId) ?? null);
 	const categoryChipLabel = $derived(selectedCategory?.name ?? '');
 	const dueDateChipLabel = $derived(dueDate ? formatDate(dueDate) : '');
@@ -120,7 +116,7 @@
 	}
 
 	function setDialogAssignedUsers(selectedUsers: User[]) {
-		dialogAssignedUserIds = new Set(selectedUsers.map((user) => user.id));
+		assignedUserIds = new Set(selectedUsers.map((user) => user.id));
 	}
 
 	function formatDate(value: string): string {
@@ -140,10 +136,6 @@
 	}
 
 	function openDetail(detail: Detail) {
-		dialogCategoryId = categoryId;
-		dialogDueDate = dueDate;
-		dialogRecurrencePreset = recurrencePreset;
-		dialogAssignedUserIds = new Set(assignedUserIds);
 		dialogNotes = notes;
 		activeDetail = detail;
 		ignoreNextFocusOut = true;
@@ -165,24 +157,23 @@
 		}
 	}
 
+	function selectCategory(nextCategoryId: string | null) {
+		categoryId = nextCategoryId;
+		closeDetail();
+	}
+
+	function selectDueDate(nextDueDate: string | null) {
+		dueDate = nextDueDate;
+		closeDetail();
+	}
+
+	function selectRecurrence(nextRecurrencePreset: string) {
+		recurrencePreset = nextRecurrencePreset;
+		closeDetail();
+	}
+
 	function saveDetail() {
-		switch (activeDetail) {
-			case 'category':
-				categoryId = dialogCategoryId;
-				break;
-			case 'dueDate':
-				dueDate = dialogDueDate;
-				break;
-			case 'recurrence':
-				recurrencePreset = dialogRecurrencePreset;
-				break;
-			case 'assignees':
-				assignedUserIds = new Set(dialogAssignedUserIds);
-				break;
-			case 'notes':
-				notes = dialogNotes;
-				break;
-		}
+		if (activeDetail === 'notes') notes = dialogNotes;
 		closeDetail();
 	}
 
@@ -210,13 +201,6 @@
 		getTrigger(detail)?.focus();
 		preservingInternalFocus = false;
 		ignoreNextFocusOut = false;
-	}
-
-	function handleDialogKeydown(event: KeyboardEvent) {
-		if (event.key === 'Escape') {
-			event.preventDefault();
-			closeDetail();
-		}
 	}
 
 	$effect(() => {
@@ -402,107 +386,87 @@
 			containerClass="min-w-0 flex-1"
 			class="w-full"
 		/>
-		<Button type="button" tone="neutral" appearance="bare" size="icon-standard" aria-label="Cancel" onclick={() => oncancel({ reason: 'explicit' })}>
-			<Icon name="cancel" size="compact" />
-		</Button>
-		<Button type="submit" loading={submitting} loadingLabel="Adding..." aria-label="Add">
-			<Icon name="plus" size="compact" />
-			<span>Add</span>
-		</Button>
 	</div>
 
 	{#if activeDetail}
-		<div
-			class="fixed inset-0 z-50 bg-overlay/40 p-4"
+		<Dialog
+			title={dialogTitle}
+			onclose={() => closeDetail(false)}
+			returnFocusTo={getTrigger(activeDetail)}
+			showFooter={activeDetail === 'notes'}
 		>
-			<div
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="quick-add-detail-title"
-				tabindex="-1"
-				class="mx-auto mt-16 max-w-md rounded-lg border border-border bg-surface shadow-lg"
-				onkeydown={handleDialogKeydown}
-			>
-				<div class="flex items-center justify-between border-b border-border px-4 py-3">
-					<h2 id="quick-add-detail-title" class="text-base font-semibold text-heading">{dialogTitle}</h2>
-					<Button type="button" tone="neutral" appearance="bare" size="icon-compact" aria-label="Cancel" onclick={() => closeDetail()}>
-						<Icon name="close" size="compact" />
-					</Button>
-				</div>
+			{#if activeDetail === 'category'}
+				<CategorySelect
+					categories={categories}
+					selectedCategoryId={categoryId}
+					label=""
+					ariaLabel="Category"
+					placeholder="category"
+					emptySelectedLabel="Uncategorized"
+					labelId="quick-add-category"
+					onSelect={selectCategory}
+				/>
+			{:else if activeDetail === 'dueDate'}
+				<DatePicker value={dueDate} ariaLabel="Due date" placeholder="set due date" onSelect={selectDueDate} />
+			{:else if activeDetail === 'recurrence'}
+				<Select
+					options={recurrencePresetOptions}
+					selected={recurrencePreset}
+					ariaLabel="Recurrence"
+					placeholder="No recurrence"
+					labelId="quick-add-recurrence"
+					getOptionLabel={getRecurrenceLabel}
+					getSelectedLabel={getRecurrenceSelectedLabel}
+					isSelectedMuted={(preset) => !preset}
+					onSelect={selectRecurrence}
+				/>
+			{:else if activeDetail === 'assignees'}
+				<MultiSelect
+					options={users}
+					selected={selectedAssignees}
+					ariaLabel="Assignees"
+					placeholder="add assignee"
+					labelId="quick-add-assignees"
+					getOptionLabel={getUserLabel}
+					optionKey={(user) => user.id}
+					onChange={setDialogAssignedUsers}
+				>
+					{#snippet selectedContent(user)}
+						<span class="inline-flex min-w-0 items-center gap-1">
+							<span class="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-primary-subtle text-[10px] font-semibold text-primary-strong" aria-hidden="true">
+								{getUserInitial(user)}
+							</span>
+							<span class="truncate">{getUserLabel(user)}</span>
+						</span>
+					{/snippet}
 
-				<div class="space-y-4 p-4">
-					{#if activeDetail === 'category'}
-						<CategorySelect
-							categories={categories}
-							bind:selectedCategoryId={dialogCategoryId}
-							label=""
-							ariaLabel="Category"
-							placeholder="category"
-							emptySelectedLabel="Uncategorized"
-							labelId="quick-add-category"
-						/>
-					{:else if activeDetail === 'dueDate'}
-						<DatePicker bind:value={dialogDueDate} ariaLabel="Due date" placeholder="set due date" />
-					{:else if activeDetail === 'recurrence'}
-						<Select
-							options={recurrencePresetOptions}
-							selected={dialogRecurrencePreset}
-							ariaLabel="Recurrence"
-							placeholder="No recurrence"
-							labelId="quick-add-recurrence"
-							getOptionLabel={getRecurrenceLabel}
-							getSelectedLabel={getRecurrenceSelectedLabel}
-							isSelectedMuted={(preset) => !preset}
-							onSelect={(value) => { dialogRecurrencePreset = value; }}
-						/>
-					{:else if activeDetail === 'assignees'}
-						<MultiSelect
-							options={users}
-							selected={dialogSelectedAssignees}
-							ariaLabel="Assignees"
-							placeholder="add assignee"
-							labelId="quick-add-assignees"
-							getOptionLabel={getUserLabel}
-							optionKey={(user) => user.id}
-							onChange={setDialogAssignedUsers}
-						>
-							{#snippet selectedContent(user)}
-								<span class="inline-flex min-w-0 items-center gap-1">
-									<span class="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-primary-subtle text-[10px] font-semibold text-primary-strong" aria-hidden="true">
-										{getUserInitial(user)}
-									</span>
-									<span class="truncate">{getUserLabel(user)}</span>
-								</span>
-							{/snippet}
+					{#snippet optionContent(user)}
+						<span class="inline-flex min-w-0 items-center gap-2">
+							<span class="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-surface-subtle text-xs font-semibold text-supporting" aria-hidden="true">
+								{getUserInitial(user)}
+							</span>
+							<span class="min-w-0 truncate">{getUserLabel(user)}</span>
+						</span>
+					{/snippet}
+				</MultiSelect>
+			{:else if activeDetail === 'notes'}
+				<Textarea
+					bind:element={notesTextarea}
+					bind:value={dialogNotes}
+					ariaLabel="Notes"
+					placeholder="add note"
+					rows={8}
+					resize="none"
+					appearance="inline"
+				/>
+			{/if}
 
-							{#snippet optionContent(user)}
-								<span class="inline-flex min-w-0 items-center gap-2">
-									<span class="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-surface-subtle text-xs font-semibold text-supporting" aria-hidden="true">
-										{getUserInitial(user)}
-									</span>
-									<span class="min-w-0 truncate">{getUserLabel(user)}</span>
-								</span>
-							{/snippet}
-						</MultiSelect>
-					{:else if activeDetail === 'notes'}
-						<Textarea
-							bind:element={notesTextarea}
-							bind:value={dialogNotes}
-							ariaLabel="Notes"
-							placeholder="add note"
-							rows={8}
-							resize="none"
-							appearance="inline"
-						/>
-					{/if}
-				</div>
-
-				<div class="flex justify-end gap-2 border-t border-border px-4 py-3">
-					<Button type="button" tone="neutral" appearance="bare" onclick={() => closeDetail()}>Cancel</Button>
+			{#snippet footer()}
+				{#if activeDetail === 'notes'}
 					<Button type="button" onclick={saveDetail}>Save</Button>
-				</div>
-			</div>
-		</div>
+				{/if}
+			{/snippet}
+		</Dialog>
 	{/if}
 </form>
 
