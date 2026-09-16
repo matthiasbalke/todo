@@ -51,28 +51,48 @@ The quick-add composer SHALL show each optional detail control as an icon-only c
 - **THEN** the corresponding detail control returns to its icon-only empty state
 
 ### Requirement: Quick-add detail dialogs
-The quick-add composer SHALL open a focused dialog for each optional item detail and SHALL keep the pending quick-add draft while the user edits details.
+The quick-add composer SHALL open a focused dialog for each optional item detail, SHALL keep the pending quick-add draft while the user edits details, and SHALL apply selection-oriented details without separate Save or Cancel actions.
 
 #### Scenario: User edits an optional detail
 - **WHEN** the quick-add composer is open
-- **AND** the user activates a category, due date, recurrence, assignee, or notes icon control
-- **THEN** a dialog opens for editing only that detail
+- **AND** the user activates a category, due date, or recurrence icon control
+- **AND** the user selects a value in the dialog
+- **THEN** the pending quick-add value is updated immediately without requiring a separate Save action
+- **AND** the dialog closes
+- **AND** the quick-add composer remains open
 - **AND** the current item title remains in the quick-add draft
-- **AND** saving the dialog updates the pending quick-add value without submitting the item
+
+#### Scenario: User selects multiple assignees
+- **WHEN** the quick-add composer is open
+- **AND** the user activates the assignees icon control or assignees chip
+- **AND** the user selects or removes one or more assignees in the dialog
+- **THEN** each complete selected assignee set is reflected in the pending quick-add draft without requiring a separate Save action
+- **AND** the assignee dialog remains available for additional selections until the user closes or dismisses it
+- **AND** closing or dismissing the assignee dialog does not revert selected assignee changes
 
 #### Scenario: User cancels a detail dialog
-- **WHEN** a detail dialog is open with unsaved changes
-- **AND** the user cancels or dismisses the dialog
+- **WHEN** a category, due date, recurrence, or assignees dialog is open with no in-dialog selection changes
+- **AND** the user closes or dismisses the dialog
 - **THEN** the quick-add composer remains open
-- **AND** the canceled dialog changes are not applied to the pending quick-add draft
-- **AND** the title and other previously saved quick-add detail values remain unchanged
+- **AND** no quick-add detail values are changed
+- **AND** the title and other quick-add detail values remain unchanged
+
+#### Scenario: User dismisses a selection detail dialog by interacting outside it
+- **WHEN** a category, due date, recurrence, or assignees dialog is open
+- **AND** the user clicks or touches outside the dialog area
+- **THEN** the dialog is dismissed
+- **AND** no untouched single-selection value is applied
+- **AND** any assignee selections already made in the multi-select dialog remain applied
 
 #### Scenario: Dialog controls remain accessible
 - **WHEN** a detail dialog opens
 - **THEN** it exposes a dialog name matching the edited detail
 - **AND** the dialog does not repeat a visible field label when the dialog title already identifies the edited detail
-- **AND** it provides a keyboard-accessible way to save or cancel
-- **AND** focus remains within the dialog until the user saves or cancels
+- **AND** it provides a keyboard-accessible title-bar close control
+- **AND** notes dialogs provide a keyboard-accessible way to save
+- **AND** selection-oriented dialogs do not display a separate Save action
+- **AND** detail dialogs do not display a separate Cancel action
+- **AND** focus remains within the dialog until the user closes, dismisses, or completes it
 - **AND** focus returns to the activating icon control after the dialog closes
 
 #### Scenario: User edits notes
@@ -80,10 +100,11 @@ The quick-add composer SHALL open a focused dialog for each optional item detail
 - **AND** the user activates the notes icon control or notes chip
 - **THEN** a note editor dialog opens with a text area for adding or editing the note
 - **AND** saving the note editor updates the pending quick-add note value without submitting the item
-- **AND** canceling the note editor leaves the previously saved quick-add note value unchanged
+- **AND** closing, dismissing, or clicking or touching outside the note editor leaves the previously saved quick-add note value unchanged
+- **AND** the note editor does not display a separate Cancel action
 
 ### Requirement: Quick-add submission includes dialog details
-The quick-add composer SHALL submit the pending title and every saved optional detail as a new item when the user presses Enter in the title entry.
+The quick-add composer SHALL submit the pending title and every applied optional detail as a new item when the user presses Enter in the title entry.
 
 #### Scenario: User submits with title only
 - **WHEN** the quick-add composer is open
@@ -94,9 +115,9 @@ The quick-add composer SHALL submit the pending title and every saved optional d
 
 #### Scenario: User submits with optional details
 - **WHEN** the user enters a title in the quick-add composer
-- **AND** the user saves category, due date, recurrence, assignee, or notes values from detail dialogs
+- **AND** the user applies category, due date, recurrence, assignee, or notes values from detail dialogs
 - **AND** the user presses Enter in the title entry
-- **THEN** a new item is created with the title and all saved quick-add detail values
+- **THEN** a new item is created with the title and all applied quick-add detail values
 
 #### Scenario: Successful submit resets quick-add
 - **WHEN** the quick-add composer submits successfully
@@ -105,7 +126,7 @@ The quick-add composer SHALL submit the pending title and every saved optional d
 
 #### Scenario: Failed submit preserves quick-add
 - **WHEN** the quick-add composer submits and the add operation fails
-- **THEN** the composer remains available with the user's title and saved optional detail values intact
+- **THEN** the composer remains available with the user's title and applied optional detail values intact
 
 ### Requirement: Item form title row exposes item state controls
 The item form SHALL render the title row with the completion/status control before the title entry and the starred control after the title entry.
@@ -168,11 +189,54 @@ The item form SHALL present title, category, date, recurrence, assignee, and not
 - **WHEN** an editable user opens the item form
 - **THEN** the editable controls are visually presented as inline rows rather than boxed fields
 - **AND** each control remains discoverable by its accessible name
-- **AND** required title validation remains available before submission
+- **AND** required title validation remains available before persistence
 
 #### Scenario: Existing workflows are preserved
-- **WHEN** the user submits, cancels, changes focus inside the form, or receives a submit failure
-- **THEN** the existing submitted item data, draft preservation, focus-out cancellation rules, and error recovery behavior are preserved
+- **WHEN** the user changes focus inside the form, receives a persistence failure, or interacts with field-specific editors
+- **THEN** the existing item data, draft preservation, focus-out minimization rules, and error recovery behavior are preserved
+
+### Requirement: Item field edits autosave
+The item form SHALL persist add-item and edit-item value changes automatically without showing save or cancel buttons for ordinary field editing, while preserving the existing fullscreen notes editor workflow.
+
+#### Scenario: Existing item text edit is committed automatically
+- **WHEN** an editable user changes an existing item's title and completes the edit using the implementation-defined commit event
+- **THEN** the changed value is persisted for that item
+- **AND** the editor does not require or display separate save or cancel controls
+
+#### Scenario: Fullscreen notes editor workflow is preserved
+- **WHEN** an editable user opens the fullscreen notes editor from an item form
+- **THEN** the notes editor continues to provide its field-specific Save and Cancel controls
+- **AND** canceling the notes editor leaves the item notes unchanged
+- **AND** saving the notes editor applies the notes value to the item form
+
+#### Scenario: Existing item selection edit is committed automatically
+- **WHEN** an editable user changes an existing item's category, due date, recurrence, assignees, completion state, or starred state
+- **THEN** the changed value is persisted for that item without requiring a separate save action
+
+#### Scenario: New item is created from entered values
+- **WHEN** an editable user enters the required new-item title and completes the add-item creation using an intentional creation event
+- **THEN** a new item is created with the current form values
+- **AND** the add-item form does not require or display separate save or cancel controls
+
+#### Scenario: Title blur preserves quick-add draft
+- **WHEN** an editable user enters a title in the quick-add item form
+- **AND** the title input loses focus before an intentional creation event occurs
+- **THEN** no new item is created
+- **AND** the quick-add draft remains available when the user reopens the quick-add form
+
+#### Scenario: New item optional edits are included
+- **WHEN** an editable user changes optional values before the new item is created
+- **THEN** the created item includes the current optional values for category, due date, recurrence, assignees, completion state, starred state, and notes
+
+#### Scenario: Invalid item values are not persisted
+- **WHEN** an editable user enters invalid item values
+- **THEN** the invalid values are not persisted
+- **AND** the UI communicates the validation problem without requiring a cancel action to restore the last valid saved value
+
+#### Scenario: Autosave failure keeps user input recoverable
+- **WHEN** an automatic item save or creation attempt fails
+- **THEN** the user's current input remains available for correction or retry
+- **AND** the UI communicates that the value was not persisted
 
 ### Requirement: Notes support large preview and fullscreen editing
 The item form SHALL display notes with a larger preview area and SHALL open a fullscreen note editor when the user focuses or activates notes editing.
