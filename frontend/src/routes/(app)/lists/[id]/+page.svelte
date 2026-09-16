@@ -27,6 +27,7 @@
   import Button from '$lib/components/Button.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
   import DeleteCheckedItemsDialog from '$lib/components/DeleteCheckedItemsDialog.svelte';
+  import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
   import FixedActionFooter from '$lib/components/FixedActionFooter.svelte';
   import Icon from '$lib/components/Icon.svelte';
   import { focusTextInput } from '$lib/utils/focus';
@@ -91,6 +92,8 @@
   let sortSubmenuOpen = $state(false);
   let filterSubmenuOpen = $state(false);
   let deleting = $state(false);
+  let showDeleteListDialog = $state(false);
+  let deleteListError = $state('');
   let duplicating = $state(false);
   let deletingFinished = $state(false);
   let showDeleteCheckedDialog = $state(false);
@@ -249,14 +252,29 @@
     }
   }
 
+  function openDeleteListDialog() {
+    deleteListError = '';
+    showDeleteListDialog = true;
+    menuOpen = false;
+    sortSubmenuOpen = false;
+    filterSubmenuOpen = false;
+  }
+
+  function closeDeleteListDialog() {
+    if (deleting) return;
+    deleteListError = '';
+    showDeleteListDialog = false;
+  }
+
   async function handleDelete() {
-    if (!confirm('Delete this list? This cannot be undone.')) return;
+    if (deleting) return;
     deleting = true;
+    deleteListError = '';
     try {
       await deleteList(data.id);
       goto('/lists');
     } catch (e) {
-      alert(friendlyError(e, 'Failed to delete list'));
+      deleteListError = friendlyError(e, 'Failed to delete list');
       deleting = false;
     }
   }
@@ -548,7 +566,7 @@
                     size="menu"
                     align="start"
                     weight="normal"
-                    onclick={() => { menuOpen = false; handleDelete(); }}
+                    onclick={openDeleteListDialog}
                     disabled={deleting}
                   >
                     Delete list
@@ -621,6 +639,20 @@
     onconfirm={handleDeleteCheckedItems}
     oncancel={closeDeleteCheckedDialog}
   />
+{/if}
+
+{#if showDeleteListDialog}
+  <ConfirmDialog
+    title="Delete this list?"
+    confirmLabel="Delete list"
+    loadingLabel="Deleting..."
+    pending={deleting}
+    error={deleteListError}
+    onconfirm={handleDelete}
+    oncancel={closeDeleteListDialog}
+  >
+    <p>This cannot be undone.</p>
+  </ConfirmDialog>
 {/if}
 
 {#if capabilities.canEditItems}

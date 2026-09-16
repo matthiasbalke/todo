@@ -12,6 +12,7 @@
 	import Select from '$lib/components/Select.svelte';
 	import EditableLabel from '$lib/components/EditableLabel.svelte';
 	import Button from '$lib/components/Button.svelte';
+	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import Dialog from '$lib/components/Dialog.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import CalendarDayButton from '$lib/components/CalendarDayButton.svelte';
@@ -65,6 +66,9 @@
 	let latestAssigneeSelection = selectedAssignees.map((assignee) => assignee.id).join(', ');
 	let showcaseDialogOpen = false;
 	let showcaseDialogCloseCount = 0;
+	let showcaseConfirmOpen = false;
+	let showcaseConfirmPending = false;
+	let showcaseConfirmResult = 'None';
 
 	const fruits = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig'];
 	const priorities = ['Low', 'Medium', 'High', 'Urgent'];
@@ -181,6 +185,23 @@
 	function closeShowcaseDialog() {
 		showcaseDialogOpen = false;
 		showcaseDialogCloseCount += 1;
+	}
+
+	function openShowcaseConfirm(pending = false) {
+		showcaseConfirmPending = pending;
+		showcaseConfirmOpen = true;
+	}
+
+	function closeShowcaseConfirm() {
+		if (showcaseConfirmPending) return;
+		showcaseConfirmOpen = false;
+		showcaseConfirmResult = 'Canceled';
+	}
+
+	function confirmShowcaseConfirm() {
+		if (showcaseConfirmPending) return;
+		showcaseConfirmOpen = false;
+		showcaseConfirmResult = 'Confirmed';
 	}
 
 	const basicInputCode = `<TextInput
@@ -697,6 +718,17 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 				</div>
 			</div>
 
+			<div class="mt-12 pt-8 border-t border-border">
+				<h3 class="text-lg font-semibold text-value mb-4">ConfirmDialog</h3>
+				<div class="flex flex-wrap gap-3">
+					<Button tone="danger" onclick={() => openShowcaseConfirm()}>Open confirmation</Button>
+					<Button tone="neutral" appearance="outline" onclick={() => openShowcaseConfirm(true)}>Open pending confirmation</Button>
+				</div>
+				<p class="text-xs text-muted mt-2">
+					Last confirmation action: <code>{showcaseConfirmResult}</code>
+				</p>
+			</div>
+
 			{#if showcaseDialogOpen}
 				<Dialog title="Dialog preview" onclose={closeShowcaseDialog}>
 					<p class="text-sm text-supporting">
@@ -708,6 +740,19 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 						<Button onclick={closeShowcaseDialog}>Confirm</Button>
 					{/snippet}
 				</Dialog>
+			{/if}
+
+			{#if showcaseConfirmOpen}
+				<ConfirmDialog
+					title="Delete project?"
+					confirmLabel="Delete project"
+					loadingLabel="Deleting project..."
+					pending={showcaseConfirmPending}
+					onconfirm={confirmShowcaseConfirm}
+					oncancel={closeShowcaseConfirm}
+				>
+					<p>This destructive confirmation uses the shared dialog shell and guarded actions.</p>
+				</ConfirmDialog>
 			{/if}
 
 			<div class="mt-12 pt-8 border-t border-border">

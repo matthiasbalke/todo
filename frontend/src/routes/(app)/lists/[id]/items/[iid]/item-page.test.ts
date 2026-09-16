@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TodoItem } from '$lib/mock-data';
 
@@ -69,7 +69,7 @@ vi.mock('$lib/api/errors', () => ({
 
 import ItemPage from './+page.svelte';
 import { goto } from '$app/navigation';
-import { toggleDone, toggleStarred, updateItem } from '$lib/stores/items.svelte';
+import { deleteItem, toggleDone, toggleStarred, updateItem } from '$lib/stores/items.svelte';
 
 afterEach(() => {
 	cleanup();
@@ -199,5 +199,59 @@ describe('item detail capabilities', () => {
 		expect(toggleStarred).toHaveBeenCalledWith('list-1', 'item-1');
 		expect(updateItem).not.toHaveBeenCalled();
 		expect(goto).not.toHaveBeenCalled();
+	});
+
+	it('opens and cancels item deletion in an app dialog', async () => {
+		const confirm = vi.fn();
+		vi.stubGlobal('confirm', confirm);
+		render(ItemPage, {
+			props: { data: { id: 'list-1', iid: 'item-1', returnTo: null, buildNumber: '0' } },
+		});
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete item' }));
+		const dialog = screen.getByRole('dialog', { name: 'Delete this item?' });
+		expect(dialog).toHaveTextContent('This cannot be undone.');
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+		expect(deleteItem).not.toHaveBeenCalled();
+		expect(confirm).not.toHaveBeenCalled();
+		expect(screen.queryByRole('dialog', { name: 'Delete this item?' })).not.toBeInTheDocument();
+		vi.unstubAllGlobals();
+	});
+
+	it('deletes the item after app dialog confirmation and returns to the source page', async () => {
+		vi.mocked(deleteItem).mockResolvedValueOnce(undefined);
+		render(ItemPage, {
+			props: { data: { id: 'list-1', iid: 'item-1', returnTo: '/today', buildNumber: '0' } },
+		});
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete item' }));
+		await fireEvent.click(within(screen.getByRole('dialog', { name: 'Delete this item?' })).getByRole('button', { name: 'Delete item' }));
+
+		await waitFor(() => expect(deleteItem).toHaveBeenCalledWith('list-1', 'item-1'));
+		expect(goto).toHaveBeenCalledWith('/today');
+	});
+
+	it('keeps failed item deletion visible and prevents duplicate submissions while pending', async () => {
+		let rejectDelete: (error: Error) => void = () => {};
+		vi.mocked(deleteItem).mockReturnValueOnce(new Promise((_, reject) => { rejectDelete = reject; }));
+		render(ItemPage, {
+			props: { data: { id: 'list-1', iid: 'item-1', returnTo: null, buildNumber: '0' } },
+		});
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete item' }));
+		let dialog = screen.getByRole('dialog', { name: 'Delete this item?' });
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Delete item' }));
+
+		expect(within(dialog).getByRole('button', { name: 'Deleting...' })).toBeDisabled();
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Deleting...' }));
+		expect(deleteItem).toHaveBeenCalledOnce();
+
+		rejectDelete(new Error('boom'));
+		await waitFor(() => expect(screen.getByText('Error: boom')).toBeInTheDocument());
+		dialog = screen.getByRole('dialog', { name: 'Delete this item?' });
+		expect(dialog).toBeInTheDocument();
+		expect(within(dialog).getByRole('button', { name: 'Delete item' })).not.toBeDisabled();
 	});
 });

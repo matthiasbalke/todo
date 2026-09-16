@@ -14,7 +14,7 @@
   import { friendlyError } from '$lib/api/errors';
   import { formatListRole } from '$lib/listRoles';
   import Button from './Button.svelte';
-  import Icon from './Icon.svelte';
+  import Dialog from './Dialog.svelte';
   import MemberInviteEmailInput from './MemberInviteEmailInput.svelte';
   import Select from './Select.svelte';
 
@@ -120,22 +120,7 @@
   };
 </script>
 
-<!-- Backdrop -->
-<div
-  class="fixed inset-0 z-30 bg-overlay/40"
-  onclick={onclose}
-  role="presentation"
-></div>
-
-<!-- Dialog -->
-<div class="fixed inset-x-4 top-1/2 z-40 -translate-y-1/2 max-w-md mx-auto bg-surface rounded-2xl shadow-xl p-6">
-  <div class="flex items-center justify-between mb-4">
-    <h2 class="text-lg font-semibold text-heading">Members</h2>
-    <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={onclose} aria-label="Close">
-      <Icon name="close" size="controlCompact" />
-    </Button>
-  </div>
-
+<Dialog title="Members" onclose={onclose} bodyClass="p-6" class="max-w-md">
   {#if loadError}
     <p class="text-sm text-danger mb-4">{loadError}</p>
   {:else}
@@ -209,4 +194,4 @@
       </form>
     {/if}
   {/if}
-</div>
+</Dialog>
