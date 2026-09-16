@@ -404,6 +404,61 @@ describe('ListPage menu presentation', () => {
 		expect(screen.getByRole('dialog', { name: 'Delete all checked items?' })).toBeInTheDocument();
 	});
 
+	it('opens and cancels list deletion in an app dialog', async () => {
+		const confirm = vi.fn();
+		vi.stubGlobal('confirm', confirm);
+		const { deleteList } = await import('$lib/stores/lists.svelte');
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete list' }));
+		const dialog = screen.getByRole('dialog', { name: 'Delete this list?' });
+		expect(dialog).toHaveTextContent('This cannot be undone.');
+
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+		expect(deleteList).not.toHaveBeenCalled();
+		expect(confirm).not.toHaveBeenCalled();
+		expect(screen.queryByRole('dialog', { name: 'Delete this list?' })).not.toBeInTheDocument();
+		vi.unstubAllGlobals();
+	});
+
+	it('deletes the list after app dialog confirmation and navigates away', async () => {
+		const { goto } = await import('$app/navigation');
+		const { deleteList } = await import('$lib/stores/lists.svelte');
+		vi.mocked(deleteList).mockResolvedValueOnce(undefined);
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete list' }));
+		await fireEvent.click(within(screen.getByRole('dialog', { name: 'Delete this list?' })).getByRole('button', { name: 'Delete list' }));
+
+		await waitFor(() => expect(deleteList).toHaveBeenCalledWith('list-1'));
+		expect(goto).toHaveBeenCalledWith('/lists');
+	});
+
+	it('keeps failed list deletion visible and prevents duplicate submissions while pending', async () => {
+		const { deleteList } = await import('$lib/stores/lists.svelte');
+		let rejectDelete: (error: Error) => void = () => {};
+		vi.mocked(deleteList).mockReturnValueOnce(new Promise((_, reject) => { rejectDelete = reject; }));
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete list' }));
+		let dialog = screen.getByRole('dialog', { name: 'Delete this list?' });
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Delete list' }));
+
+		expect(within(dialog).getByRole('button', { name: 'Deleting...' })).toBeDisabled();
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Deleting...' }));
+		expect(deleteList).toHaveBeenCalledOnce();
+
+		rejectDelete(new Error('boom'));
+		await waitFor(() => expect(screen.getByText('Error: boom')).toBeInTheDocument());
+		dialog = screen.getByRole('dialog', { name: 'Delete this list?' });
+		expect(dialog).toBeInTheDocument();
+		expect(within(dialog).getByRole('button', { name: 'Delete list' })).not.toBeDisabled();
+	});
+
 	it('duplicates the list and navigates to the copy', async () => {
 		const { goto } = await import('$app/navigation');
 		const { duplicateList } = await import('$lib/stores/lists.svelte');

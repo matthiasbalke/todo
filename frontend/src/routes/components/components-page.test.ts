@@ -566,6 +566,28 @@ describe('ComponentsPage Dialog showcase', () => {
 			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
 		}
 	});
+
+	it('showcases ConfirmDialog cancellation, confirmation, and pending behavior', async () => {
+		render(ComponentsPage);
+		const section = screen.getByRole('heading', { name: 'Dialog Component' }).closest('section')!;
+		const showcase = within(section);
+
+		await fireEvent.click(showcase.getByRole('button', { name: 'Open confirmation' }));
+		let dialog = screen.getByRole('dialog', { name: 'Delete project?' });
+		expect(dialog).toHaveTextContent('This destructive confirmation uses the shared dialog shell');
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+		expect(showcase.getByText('Last confirmation action:').parentElement).toHaveTextContent('Canceled');
+
+		await fireEvent.click(showcase.getByRole('button', { name: 'Open confirmation' }));
+		dialog = screen.getByRole('dialog', { name: 'Delete project?' });
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Delete project' }));
+		expect(showcase.getByText('Last confirmation action:').parentElement).toHaveTextContent('Confirmed');
+
+		await fireEvent.click(showcase.getByRole('button', { name: 'Open pending confirmation' }));
+		dialog = screen.getByRole('dialog', { name: 'Delete project?' });
+		expect(within(dialog).getByRole('button', { name: 'Cancel' })).toBeDisabled();
+		expect(within(dialog).getByRole('button', { name: 'Deleting project...' })).toBeDisabled();
+	});
 });
 
 describe('ComponentsPage MemberInviteEmailInput showcase', () => {

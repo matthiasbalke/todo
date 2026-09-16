@@ -8,6 +8,7 @@
   import { friendlyError } from '$lib/api/errors';
   import { getMembers } from '$lib/api/lists';
   import Button from '$lib/components/Button.svelte';
+  import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
   import Icon from '$lib/components/Icon.svelte';
   import ItemDetails from '$lib/components/ItemDetails.svelte';
   import { getListCapabilities } from '$lib/listCapabilities';
@@ -29,6 +30,9 @@
   const item = $derived(getItems().find(i => i.id === data.iid && i.listId === data.id));
   const categories = $derived(getCategoriesForList(data.id));
   const returnDestination = $derived(data.returnTo ?? `/lists/${data.id}`);
+  let showDeleteDialog = $state(false);
+  let deleting = $state(false);
+  let deleteError = $state('');
 
   async function handleSave(updated: TodoItem) {
     try {
@@ -70,13 +74,27 @@
     goto(returnDestination);
   }
 
+  function openDeleteDialog() {
+    deleteError = '';
+    showDeleteDialog = true;
+  }
+
+  function closeDeleteDialog() {
+    if (deleting) return;
+    deleteError = '';
+    showDeleteDialog = false;
+  }
+
   async function handleDelete() {
-    if (!confirm('Delete this item?')) return;
+    if (deleting) return;
+    deleting = true;
+    deleteError = '';
     try {
       await deleteItem(data.id, data.iid);
       goto(returnDestination);
     } catch (e) {
-      alert(friendlyError(e, 'Failed to delete item'));
+      deleteError = friendlyError(e, 'Failed to delete item');
+      deleting = false;
     }
   }
 </script>
@@ -106,7 +124,7 @@
       <div class="mt-4">
         <Button tone="danger" appearance="ghost"
           type="button"
-          onclick={handleDelete}
+          onclick={openDeleteDialog}
           class="w-full"
         >
           Delete item
@@ -119,3 +137,17 @@
     <div class="text-center py-12 text-subdued">Item not found.</div>
   {/if}
 </div>
+
+{#if showDeleteDialog}
+  <ConfirmDialog
+    title="Delete this item?"
+    confirmLabel="Delete item"
+    loadingLabel="Deleting..."
+    pending={deleting}
+    error={deleteError}
+    onconfirm={handleDelete}
+    oncancel={closeDeleteDialog}
+  >
+    <p>This cannot be undone.</p>
+  </ConfirmDialog>
+{/if}

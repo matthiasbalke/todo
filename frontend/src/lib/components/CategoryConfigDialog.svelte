@@ -8,6 +8,8 @@
   import EditableLabel from './EditableLabel.svelte';
   import TextInput from './TextInput.svelte';
   import Icon from './Icon.svelte';
+  import ConfirmDialog from './ConfirmDialog.svelte';
+  import Dialog from './Dialog.svelte';
 
   const CATEGORY_DND_TYPE = 'configure-category';
 
@@ -137,31 +139,13 @@
   }
 </script>
 
-<div
-  class="fixed inset-0 z-50 flex items-center justify-center bg-overlay/40"
-  role="dialog"
-  aria-modal="true"
-  aria-label="Category configuration"
+<Dialog
+  title="Categories"
+  onclose={onclose}
+  class="max-w-sm flex max-h-[80vh] flex-col"
+  bodyClass="flex min-h-0 flex-1 flex-col p-0"
+  showFooter={false}
 >
-  <!-- backdrop click -->
-  <Button
-    tone="neutral" appearance="bare"
-    size="backdrop"
-    class="absolute inset-0 w-full h-full cursor-default"
-    tabindex={-1}
-    aria-hidden="true"
-    onclick={onclose}
-  ></Button>
-
-  <div class="relative z-10 w-full max-w-sm mx-4 bg-surface rounded-2xl shadow-xl flex flex-col max-h-[80vh]">
-    <!-- Header -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
-      <h2 class="font-semibold text-heading">Categories</h2>
-      <Button tone="neutral" appearance="bare" size="icon" emphasis="muted" onclick={onclose} aria-label="Close">
-        <Icon name="close" size="controlCompact" />
-      </Button>
-    </div>
-
     {#if error}
       <p class="px-4 py-2 text-sm text-danger bg-danger-surface border-b border-danger-subtle">{error}</p>
     {/if}
@@ -280,40 +264,20 @@
         >Add</Button>
       </div>
     </div>
-  </div>
+</Dialog>
 
   {#if pendingDeleteCategory}
-    <div class="fixed inset-0 z-[60] flex items-center justify-center bg-overlay/40 px-4">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="delete-category-title"
-        class="w-full max-w-sm rounded-lg bg-surface p-5 shadow-xl"
-      >
-        <h2 id="delete-category-title" class="text-base font-semibold text-heading">
-          Delete category?
-        </h2>
-        <p class="mt-2 text-sm text-supporting">
-          This will <strong class="font-semibold text-danger">delete category {pendingDeleteCategory.name}</strong> from this list.
-        </p>
-        {#if error}
-          <p class="mt-3 text-sm text-danger">{error}</p>
-        {/if}
-        <div class="mt-5 flex justify-end gap-2">
-          <Button tone="neutral" appearance="outline" onclick={cancelDeleteCategory} disabled={isDeletingCategory}>
-            Cancel
-          </Button>
-          <Button
-            tone="danger"
-            appearance="solid"
-            onclick={confirmDeleteCategory}
-            loading={isDeletingCategory}
-            loadingLabel="Deleting..."
-          >
-            Delete
-          </Button>
-        </div>
-      </div>
-    </div>
+    <ConfirmDialog
+      title="Delete category?"
+      confirmLabel="Delete"
+      loadingLabel="Deleting..."
+      pending={isDeletingCategory}
+      error={error ?? ''}
+      onconfirm={confirmDeleteCategory}
+      oncancel={cancelDeleteCategory}
+    >
+      <p>
+        This will <strong class="font-semibold text-danger">delete category {pendingDeleteCategory.name}</strong> from this list.
+      </p>
+    </ConfirmDialog>
   {/if}
-</div>
