@@ -33,6 +33,7 @@
 		locale?: string;
 		ariaLabel?: string;
 		appearance?: 'default' | 'inline';
+		onSelect?: (value: string | null) => void;
 	}
 
 	let {
@@ -45,7 +46,8 @@
 		max = null,
 		locale,
 		ariaLabel,
-		appearance = 'default'
+		appearance = 'default',
+		onSelect
 	}: Props = $props();
 
 	let isOpen = $state(false);
@@ -154,12 +156,15 @@
 
 	function selectDate(date: CalendarDate) {
 		if (!isAllowed(date)) return;
-		value = toIsoDate(date);
+		const nextValue = toIsoDate(date);
+		value = nextValue;
+		onSelect?.(nextValue);
 		closeCalendar(true);
 	}
 
 	function clearDate() {
 		value = null;
+		onSelect?.(null);
 		closeCalendar(true);
 	}
 

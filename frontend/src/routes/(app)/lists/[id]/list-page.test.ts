@@ -630,7 +630,7 @@ describe('ListPage menu presentation', () => {
 		});
 		await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
 		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Uncategorized');
-		await fireEvent.click(within(screen.getByRole('dialog', { name: 'Category' })).getByRole('button', { name: 'Save' }));
+		await fireEvent.click(within(screen.getByRole('dialog', { name: 'Category' })).getByRole('button', { name: 'Close' }));
 		await createQuickAddItem();
 
 		expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({ categoryId: null }));

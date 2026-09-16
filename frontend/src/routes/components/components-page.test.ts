@@ -514,6 +514,60 @@ describe('ComponentsPage MultiSelect showcase', () => {
 	});
 });
 
+describe('ComponentsPage Dialog showcase', () => {
+	afterEach(cleanup);
+
+	it('demonstrates open, title close, Escape, outside dismissal, and footer actions', async () => {
+		render(ComponentsPage);
+		const section = screen.getByRole('heading', { name: 'Dialog Component' }).closest('section')!;
+		const showcase = within(section);
+		const openButton = showcase.getByRole('button', { name: 'Open dialog' });
+
+		await fireEvent.click(openButton);
+		let dialog = screen.getByRole('dialog', { name: 'Dialog preview' });
+		expect(dialog).toHaveTextContent('Shared dialog content');
+		expect(within(dialog).getByRole('button', { name: 'Secondary' })).toBeInTheDocument();
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+		expect(screen.queryByRole('dialog', { name: 'Dialog preview' })).not.toBeInTheDocument();
+
+		await fireEvent.click(openButton);
+		dialog = screen.getByRole('dialog', { name: 'Dialog preview' });
+		await fireEvent.keyDown(dialog, { key: 'Escape' });
+		expect(screen.queryByRole('dialog', { name: 'Dialog preview' })).not.toBeInTheDocument();
+
+		await fireEvent.click(openButton);
+		dialog = screen.getByRole('dialog', { name: 'Dialog preview' });
+		await fireEvent.pointerDown(dialog.parentElement!);
+		expect(screen.queryByRole('dialog', { name: 'Dialog preview' })).not.toBeInTheDocument();
+
+		await fireEvent.click(openButton);
+		dialog = screen.getByRole('dialog', { name: 'Dialog preview' });
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm' }));
+		expect(screen.queryByRole('dialog', { name: 'Dialog preview' })).not.toBeInTheDocument();
+		expect(showcase.getByText('Close count:').parentElement).toHaveTextContent('4');
+	});
+
+	it('documents Dialog usage and props', () => {
+		render(ComponentsPage);
+		const section = screen.getByRole('heading', { name: 'Dialog Component' }).closest('section')!;
+		const showcase = within(section);
+
+		expect(showcase.getByText('Usage Example')).toBeInTheDocument();
+		expect(section).toHaveTextContent('<Dialog');
+		for (const prop of [
+			'title',
+			'onclose',
+			'returnFocusTo',
+			'closeLabel',
+			'showFooter',
+			'children',
+			'footer'
+		]) {
+			expect(showcase.getByText(prop, { selector: 'td' })).toBeInTheDocument();
+		}
+	});
+});
+
 describe('ComponentsPage MemberInviteEmailInput showcase', () => {
 	afterEach(() => {
 		cleanup();
@@ -640,7 +694,7 @@ describe('ComponentsPage section navigation', () => {
 		const navigation = screen.getByRole('navigation', { name: 'Component sections' });
 		const links = within(navigation).getAllByRole('link');
 		const headings = screen.getAllByRole('heading', { level: 2 });
-		expect(headings).toHaveLength(15);
+		expect(headings).toHaveLength(16);
 		expect(links).toHaveLength(headings.length);
 		expect(new Set(links.map((link) => link.getAttribute('href'))).size).toBe(links.length);
 		for (const [index, link] of links.entries()) {
