@@ -64,7 +64,7 @@ The duplicate SHALL copy the source list metadata, categories, memberships, item
 - **THEN** the duplicate item references the matching duplicated parent item
 
 ### Requirement: Frontend exposes list duplication from the list menu
-The frontend SHALL expose duplication from the list options menu for users with list management capability.
+The frontend SHALL expose duplication from the list options menu for users with list management capability, and the action SHALL be available again after a successful duplication flow completes.
 
 #### Scenario: Owner sees duplicate action above delete
 - **WHEN** an owner opens the list options menu
@@ -75,6 +75,10 @@ The frontend SHALL expose duplication from the list options menu for users with 
 - **THEN** the frontend calls the duplicate list API operation
 - **AND** the duplicated list is added to local list state
 - **AND** the user is navigated to the duplicated list page
+
+#### Scenario: Duplicated list can be duplicated again immediately
+- **WHEN** an owner duplicates a list and arrives on the duplicated list page
+- **THEN** the `Duplicate list` action is enabled without requiring the user to leave and reopen the list
 
 #### Scenario: Duplicate failure is reported
 - **WHEN** duplicating a list fails

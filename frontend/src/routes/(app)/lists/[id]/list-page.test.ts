@@ -471,6 +471,55 @@ describe('ListPage menu presentation', () => {
 		await waitFor(() => expect(goto).toHaveBeenCalledWith('/lists/list-2'));
 	});
 
+	it('prevents duplicate submissions while duplication is pending', async () => {
+		const { duplicateList } = await import('$lib/stores/lists.svelte');
+		let resolveDuplicate: (value: Awaited<ReturnType<typeof duplicateList>>) => void = () => {};
+		vi.mocked(duplicateList).mockReturnValueOnce(
+			new Promise((resolve) => {
+				resolveDuplicate = resolve;
+			})
+		);
+		render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Duplicate list' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+
+		const duplicateButton = screen.getByRole('button', { name: 'Duplicate list' });
+		expect(duplicateButton).toBeDisabled();
+		await fireEvent.click(duplicateButton);
+		expect(duplicateList).toHaveBeenCalledOnce();
+
+		resolveDuplicate({
+			id: 'list-2',
+			name: 'Groceries (1)',
+			emoji: '🛒',
+			description: null,
+			defaultSortField: 'MANUAL',
+			defaultSortDirection: 'ASC',
+			createdAt: '2024-01-02T00:00:00Z',
+			groupId: null,
+			sortOrderInGroup: 0,
+			role: 'OWNER',
+		});
+	});
+
+	it('reenables duplication after navigating to the copied list', async () => {
+		const { goto } = await import('$app/navigation');
+		const { duplicateList } = await import('$lib/stores/lists.svelte');
+		const { rerender } = render(ListPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Duplicate list' }));
+
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/lists/list-2'));
+		await rerender({ data: { ...mockData, id: 'list-2' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'List options' }));
+
+		expect(screen.getByRole('button', { name: 'Duplicate list' })).not.toBeDisabled();
+		expect(duplicateList).toHaveBeenCalledOnce();
+	});
+
 	it('reports duplicate failures without navigating away', async () => {
 		const alert = vi.fn();
 		vi.stubGlobal('alert', alert);

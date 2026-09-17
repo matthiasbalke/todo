@@ -280,10 +280,12 @@
   }
 
   async function handleDuplicate() {
+    if (duplicating) return;
     duplicating = true;
     try {
       const duplicated = await duplicateList(data.id);
-      goto(`/lists/${duplicated.id}`);
+      await goto(`/lists/${duplicated.id}`);
+      duplicating = false;
     } catch (e) {
       alert(friendlyError(e, 'Failed to duplicate list'));
       duplicating = false;
