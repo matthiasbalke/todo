@@ -1,20 +1,17 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Backend: Start" type="ShConfigurationType">
-    <option name="SCRIPT_TEXT" value="./start-https-backend.sh" />
+  <configuration default="false" name="Mailpit Start" type="ShConfigurationType">
+    <option name="SCRIPT_TEXT" value="docker compose up mailpit-starttls mailpit-smtps -d" />
     <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
     <option name="SCRIPT_PATH" value="" />
     <option name="SCRIPT_OPTIONS" value="" />
     <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
-    <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$/backend" />
+    <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
     <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
     <option name="INTERPRETER_PATH" value="/bin/zsh" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="EXECUTE_IN_TERMINAL" value="true" />
     <option name="EXECUTE_SCRIPT_FILE" value="false" />
-    <envs>
-      <env name="JAVA_TOOL_OPTIONS" value="-Djavax.net.ssl.trustStore=$(pwd)/../e2e/certs/e2e-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12" />
-      <env name="RATE_LIMIT_CAPACITY" value="50000" />
-    </envs>
+    <envs />
     <method v="2" />
   </configuration>
 </component>

@@ -1,11 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const events = vi.hoisted(() => [] as string[]);
+const emailSettings = vi.hoisted(() => ({
+	source: 'DEPLOYMENT' as const,
+	enabled: false,
+	authEnabled: false,
+	host: '',
+	port: null,
+	protocol: 'smtp',
+	encryption: 'STARTTLS' as const,
+	username: null,
+	passwordConfigured: false,
+	from: '',
+	fromName: 'Todo',
+	publicBaseUrl: 'http://localhost:5173',
+	validationErrors: [],
+}));
 
 vi.mock('$lib/api/admin', () => ({
 	getAdminSettings: vi.fn(async () => {
 		events.push('settings');
-		return { registrationEnabled: true };
+		return { registrationEnabled: true, email: emailSettings };
 	}),
 	getAdminStats: vi.fn(async () => {
 		events.push('stats');
@@ -35,7 +50,7 @@ describe('admin page load', () => {
 		});
 
 		await expect(load({ fetch: fetchFn, parent } as never)).resolves.toMatchObject({
-			settings: { registrationEnabled: true },
+			settings: { registrationEnabled: true, email: emailSettings },
 			stats: { users: 1 },
 			users: [],
 		});

@@ -10,6 +10,17 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  mail:
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    protocol: ${SMTP_PROTOCOL:smtp}
+    default-encoding: UTF-8
+    properties:
+      "[mail.smtp.connectiontimeout]": ${SMTP_CONNECTION_TIMEOUT_MS:5000}
+      "[mail.smtp.timeout]": ${SMTP_READ_TIMEOUT_MS:5000}
+      "[mail.smtp.writetimeout]": ${SMTP_WRITE_TIMEOUT_MS:5000}
 
 webauthn:
   rp:
@@ -34,12 +45,23 @@ app:
     secret: ${SETUP_SECRET:}
   registration:
     enabled: ${REGISTRATION_ENABLED:true}
+  email:
+    enabled: ${EMAIL_ENABLED:false}
+    auth:
+      enabled: ${EMAIL_AUTH_ENABLED:false}
+    encryption: ${EMAIL_ENCRYPTION:STARTTLS}
+    from: ${EMAIL_FROM:}
+    from-name: ${EMAIL_FROM_NAME:Todo}
+    public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:5173}
   security:
     rate-limit:
       capacity: ${RATE_LIMIT_CAPACITY:50}
       window-minutes: ${RATE_LIMIT_WINDOW_MINUTES:1}
 
 management:
+  health:
+    mail:
+      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
   info:
     build:
       enabled: true

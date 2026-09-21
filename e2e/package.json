@@ -2,6 +2,8 @@
   "name": "todo-e2e",
   "private": true,
   "scripts": {
+    "auth:admin": "bun scripts/create-admin-storage-state.ts",
+    "certs:mailpit": "zsh scripts/generate-mailpit-cert.sh",
     "test": "bunx playwright test"
   },
   "devDependencies": {

@@ -117,6 +117,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Install zsh
+        run: sudo apt-get update; sudo apt-get install zsh
+
       # otherwise we get an authentication error when pulling using docker-compose
       - name: rebuild dhi.io/curl image
         env:
@@ -152,8 +155,11 @@ jobs:
           docker load < /tmp/backend.tar
           docker load < /tmp/frontend.tar
 
+      - name: Generate Mailpit TLS certificate
+        run: /usr/bin/zsh e2e/scripts/generate-mailpit-cert.sh
+
       - name: Start services
-        run: docker compose up postgres backend backend-healthcheck frontend nginx --no-build --wait -d
+        run: docker compose up postgres mailpit-starttls mailpit-smtps backend backend-healthcheck frontend nginx --no-build --wait -d
 
       - uses: oven-sh/setup-bun@v2
 
@@ -182,6 +188,8 @@ jobs:
         working-directory: e2e
         env:
           SETUP_SECRET: e2e-setup-secret
+          MAILPIT_STARTTLS_API_URL: http://localhost:8025
+          MAILPIT_SMTPS_API_URL: http://localhost:8026
 
       - name: Upload Playwright report
         if: failure()

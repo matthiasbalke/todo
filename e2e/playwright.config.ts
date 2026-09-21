@@ -1,6 +1,16 @@
 import { defineConfig, devices } from '@playwright/test';
+import { existsSync, readFileSync } from 'node:fs';
 
-const baseURL = process.env.BASE_URL ?? 'http://localhost:5173';
+function localDomainBaseURL(): string | undefined {
+  const domainFile = '../.local-domain';
+  if (!existsSync(domainFile)) {
+    return undefined;
+  }
+  const domain = readFileSync(domainFile, 'utf8').replaceAll('\r', '').trim();
+  return domain ? `https://${domain}` : undefined;
+}
+
+const baseURL = process.env.BASE_URL ?? localDomainBaseURL() ?? 'http://localhost:5173';
 const chromiumHostResolverRules = process.env.CHROMIUM_HOST_RESOLVER_RULES;
 
 export default defineConfig({
@@ -29,7 +39,7 @@ export default defineConfig({
       dependencies: ['setup'],
     },
   ],
-  webServer: process.env.BASE_URL
+  webServer: baseURL !== 'http://localhost:5173'
     ? undefined
     : {
         command: 'bun run dev',

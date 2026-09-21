@@ -1,8 +1,30 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const emailSettings = vi.hoisted(() => ({
+	source: 'DEPLOYMENT' as const,
+	enabled: false,
+	authEnabled: false,
+	host: '',
+	port: null,
+	protocol: 'smtp',
+	encryption: 'STARTTLS' as const,
+	username: null,
+	passwordConfigured: false,
+	from: '',
+	fromName: 'Todo',
+	publicBaseUrl: 'http://localhost:5173',
+	validationErrors: [],
+}));
+
 vi.mock('$lib/api/admin', () => ({
-	setRegistrationEnabled: vi.fn().mockResolvedValue({ registrationEnabled: false }),
+	setRegistrationEnabled: vi.fn().mockResolvedValue({ registrationEnabled: false, email: emailSettings }),
+	updateEmailSettings: vi.fn().mockResolvedValue(emailSettings),
+	updatePublicBaseUrl: vi.fn().mockImplementation((publicBaseUrl: string) =>
+		Promise.resolve({ ...emailSettings, publicBaseUrl })
+	),
+	resetEmailSettings: vi.fn().mockResolvedValue(emailSettings),
+	testEmailSettings: vi.fn().mockResolvedValue({ status: 'ACCEPTED', category: null, message: null, detail: null, hint: null }),
 	updateAdminUser: vi.fn(),
 	updateUserAdmin: vi.fn(),
 	updateUserBlocked: vi.fn(),
@@ -13,7 +35,7 @@ vi.mock('$lib/api/admin', () => ({
 	}),
 }));
 
-import { createRecoveryLink, updateUserBlocked } from '$lib/api/admin';
+import { createRecoveryLink, testEmailSettings, updateEmailSettings, updatePublicBaseUrl, updateUserBlocked } from '$lib/api/admin';
 import { ApiError } from '$lib/api/client';
 import AdminPage from './+page.svelte';
 
@@ -24,7 +46,7 @@ afterEach(() => {
 
 const data = {
 	buildNumber: 'test-build',
-	settings: { registrationEnabled: true },
+	settings: { registrationEnabled: true, email: emailSettings },
 	stats: { users: 2, admins: 1, blockedUsers: 0, lists: 3, todoItems: 8 },
 	users: [
 		{
@@ -75,5 +97,105 @@ describe('admin page', () => {
 
 		expect(updateUserBlocked).toHaveBeenCalledWith('admin-1', true);
 		expect(await screen.findByText('You cannot block yourself.')).toBeInTheDocument();
+	});
+
+	it('saves email settings as a draft and sends a test email after save', async () => {
+		render(AdminPage, { props: { data } });
+
+		expect(screen.queryByLabelText('Protocol')).not.toBeInTheDocument();
+		await fireEvent.click(screen.getByLabelText('Email delivery enabled'));
+		await fireEvent.input(screen.getByLabelText('SMTP host'), { target: { value: 'smtp.example.com' } });
+		await fireEvent.input(screen.getByLabelText('SMTP port'), { target: { value: '587' } });
+		await fireEvent.input(screen.getByLabelText('Sender email'), { target: { value: 'todo@example.com' } });
+		await fireEvent.input(screen.getByLabelText('Public app URL'), { target: { value: 'https://todo.example.com' } });
+		await fireEvent.click(screen.getByRole('button', { name: /save email settings/i }));
+
+		expect(updateEmailSettings).toHaveBeenCalledWith(expect.objectContaining({
+			enabled: true,
+			host: 'smtp.example.com',
+			port: 587,
+			protocol: 'smtp',
+		}));
+
+		await fireEvent.input(screen.getByLabelText('Test recipient'), { target: { value: 'recipient@example.com' } });
+		await fireEvent.click(screen.getByRole('button', { name: /test email settings/i }));
+
+		expect(testEmailSettings).toHaveBeenCalledWith('recipient@example.com');
+	});
+
+	it('shows safe test email diagnostic details and hints', async () => {
+		vi.mocked(testEmailSettings).mockResolvedValueOnce({
+			status: 'FAILED',
+			category: 'SERVER_UNREACHABLE',
+			message: 'Email server is not reachable',
+			detail: 'Could not connect to smtp.example.com:587 within the SMTP timeout.',
+			hint: 'Check the SMTP host, port, firewall, and whether the provider expects STARTTLS or SSL/TLS.',
+		});
+		render(AdminPage, { props: { data } });
+
+		await fireEvent.input(screen.getByLabelText('Test recipient'), { target: { value: 'recipient@example.com' } });
+		await fireEvent.click(screen.getByRole('button', { name: /test email settings/i }));
+
+		expect(await screen.findByText('Email server is not reachable')).toBeInTheDocument();
+		expect(screen.getByText('Could not connect to smtp.example.com:587 within the SMTP timeout.')).toBeInTheDocument();
+		expect(screen.getByText('Check the SMTP host, port, firewall, and whether the provider expects STARTTLS or SSL/TLS.')).toBeInTheDocument();
+	});
+
+	it('replaces configured SMTP password when the password field is edited', async () => {
+		render(AdminPage, {
+			props: {
+				data: {
+					...data,
+					settings: {
+						...data.settings,
+						email: {
+							...emailSettings,
+							enabled: true,
+							authEnabled: true,
+							host: 'smtp.example.com',
+							port: 587,
+							username: 'mailer',
+							passwordConfigured: true,
+							from: 'todo@example.com',
+							publicBaseUrl: 'https://todo.example.com',
+						},
+					},
+				},
+			},
+		});
+
+		expect(screen.queryByLabelText('Password action')).not.toBeInTheDocument();
+		expect(screen.getByPlaceholderText('********')).toBeInTheDocument();
+		await fireEvent.input(screen.getByLabelText('Password'), { target: { value: '' } });
+		await fireEvent.click(screen.getByRole('button', { name: /save email settings/i }));
+		await waitFor(() => {
+			expect(screen.getAllByText('SMTP password is required when authentication is enabled.').length).toBeGreaterThan(0);
+		});
+		expect(screen.queryByText('SMTP password cannot be cleared while authentication is enabled.')).not.toBeInTheDocument();
+
+		await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'new-secret' } });
+		await fireEvent.click(screen.getByRole('button', { name: /save email settings/i }));
+
+		expect(updateEmailSettings).toHaveBeenCalledWith(expect.objectContaining({
+			passwordAction: 'REPLACE',
+			password: 'new-secret',
+		}));
+	});
+
+	it('autosaves public app URL without saving SMTP settings', async () => {
+		vi.useFakeTimers();
+		try {
+			render(AdminPage, { props: { data } });
+
+			await fireEvent.input(screen.getByLabelText('Public app URL'), { target: { value: 'https://todo.example.com' } });
+			await vi.advanceTimersByTimeAsync(700);
+
+			await waitFor(() => {
+				expect(updatePublicBaseUrl).toHaveBeenCalledWith('https://todo.example.com');
+			});
+			expect(updateEmailSettings).not.toHaveBeenCalled();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });
