@@ -33,9 +33,48 @@ services:
       RATE_LIMIT_WINDOW_MINUTES: 1
       CORS_ALLOWED_ORIGINS: http://localhost:5173
       WEBAUTHN_RP_ID: localhost
+      JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/e2e-certs/e2e-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12
+    volumes:
+      - ./e2e/certs:/e2e-certs:ro
     depends_on:
       postgres:
         condition: service_healthy
+
+  mailpit-starttls:
+    image: axllent/mailpit:v1.31.2
+    command:
+      - --smtp
+      - 0.0.0.0:1025
+      - --listen
+      - 0.0.0.0:8025
+      - --smtp-tls-cert
+      - /certs/mailpit.pem
+      - --smtp-tls-key
+      - /certs/mailpit.key
+      - --smtp-require-starttls
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    volumes:
+      - ./e2e/certs:/certs:ro
+
+  mailpit-smtps:
+    image: axllent/mailpit:v1.31.2
+    command:
+      - --smtp
+      - 0.0.0.0:1465
+      - --listen
+      - 0.0.0.0:8025
+      - --smtp-tls-cert
+      - /certs/mailpit.pem
+      - --smtp-tls-key
+      - /certs/mailpit.key
+      - --smtp-require-tls
+    ports:
+      - "1465:1465"
+      - "8026:8025"
+    volumes:
+      - ./e2e/certs:/certs:ro
 
   backend-healthcheck:
     image: dhi.io/curl:8.14.1-dev
