@@ -26,7 +26,7 @@ class CategoryIntegrationTest : AbstractIntegrationTest() {
     private val mapper = JsonMapper()
 
     private fun createUser(): User =
-        userRepository.save(User(email = "user-${UUID.randomUUID()}@example.com", displayName = "Test User"))
+        userRepository.save(User(email = "user-${UUID.randomUUID()}@example.com", displayName = "Test User", validatedAt = java.time.Instant.now()))
 
     private fun bearerHeader(user: User) = "Bearer ${jwtTokenService.generateAccessToken(user)}"
 

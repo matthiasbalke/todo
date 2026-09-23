@@ -7,6 +7,7 @@ const authState = vi.hoisted(() => ({
 vi.mock('$lib/stores/auth.svelte', () => ({
 	restoreSession: vi.fn(),
 	isAuthenticated: vi.fn(() => authState.authenticated),
+	getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'user@example.com', displayName: 'User', emailVerified: true })),
 }));
 vi.mock('$lib/api/health', () => ({
 	checkHealth: vi.fn(),
@@ -46,6 +47,25 @@ describe('auth page load guard', () => {
 			location: '/lists',
 		});
 		expect(restoreSession).toHaveBeenCalledWith(fetchFn);
+	});
+
+	it('redirects an unverified authenticated user to email verification', async () => {
+		const { getCurrentUser } = await import('$lib/stores/auth.svelte');
+		vi.mocked(restoreSession).mockImplementation(async () => {
+			authState.authenticated = true;
+			return 'authenticated';
+		});
+		vi.mocked(getCurrentUser).mockReturnValue({
+			id: 'user-1',
+			email: 'user@example.com',
+			displayName: 'User',
+			emailVerified: false,
+		});
+
+		await expect(load({ fetch: fetchFn } as never)).rejects.toMatchObject({
+			status: 307,
+			location: '/verify-email',
+		});
 	});
 
 	it('allows an unauthenticated user to view the auth page', async () => {

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
+import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.mock.web.MockHttpSession
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -37,6 +38,9 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
 
     @Autowired
     private lateinit var jwtTokenService: JwtTokenService
+
+    @Autowired
+    private lateinit var authSessionService: AuthSessionService
 
     @Autowired
     private lateinit var appSettingsService: AppSettingsService
@@ -135,6 +139,31 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
+    fun `register-options rejects email pending verification on another account`() {
+        val pendingEmail = "Pending-${UUID.randomUUID()}@Example.com"
+        userRepository.save(
+            User(
+                email = "owner-${UUID.randomUUID()}@example.com",
+                displayName = "Owner",
+                validatedAt = java.time.Instant.now(),
+                pendingEmail = pendingEmail,
+            )
+        )
+        val body = """{"email":"  ${pendingEmail.lowercase()}  ","displayName":"Different Name"}"""
+
+        mockMvc.post("/api/auth/webauthn/register-options") {
+            contentType = MediaType.APPLICATION_JSON
+            content = body
+        }.andExpect {
+            status { isEqualTo(409) }
+            jsonPath("$.code") { value("EMAIL_ALREADY_REGISTERED") }
+            jsonPath("$.message") { value("This email address is already registered.") }
+        }
+
+        assertNull(userRepository.findByEmailIdentity(pendingEmail))
+    }
+
+    @Test
     fun `register-options deletes orphaned user and returns 200 when email exists but has no credential`() {
         // Simulate a previous registration attempt that saved the user but the
         // passkey ceremony was never completed (e.g. the browser dialog was cancelled).
@@ -228,6 +257,32 @@ class WebAuthnIntegrationTest : AbstractIntegrationTest() {
             contentType = MediaType.APPLICATION_JSON
             content = "{}"
             cookie(jakarta.servlet.http.Cookie("refreshToken", "unknown-token-value"))
+        }.andExpect {
+            status { isUnauthorized() }
+        }
+    }
+
+    @Test
+    fun `refresh returns 401 when reused refresh token was already rotated`() {
+        val user = userRepository.save(User(email = "refresh-reuse@example.com", displayName = "Refresh Reuse"))
+        val initialResponse = MockHttpServletResponse()
+        authSessionService.issueTokens(user, initialResponse)
+        val originalRefreshCookie = initialResponse.getCookie("refreshToken")
+
+        assertNotNull(originalRefreshCookie)
+
+        mockMvc.post("/api/auth/refresh") {
+            contentType = MediaType.APPLICATION_JSON
+            content = "{}"
+            cookie(originalRefreshCookie)
+        }.andExpect {
+            status { isOk() }
+        }
+
+        mockMvc.post("/api/auth/refresh") {
+            contentType = MediaType.APPLICATION_JSON
+            content = "{}"
+            cookie(originalRefreshCookie)
         }.andExpect {
             status { isUnauthorized() }
         }

@@ -13,6 +13,7 @@ class AppSettingsServiceTest {
     fun `app setting keys use app prefix matching app property paths`() {
         assertEquals("app.registration.enabled", AppSettingsService.REGISTRATION_ENABLED_KEY)
         assertEquals("app.publicBaseUrl", AppSettingsService.PUBLIC_BASE_URL_KEY)
+        assertEquals("app.emailValidationTimeoutMinutes", AppSettingsService.EMAIL_VALIDATION_TIMEOUT_MINUTES_KEY)
     }
 
     @Test
@@ -69,6 +70,37 @@ class AppSettingsServiceTest {
         assertEquals(false, AppSettingsService.validPublicBaseUrl("todo.example.com"))
         assertEquals(false, AppSettingsService.validPublicBaseUrl("https://todo.example.com/"))
         assertEquals(true, AppSettingsService.validPublicBaseUrl("https://todo.example.com"))
+    }
+
+    @Test
+    fun `email validation timeout defaults to thirty minutes when setting is absent`() {
+        val harness = service()
+
+        assertEquals(30, harness.service.emailValidationTimeout().toMinutes())
+    }
+
+    @Test
+    fun `email validation timeout uses positive stored minutes`() {
+        val harness = service(
+            initialSettings = listOf(
+                AppSetting(AppSettingsService.EMAIL_VALIDATION_TIMEOUT_MINUTES_KEY, "45"),
+            )
+        )
+
+        assertEquals(45, harness.service.emailValidationTimeout().toMinutes())
+    }
+
+    @Test
+    fun `email validation timeout falls back to default for invalid stored values`() {
+        listOf("0", "-1", "not-a-number").forEach { value ->
+            val harness = service(
+                initialSettings = listOf(
+                    AppSetting(AppSettingsService.EMAIL_VALIDATION_TIMEOUT_MINUTES_KEY, value),
+                )
+            )
+
+            assertEquals(30, harness.service.emailValidationTimeout().toMinutes())
+        }
     }
 
     private data class Harness(

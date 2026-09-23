@@ -11,6 +11,7 @@ vi.mock('$lib/stores/auth.svelte', () => ({
 		return 'unauthenticated';
 	}),
 	isAuthenticated: vi.fn(() => authState.authenticated),
+	getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'user@example.com', displayName: 'User', emailVerified: true })),
 }));
 vi.mock('$lib/api/health', () => ({
 	checkHealth: vi.fn(async () => {
@@ -99,6 +100,30 @@ describe('protected app layout load guard', () => {
 		});
 
 		expect(restoreSession).toHaveBeenCalledWith(fetchFn);
+		expect(loadLists).not.toHaveBeenCalled();
+		expect(loadPreferences).not.toHaveBeenCalled();
+		expect(loadTodayCount).not.toHaveBeenCalled();
+	});
+
+	it('redirects an unverified authenticated user without loading protected data', async () => {
+		const { getCurrentUser } = await import('$lib/stores/auth.svelte');
+		vi.mocked(restoreSession).mockImplementation(async () => {
+			authState.events.push('restore');
+			authState.authenticated = true;
+			return 'authenticated';
+		});
+		vi.mocked(getCurrentUser).mockReturnValue({
+			id: 'user-1',
+			email: 'user@example.com',
+			displayName: 'User',
+			emailVerified: false,
+		});
+
+		await expect(load({ fetch: fetchFn } as never)).rejects.toMatchObject({
+			status: 307,
+			location: '/verify-email',
+		});
+
 		expect(loadLists).not.toHaveBeenCalled();
 		expect(loadPreferences).not.toHaveBeenCalled();
 		expect(loadTodayCount).not.toHaveBeenCalled();

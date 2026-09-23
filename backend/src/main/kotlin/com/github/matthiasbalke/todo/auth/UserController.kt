@@ -53,6 +53,8 @@ class UserController(
         val todayViewEnabled: Boolean,
         val themePreference: ThemePreference,
         val admin: Boolean,
+        val emailVerified: Boolean,
+        val pendingEmail: String?,
     )
     data class UpdateProfileRequest(val displayName: String, val email: String)
     data class UpdatePreferencesRequest(
@@ -65,6 +67,15 @@ class UserController(
     data class ListNameDto(val id: UUID, val name: String)
     data class DeletionPreviewDto(val listsToDelete: List<ListNameDto>, val listsToLeave: List<ListNameDto>)
     data class ErrorResponse(val code: String, val message: String)
+
+    @org.springframework.web.bind.annotation.ExceptionHandler(EmailVerificationException::class)
+    fun verificationError(error: EmailVerificationException): ResponseEntity<ErrorResponse> =
+        ResponseEntity.status(error.status).body(
+            ErrorResponse(
+                code = error.code,
+                message = error.message ?: "Email verification failed",
+            )
+        )
 
     // ─── Profile ─────────────────────────────────────────────────────────────
 
@@ -224,6 +235,8 @@ class UserController(
         todayViewEnabled = todayViewEnabled,
         themePreference = themePreference,
         admin = admin,
+        emailVerified = validatedAt != null,
+        pendingEmail = pendingEmail,
     )
 
     private fun WebAuthnCredential.toDto() = PasskeyDto(id, label, createdAt)

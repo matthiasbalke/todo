@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets
 
 sealed interface AppRoute {
     data class Recovery(val token: String) : AppRoute
+    data class EmailVerification(val token: String) : AppRoute
 }
 
 @Service
@@ -20,6 +21,7 @@ class ApplicationLinkService(
 
     private fun path(route: AppRoute): String = when (route) {
         is AppRoute.Recovery -> "/recover/${encodePathSegment(route.token)}"
+        is AppRoute.EmailVerification -> "/verify-email?validation_token=${encodePathSegment(route.token)}"
     }
 
     private fun encodePathSegment(value: String): String =

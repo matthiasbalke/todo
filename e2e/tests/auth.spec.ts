@@ -16,6 +16,7 @@
 
 import { test, expect } from '@playwright/test';
 import type { BrowserContext, CDPSession, Page } from '@playwright/test';
+import { completeEmailVerification } from './helpers';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -41,7 +42,7 @@ async function waitForHydration(page: Page): Promise<void> {
 function authSessionResponse() {
 	return {
 		accessToken: 'header.payload.signature',
-		user: { id: 'u1', email: 'user@example.com', displayName: 'User' },
+		user: { id: 'u1', email: 'user@example.com', displayName: 'User', emailVerified: true },
 	};
 }
 
@@ -95,6 +96,8 @@ async function installStartupRecoveryFixtures(
 				timeZoneInitialized: true,
 				todayViewEnabled: true,
 				themePreference: 'SYSTEM',
+				emailVerified: true,
+				pendingEmail: null,
 			}),
 		});
 	});
@@ -111,6 +114,8 @@ async function installStartupRecoveryFixtures(
 				timeZoneInitialized: true,
 				todayViewEnabled: true,
 				themePreference: 'SYSTEM',
+				emailVerified: true,
+				pendingEmail: null,
 			}),
 		});
 	});
@@ -146,7 +151,7 @@ function uniqueEmail(): string {
 	return `e2e-${Date.now()}-${emailCounter}@example.com`;
 }
 
-// Register a new account and land on /lists.
+// Register a new account, verify its email, and land on /lists.
 // The virtual authenticator is set up AFTER page.goto() so the CDP session is
 // bound to the correct security origin.
 async function registerPasskey(
@@ -166,6 +171,8 @@ async function registerPasskey(
 	await page.getByPlaceholder('you@example.com').fill(email);
 	await page.getByRole('button', { name: /Register passkey/ }).click();
 
+	await page.waitForURL('**/verify-email');
+	await completeEmailVerification(page, email);
 	await page.waitForURL('**/lists');
 }
 
@@ -241,11 +248,11 @@ test.describe('Passkey registration', () => {
 		await page.getByRole('button', { name: /Register passkey/ }).click();
 
 		// Must succeed — not show "This email address is already registered."
-		await page.waitForURL('**/lists');
-		await expect(page).toHaveURL(/\/lists$/);
+		await page.waitForURL('**/verify-email');
+		await expect(page).toHaveURL(/\/verify-email$/);
 	});
 
-	test('fills form → passkey ceremony → redirects to /lists', async ({ page, context }) => {
+	test('fills form → passkey ceremony → redirects to email verification', async ({ page, context }) => {
 		await page.goto('/auth');
 		await waitForHydration(page);
 
@@ -258,6 +265,31 @@ test.describe('Passkey registration', () => {
 
 		await page.getByRole('button', { name: /Register passkey/ }).click();
 
+		await page.waitForURL('**/verify-email');
+		await expect(page).toHaveURL(/\/verify-email$/);
+	});
+
+	test('blocks app access until verification email token is submitted', async ({ page, context }) => {
+		const email = uniqueEmail();
+		await page.goto('/auth');
+		await waitForHydration(page);
+
+		const cdp = await context.newCDPSession(page);
+		await addVirtualAuthenticator(cdp);
+
+		await page.getByRole('button', { name: 'Create account' }).click();
+		await page.getByPlaceholder('Your name').fill('Verification Flow User');
+		await page.getByPlaceholder('you@example.com').fill(email);
+		await page.getByRole('button', { name: /Register passkey/ }).click();
+
+		await page.waitForURL('**/verify-email');
+		await expect(page.getByRole('heading', { name: 'Verify email' })).toBeVisible();
+
+		await page.goto('/lists');
+		await page.waitForURL('**/verify-email');
+		await expect(page.getByRole('heading', { name: 'Verify email' })).toBeVisible();
+
+		await completeEmailVerification(page, email);
 		await page.waitForURL('**/lists');
 		await expect(page).toHaveURL(/\/lists$/);
 	});
@@ -281,8 +313,11 @@ test.describe('Passkey sign-in', () => {
 
 		await page.getByRole('button', { name: 'Create account' }).click();
 		await page.getByPlaceholder('Your name').fill('Bob Passkey');
-		await page.getByPlaceholder('you@example.com').fill(uniqueEmail());
+		const email = uniqueEmail();
+		await page.getByPlaceholder('you@example.com').fill(email);
 		await page.getByRole('button', { name: /Register passkey/ }).click();
+		await page.waitForURL('**/verify-email');
+		await completeEmailVerification(page, email);
 		await page.waitForURL('**/lists');
 
 		// Log out.

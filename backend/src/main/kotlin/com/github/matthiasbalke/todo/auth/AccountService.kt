@@ -16,6 +16,7 @@ class AccountService(
     private val webAuthnCredentialRepository: WebAuthnCredentialRepository,
     private val listRepository: ListRepository,
     private val listMembershipRepository: ListMembershipRepository,
+    private val emailVerificationService: EmailVerificationService,
 ) {
 
     @Transactional
@@ -27,12 +28,16 @@ class AccountService(
             ResponseStatusException(HttpStatus.NOT_FOUND)
         }
         val trimmedEmail = email.trim()
-        if (userRepository.existsByEmailIdentityAndIdNot(trimmedEmail, userId)) {
+        if (userRepository.existsByActiveOrPendingEmailIdentityAndIdNot(trimmedEmail, userId)) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "Email is already in use")
         }
         user.displayName = displayName.trim()
-        user.email = trimmedEmail
-        return userRepository.save(user)
+        if (sameEmailIdentity(user.email, trimmedEmail)) {
+            user.email = trimmedEmail
+            return userRepository.save(user)
+        }
+        userRepository.save(user)
+        return emailVerificationService.startPendingEmailChange(userId, trimmedEmail)
     }
 
     fun getPasskeys(userId: UUID): kotlin.collections.List<WebAuthnCredential> =
@@ -106,4 +111,7 @@ class AccountService(
         val listsToDelete: kotlin.collections.List<List>,
         val listsToLeave: kotlin.collections.List<List>,
     )
+
+    private fun sameEmailIdentity(left: String, right: String): Boolean =
+        left.trim().equals(right.trim(), ignoreCase = true)
 }
