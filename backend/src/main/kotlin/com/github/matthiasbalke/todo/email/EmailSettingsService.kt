@@ -16,11 +16,10 @@ class EmailSettingsService(
 
     fun activeConfiguration(): EmailConfiguration {
         val settings = readRuntimeSettings()
-        val publicBaseUrl = activePublicBaseUrl(settings)
         return if (settings[RUNTIME_CONFIGURED_KEY]?.toBooleanStrictOrNull() == true) {
-            configurationFromRuntime(settings, publicBaseUrl)
+            configurationFromRuntime(settings)
         } else {
-            configurationFromDeployment(publicBaseUrl)
+            configurationFromDeployment()
         }
     }
 
@@ -40,7 +39,6 @@ class EmailSettingsService(
             password = password,
             from = update.from.trim(),
             fromName = update.fromName?.trim()?.ifBlank { null },
-            publicBaseUrl = update.publicBaseUrl.trim(),
         )
         val errors = configuration.validationErrors()
         if (errors.isNotEmpty()) throw InvalidEmailConfigurationException(errors)
@@ -56,23 +54,7 @@ class EmailSettingsService(
         saveSetting(PASSWORD_KEY, configuration.password.orEmpty())
         saveSetting(FROM_KEY, configuration.from)
         saveSetting(FROM_NAME_KEY, configuration.fromName.orEmpty())
-        saveSetting(APP_PUBLIC_BASE_URL_KEY, configuration.publicBaseUrl)
         return configuration
-    }
-
-    @Transactional
-    fun savePublicBaseUrl(publicBaseUrl: String): EmailConfiguration {
-        val normalized = publicBaseUrl.trim()
-        if (normalized.isBlank()) {
-            throw InvalidEmailConfigurationException(listOf("Public application base URL is required"))
-        }
-        if (!EmailConfiguration.validPublicBaseUrl(normalized)) {
-            throw InvalidEmailConfigurationException(
-                listOf("Public app URL must look like https://todo.example.com without a trailing slash")
-            )
-        }
-        saveSetting(APP_PUBLIC_BASE_URL_KEY, normalized)
-        return activeConfiguration()
     }
 
     @Transactional
@@ -94,7 +76,7 @@ class EmailSettingsService(
         }
     }
 
-    private fun configurationFromDeployment(publicBaseUrl: String = emailProperties.publicBaseUrl): EmailConfiguration = EmailConfiguration(
+    private fun configurationFromDeployment(): EmailConfiguration = EmailConfiguration(
         source = EmailConfigurationSource.DEPLOYMENT,
         enabled = emailProperties.enabled,
         authEnabled = emailProperties.auth.enabled,
@@ -106,10 +88,9 @@ class EmailSettingsService(
         password = mailProperties.password?.ifBlank { null },
         from = emailProperties.from,
         fromName = emailProperties.fromName.ifBlank { null },
-        publicBaseUrl = publicBaseUrl,
     )
 
-    private fun configurationFromRuntime(settings: Map<String, String>, publicBaseUrl: String): EmailConfiguration {
+    private fun configurationFromRuntime(settings: Map<String, String>): EmailConfiguration {
         val encryption = settings[ENCRYPTION_KEY]?.let {
             runCatching { EmailEncryption.valueOf(it) }.getOrNull()
         } ?: EmailEncryption.STARTTLS
@@ -125,17 +106,11 @@ class EmailSettingsService(
             password = settings[PASSWORD_KEY]?.ifBlank { null },
             from = settings[FROM_KEY].orEmpty(),
             fromName = settings[FROM_NAME_KEY]?.ifBlank { null },
-            publicBaseUrl = publicBaseUrl,
         )
     }
 
-    private fun activePublicBaseUrl(settings: Map<String, String>): String =
-        settings[APP_PUBLIC_BASE_URL_KEY]?.ifBlank { null }
-            ?: settings[LEGACY_PUBLIC_BASE_URL_KEY]?.ifBlank { null }
-            ?: emailProperties.publicBaseUrl
-
     private fun readRuntimeSettings(): Map<String, String> =
-        appSettingRepository.findAllById(EMAIL_KEYS + APP_PUBLIC_BASE_URL_KEY + LEGACY_PUBLIC_BASE_URL_KEY)
+        appSettingRepository.findAllById(EMAIL_KEYS)
             .associate { it.key to it.value }
 
     private fun saveSetting(key: String, value: String) {
@@ -158,8 +133,6 @@ class EmailSettingsService(
         const val PASSWORD_KEY = "email.password"
         const val FROM_KEY = "email.from"
         const val FROM_NAME_KEY = "email.fromName"
-        const val APP_PUBLIC_BASE_URL_KEY = "app.publicBaseUrl"
-        const val LEGACY_PUBLIC_BASE_URL_KEY = "email.publicBaseUrl"
         val EMAIL_KEYS = listOf(
             RUNTIME_CONFIGURED_KEY,
             ENABLED_KEY,

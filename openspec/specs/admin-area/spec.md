@@ -88,6 +88,44 @@ The frontend SHALL expose the admin area only to authenticated admin users, and 
 - **WHEN** an unauthenticated user requests an admin-only API
 - **THEN** the request is rejected
 
+### Requirement: Admin area provides section navigation
+The admin area SHALL expose dedicated Settings and Users sections so administrators can move between instance configuration and user management without leaving the admin area.
+
+#### Scenario: Admin opens admin entry point
+- **WHEN** an authenticated admin opens `/admin`
+- **THEN** the admin area navigates to the Settings section
+- **AND** the administrator remains within the authenticated app shell
+
+#### Scenario: Admin views admin navigation
+- **WHEN** an authenticated admin opens an admin section
+- **THEN** navigation entries for Settings and Users are displayed
+- **AND** the active section is visually indicated
+
+#### Scenario: Admin opens settings section
+- **WHEN** an administrator opens the Settings section
+- **THEN** registration settings are displayed
+- **AND** application link settings are displayed
+- **AND** email settings are displayed
+- **AND** user-management controls are not displayed
+
+#### Scenario: Admin opens users section
+- **WHEN** an administrator opens the Users section
+- **THEN** usage statistics are displayed
+- **AND** user account management controls are displayed
+- **AND** registration, application link, and email settings controls are not displayed
+
+#### Scenario: Admin uses small-screen navigation
+- **WHEN** an administrator opens the admin area on a small screen
+- **THEN** Settings and Users navigation remains available without requiring a permanent sidebar
+
+#### Scenario: Non-admin opens admin subsection
+- **WHEN** an authenticated non-admin opens any admin subsection
+- **THEN** the request is rejected
+
+#### Scenario: Unauthenticated user opens admin subsection
+- **WHEN** an unauthenticated user opens any admin subsection
+- **THEN** the request is rejected
+
 ### Requirement: Admin users can manage registration at runtime
 The admin area SHALL allow admins to enable or disable new account registration without restarting the deployment.
 
@@ -108,6 +146,36 @@ The admin area SHALL allow admins to enable or disable new account registration 
 #### Scenario: Registration setting changes
 - **WHEN** the registration-enabled setting is changed
 - **THEN** subsequent authentication configuration and registration requests use the updated setting without backend downtime
+
+### Requirement: Admin users can manage app settings at runtime
+The admin area SHALL expose direct app settings through an admin-only app settings API and SHALL keep those settings separate from email provider settings.
+
+#### Scenario: Admin views app settings
+- **WHEN** an administrator opens admin settings
+- **THEN** the current registration-enabled state is displayed
+- **AND** the current public application base URL is displayed
+- **AND** the app settings are loaded from the app settings API
+- **AND** email provider settings are not required to read app settings
+
+#### Scenario: Admin saves app settings
+- **WHEN** an administrator saves valid app settings
+- **THEN** the registration-enabled state is persisted
+- **AND** the public application base URL is persisted
+- **AND** persisted app setting keys use the `app.` prefix and stay aligned with the corresponding `application.yml` app property paths
+- **AND** subsequent registration checks and application link generation use the updated values without backend downtime
+
+#### Scenario: Admin saves invalid public base URL
+- **WHEN** an administrator saves app settings with a missing, malformed, or trailing-slash public application base URL
+- **THEN** the request is rejected
+- **AND** the previously active app settings remain unchanged
+
+#### Scenario: Non-admin requests app settings
+- **WHEN** a non-admin requests app settings
+- **THEN** the request is rejected
+
+#### Scenario: Unauthenticated user requests app settings
+- **WHEN** an unauthenticated user requests app settings
+- **THEN** the request is rejected
 
 ### Requirement: Admin users can view basic usage statistics
 The admin area SHALL display basic instance usage statistics.
@@ -217,6 +285,7 @@ The admin area SHALL allow admins to create one-time recovery links that let eli
 #### Scenario: Admin creates recovery link
 - **WHEN** an admin creates a passkey recovery link for an unblocked user
 - **THEN** the backend creates a one-time expiring recovery token for the target account
+- **AND** the recovery URL is generated from the configured public application base URL and recovery route
 - **AND** the admin area displays the recovery URL for manual delivery
 
 #### Scenario: Admin creates recovery link for blocked user
@@ -275,6 +344,7 @@ The admin area SHALL allow administrators to view and update outbound email deli
 - **WHEN** an administrator saves valid email delivery settings
 - **THEN** a complete runtime email configuration snapshot is persisted
 - **AND** subsequent outbound email attempts use the updated settings without backend downtime
+- **AND** the save action is labeled `Save`
 
 #### Scenario: Admin edits email settings before saving
 - **WHEN** an administrator changes email settings in the admin UI
@@ -285,6 +355,7 @@ The admin area SHALL allow administrators to view and update outbound email deli
 - **WHEN** an administrator discards draft email setting changes
 - **THEN** the draft values are replaced with the active configuration values
 - **AND** no runtime email configuration snapshot is changed
+- **AND** the draft discard action is labeled `Cancel`
 
 #### Scenario: Admin saves first runtime change from deployment settings
 - **WHEN** deployment email settings are active
@@ -341,6 +412,12 @@ The admin area SHALL allow administrators to view and update outbound email deli
 
 ### Requirement: Admin users can test email delivery
 The admin area SHALL allow administrators to send a test email to a provided recipient address using the active email configuration.
+
+#### Scenario: Admin views test email settings section
+- **WHEN** an administrator opens admin email settings
+- **THEN** test email controls are displayed in a dedicated section titled `Test email settings`
+- **AND** the section explains that administrators can send a test email below to verify the active email configuration
+- **AND** the send action is labeled `Test`
 
 #### Scenario: Admin sends test email
 - **WHEN** an administrator requests a test email to a recipient address

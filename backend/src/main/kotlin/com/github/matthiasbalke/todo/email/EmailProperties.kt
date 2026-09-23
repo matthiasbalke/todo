@@ -9,7 +9,6 @@ data class EmailProperties(
     val encryption: EmailEncryption = EmailEncryption.STARTTLS,
     val from: String = "",
     val fromName: String = "Todo",
-    val publicBaseUrl: String = "http://localhost:5173",
 ) {
     data class Auth(
         val enabled: Boolean = false,

@@ -37,12 +37,17 @@ class AdminController(
     private val emailDeliveryService: EmailDeliveryService,
 ) {
 
-    data class RegistrationSettingResponse(val registrationEnabled: Boolean)
-    data class UpdateRegistrationRequest(val registrationEnabled: Boolean)
-    data class UpdatePublicBaseUrlRequest(val publicBaseUrl: String)
     data class AdminSettingsResponse(
-        val registrationEnabled: Boolean,
+        val app: AppSettingsResponse,
         val email: EmailSettingsResponse,
+    )
+    data class AppSettingsResponse(
+        val registrationEnabled: Boolean,
+        val publicBaseUrl: String,
+    )
+    data class UpdateAppSettingsRequest(
+        val registrationEnabled: Boolean,
+        val publicBaseUrl: String,
     )
 
     data class EmailSettingsResponse(
@@ -57,7 +62,6 @@ class AdminController(
         val passwordConfigured: Boolean,
         val from: String,
         val fromName: String?,
-        val publicBaseUrl: String,
         val validationErrors: List<String>,
     )
 
@@ -73,7 +77,6 @@ class AdminController(
         val password: String?,
         val from: String,
         val fromName: String?,
-        val publicBaseUrl: String,
     )
 
     data class TestEmailRequest(val recipient: String)
@@ -107,31 +110,42 @@ class AdminController(
             )
         )
 
+    @ExceptionHandler(InvalidAppSettingsException::class)
+    fun appSettingsError(error: InvalidAppSettingsException): ResponseEntity<ErrorResponse> =
+        ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            ErrorResponse(
+                code = "APP_SETTINGS_INVALID",
+                message = error.errors.joinToString("; "),
+            )
+        )
+
     @GetMapping("/settings")
     fun settings(@AuthenticationPrincipal userId: UUID): AdminSettingsResponse {
         adminService.requireAdmin(userId)
         return AdminSettingsResponse(
-            registrationEnabled = appSettingsService.isRegistrationEnabled(),
+            app = appSettingsService.activeSettings().toAppSettingsResponse(),
             email = emailSettingsService.activeConfiguration().toEmailSettingsResponse(),
         )
     }
 
-    @PatchMapping("/settings/registration")
-    fun updateRegistration(
-        @AuthenticationPrincipal userId: UUID,
-        @RequestBody body: UpdateRegistrationRequest,
-    ): RegistrationSettingResponse {
+    @GetMapping("/settings/app")
+    fun appSettings(@AuthenticationPrincipal userId: UUID): AppSettingsResponse {
         adminService.requireAdmin(userId)
-        return RegistrationSettingResponse(appSettingsService.setRegistrationEnabled(body.registrationEnabled))
+        return appSettingsService.activeSettings().toAppSettingsResponse()
     }
 
-    @PatchMapping("/settings/public-base-url")
-    fun updatePublicBaseUrl(
+    @PatchMapping("/settings/app")
+    fun updateAppSettings(
         @AuthenticationPrincipal userId: UUID,
-        @RequestBody body: UpdatePublicBaseUrlRequest,
-    ): EmailSettingsResponse {
+        @RequestBody body: UpdateAppSettingsRequest,
+    ): AppSettingsResponse {
         adminService.requireAdmin(userId)
-        return emailSettingsService.savePublicBaseUrl(body.publicBaseUrl).toEmailSettingsResponse()
+        return appSettingsService.saveAppSettings(
+            AppSettingsUpdate(
+                registrationEnabled = body.registrationEnabled,
+                publicBaseUrl = body.publicBaseUrl,
+            )
+        ).toAppSettingsResponse()
     }
 
     @GetMapping("/settings/email")
@@ -243,6 +257,10 @@ class AdminController(
         password = password,
         from = from,
         fromName = fromName,
+    )
+
+    private fun AppSettings.toAppSettingsResponse() = AppSettingsResponse(
+        registrationEnabled = registrationEnabled,
         publicBaseUrl = publicBaseUrl,
     )
 
@@ -258,7 +276,6 @@ class AdminController(
         passwordConfigured = passwordConfigured,
         from = from,
         fromName = fromName,
-        publicBaseUrl = publicBaseUrl,
         validationErrors = validationErrors(),
     )
 

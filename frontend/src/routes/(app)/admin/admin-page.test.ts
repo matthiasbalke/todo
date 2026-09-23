@@ -13,16 +13,18 @@ const emailSettings = vi.hoisted(() => ({
 	passwordConfigured: false,
 	from: '',
 	fromName: 'Todo',
-	publicBaseUrl: 'http://localhost:5173',
 	validationErrors: [],
+}));
+const appSettings = vi.hoisted(() => ({
+	registrationEnabled: true,
+	publicBaseUrl: 'http://localhost:5173',
 }));
 
 vi.mock('$lib/api/admin', () => ({
-	setRegistrationEnabled: vi.fn().mockResolvedValue({ registrationEnabled: false, email: emailSettings }),
-	updateEmailSettings: vi.fn().mockResolvedValue(emailSettings),
-	updatePublicBaseUrl: vi.fn().mockImplementation((publicBaseUrl: string) =>
-		Promise.resolve({ ...emailSettings, publicBaseUrl })
+	updateAppSettings: vi.fn().mockImplementation((settings: { registrationEnabled: boolean; publicBaseUrl: string }) =>
+		Promise.resolve(settings)
 	),
+	updateEmailSettings: vi.fn().mockResolvedValue(emailSettings),
 	resetEmailSettings: vi.fn().mockResolvedValue(emailSettings),
 	testEmailSettings: vi.fn().mockResolvedValue({ status: 'ACCEPTED', category: null, message: null, detail: null, hint: null }),
 	updateAdminUser: vi.fn(),
@@ -35,9 +37,10 @@ vi.mock('$lib/api/admin', () => ({
 	}),
 }));
 
-import { createRecoveryLink, testEmailSettings, updateEmailSettings, updatePublicBaseUrl, updateUserBlocked } from '$lib/api/admin';
+import { createRecoveryLink, testEmailSettings, updateAppSettings, updateEmailSettings, updateUserBlocked } from '$lib/api/admin';
 import { ApiError } from '$lib/api/client';
-import AdminPage from './+page.svelte';
+import SettingsPage from './settings/+page.svelte';
+import UsersPage from './users/+page.svelte';
 
 afterEach(() => {
 	cleanup();
@@ -46,7 +49,8 @@ afterEach(() => {
 
 const data = {
 	buildNumber: 'test-build',
-	settings: { registrationEnabled: true, email: emailSettings },
+	activeAdminPath: '/admin/settings',
+	settings: { app: appSettings, email: emailSettings },
 	stats: { users: 2, admins: 1, blockedUsers: 0, lists: 3, todoItems: 8 },
 	users: [
 		{
@@ -64,10 +68,13 @@ const data = {
 
 describe('admin page', () => {
 	it('shows stats and displays a generated recovery link', async () => {
-		render(AdminPage, { props: { data } });
+		render(UsersPage, { props: { data } });
 
 		expect(screen.getByRole('heading', { name: 'Users' })).toBeInTheDocument();
 		expect(screen.getByText('8')).toBeInTheDocument();
+		expect(screen.queryByLabelText('Registration enabled')).not.toBeInTheDocument();
+		expect(screen.queryByLabelText('Public app URL')).not.toBeInTheDocument();
+		expect(screen.queryByLabelText('Email delivery enabled')).not.toBeInTheDocument();
 		await fireEvent.click(screen.getByRole('button', { name: /create recovery link/i }));
 
 		expect(createRecoveryLink).toHaveBeenCalledWith('user-1');
@@ -77,7 +84,7 @@ describe('admin page', () => {
 	it('shows the backend message when an admin tries to block itself', async () => {
 		vi.mocked(updateUserBlocked).mockRejectedValue(new ApiError(409, 'You cannot block yourself.', 'SELF_BLOCKED'));
 
-		render(AdminPage, {
+		render(UsersPage, {
 			props: {
 				data: {
 					...data,
@@ -100,15 +107,21 @@ describe('admin page', () => {
 	});
 
 	it('saves email settings as a draft and sends a test email after save', async () => {
-		render(AdminPage, { props: { data } });
+		render(SettingsPage, { props: { data } });
 
+		expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
 		expect(screen.queryByLabelText('Protocol')).not.toBeInTheDocument();
+		expect(screen.queryByRole('heading', { name: 'Users' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /create recovery link/i })).not.toBeInTheDocument();
 		await fireEvent.click(screen.getByLabelText('Email delivery enabled'));
 		await fireEvent.input(screen.getByLabelText('SMTP host'), { target: { value: 'smtp.example.com' } });
 		await fireEvent.input(screen.getByLabelText('SMTP port'), { target: { value: '587' } });
 		await fireEvent.input(screen.getByLabelText('Sender email'), { target: { value: 'todo@example.com' } });
-		await fireEvent.input(screen.getByLabelText('Public app URL'), { target: { value: 'https://todo.example.com' } });
-		await fireEvent.click(screen.getByRole('button', { name: /save email settings/i }));
+		expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /save email settings/i })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Discard' })).not.toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
 		expect(updateEmailSettings).toHaveBeenCalledWith(expect.objectContaining({
 			enabled: true,
@@ -117,8 +130,12 @@ describe('admin page', () => {
 			protocol: 'smtp',
 		}));
 
+		expect(screen.getByText('Test email settings')).toBeInTheDocument();
+		expect(screen.getByText('Send a test email below to verify the active email configuration.')).toBeInTheDocument();
 		await fireEvent.input(screen.getByLabelText('Test recipient'), { target: { value: 'recipient@example.com' } });
-		await fireEvent.click(screen.getByRole('button', { name: /test email settings/i }));
+		expect(screen.queryByRole('button', { name: /test email settings/i })).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Test' })).toHaveClass('py-2');
+		await fireEvent.click(screen.getByRole('button', { name: 'Test' }));
 
 		expect(testEmailSettings).toHaveBeenCalledWith('recipient@example.com');
 	});
@@ -131,10 +148,10 @@ describe('admin page', () => {
 			detail: 'Could not connect to smtp.example.com:587 within the SMTP timeout.',
 			hint: 'Check the SMTP host, port, firewall, and whether the provider expects STARTTLS or SSL/TLS.',
 		});
-		render(AdminPage, { props: { data } });
+		render(SettingsPage, { props: { data } });
 
 		await fireEvent.input(screen.getByLabelText('Test recipient'), { target: { value: 'recipient@example.com' } });
-		await fireEvent.click(screen.getByRole('button', { name: /test email settings/i }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Test' }));
 
 		expect(await screen.findByText('Email server is not reachable')).toBeInTheDocument();
 		expect(screen.getByText('Could not connect to smtp.example.com:587 within the SMTP timeout.')).toBeInTheDocument();
@@ -142,7 +159,7 @@ describe('admin page', () => {
 	});
 
 	it('replaces configured SMTP password when the password field is edited', async () => {
-		render(AdminPage, {
+		render(SettingsPage, {
 			props: {
 				data: {
 					...data,
@@ -157,7 +174,6 @@ describe('admin page', () => {
 							username: 'mailer',
 							passwordConfigured: true,
 							from: 'todo@example.com',
-							publicBaseUrl: 'https://todo.example.com',
 						},
 					},
 				},
@@ -167,14 +183,14 @@ describe('admin page', () => {
 		expect(screen.queryByLabelText('Password action')).not.toBeInTheDocument();
 		expect(screen.getByPlaceholderText('********')).toBeInTheDocument();
 		await fireEvent.input(screen.getByLabelText('Password'), { target: { value: '' } });
-		await fireEvent.click(screen.getByRole('button', { name: /save email settings/i }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 		await waitFor(() => {
 			expect(screen.getAllByText('SMTP password is required when authentication is enabled.').length).toBeGreaterThan(0);
 		});
 		expect(screen.queryByText('SMTP password cannot be cleared while authentication is enabled.')).not.toBeInTheDocument();
 
 		await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'new-secret' } });
-		await fireEvent.click(screen.getByRole('button', { name: /save email settings/i }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
 		expect(updateEmailSettings).toHaveBeenCalledWith(expect.objectContaining({
 			passwordAction: 'REPLACE',
@@ -185,13 +201,16 @@ describe('admin page', () => {
 	it('autosaves public app URL without saving SMTP settings', async () => {
 		vi.useFakeTimers();
 		try {
-			render(AdminPage, { props: { data } });
+			render(SettingsPage, { props: { data } });
 
 			await fireEvent.input(screen.getByLabelText('Public app URL'), { target: { value: 'https://todo.example.com' } });
 			await vi.advanceTimersByTimeAsync(700);
 
 			await waitFor(() => {
-				expect(updatePublicBaseUrl).toHaveBeenCalledWith('https://todo.example.com');
+				expect(updateAppSettings).toHaveBeenCalledWith({
+					registrationEnabled: true,
+					publicBaseUrl: 'https://todo.example.com',
+				});
 			});
 			expect(updateEmailSettings).not.toHaveBeenCalled();
 		} finally {

@@ -179,6 +179,5 @@ class EmailDeliveryServiceTest {
         password = "secret",
         from = "todo@example.com",
         fromName = "Todo",
-        publicBaseUrl = "https://todo.example.com",
     )
 }

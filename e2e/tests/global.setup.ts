@@ -4,6 +4,11 @@ import { addVirtualAuthenticator, waitForHydration } from './helpers';
 
 const adminStorageState = '.auth/admin.json';
 
+interface AppSettings {
+	registrationEnabled: boolean;
+	publicBaseUrl: string;
+}
+
 async function registrationEnabled(page: import('@playwright/test').Page): Promise<boolean> {
 	const config = await page.request.get('/api/auth/config');
 	expect(config.ok()).toBe(true);
@@ -16,11 +21,15 @@ async function enableRegistration(page: import('@playwright/test').Page): Promis
 	});
 	expect(refresh.ok()).toBe(true);
 	const { accessToken } = (await refresh.json()) as { accessToken: string };
-	const response = await page.request.patch('/api/admin/settings/registration', {
-		headers: {
-			Authorization: `Bearer ${accessToken}`,
-		},
-		data: { registrationEnabled: true },
+	const headers = {
+		Authorization: `Bearer ${accessToken}`,
+	};
+	const settingsResponse = await page.request.get('/api/admin/settings/app', { headers });
+	expect(settingsResponse.ok()).toBe(true);
+	const settings = (await settingsResponse.json()) as AppSettings;
+	const response = await page.request.patch('/api/admin/settings/app', {
+		headers,
+		data: { ...settings, registrationEnabled: true },
 	});
 	expect(response.ok()).toBe(true);
 }
@@ -50,7 +59,7 @@ test('creates the first admin when setup is required', async ({ page, context })
 	await page.getByLabel('Passkey name (optional)').fill('E2E setup passkey');
 	await page.getByRole('button', { name: /Create admin passkey/ }).click();
 
-	await page.waitForURL('**/admin');
+	await page.waitForURL('**/admin/settings');
 	await expect(page.getByRole('heading', { name: 'Admin' })).toBeVisible();
 	await enableRegistration(page);
 	await mkdir('.auth', { recursive: true });

@@ -50,7 +50,6 @@ class EmailSettingsServiceTest {
             password = null,
             from = "",
             fromName = null,
-            publicBaseUrl = "",
         )
 
         assertTrue(configuration.validForSending)
@@ -71,7 +70,6 @@ class EmailSettingsServiceTest {
             password = null,
             from = "",
             fromName = null,
-            publicBaseUrl = "",
         )
 
         assertFalse(configuration.validForSending)
@@ -81,7 +79,6 @@ class EmailSettingsServiceTest {
                 "SMTP port is required",
                 "SMTP protocol is required",
                 "Sender address is required",
-                "Public application base URL is required",
                 "SMTP username is required when authentication is enabled",
                 "SMTP password is required when authentication is enabled",
             ),
@@ -103,37 +100,28 @@ class EmailSettingsServiceTest {
             password = null,
             from = "todo@example.com",
             fromName = null,
-            publicBaseUrl = "https://todo.example.com",
         )
 
         assertEquals(listOf("SMTP protocol must be smtp"), configuration.validationErrors())
     }
 
     @Test
-    fun `enabled configuration requires public app URL with protocol and no trailing slash`() {
-        val missingProtocol = validUpdate().copy(publicBaseUrl = "todo.example.com")
-        val trailingSlash = validUpdate().copy(publicBaseUrl = "https://todo.example.com/")
-
-        assertEquals(
-            listOf("Public app URL must look like https://todo.example.com without a trailing slash"),
-            EmailConfiguration(
-                source = EmailConfigurationSource.RUNTIME,
-                enabled = missingProtocol.enabled,
-                authEnabled = missingProtocol.authEnabled,
-                host = missingProtocol.host,
-                port = missingProtocol.port,
-                protocol = missingProtocol.protocol,
-                encryption = missingProtocol.encryption,
-                username = missingProtocol.username,
-                password = missingProtocol.password,
-                from = missingProtocol.from,
-                fromName = missingProtocol.fromName,
-                publicBaseUrl = missingProtocol.publicBaseUrl,
-            ).validationErrors(),
+    fun `enabled email configuration does not require public app URL`() {
+        val configuration = EmailConfiguration(
+            source = EmailConfigurationSource.RUNTIME,
+            enabled = true,
+            authEnabled = false,
+            host = "smtp.example.com",
+            port = 587,
+            protocol = "smtp",
+            encryption = EmailEncryption.STARTTLS,
+            username = null,
+            password = null,
+            from = "todo@example.com",
+            fromName = null,
         )
-        assertFailsWith<InvalidEmailConfigurationException> {
-            service().service.saveRuntimeSettings(trailingSlash)
-        }
+
+        assertEquals(emptyList(), configuration.validationErrors())
     }
 
     @Test
@@ -200,26 +188,19 @@ class EmailSettingsServiceTest {
     }
 
     @Test
-    fun `public app URL can be saved independently of SMTP settings`() {
-        val harness = service()
+    fun `runtime SMTP settings do not read or write public app URL settings`() {
+        val harness = service(
+            initialSettings = listOf(
+                AppSetting("app.publicBaseUrl", "https://public.example.com"),
+                AppSetting("email.publicBaseUrl", "https://legacy.example.com"),
+            )
+        )
 
-        val saved = harness.service.savePublicBaseUrl(" https://public.example.com ")
+        harness.service.saveRuntimeSettings(validUpdate())
 
-        assertEquals("https://public.example.com", saved.publicBaseUrl)
-        assertEquals("https://public.example.com", harness.value(EmailSettingsService.APP_PUBLIC_BASE_URL_KEY))
-        assertEquals(null, harness.value(EmailSettingsService.RUNTIME_CONFIGURED_KEY))
-    }
-
-    @Test
-    fun `runtime SMTP settings use independently saved public app URL`() {
-        val harness = service()
-        harness.service.savePublicBaseUrl("https://public.example.com")
-
-        val saved = harness.service.saveRuntimeSettings(validUpdate())
-
-        assertEquals("https://todo.example.com", saved.publicBaseUrl)
-        assertEquals("https://todo.example.com", harness.value(EmailSettingsService.APP_PUBLIC_BASE_URL_KEY))
-        assertEquals("https://todo.example.com", harness.service.activeConfiguration().publicBaseUrl)
+        assertEquals("https://public.example.com", harness.value("app.publicBaseUrl"))
+        assertEquals("https://legacy.example.com", harness.value("email.publicBaseUrl"))
+        assertEquals(EmailConfigurationSource.RUNTIME, harness.service.activeConfiguration().source)
     }
 
     @Test
@@ -229,15 +210,12 @@ class EmailSettingsServiceTest {
             emailProperties = emailProperties(enabled = false),
         )
         harness.service.saveRuntimeSettings(validUpdate(passwordAction = PasswordAction.REPLACE, password = "runtime-secret"))
-        harness.service.savePublicBaseUrl("https://public.example.com")
 
         val reset = harness.service.resetToDeployment()
 
         assertEquals(EmailConfigurationSource.DEPLOYMENT, reset.source)
         assertEquals("deployment.example.com", reset.host)
-        assertEquals("https://public.example.com", reset.publicBaseUrl)
         assertEquals(null, harness.value(EmailSettingsService.RUNTIME_CONFIGURED_KEY))
-        assertEquals("https://public.example.com", harness.value(EmailSettingsService.APP_PUBLIC_BASE_URL_KEY))
     }
 
     private data class Harness(
@@ -301,7 +279,6 @@ class EmailSettingsServiceTest {
         encryption = EmailEncryption.STARTTLS,
         from = "todo@example.com",
         fromName = "Todo",
-        publicBaseUrl = "https://todo.example.com",
     )
 
     private fun validUpdate(
@@ -321,6 +298,5 @@ class EmailSettingsServiceTest {
         password = password,
         from = "todo@example.com",
         fromName = "Todo",
-        publicBaseUrl = "https://todo.example.com",
     )
 }

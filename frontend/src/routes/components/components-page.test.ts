@@ -238,6 +238,18 @@ describe('ComponentsPage Button showcase', () => {
 		expect(screen.getByText('Last action:').parentElement).toHaveTextContent('Submit');
 	});
 
+	it('demonstrates field-adjacent button sizing beside an input', async () => {
+		render(ComponentsPage);
+
+		expect(screen.getByLabelText('Email')).toBeInTheDocument();
+		const button = screen.getByRole('button', { name: 'Send' });
+		expect(button).toHaveClass('py-2');
+		expect(button).not.toHaveClass('py-1.5');
+
+		await fireEvent.click(button);
+		expect(screen.getByText('Last action:').parentElement).toHaveTextContent('Field action');
+	});
+
 	it('documents Button props and native forwarding', () => {
 		render(ComponentsPage);
 
@@ -263,6 +275,7 @@ describe('ComponentsPage Button showcase', () => {
 		expect(showcase.getByText(/standard native button attributes and handlers/i)).toBeInTheDocument();
 		expect(showcase.getByText('Tone, appearance, and click handling:')).toBeInTheDocument();
 		expect(showcase.getByText('States, type, and layout classes:')).toBeInTheDocument();
+		expect(showcase.getByText('Field-adjacent action:')).toBeInTheDocument();
 		expect(showcase.getByText('Icon Touch Targets')).toBeInTheDocument();
 		expect(showcase.getByText(/selected options use blue text/i)).toBeInTheDocument();
 	});

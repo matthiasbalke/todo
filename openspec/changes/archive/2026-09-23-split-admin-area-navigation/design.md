@@ -68,11 +68,17 @@ On wider screens, show a persistent sidebar within the admin content area. On sm
 
 Alternative considered: use a drawer menu on mobile. That is heavier than needed for two sections and would make common switching slower.
 
+### Allow a wider admin shell on desktop
+
+Admin routes may use a wider desktop content container than regular app routes. The todo workflow benefits from the existing narrow app shell, but the admin area contains operational forms and dense management surfaces such as SMTP settings, usage stats, user profile editing, and recovery links. Keeping admin content inside the normal `max-w-2xl` app width leaves too little horizontal room once the desktop admin sidebar is present.
+
+The wider shell should be scoped to `/admin` main content only and should preserve the current small-screen behavior. The authenticated app header should keep its existing width so the Todo brand, install button area, and user menu do not shift when navigating between normal todo routes and admin routes. A route-aware app layout width, such as keeping normal route content at the existing narrow width while allowing admin route content to use a wider desktop max width below the header, is preferable to widening every authenticated route, widening the header, or making the admin layout break out of its parent container.
+
 ## Risks / Trade-offs
 
 - [Route refactor breaks existing tests] -> Update unit and E2E tests to navigate to explicit admin subsections and keep `/admin` redirect coverage.
 - [Duplicated state between old and new page components] -> Move settings and user-management logic wholesale into the new pages rather than temporarily rendering both structures.
-- [Admin UI becomes too wide for the app shell] -> Keep the existing app max-width initially; if the sidebar feels cramped, adjust only the admin shell content width as part of the implementation.
+- [Admin UI becomes too wide for the app shell] -> Keep the existing app max-width for normal app routes, but allow `/admin` to use a wider desktop content container when admin controls such as SMTP settings need more room.
 - [Future sections outgrow simple navigation] -> The nested route shape supports adding Overview, Audit, or Email-specific sections later without changing the entry-point behavior.
 
 ## Migration Plan

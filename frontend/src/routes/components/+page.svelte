@@ -42,6 +42,7 @@
 	let inviteEmail = '';
 	let password = '';
 	let username = '';
+	let fieldActionEmail = '';
 	let searchQuery = '';
 	let editableName = 'Alex Morgan';
 	let latestEditableName = editableName;
@@ -230,7 +231,7 @@
 </Button>
 <Button tone="neutral" appearance="bare" size="menu" align="start" weight="normal">Menu item</Button>`;
 
-	const buttonStatesCode = `<Button loading={isSaving} loadingLabel="Saving…">
+const buttonStatesCode = `<Button loading={isSaving} loadingLabel="Saving…">
   Save changes
 </Button>
 
@@ -239,6 +240,15 @@
 <Button type="submit" class="w-full">
   Submit form
 </Button>`;
+
+	const buttonFieldRowCode = `<div class="grid sm:grid-cols-[1fr_auto] gap-2">
+  <TextInput bind:value={email} label="Email" type="email" />
+  <div class="self-end">
+    <Button tone="neutral" appearance="outline" size="field">
+      Send
+    </Button>
+  </div>
+</div>`;
 
 	const dialogCode = `<script lang="ts">
   import Dialog from '$lib/components/Dialog.svelte';
@@ -588,6 +598,19 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					</form>
 					<p class="text-xs text-muted mt-2">Uses native form submission semantics.</p>
 				</div>
+
+				<div>
+					<h3 class="text-lg font-semibold text-value mb-4">Field-Adjacent Action</h3>
+					<div class="grid sm:grid-cols-[1fr_auto] gap-2">
+						<TextInput bind:value={fieldActionEmail} label="Email" type="email" class="w-full" />
+						<div class="self-end">
+							<Button tone="neutral" appearance="outline" size="field" onclick={() => handleButtonAction('Field action')}>
+								Send
+							</Button>
+						</div>
+					</div>
+					<p class="text-xs text-muted mt-2">Use field size when a Button sits beside a default input.</p>
+				</div>
 			</div>
 
 			<div class="mt-12 pt-8 border-t border-border">
@@ -600,6 +623,10 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 					<div>
 						<p class="text-sm font-mono text-supporting mb-2">States, type, and layout classes:</p>
 						<pre class="bg-surface-inverse text-on-inverse p-4 rounded text-sm overflow-x-auto"><code>{buttonStatesCode}</code></pre>
+					</div>
+					<div>
+						<p class="text-sm font-mono text-supporting mb-2">Field-adjacent action:</p>
+						<pre class="bg-surface-inverse text-on-inverse p-4 rounded text-sm overflow-x-auto"><code>{buttonFieldRowCode}</code></pre>
 					</div>
 				</div>
 			</div>

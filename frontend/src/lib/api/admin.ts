@@ -1,12 +1,13 @@
 import { authedFetch } from './authedClient';
 
 export interface AdminSettings {
-	registrationEnabled: boolean;
+	app: AppSettings;
 	email: EmailSettings;
 }
 
-export interface RegistrationSettings {
+export interface AppSettings {
 	registrationEnabled: boolean;
+	publicBaseUrl: string;
 }
 
 export type EmailConfigurationSource = 'DEPLOYMENT' | 'RUNTIME';
@@ -25,7 +26,6 @@ export interface EmailSettings {
 	passwordConfigured: boolean;
 	from: string;
 	fromName: string | null;
-	publicBaseUrl: string;
 	validationErrors: string[];
 }
 
@@ -41,7 +41,6 @@ export interface UpdateEmailSettingsRequest {
 	password: string | null;
 	from: string;
 	fromName: string | null;
-	publicBaseUrl: string;
 }
 
 export interface TestEmailResponse {
@@ -81,17 +80,10 @@ export async function getAdminSettings(fetchFn: typeof fetch = fetch): Promise<A
 	return authedFetch('/api/admin/settings', undefined, fetchFn);
 }
 
-export async function setRegistrationEnabled(registrationEnabled: boolean): Promise<RegistrationSettings> {
-	return authedFetch('/api/admin/settings/registration', {
+export async function updateAppSettings(req: AppSettings): Promise<AppSettings> {
+	return authedFetch('/api/admin/settings/app', {
 		method: 'PATCH',
-		body: JSON.stringify({ registrationEnabled }),
-	});
-}
-
-export async function updatePublicBaseUrl(publicBaseUrl: string): Promise<EmailSettings> {
-	return authedFetch('/api/admin/settings/public-base-url', {
-		method: 'PATCH',
-		body: JSON.stringify({ publicBaseUrl }),
+		body: JSON.stringify(req),
 	});
 }
 
