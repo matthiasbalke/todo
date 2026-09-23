@@ -5,7 +5,7 @@ vi.mock('./authedClient', () => ({
 }));
 
 import { authedFetch } from './authedClient';
-import { resetEmailSettings, testEmailSettings, updateEmailSettings, updatePublicBaseUrl } from './admin';
+import { resetEmailSettings, testEmailSettings, updateAppSettings, updateEmailSettings } from './admin';
 
 describe('admin api', () => {
 	it('updateEmailSettings sends the full email settings payload', async () => {
@@ -21,7 +21,6 @@ describe('admin api', () => {
 			password: 'secret',
 			from: 'todo@example.com',
 			fromName: 'Todo',
-			publicBaseUrl: 'https://todo.example.com',
 		};
 
 		await updateEmailSettings(req);
@@ -38,12 +37,14 @@ describe('admin api', () => {
 		expect(authedFetch).toHaveBeenCalledWith('/api/admin/settings/email/reset', { method: 'POST' });
 	});
 
-	it('updatePublicBaseUrl patches the public app URL endpoint', async () => {
-		await updatePublicBaseUrl('https://todo.example.com');
+	it('updateAppSettings patches the app settings endpoint', async () => {
+		const req = { registrationEnabled: false, publicBaseUrl: 'https://todo.example.com' };
 
-		expect(authedFetch).toHaveBeenCalledWith('/api/admin/settings/public-base-url', {
+		await updateAppSettings(req);
+
+		expect(authedFetch).toHaveBeenCalledWith('/api/admin/settings/app', {
 			method: 'PATCH',
-			body: JSON.stringify({ publicBaseUrl: 'https://todo.example.com' }),
+			body: JSON.stringify(req),
 		});
 	});
 

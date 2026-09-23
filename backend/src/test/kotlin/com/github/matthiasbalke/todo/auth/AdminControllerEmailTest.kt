@@ -138,6 +138,5 @@ class AdminControllerEmailTest {
         password = password,
         from = "todo@example.com",
         fromName = "Todo",
-        publicBaseUrl = "https://todo.example.com",
     )
 }

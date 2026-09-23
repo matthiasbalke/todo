@@ -88,7 +88,6 @@ class AdminAreaIntegrationTest : AbstractIntegrationTest() {
         password = "smtp-secret",
         from = "todo@example.com",
         fromName = "Todo",
-        publicBaseUrl = "https://todo.example.com",
     )
 
     private fun validEmailSettingsJson(
@@ -107,8 +106,7 @@ class AdminAreaIntegrationTest : AbstractIntegrationTest() {
           "passwordAction": "REPLACE",
           "password": "$password",
           "from": "todo@example.com",
-          "fromName": "Todo",
-          "publicBaseUrl": "https://todo.example.com"
+          "fromName": "Todo"
         }
     """.trimIndent()
 
@@ -135,26 +133,57 @@ class AdminAreaIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `admin can toggle runtime registration setting`() {
+    fun `admin can save runtime app settings`() {
         val admin = createUser(admin = true)
 
-        mockMvc.patch("/api/admin/settings/registration") {
+        mockMvc.patch("/api/admin/settings/app") {
             header("Authorization", bearer(admin))
             contentType = MediaType.APPLICATION_JSON
-            content = """{"registrationEnabled":false}"""
+            content = """{"registrationEnabled":false,"publicBaseUrl":"https://todo.example.com"}"""
         }.andExpect {
             status { isOk() }
             jsonPath("$.registrationEnabled") { value(false) }
+            jsonPath("$.publicBaseUrl") { value("https://todo.example.com") }
         }
         assertFalse(appSettingsService.isRegistrationEnabled())
+        assertEquals("https://todo.example.com", appSettingsService.publicBaseUrl())
 
-        mockMvc.patch("/api/admin/settings/registration") {
+        mockMvc.patch("/api/admin/settings/app") {
             header("Authorization", bearer(admin))
             contentType = MediaType.APPLICATION_JSON
-            content = """{"registrationEnabled":true}"""
+            content = """{"registrationEnabled":true,"publicBaseUrl":"https://todo.example.com/"}"""
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.code") { value("APP_SETTINGS_INVALID") }
+        }
+
+        mockMvc.get("/api/admin/settings/app") {
+            header("Authorization", bearer(admin))
         }.andExpect {
             status { isOk() }
-            jsonPath("$.registrationEnabled") { value(true) }
+            jsonPath("$.registrationEnabled") { value(false) }
+            jsonPath("$.publicBaseUrl") { value("https://todo.example.com") }
+        }
+    }
+
+    @Test
+    fun `admin app settings APIs reject unauthenticated and non-admin users`() {
+        val user = createUser()
+
+        mockMvc.get("/api/admin/settings/app").andExpect {
+            status { is4xxClientError() }
+        }
+        mockMvc.get("/api/admin/settings/app") {
+            header("Authorization", bearer(user))
+        }.andExpect {
+            status { isForbidden() }
+        }
+        mockMvc.patch("/api/admin/settings/app") {
+            header("Authorization", bearer(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"registrationEnabled":true,"publicBaseUrl":"https://todo.example.com"}"""
+        }.andExpect {
+            status { isForbidden() }
         }
     }
 
@@ -439,13 +468,18 @@ class AdminAreaIntegrationTest : AbstractIntegrationTest() {
         val admin = createUser(admin = true)
         val target = createUser()
         val blocked = createUser(blocked = true)
-        appSettingsService.setRegistrationEnabled(false)
+        appSettingsService.saveAppSettings(
+            AppSettingsUpdate(
+                registrationEnabled = false,
+                publicBaseUrl = "https://todo.example.com",
+            )
+        )
 
         mockMvc.post("/api/admin/users/${target.id}/recovery-links") {
             header("Authorization", bearer(admin))
         }.andExpect {
             status { isCreated() }
-            jsonPath("$.url") { exists() }
+            jsonPath("$.url") { value(org.hamcrest.Matchers.startsWith("https://todo.example.com/recover/")) }
             jsonPath("$.expiresAt") { exists() }
         }
         assertTrue(passkeyRecoveryTokenRepository.findAll().any { it.userId == target.id })

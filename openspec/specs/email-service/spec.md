@@ -137,7 +137,8 @@ The email service SHALL require explicit complete configuration before sending o
 
 #### Scenario: Application base URL is configured
 - **WHEN** an email template includes an application link
-- **THEN** the link uses a configured public application base URL
+- **THEN** the message composition uses the application link generator to produce the link
+- **AND** email provider settings do not accept, return, store, or validate the public application base URL
 - **AND** the service does not derive public links from untrusted request headers
 
 #### Scenario: Deployment defaults configure email

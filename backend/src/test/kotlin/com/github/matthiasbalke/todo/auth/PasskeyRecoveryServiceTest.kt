@@ -1,35 +1,20 @@
 package com.github.matthiasbalke.todo.auth
 
+import org.mockito.Mockito
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
 class PasskeyRecoveryServiceTest {
 
     @Test
-    fun `public recovery URL base uses first configured CORS origin`() {
-        assertEquals(
-            "https://todo.example.com",
-            PasskeyRecoveryService.publicBaseUrlFromAllowedOrigins("https://todo.example.com,https://localhost:8443"),
-        )
-    }
+    fun `application link service builds encoded recovery URLs from app public base url`() {
+        val appSettingsService = Mockito.mock(AppSettingsService::class.java)
+        Mockito.`when`(appSettingsService.publicBaseUrl()).thenReturn("https://todo.example.com/")
+        val service = ApplicationLinkService(appSettingsService)
 
-    @Test
-    fun `public recovery URL base removes default ports`() {
         assertEquals(
-            "https://todo.example.com",
-            PasskeyRecoveryService.publicBaseUrlFromAllowedOrigins("https://todo.example.com:443"),
+            "https://todo.example.com/recover/token%20with%2Fslash",
+            service.url(AppRoute.Recovery("token with/slash")),
         )
-        assertEquals(
-            "http://todo.example.com",
-            PasskeyRecoveryService.publicBaseUrlFromAllowedOrigins("http://todo.example.com:80"),
-        )
-    }
-
-    @Test
-    fun `public recovery URL base rejects missing configured origin`() {
-        assertFailsWith<IllegalStateException> {
-            PasskeyRecoveryService.publicBaseUrlFromAllowedOrigins(" , ")
-        }
     }
 }

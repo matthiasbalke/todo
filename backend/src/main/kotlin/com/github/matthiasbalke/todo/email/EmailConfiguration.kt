@@ -1,7 +1,5 @@
 package com.github.matthiasbalke.todo.email
 
-import java.net.URI
-
 enum class EmailConfigurationSource {
     DEPLOYMENT,
     RUNTIME,
@@ -30,7 +28,6 @@ data class EmailSettingsUpdate(
     val password: String?,
     val from: String,
     val fromName: String?,
-    val publicBaseUrl: String,
 )
 
 data class EmailConfiguration(
@@ -45,7 +42,6 @@ data class EmailConfiguration(
     val password: String?,
     val from: String,
     val fromName: String?,
-    val publicBaseUrl: String,
 ) {
     val passwordConfigured: Boolean = !password.isNullOrBlank()
     val validForSending: Boolean = validationErrors().isEmpty()
@@ -66,23 +62,10 @@ data class EmailConfiguration(
             errors += "SMTP protocol must be smtp"
         }
         if (from.isBlank()) errors += "Sender address is required"
-        if (publicBaseUrl.isBlank()) {
-            errors += "Public application base URL is required"
-        } else if (!validPublicBaseUrl(publicBaseUrl)) {
-            errors += "Public app URL must look like https://todo.example.com without a trailing slash"
-        }
         if (authEnabled) {
             if (username.isNullOrBlank()) errors += "SMTP username is required when authentication is enabled"
             if (password.isNullOrBlank()) errors += "SMTP password is required when authentication is enabled"
         }
         return errors
-    }
-
-    companion object {
-        fun validPublicBaseUrl(value: String): Boolean {
-            if (value.endsWith("/")) return false
-            val uri = runCatching { URI(value) }.getOrNull() ?: return false
-            return uri.scheme in setOf("http", "https") && !uri.host.isNullOrBlank()
-        }
     }
 }

@@ -104,7 +104,7 @@ async function configureEmail(page: Page, settings: {
 	from: string;
 	fromName: string;
 }) {
-	await page.goto('/admin');
+	await page.goto('/admin/settings');
 	await waitForHydration(page);
 	await expect(page.getByRole('heading', { name: 'Admin' })).toBeVisible();
 
@@ -115,8 +115,7 @@ async function configureEmail(page: Page, settings: {
 	await page.getByLabel('SMTP port').fill(String(settings.port));
 	await page.getByLabel('Sender email').fill(settings.from);
 	await page.getByLabel('Sender name').fill(settings.fromName);
-	await page.getByLabel('Public app URL').fill('http://localhost');
-	const saveButton = page.getByRole('button', { name: /save email settings/i });
+	const saveButton = page.getByRole('button', { name: 'Save' });
 	if (await saveButton.isEnabled()) {
 		const saveResponse = page.waitForResponse((response) =>
 			response.url().includes('/api/admin/settings/email')
@@ -126,14 +125,21 @@ async function configureEmail(page: Page, settings: {
 		await saveButton.click();
 		const response = await saveResponse;
 		expect(response.ok(), `Email settings save returned ${response.status()}`).toBe(true);
-		await expect(page.getByRole('button', { name: /test email settings/i })).toBeEnabled();
+		await expect(page.getByRole('button', { name: 'Test' })).toBeEnabled();
 	}
 }
 
 async function sendTestEmail(page: Page, recipient: string) {
 	await page.getByLabel('Test recipient').fill(recipient);
-	await page.getByRole('button', { name: /test email settings/i }).click();
-	await expect(page.getByText('Test email accepted for delivery.')).toBeVisible();
+	const testResponse = page.waitForResponse((response) =>
+		response.url().includes('/api/admin/settings/email/test')
+		&& response.request().method() === 'POST',
+		{ timeout: 30000 },
+	);
+	await page.getByRole('button', { name: 'Test' }).click();
+	const response = await testResponse;
+	expect(response.ok(), `Test email endpoint returned ${response.status()}`).toBe(true);
+	await expect(page.getByText('Test email accepted for delivery.')).toBeVisible({ timeout: 15000 });
 }
 
 function expectCapturedTestMessage(

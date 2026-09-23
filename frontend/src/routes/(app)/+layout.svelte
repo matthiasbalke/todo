@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { page } from '$app/state';
   import { logout } from '$lib/api/auth';
   import { clearSession, getAccessToken, getCurrentUser, refreshIfExpired } from '$lib/stores/auth.svelte';
   import { flushOfflineQueue, hasPending } from '$lib/stores/offlineQueue.svelte';
@@ -17,6 +18,7 @@
   let offline = $state(false);
   let syncing = $state(false);
   let deferredPrompt = $state<BeforeInstallPromptEvent | null>(null);
+  const mainWidthClass = $derived(page.url.pathname.startsWith('/admin') ? 'max-w-5xl' : 'max-w-2xl');
 
   onMount(() => {
     offline = !navigator.onLine;
@@ -147,7 +149,7 @@
       You're offline — changes won't be saved until you reconnect.
     </div>
   {/if}
-  <main class="max-w-2xl mx-auto px-4 py-6">
+  <main class="{mainWidthClass} mx-auto px-4 py-6">
     {@render children()}
   </main>
 </div>
