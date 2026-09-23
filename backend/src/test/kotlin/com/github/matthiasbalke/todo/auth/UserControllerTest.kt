@@ -6,10 +6,17 @@ import com.github.matthiasbalke.todo.lists.ListMembership
 import com.github.matthiasbalke.todo.lists.ListMembershipRepository
 import com.github.matthiasbalke.todo.lists.ListRepository
 import com.github.matthiasbalke.todo.lists.ListRole
+import com.github.matthiasbalke.todo.email.EmailDeliveryResult
+import com.github.matthiasbalke.todo.email.EmailDeliveryService
+import com.github.matthiasbalke.todo.email.OutboundEmail
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers
+import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
@@ -30,6 +37,13 @@ class UserControllerTest : AbstractIntegrationTest() {
     @Autowired private lateinit var listRepository: ListRepository
     @Autowired private lateinit var listMembershipRepository: ListMembershipRepository
     @Autowired private lateinit var jwtTokenService: JwtTokenService
+    @MockitoBean private lateinit var emailDeliveryService: EmailDeliveryService
+
+    @BeforeEach
+    fun configureEmailDelivery() {
+        Mockito.reset(emailDeliveryService)
+        Mockito.`when`(emailDeliveryService.send(ArgumentMatchers.any(OutboundEmail::class.java) ?: OutboundEmail("", "", ""))).thenReturn(EmailDeliveryResult.Accepted)
+    }
 
     private fun createUser(email: String = "user-${UUID.randomUUID()}@example.com"): User =
         userRepository.save(User(email = email, displayName = "Test User", validatedAt = java.time.Instant.now()))
@@ -155,7 +169,7 @@ class UserControllerTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `PUT me - updates email`() {
+    fun `PUT me - starts pending email change`() {
         val user = createUser()
         val newEmail = "new-${UUID.randomUUID()}@example.com"
         mockMvc.put("/api/users/me") {
@@ -164,8 +178,14 @@ class UserControllerTest : AbstractIntegrationTest() {
             content = """{"displayName":"${user.displayName}","email":"$newEmail"}"""
         }.andExpect {
             status { isOk() }
-            jsonPath("$.email") { value(newEmail) }
+            jsonPath("$.email") { value(user.email) }
+            jsonPath("$.pendingEmail") { value(newEmail) }
         }
+
+        val updated = userRepository.findById(user.id).orElseThrow()
+        assertEquals(user.email, updated.email)
+        assertEquals(newEmail, updated.pendingEmail)
+        assertNotNull(updated.pendingEmailToken)
     }
 
     @Test
