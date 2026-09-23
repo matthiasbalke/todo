@@ -1,6 +1,5 @@
 package com.github.matthiasbalke.todo.auth
 
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -15,7 +14,7 @@ import java.util.Base64
 class PasskeyRecoveryService(
     private val tokenRepository: PasskeyRecoveryTokenRepository,
     private val userRepository: UserRepository,
-    @Value("\${app.cors.allowed-origins}") private val allowedOrigins: String,
+    private val applicationLinkService: ApplicationLinkService,
 ) {
 
     @Transactional
@@ -32,10 +31,9 @@ class PasskeyRecoveryService(
                 createdByUserId = actor.id,
             )
         )
-        val base = publicBaseUrlFromAllowedOrigins(allowedOrigins)
         return RecoveryLink(
             tokenId = token.id.toString(),
-            url = "$base/recover/$rawToken",
+            url = applicationLinkService.url(AppRoute.Recovery(rawToken)),
             expiresAt = token.expiresAt,
         )
     }
@@ -86,21 +84,6 @@ class PasskeyRecoveryService(
 
     companion object {
         val DEFAULT_TTL: Duration = Duration.ofMinutes(30)
-
-        fun publicBaseUrlFromAllowedOrigins(allowedOrigins: String): String {
-            val firstOrigin = allowedOrigins.split(",")
-                .map { it.trim() }
-                .firstOrNull { it.isNotBlank() }
-                ?: error("app.cors.allowed-origins must contain at least one origin")
-            val normalized = when {
-                firstOrigin.startsWith("https://") && firstOrigin.endsWith(":443") ->
-                    firstOrigin.substringBeforeLast(":443")
-                firstOrigin.startsWith("http://") && firstOrigin.endsWith(":80") ->
-                    firstOrigin.substringBeforeLast(":80")
-                else -> firstOrigin
-            }
-            return normalized.trimEnd('/')
-        }
     }
 }
 

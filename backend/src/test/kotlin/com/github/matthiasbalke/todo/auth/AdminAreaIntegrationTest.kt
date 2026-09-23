@@ -1,6 +1,13 @@
 package com.github.matthiasbalke.todo.auth
 
 import com.github.matthiasbalke.todo.AbstractIntegrationTest
+import com.github.matthiasbalke.todo.email.EmailDeliveryResult
+import com.github.matthiasbalke.todo.email.EmailDeliveryService
+import com.github.matthiasbalke.todo.email.EmailEncryption
+import com.github.matthiasbalke.todo.email.EmailFailureCategory
+import com.github.matthiasbalke.todo.email.EmailSettingsService
+import com.github.matthiasbalke.todo.email.EmailSettingsUpdate
+import com.github.matthiasbalke.todo.email.PasswordAction
 import org.hamcrest.Matchers.greaterThanOrEqualTo
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
@@ -37,9 +44,11 @@ class AdminAreaIntegrationTest : AbstractIntegrationTest() {
     @Autowired private lateinit var refreshTokenRepository: RefreshTokenRepository
     @Autowired private lateinit var jwtTokenService: JwtTokenService
     @Autowired private lateinit var appSettingsService: AppSettingsService
+    @Autowired private lateinit var emailSettingsService: EmailSettingsService
     @Autowired private lateinit var passkeyRecoveryTokenRepository: PasskeyRecoveryTokenRepository
     @Autowired private lateinit var passkeyRecoveryService: PasskeyRecoveryService
     @MockitoBean private lateinit var rpOperations: WebAuthnRelyingPartyOperations
+    @MockitoBean private lateinit var emailDeliveryService: EmailDeliveryService
 
     private fun createUser(
         email: String = "user-${UUID.randomUUID()}@example.com",
@@ -67,6 +76,40 @@ class AdminAreaIntegrationTest : AbstractIntegrationTest() {
         )
     }
 
+    private fun validEmailSettingsUpdate() = EmailSettingsUpdate(
+        enabled = true,
+        authEnabled = true,
+        host = "smtp.example.com",
+        port = 587,
+        protocol = "smtp",
+        encryption = EmailEncryption.STARTTLS,
+        username = "mailer",
+        passwordAction = PasswordAction.REPLACE,
+        password = "smtp-secret",
+        from = "todo@example.com",
+        fromName = "Todo",
+    )
+
+    private fun validEmailSettingsJson(
+        host: String = "smtp.example.com",
+        port: Int = 587,
+        password: String = "smtp-secret",
+    ) = """
+        {
+          "enabled": true,
+          "authEnabled": true,
+          "host": "$host",
+          "port": $port,
+          "protocol": "smtp",
+          "encryption": "STARTTLS",
+          "username": "mailer",
+          "passwordAction": "REPLACE",
+          "password": "$password",
+          "from": "todo@example.com",
+          "fromName": "Todo"
+        }
+    """.trimIndent()
+
     @Test
     fun `setup status reports whether admin users exist`() {
         mockMvc.get("/api/setup").andExpect {
@@ -90,26 +133,192 @@ class AdminAreaIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `admin can toggle runtime registration setting`() {
+    fun `admin can save runtime app settings`() {
         val admin = createUser(admin = true)
 
-        mockMvc.patch("/api/admin/settings/registration") {
+        mockMvc.patch("/api/admin/settings/app") {
             header("Authorization", bearer(admin))
             contentType = MediaType.APPLICATION_JSON
-            content = """{"registrationEnabled":false}"""
+            content = """{"registrationEnabled":false,"publicBaseUrl":"https://todo.example.com"}"""
         }.andExpect {
             status { isOk() }
             jsonPath("$.registrationEnabled") { value(false) }
+            jsonPath("$.publicBaseUrl") { value("https://todo.example.com") }
         }
         assertFalse(appSettingsService.isRegistrationEnabled())
+        assertEquals("https://todo.example.com", appSettingsService.publicBaseUrl())
 
-        mockMvc.patch("/api/admin/settings/registration") {
+        mockMvc.patch("/api/admin/settings/app") {
             header("Authorization", bearer(admin))
             contentType = MediaType.APPLICATION_JSON
-            content = """{"registrationEnabled":true}"""
+            content = """{"registrationEnabled":true,"publicBaseUrl":"https://todo.example.com/"}"""
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.code") { value("APP_SETTINGS_INVALID") }
+        }
+
+        mockMvc.get("/api/admin/settings/app") {
+            header("Authorization", bearer(admin))
         }.andExpect {
             status { isOk() }
-            jsonPath("$.registrationEnabled") { value(true) }
+            jsonPath("$.registrationEnabled") { value(false) }
+            jsonPath("$.publicBaseUrl") { value("https://todo.example.com") }
+        }
+    }
+
+    @Test
+    fun `admin app settings APIs reject unauthenticated and non-admin users`() {
+        val user = createUser()
+
+        mockMvc.get("/api/admin/settings/app").andExpect {
+            status { is4xxClientError() }
+        }
+        mockMvc.get("/api/admin/settings/app") {
+            header("Authorization", bearer(user))
+        }.andExpect {
+            status { isForbidden() }
+        }
+        mockMvc.patch("/api/admin/settings/app") {
+            header("Authorization", bearer(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"registrationEnabled":true,"publicBaseUrl":"https://todo.example.com"}"""
+        }.andExpect {
+            status { isForbidden() }
+        }
+    }
+
+    @Test
+    fun `admin email settings APIs reject unauthenticated and non-admin users`() {
+        val user = createUser()
+
+        mockMvc.get("/api/admin/settings/email").andExpect {
+            status { is4xxClientError() }
+        }
+        mockMvc.get("/api/admin/settings/email") {
+            header("Authorization", bearer(user))
+        }.andExpect {
+            status { isForbidden() }
+        }
+        mockMvc.post("/api/admin/settings/email/test") {
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"recipient":"recipient@example.com"}"""
+        }.andExpect {
+            status { is4xxClientError() }
+        }
+        mockMvc.post("/api/admin/settings/email/test") {
+            header("Authorization", bearer(user))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"recipient":"recipient@example.com"}"""
+        }.andExpect {
+            status { isForbidden() }
+        }
+    }
+
+    @Test
+    fun `admin email settings response redacts password and exposes source`() {
+        val admin = createUser(admin = true)
+        emailSettingsService.resetToDeployment()
+
+        mockMvc.patch("/api/admin/settings/email") {
+            header("Authorization", bearer(admin))
+            contentType = MediaType.APPLICATION_JSON
+            content = validEmailSettingsJson(password = "smtp-secret")
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.source") { value("RUNTIME") }
+            jsonPath("$.host") { value("smtp.example.com") }
+            jsonPath("$.username") { value("mailer") }
+            jsonPath("$.passwordConfigured") { value(true) }
+            jsonPath("$.password") { doesNotExist() }
+        }
+
+        mockMvc.get("/api/admin/settings/email") {
+            header("Authorization", bearer(admin))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.source") { value("RUNTIME") }
+            jsonPath("$.passwordConfigured") { value(true) }
+            jsonPath("$.password") { doesNotExist() }
+        }
+    }
+
+    @Test
+    fun `invalid admin email settings update leaves active settings unchanged`() {
+        val admin = createUser(admin = true)
+        emailSettingsService.resetToDeployment()
+        emailSettingsService.saveRuntimeSettings(validEmailSettingsUpdate())
+
+        mockMvc.patch("/api/admin/settings/email") {
+            header("Authorization", bearer(admin))
+            contentType = MediaType.APPLICATION_JSON
+            content = validEmailSettingsJson(host = "", port = 70000)
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.code") { value("EMAIL_SETTINGS_INVALID") }
+        }
+
+        mockMvc.get("/api/admin/settings/email") {
+            header("Authorization", bearer(admin))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.host") { value("smtp.example.com") }
+            jsonPath("$.port") { value(587) }
+        }
+    }
+
+    @Test
+    fun `admin test email endpoint maps success unavailable failed and invalid recipient`() {
+        val admin = createUser(admin = true)
+        given(emailDeliveryService.testEmail("ok@example.com")).willReturn(EmailDeliveryResult.Accepted)
+        given(emailDeliveryService.testEmail("missing@example.com"))
+            .willReturn(EmailDeliveryResult.Unavailable(listOf("Email delivery is disabled")))
+        given(emailDeliveryService.testEmail("failed@example.com"))
+            .willReturn(EmailDeliveryResult.Failed(
+                EmailFailureCategory.PROVIDER_REJECTED,
+                "Email delivery failed",
+                detail = "The SMTP server rejected the test message after the connection was established.",
+                hint = "Check the sender address, recipient address, provider policy, and any SMTP relay restrictions.",
+            ))
+
+        mockMvc.post("/api/admin/settings/email/test") {
+            header("Authorization", bearer(admin))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"recipient":"ok@example.com"}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.status") { value("ACCEPTED") }
+        }
+
+        mockMvc.post("/api/admin/settings/email/test") {
+            header("Authorization", bearer(admin))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"recipient":"missing@example.com"}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.status") { value("UNAVAILABLE") }
+            jsonPath("$.message") { value("Email delivery is disabled") }
+        }
+
+        mockMvc.post("/api/admin/settings/email/test") {
+            header("Authorization", bearer(admin))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"recipient":"failed@example.com"}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.status") { value("FAILED") }
+            jsonPath("$.category") { value("PROVIDER_REJECTED") }
+            jsonPath("$.message") { value("Email delivery failed") }
+            jsonPath("$.detail") { value("The SMTP server rejected the test message after the connection was established.") }
+            jsonPath("$.hint") { value("Check the sender address, recipient address, provider policy, and any SMTP relay restrictions.") }
+        }
+
+        mockMvc.post("/api/admin/settings/email/test") {
+            header("Authorization", bearer(admin))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"recipient":"not-an-address"}"""
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.code") { value("EMAIL_RECIPIENT_INVALID") }
         }
     }
 
@@ -259,13 +468,18 @@ class AdminAreaIntegrationTest : AbstractIntegrationTest() {
         val admin = createUser(admin = true)
         val target = createUser()
         val blocked = createUser(blocked = true)
-        appSettingsService.setRegistrationEnabled(false)
+        appSettingsService.saveAppSettings(
+            AppSettingsUpdate(
+                registrationEnabled = false,
+                publicBaseUrl = "https://todo.example.com",
+            )
+        )
 
         mockMvc.post("/api/admin/users/${target.id}/recovery-links") {
             header("Authorization", bearer(admin))
         }.andExpect {
             status { isCreated() }
-            jsonPath("$.url") { exists() }
+            jsonPath("$.url") { value(org.hamcrest.Matchers.startsWith("https://todo.example.com/recover/")) }
             jsonPath("$.expiresAt") { exists() }
         }
         assertTrue(passkeyRecoveryTokenRepository.findAll().any { it.userId == target.id })

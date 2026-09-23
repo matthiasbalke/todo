@@ -3,6 +3,16 @@ import { createRawSnippet } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+const appState = vi.hoisted(() => ({
+	pathname: '/lists',
+}));
+vi.mock('$app/state', () => ({
+	page: {
+		get url() {
+			return new URL(`https://todo.example${appState.pathname}`);
+		},
+	},
+}));
 vi.mock('$lib/api/auth', () => ({ logout: vi.fn() }));
 const authState = vi.hoisted(() => ({
 	user: { id: 'user-1', displayName: 'Test User', email: 'test@example.com', admin: false },
@@ -27,6 +37,7 @@ afterEach(cleanup);
 describe('App layout account menu presentation', () => {
 	afterEach(() => {
 		authState.user = { id: 'user-1', displayName: 'Test User', email: 'test@example.com', admin: false };
+		appState.pathname = '/lists';
 	});
 
 	it('left aligns account actions and renders them at regular weight', async () => {
@@ -55,5 +66,29 @@ describe('App layout account menu presentation', () => {
 		const adminLink = screen.getByRole('link', { name: 'Admin' });
 		expect(adminLink).toHaveAttribute('href', '/admin');
 		expect(adminLink).toHaveClass('text-danger-strong', 'hover:bg-danger-surface');
+	});
+
+	it('widens only admin main content and keeps the header width stable', () => {
+		const children = createRawSnippet(() => ({ render: () => '<p>Admin content</p>' }));
+		appState.pathname = '/admin/settings';
+
+		const { container } = render(AppLayout, { props: { children } });
+
+		const headerInner = container.querySelector('header > div');
+		const main = container.querySelector('main');
+		expect(headerInner).toHaveClass('max-w-2xl');
+		expect(headerInner).not.toHaveClass('max-w-5xl');
+		expect(main).toHaveClass('max-w-5xl');
+		expect(main).not.toHaveClass('max-w-2xl');
+	});
+
+	it('keeps normal app route main content at the narrow width', () => {
+		const children = createRawSnippet(() => ({ render: () => '<p>List content</p>' }));
+
+		const { container } = render(AppLayout, { props: { children } });
+
+		const main = container.querySelector('main');
+		expect(main).toHaveClass('max-w-2xl');
+		expect(main).not.toHaveClass('max-w-5xl');
 	});
 });

@@ -16,3 +16,16 @@ The application SHALL use English for user-facing display text until a dedicated
 - **WHEN** a UI feature formats locale-sensitive values such as dates or times
 - **THEN** display words such as weekday and month names use the app's English display language
 - **AND** user preferences such as timezone may still affect the calculated value
+
+### Requirement: Application wording is coherent
+The application SHALL use consistent user-facing wording for the same concepts wherever practical.
+
+#### Scenario: Reusing an existing concept
+- **WHEN** a UI label, action, message, or navigation term represents a concept already used elsewhere in the app
+- **THEN** the wording matches the existing app wording for that concept wherever practical
+- **AND** route-specific or feature-specific wording is used only when it clarifies a materially different action or state
+
+#### Scenario: Form draft actions are displayed
+- **WHEN** a form or settings surface presents standard draft actions
+- **THEN** the primary commit action uses the concise label `Save` wherever the surrounding context already identifies what is being saved
+- **AND** the draft-abandoning action uses the label `Cancel` wherever it returns the draft to the current saved state or exits the editing flow
