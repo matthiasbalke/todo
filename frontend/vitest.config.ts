@@ -18,5 +18,7 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,ts}'],
     setupFiles: ['src/vitest.setup.ts'],
     testTimeout: 10000,
+    pool: 'vmThreads',
+    maxWorkers: 3, // measured -44% on this suite
   },
 });

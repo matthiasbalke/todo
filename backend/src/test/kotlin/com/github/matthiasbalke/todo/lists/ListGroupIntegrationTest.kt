@@ -25,7 +25,7 @@ class ListGroupIntegrationTest : AbstractIntegrationTest() {
     @Autowired private lateinit var jwtTokenService: JwtTokenService
 
     private fun createUser(email: String = "user-${UUID.randomUUID()}@example.com"): User =
-        userRepository.save(User(email = email, displayName = "Test User"))
+        userRepository.save(User(email = email, displayName = "Test User", validatedAt = java.time.Instant.now()))
 
     private fun bearerHeader(user: User) = "Bearer ${jwtTokenService.generateAccessToken(user)}"
 

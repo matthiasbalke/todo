@@ -9,6 +9,19 @@ interface UserRepository : JpaRepository<User, UUID> {
     @Query("SELECT u FROM User u WHERE lower(trim(u.email)) = lower(trim(:email))")
     fun findByEmailIdentity(@Param("email") email: String): User?
 
+    @Query("SELECT u FROM User u WHERE lower(trim(u.email)) = lower(trim(:email)) OR lower(trim(u.pendingEmail)) = lower(trim(:email))")
+    fun findByActiveOrPendingEmailIdentity(@Param("email") email: String): User?
+
+    @Query(
+        """
+        SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END
+        FROM User u
+        WHERE (lower(trim(u.email)) = lower(trim(:email)) OR lower(trim(u.pendingEmail)) = lower(trim(:email)))
+          AND u.id <> :id
+        """
+    )
+    fun existsByActiveOrPendingEmailIdentityAndIdNot(@Param("email") email: String, @Param("id") id: UUID): Boolean
+
     @Query(
         """
         SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END

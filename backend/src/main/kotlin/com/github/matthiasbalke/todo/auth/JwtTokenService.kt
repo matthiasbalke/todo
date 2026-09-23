@@ -27,6 +27,7 @@ class JwtTokenService(private val jwtProperties: JwtProperties) {
             .claim("email", user.email)
             .claim("displayName", user.displayName)
             .claim("admin", user.admin)
+            .claim("emailVerified", user.validatedAt != null)
             .id(UUID.randomUUID().toString())
             .issuer(jwtProperties.issuer)
             .audience().add(jwtProperties.audience).and()

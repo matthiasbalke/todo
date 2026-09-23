@@ -96,6 +96,23 @@ describe('AuthPage', () => {
 		});
 	});
 
+	it('navigates to email verification after sign-in with an unverified account', async () => {
+		const mockResult = {
+			accessToken: 'tok',
+			user: { id: '1', email: 'a@b.com', displayName: 'A', emailVerified: false },
+		};
+		vi.mocked(authApi.loginWithPasskey).mockResolvedValue(mockResult);
+
+		render(AuthPage);
+		await waitForIdle();
+		await fireEvent.click(screen.getByRole('button', { name: /sign in with passkey/i }));
+
+		await waitFor(() => {
+			expect(setSession).toHaveBeenCalledWith(mockResult);
+			expect(goto).toHaveBeenCalledWith('/verify-email');
+		});
+	});
+
 	it('shows origin-not-allowed message on SecurityError', async () => {
 		const error = new DOMException('Origin not allowed', 'SecurityError');
 		vi.mocked(authApi.loginWithPasskey).mockRejectedValue(error);
@@ -237,6 +254,31 @@ describe('AuthPage', () => {
 			expect(authApi.registerWithPasskey).toHaveBeenCalledWith('alice@example.com', 'Alice', undefined);
 			expect(setSession).toHaveBeenCalledWith(mockResult);
 			expect(goto).toHaveBeenCalledWith('/lists');
+		});
+	});
+
+	it('navigates to email verification after registering an unverified account', async () => {
+		const mockResult = {
+			accessToken: 'tok',
+			user: { id: '1', email: 'alice@example.com', displayName: 'Alice', emailVerified: false },
+		};
+		vi.mocked(authApi.registerWithPasskey).mockResolvedValue(mockResult);
+
+		render(AuthPage);
+		await waitForIdle();
+		await fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+		await fireEvent.input(screen.getByLabelText(/display name/i), {
+			target: { value: 'Alice' },
+		});
+		await fireEvent.input(screen.getByLabelText(/email/i), {
+			target: { value: 'alice@example.com' },
+		});
+
+		await fireEvent.submit(screen.getByRole('button', { name: /register passkey/i }).closest('form')!);
+
+		await waitFor(() => {
+			expect(setSession).toHaveBeenCalledWith(mockResult);
+			expect(goto).toHaveBeenCalledWith('/verify-email');
 		});
 	});
 
