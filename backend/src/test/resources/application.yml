@@ -18,6 +18,14 @@ sse:
 app:
   cors:
     allowed-origins: http://localhost:5173
+  email:
+    enabled: true
+    from: todo-test@example.com
   security:
     rate-limit:
       capacity: 10000
+
+spring:
+  mail:
+    host: smtp.test.local
+    port: 587

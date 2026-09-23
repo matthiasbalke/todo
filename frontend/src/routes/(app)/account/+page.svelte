@@ -15,6 +15,7 @@
     type PasskeyDto,
     type DeletionPreviewDto,
   } from '$lib/api/users';
+  import { cancelPendingEmail, requestVerificationEmail } from '$lib/api/verification';
   import { updateCurrentUser, clearSession } from '$lib/stores/auth.svelte';
   import { friendlyError } from '$lib/api/errors';
   import { ApiError } from '$lib/api/client';
@@ -115,31 +116,56 @@
   let emailEdit = $state(untrack(() => profile.email));
   let emailSaving = $state(false);
   let emailError = $state('');
-  let emailSuccess = $state(false);
-  let editingEmail = $state(false);
-  let emailInput = $state<HTMLInputElement | null>(null);
-  let ignoreNextEmailFocusOut = false;
-  $effect(() => { if (editingEmail && emailInput) emailInput.focus(); });
-
-  function startEditEmail() {
-    emailEdit = profile.email;
-    emailError = '';
-    emailSuccess = false;
-    editingEmail = true;
-  }
+  let emailMessage = $state('');
 
   async function saveEmail() {
     emailSaving = true;
     emailError = '';
-    emailSuccess = false;
+    emailMessage = '';
     try {
       const updated = await updateMe({ displayName: profile.displayName, email: emailEdit.trim() });
-      profile = { ...profile, email: updated.email };
-      updateCurrentUser({ email: updated.email });
-      emailSuccess = true;
-      editingEmail = false;
+      profile = updated;
+      emailEdit = updated.email;
+      updateCurrentUser({
+        email: updated.email,
+        emailVerified: updated.emailVerified,
+        pendingEmail: updated.pendingEmail
+      });
+      emailMessage = updated.pendingEmail
+        ? 'Verification email sent. Your current email stays active until the new address is verified.'
+        : 'Email updated.';
     } catch (e) {
       emailError = friendlyError(e, 'Failed to save email');
+    } finally {
+      emailSaving = false;
+    }
+  }
+
+  async function resendPendingEmail() {
+    emailSaving = true;
+    emailError = '';
+    emailMessage = '';
+    try {
+      await requestVerificationEmail();
+      emailMessage = 'Verification email sent.';
+    } catch (e) {
+      emailError = friendlyError(e, 'Failed to send verification email');
+    } finally {
+      emailSaving = false;
+    }
+  }
+
+  async function cancelPendingEmailChange() {
+    emailSaving = true;
+    emailError = '';
+    emailMessage = '';
+    try {
+      await cancelPendingEmail();
+      profile = { ...profile, pendingEmail: null };
+      updateCurrentUser({ pendingEmail: null });
+      emailMessage = 'Pending email change cancelled.';
+    } catch (e) {
+      emailError = friendlyError(e, 'Failed to cancel pending email change');
     } finally {
       emailSaving = false;
     }
@@ -289,17 +315,44 @@
         isSaving={emailSaving}
         inputSize="small"
         displayAppearance="plain"
-        oncancel={() => { emailEdit = profile.email; }}
+        oncancel={() => { emailEdit = profile.email; emailError = ''; }}
         on:change={(event) => {
           emailEdit = event.detail.value;
           saveEmail();
         }}
       />
+      {#if profile.pendingEmail}
+        <div class="mt-3 rounded-lg border border-warning-soft bg-warning-surface p-3">
+          <p class="text-sm font-medium text-label">Pending email</p>
+          <p class="mt-1 break-all text-sm text-value">{profile.pendingEmail}</p>
+          <p class="mt-1 text-xs text-muted">Verify this address before it becomes your account email.</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <Button
+              tone="primary"
+              appearance="outline"
+              size="small"
+              onclick={resendPendingEmail}
+              disabled={emailSaving}
+            >
+              Resend verification
+            </Button>
+            <Button
+              tone="neutral"
+              appearance="bare"
+              size="small"
+              onclick={cancelPendingEmailChange}
+              disabled={emailSaving}
+            >
+              Cancel change
+            </Button>
+          </div>
+        </div>
+      {/if}
       {#if emailError}
         <p class="mt-1 text-xs text-danger">{emailError}</p>
       {/if}
-      {#if emailSuccess}
-        <p class="mt-1 text-xs text-success">Email updated.</p>
+      {#if emailMessage}
+        <p class="mt-1 text-xs text-success">{emailMessage}</p>
       {/if}
     </div>
   </section>

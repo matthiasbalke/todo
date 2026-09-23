@@ -2,6 +2,7 @@ package com.github.matthiasbalke.todo.auth
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import com.github.matthiasbalke.todo.email.EmailSettingsService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -41,6 +42,7 @@ class AuthController(
     private val accountService: AccountService,
     private val appSettingsService: AppSettingsService,
     private val authSessionService: AuthSessionService,
+    private val emailSettingsService: EmailSettingsService,
 ) {
 
     private val creationOptionsRepository: PublicKeyCredentialCreationOptionsRepository =
@@ -57,7 +59,7 @@ class AuthController(
     data class AuthConfigResponse(val registrationEnabled: Boolean)
 
     @GetMapping("/config")
-    fun config() = AuthConfigResponse(appSettingsService.isRegistrationEnabled())
+    fun config() = AuthConfigResponse(registrationAvailable())
 
     @PostMapping("/webauthn/register-options")
     fun registerOptions(
@@ -65,7 +67,7 @@ class AuthController(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ResponseEntity<*> {
-        if (!appSettingsService.isRegistrationEnabled()) {
+        if (!registrationAvailable()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ErrorResponse("REGISTRATION_DISABLED", "Registration is currently disabled"))
         }
@@ -98,7 +100,7 @@ class AuthController(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ResponseEntity<*> {
-        if (!appSettingsService.isRegistrationEnabled()) {
+        if (!registrationAvailable()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ErrorResponse("REGISTRATION_DISABLED", "Registration is currently disabled"))
         }
@@ -227,6 +229,9 @@ class AuthController(
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(ErrorResponse("ACCOUNT_BLOCKED", "Account is blocked"))
     }
+
+    private fun registrationAvailable(): Boolean =
+        appSettingsService.isRegistrationEnabled() && emailSettingsService.isDeliveryAvailable()
 
     private fun resolveUserFromUserHandle(userHandle: ByteArray): User? =
         bytesToUuid(userHandle)?.let { userRepository.findById(it).orElse(null) }

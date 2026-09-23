@@ -6,6 +6,8 @@ export type ThemePreference = 'SYSTEM' | 'LIGHT' | 'DARK';
 export interface UserProfileDto {
 	id: string;
 	email: string;
+	emailVerified?: boolean;
+	pendingEmail?: string | null;
 	displayName: string;
 	timeZone: string;
 	timeZoneInitialized: boolean;

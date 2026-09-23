@@ -60,6 +60,7 @@ class AdminAreaIntegrationTest : AbstractIntegrationTest() {
             displayName = "Test User",
             admin = admin,
             blockedAt = if (blocked) java.time.Instant.now() else null,
+            validatedAt = java.time.Instant.now(),
         )
     )
 

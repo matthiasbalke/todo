@@ -1,15 +1,14 @@
-export const ssr = false;
-
+import type { PageLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { checkHealth } from '$lib/api/health';
 import { getSetupStatus } from '$lib/api/setup';
+import { getEmailVerificationState } from '$lib/api/verification';
 import { getCurrentUser, restoreSession } from '$lib/stores/auth.svelte';
-import { loadLists } from '$lib/stores/lists.svelte';
-import { loadPreferences } from '$lib/stores/preferences.svelte';
-import { loadTodayCount } from '$lib/stores/today.svelte';
-import { AUTH_ROUTE, EMAIL_VERIFICATION_ROUTE, SETUP_ROUTE, STARTUP_ROUTE } from '$lib/routes';
+import { AUTH_ROUTE, SETUP_ROUTE, STARTUP_ROUTE, VERIFIED_LANDING_ROUTE } from '$lib/routes';
 
-export async function load({ fetch }) {
+export const ssr = false;
+
+export const load: PageLoad = async ({ fetch, url }) => {
 	if (!(await checkHealth(fetch))) {
 		throw redirect(307, STARTUP_ROUTE);
 	}
@@ -29,10 +28,15 @@ export async function load({ fetch }) {
 	if (restoreStatus !== 'authenticated') {
 		throw redirect(307, AUTH_ROUTE);
 	}
+
+	const state = await getEmailVerificationState(fetch);
 	const user = getCurrentUser();
-	if (user?.emailVerified === false) {
-		throw redirect(307, EMAIL_VERIFICATION_ROUTE);
+	if (user?.emailVerified !== false && !state.pendingEmailChange) {
+		throw redirect(307, VERIFIED_LANDING_ROUTE);
 	}
-	await Promise.all([loadLists(fetch), loadPreferences(fetch)]);
-	await loadTodayCount(fetch);
-}
+
+	return {
+		state,
+		validationToken: url.searchParams.get('validation_token') ?? '',
+	};
+};

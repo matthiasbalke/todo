@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.net.URI
+import java.time.Duration
 import java.time.Instant
 
 data class AppSettings(
@@ -35,6 +36,16 @@ class AppSettingsService(
     fun publicBaseUrl(): String =
         appSettingRepository.findById(PUBLIC_BASE_URL_KEY).orElse(null)?.value?.ifBlank { null }
             ?: appProperties.publicBaseUrl
+
+    fun emailValidationTimeout(): Duration {
+        val minutes = appSettingRepository.findById(EMAIL_VALIDATION_TIMEOUT_MINUTES_KEY)
+            .orElse(null)
+            ?.value
+            ?.toLongOrNull()
+            ?.takeIf { it > 0 }
+            ?: DEFAULT_EMAIL_VALIDATION_TIMEOUT_MINUTES
+        return Duration.ofMinutes(minutes)
+    }
 
     @Transactional
     fun setRegistrationEnabled(enabled: Boolean): Boolean {
@@ -79,6 +90,8 @@ class AppSettingsService(
     companion object {
         const val REGISTRATION_ENABLED_KEY = "app.registration.enabled"
         const val PUBLIC_BASE_URL_KEY = "app.publicBaseUrl"
+        const val EMAIL_VALIDATION_TIMEOUT_MINUTES_KEY = "app.emailValidationTimeoutMinutes"
+        const val DEFAULT_EMAIL_VALIDATION_TIMEOUT_MINUTES = 30L
 
         fun validPublicBaseUrl(value: String): Boolean {
             if (value.endsWith("/")) return false
