@@ -7,6 +7,7 @@
   import Button from '$lib/components/Button.svelte';
   import EmailInput from '$lib/components/EmailInput.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
+  import { EMAIL_VERIFICATION_ROUTE, VERIFIED_LANDING_ROUTE } from '$lib/routes';
 
   type Mode = 'idle' | 'register-form' | 'signing-in' | 'registering' | 'sign-in-error' | 'register-error';
 
@@ -54,7 +55,7 @@
     try {
       const result = await loginWithPasskey();
       setSession(result);
-      await goto('/lists');
+      await goto(result.user.emailVerified === false ? EMAIL_VERIFICATION_ROUTE : VERIFIED_LANDING_ROUTE);
     } catch (err) {
       mode = 'sign-in-error';
       errorMessage = passkeyErrorMessage(err);
@@ -69,7 +70,7 @@
     try {
       const result = await registerWithPasskey(email.trim(), displayName.trim(), passkeyLabel.trim() || undefined);
       setSession(result);
-      await goto('/lists');
+      await goto(result.user.emailVerified === false ? EMAIL_VERIFICATION_ROUTE : VERIFIED_LANDING_ROUTE);
     } catch (err) {
       mode = 'register-error';
       errorMessage = passkeyErrorMessage(err);

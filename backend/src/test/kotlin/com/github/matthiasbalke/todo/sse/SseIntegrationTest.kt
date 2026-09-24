@@ -13,6 +13,7 @@ import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Import
 import java.net.HttpURLConnection
 import java.net.URI
+import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -35,7 +36,7 @@ class SseIntegrationTest {
 
     @Test
     fun `SSE emits item_created event when item is created`() {
-        val user = userRepository.save(User(email = "sse-${UUID.randomUUID()}@example.com", displayName = "SSE Test"))
+        val user = userRepository.save(User(email = "sse-${UUID.randomUUID()}@example.com", displayName = "SSE Test", validatedAt = Instant.now()))
         val token = jwtTokenService.generateAccessToken(user)
 
         // Create a list via REST
@@ -100,7 +101,7 @@ class SseIntegrationTest {
 
     @Test
     fun `SSE response should include X-Accel-Buffering no header`() {
-        val user = userRepository.save(User(email = "sse-buf-${UUID.randomUUID()}@example.com", displayName = "SSE Buf Test"))
+        val user = userRepository.save(User(email = "sse-buf-${UUID.randomUUID()}@example.com", displayName = "SSE Buf Test", validatedAt = Instant.now()))
         val token = jwtTokenService.generateAccessToken(user)
         val listId = post("/api/lists", """{"name":"SSE Buf Test List"}""", token)
             .let { mapper.readTree(it)["id"].asString() }
@@ -117,7 +118,7 @@ class SseIntegrationTest {
 
     @Test
     fun `SSE should send periodic heartbeat comments after the initial connected comment`() {
-        val user = userRepository.save(User(email = "sse-hb-${UUID.randomUUID()}@example.com", displayName = "SSE HB Test"))
+        val user = userRepository.save(User(email = "sse-hb-${UUID.randomUUID()}@example.com", displayName = "SSE HB Test", validatedAt = Instant.now()))
         val token = jwtTokenService.generateAccessToken(user)
         val listId = post("/api/lists", """{"name":"SSE HB Test List"}""", token)
             .let { mapper.readTree(it)["id"].asString() }

@@ -10,8 +10,12 @@ Define authentication-aware frontend route access, redirects, and installed appl
 The frontend SHALL attempt to restore the current session before choosing the destination for `/`, and SHALL own the neutral startup state when backend unavailability prevents a conclusive session decision.
 
 #### Scenario: Authenticated user accesses the root route
-- **WHEN** a user with a valid existing session accesses `/`
+- **WHEN** a user with a valid existing session and a verified email address accesses `/`
 - **THEN** the frontend SHALL redirect the user to `/lists` without asking them to authenticate again
+
+#### Scenario: Unverified authenticated user accesses the root route
+- **WHEN** a user with a valid existing session and no verified email address accesses `/`
+- **THEN** the frontend SHALL redirect the user to the email verification flow without asking them to authenticate again
 
 #### Scenario: Unauthenticated user accesses the root route
 - **WHEN** a user without a valid existing session accesses `/`
@@ -29,7 +33,7 @@ The frontend SHALL attempt to restore the current session before choosing the de
 #### Scenario: Authenticated launch starts before the backend
 - **WHEN** a user with a valid refresh-token cookie launches `/` while the backend is temporarily unavailable
 - **THEN** the frontend SHALL display the application startup state at `/`
-- **AND** after the backend becomes healthy it SHALL restore the session and redirect the user to `/lists`
+- **AND** after the backend becomes healthy it SHALL restore the session and redirect the user according to the account's email verification state
 - **AND** it SHALL NOT display the authentication form before the session decision
 
 #### Scenario: Unauthenticated launch starts before the backend
@@ -46,8 +50,13 @@ The frontend SHALL attempt to restore the current session before choosing the de
 The frontend SHALL protect every route in the authenticated application route group and SHALL decide access only after attempting session restoration.
 
 #### Scenario: Authenticated user accesses a protected route
-- **WHEN** a user with a valid existing session accesses a protected route
+- **WHEN** a user with a valid existing session and a verified email address accesses a protected route
 - **THEN** the frontend SHALL allow the requested route to load without redirecting to `/auth`
+
+#### Scenario: Unverified authenticated user accesses a protected route
+- **WHEN** a user with a valid existing session and no verified email address accesses a protected route other than the email verification flow
+- **THEN** the frontend SHALL redirect the user to the email verification flow
+- **AND** it SHALL NOT load the requested protected route
 
 #### Scenario: Unauthenticated user accesses a protected route
 - **WHEN** a user without a valid existing session accesses a protected route
@@ -55,7 +64,7 @@ The frontend SHALL protect every route in the authenticated application route gr
 
 #### Scenario: Protected route is opened after a full page reload
 - **WHEN** the in-memory session is empty but a valid refresh-token cookie exists for a protected route
-- **THEN** the frontend SHALL restore the session and allow the requested route to load
+- **THEN** the frontend SHALL restore the session and allow or redirect the requested route according to the account's email verification state
 
 #### Scenario: Protected route encounters backend startup
 - **WHEN** session restoration for a protected route cannot complete because the backend is temporarily unavailable
@@ -66,8 +75,12 @@ The frontend SHALL protect every route in the authenticated application route gr
 The frontend SHALL resolve the current session before displaying `/auth`, and SHALL route indeterminate startup state through `/` instead of displaying authentication controls.
 
 #### Scenario: Authenticated user accesses the authentication route
-- **WHEN** a user with a valid existing session accesses `/auth`
+- **WHEN** a user with a valid existing session and a verified email address accesses `/auth`
 - **THEN** the frontend SHALL redirect the user to `/lists`
+
+#### Scenario: Unverified authenticated user accesses the authentication route
+- **WHEN** a user with a valid existing session and no verified email address accesses `/auth`
+- **THEN** the frontend SHALL redirect the user to the email verification flow
 
 #### Scenario: Unauthenticated user accesses the authentication route
 - **WHEN** a user without a valid existing session accesses `/auth`
@@ -80,7 +93,7 @@ The frontend SHALL resolve the current session before displaying `/auth`, and SH
 
 #### Scenario: Existing session is restored after backend startup
 - **WHEN** the backend becomes ready after the initial session restoration was indeterminate and the refresh-token cookie is valid
-- **THEN** the frontend SHALL restore the session and redirect the user to `/lists` without requiring a reload
+- **THEN** the frontend SHALL restore the session and redirect the user according to the account's email verification state without requiring a reload
 
 #### Scenario: Missing or invalid session is confirmed after backend startup
 - **WHEN** the backend becomes ready after the initial session restoration was indeterminate and the refresh-token cookie is absent, expired, invalid, or revoked

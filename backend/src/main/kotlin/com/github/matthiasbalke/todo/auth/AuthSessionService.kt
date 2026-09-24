@@ -35,7 +35,14 @@ class AuthSessionService(
         response.setHeader(HttpHeaders.SET_COOKIE, clearRefreshCookie().toString())
     }
 
-    private fun User.toAuthDto() = AuthUserDto(id.toString(), email, displayName, admin)
+    private fun User.toAuthDto() = AuthUserDto(
+        id = id.toString(),
+        email = email,
+        displayName = displayName,
+        admin = admin,
+        emailVerified = validatedAt != null,
+        pendingEmail = pendingEmail,
+    )
 
     private fun refreshTokenCookie(value: String): ResponseCookie =
         ResponseCookie.from("refreshToken", value)

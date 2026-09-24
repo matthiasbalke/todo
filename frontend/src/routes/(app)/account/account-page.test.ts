@@ -24,6 +24,11 @@ vi.mock('$lib/api/errors', () => ({
 	friendlyError: vi.fn((e: unknown) => String(e)),
 }));
 
+vi.mock('$lib/api/verification', () => ({
+	requestVerificationEmail: vi.fn(),
+	cancelPendingEmail: vi.fn(),
+}));
+
 vi.mock('@simplewebauthn/browser', () => ({
 	startRegistration: vi.fn(),
 	WebAuthnError: class WebAuthnError extends Error {
@@ -37,9 +42,11 @@ vi.mock('@simplewebauthn/browser', () => ({
 
 vi.mock('$lib/api/client', () => ({
 	ApiError: class ApiError extends Error {
+		status: number;
 		code: string;
-		constructor(message: string, code: string) {
+		constructor(status: number, message: string, code: string) {
 			super(message);
+			this.status = status;
 			this.code = code;
 		}
 	},
@@ -53,15 +60,24 @@ vi.mock('$lib/stores/today.svelte', () => ({
 	refreshToday: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('$lib/passkeys/signals', () => ({
+	signalCurrentUserDetails: vi.fn().mockResolvedValue(undefined),
+}));
+
 import AccountPage from './+page.svelte';
 import { updateMe, updatePreferences } from '$lib/api/users';
+import { cancelPendingEmail, requestVerificationEmail } from '$lib/api/verification';
+import { ApiError } from '$lib/api/client';
 import { refreshToday } from '$lib/stores/today.svelte';
 import { setProfile } from '$lib/stores/preferences.svelte';
+import { signalCurrentUserDetails } from '$lib/passkeys/signals';
 
 const mockProfile = {
 	id: 'user-1',
 	displayName: 'Test User',
 	email: 'test@example.com',
+	emailVerified: true,
+	pendingEmail: null,
 	timeZone: 'UTC',
 	timeZoneInitialized: true,
 	todayViewEnabled: true,
@@ -122,6 +138,85 @@ describe('AccountPage email inline-edit', () => {
 		await fireEvent.focusOut(input, { relatedTarget: null });
 
 		expect(screen.getByRole('textbox')).toBeInTheDocument();
+	});
+
+	it('shows a pending email when a new address needs verification', async () => {
+		vi.mocked(updateMe).mockResolvedValueOnce({
+			...mockProfile,
+			email: 'test@example.com',
+			pendingEmail: 'new@example.com',
+		});
+		render(AccountPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: /test@example\.com/i }));
+		await fireEvent.input(screen.getByRole('textbox'), { target: { value: 'new@example.com' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+		expect(await screen.findByText('Pending email')).toBeInTheDocument();
+		expect(screen.getByText('new@example.com')).toBeInTheDocument();
+		expect(screen.getByText(/current email stays active/i)).toBeInTheDocument();
+		expect(updateMe).toHaveBeenCalledWith({
+			displayName: 'Test User',
+			email: 'new@example.com',
+		});
+		expect(signalCurrentUserDetails).not.toHaveBeenCalled();
+	});
+
+	it('signals passkey account details when the active email is updated directly', async () => {
+		const updated = {
+			...mockProfile,
+			email: 'Test@Example.com',
+			pendingEmail: null,
+		};
+		vi.mocked(updateMe).mockResolvedValueOnce(updated);
+		render(AccountPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: /test@example\.com/i }));
+		await fireEvent.input(screen.getByRole('textbox'), { target: { value: 'Test@Example.com' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+		expect(await screen.findByText('Email updated.')).toBeInTheDocument();
+		expect(signalCurrentUserDetails).toHaveBeenCalledWith(updated);
+	});
+
+	it('shows a specific duplicate email message', async () => {
+		vi.mocked(updateMe).mockRejectedValueOnce(
+			new ApiError(409, 'Email is already in use', 'EMAIL_IN_USE'),
+		);
+		render(AccountPage, { props: { data: mockData } });
+
+		await fireEvent.click(screen.getByRole('button', { name: /test@example\.com/i }));
+		await fireEvent.input(screen.getByRole('textbox'), { target: { value: 'used@example.com' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+		expect(await screen.findByText('This email address is already in use. Use a different one.')).toBeInTheDocument();
+	});
+
+	it('resends and cancels a pending email change', async () => {
+		vi.mocked(requestVerificationEmail).mockResolvedValueOnce({ status: 'SENT', message: 'ok' });
+		vi.mocked(cancelPendingEmail).mockResolvedValueOnce({
+			emailVerified: true,
+			activeEmail: 'test@example.com',
+			registrationVerification: null,
+			pendingEmailChange: null,
+		});
+		render(AccountPage, {
+			props: {
+				data: {
+					...mockData,
+					profile: { ...mockProfile, pendingEmail: 'new@example.com' },
+				},
+			},
+		});
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Resend verification' }));
+		expect(requestVerificationEmail).toHaveBeenCalledOnce();
+		expect(await screen.findByText('Verification email sent.')).toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Cancel change' }));
+		expect(cancelPendingEmail).toHaveBeenCalledOnce();
+		expect(await screen.findByText('Pending email change cancelled.')).toBeInTheDocument();
+		expect(screen.queryByText('new@example.com')).not.toBeInTheDocument();
 	});
 });
 

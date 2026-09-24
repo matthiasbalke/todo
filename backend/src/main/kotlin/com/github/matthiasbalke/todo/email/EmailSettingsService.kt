@@ -23,6 +23,11 @@ class EmailSettingsService(
         }
     }
 
+    fun isDeliveryAvailable(): Boolean {
+        val configuration = activeConfiguration()
+        return configuration.enabled && configuration.validationErrors().isEmpty()
+    }
+
     @Transactional
     fun saveRuntimeSettings(update: EmailSettingsUpdate): EmailConfiguration {
         val active = activeConfiguration()

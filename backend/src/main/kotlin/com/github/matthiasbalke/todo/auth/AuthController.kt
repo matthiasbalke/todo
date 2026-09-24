@@ -2,6 +2,7 @@ package com.github.matthiasbalke.todo.auth
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import com.github.matthiasbalke.todo.email.EmailSettingsService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -41,6 +42,7 @@ class AuthController(
     private val accountService: AccountService,
     private val appSettingsService: AppSettingsService,
     private val authSessionService: AuthSessionService,
+    private val emailSettingsService: EmailSettingsService,
 ) {
 
     private val creationOptionsRepository: PublicKeyCredentialCreationOptionsRepository =
@@ -57,7 +59,7 @@ class AuthController(
     data class AuthConfigResponse(val registrationEnabled: Boolean)
 
     @GetMapping("/config")
-    fun config() = AuthConfigResponse(appSettingsService.isRegistrationEnabled())
+    fun config() = AuthConfigResponse(registrationAvailable())
 
     @PostMapping("/webauthn/register-options")
     fun registerOptions(
@@ -65,13 +67,17 @@ class AuthController(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ResponseEntity<*> {
-        if (!appSettingsService.isRegistrationEnabled()) {
+        if (!registrationAvailable()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ErrorResponse("REGISTRATION_DISABLED", "Registration is currently disabled"))
         }
         val trimmedEmail = body.email.trim()
-        val existingUser = userRepository.findByEmailIdentity(trimmedEmail)
+        val existingUser = userRepository.findByActiveOrPendingEmailIdentity(trimmedEmail)
         if (existingUser != null) {
+            if (!sameEmailIdentity(existingUser.email, trimmedEmail)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ErrorResponse("EMAIL_ALREADY_REGISTERED", "This email address is already registered."))
+            }
             val hasCredentials = userCredentialRepository
                 .findByUserId(Bytes(uuidToBytes(existingUser.id)))
                 .isNotEmpty()
@@ -98,7 +104,7 @@ class AuthController(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ResponseEntity<*> {
-        if (!appSettingsService.isRegistrationEnabled()) {
+        if (!registrationAvailable()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ErrorResponse("REGISTRATION_DISABLED", "Registration is currently disabled"))
         }
@@ -183,12 +189,15 @@ class AuthController(
         val user = userRepository.findById(stored.userId).orElse(null)
             ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         if (user.blockedAt != null) {
-            refreshTokenRepository.delete(stored)
+            refreshTokenRepository.deleteByIdIfPresent(stored.id)
             authSessionService.clearRefreshCookie(response)
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
 
-        refreshTokenRepository.delete(stored)
+        if (refreshTokenRepository.deleteByIdIfPresent(stored.id) == 0) {
+            authSessionService.clearRefreshCookie(response)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        }
         return ResponseEntity.ok(authSessionService.issueTokens(user, response))
     }
 
@@ -215,7 +224,7 @@ class AuthController(
         val rawRefresh = request.cookies?.find { it.name == "refreshToken" }?.value
         if (rawRefresh != null) {
             val hash = jwtTokenService.hashToken(rawRefresh)
-            refreshTokenRepository.findByTokenHash(hash)?.let { refreshTokenRepository.delete(it) }
+            refreshTokenRepository.deleteByTokenHashIfPresent(hash)
         }
 
         authSessionService.clearRefreshCookie(response)
@@ -228,6 +237,12 @@ class AuthController(
             .body(ErrorResponse("ACCOUNT_BLOCKED", "Account is blocked"))
     }
 
+    private fun registrationAvailable(): Boolean =
+        appSettingsService.isRegistrationEnabled() && emailSettingsService.isDeliveryAvailable()
+
     private fun resolveUserFromUserHandle(userHandle: ByteArray): User? =
         bytesToUuid(userHandle)?.let { userRepository.findById(it).orElse(null) }
+
+    private fun sameEmailIdentity(left: String, right: String): Boolean =
+        left.trim().equals(right.trim(), ignoreCase = true)
 }

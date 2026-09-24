@@ -195,6 +195,7 @@ class SetupControllerIntegrationTest : AbstractIntegrationTest() {
         }
 
         assertTrue(userRepository.findById(user.id).orElseThrow().admin)
+        assertTrue(userRepository.findById(user.id).orElseThrow().validatedAt != null)
     }
 
     private fun setupSessionForUser(userId: UUID): MockHttpSession {
