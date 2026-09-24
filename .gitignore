@@ -35,5 +35,8 @@ gradle-app.setting
 .idea
 
 test-results
+e2e/.auth
+e2e/certs/mailpit.key
+e2e/certs/mailpit.pem
 
 local

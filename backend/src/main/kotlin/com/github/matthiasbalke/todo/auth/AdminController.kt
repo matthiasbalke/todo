@@ -1,5 +1,16 @@
 package com.github.matthiasbalke.todo.auth
 
+import com.github.matthiasbalke.todo.email.EmailConfiguration
+import com.github.matthiasbalke.todo.email.EmailConfigurationSource
+import com.github.matthiasbalke.todo.email.EmailDeliveryResult
+import com.github.matthiasbalke.todo.email.EmailDeliveryService
+import com.github.matthiasbalke.todo.email.EmailEncryption
+import com.github.matthiasbalke.todo.email.EmailSettingsService
+import com.github.matthiasbalke.todo.email.EmailSettingsUpdate
+import com.github.matthiasbalke.todo.email.InvalidEmailConfigurationException
+import com.github.matthiasbalke.todo.email.PasswordAction
+import jakarta.mail.internet.AddressException
+import jakarta.mail.internet.InternetAddress
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -22,10 +33,61 @@ class AdminController(
     private val userRepository: UserRepository,
     private val passkeyRecoveryService: PasskeyRecoveryService,
     private val webAuthnCredentialRepository: WebAuthnCredentialRepository,
+    private val emailSettingsService: EmailSettingsService,
+    private val emailDeliveryService: EmailDeliveryService,
 ) {
 
-    data class RegistrationSettingResponse(val registrationEnabled: Boolean)
-    data class UpdateRegistrationRequest(val registrationEnabled: Boolean)
+    data class AdminSettingsResponse(
+        val app: AppSettingsResponse,
+        val email: EmailSettingsResponse,
+    )
+    data class AppSettingsResponse(
+        val registrationEnabled: Boolean,
+        val publicBaseUrl: String,
+    )
+    data class UpdateAppSettingsRequest(
+        val registrationEnabled: Boolean,
+        val publicBaseUrl: String,
+    )
+
+    data class EmailSettingsResponse(
+        val source: EmailConfigurationSource,
+        val enabled: Boolean,
+        val authEnabled: Boolean,
+        val host: String,
+        val port: Int?,
+        val protocol: String,
+        val encryption: EmailEncryption,
+        val username: String?,
+        val passwordConfigured: Boolean,
+        val from: String,
+        val fromName: String?,
+        val validationErrors: List<String>,
+    )
+
+    data class UpdateEmailSettingsRequest(
+        val enabled: Boolean,
+        val authEnabled: Boolean,
+        val host: String,
+        val port: Int?,
+        val protocol: String,
+        val encryption: EmailEncryption,
+        val username: String?,
+        val passwordAction: PasswordAction,
+        val password: String?,
+        val from: String,
+        val fromName: String?,
+    )
+
+    data class TestEmailRequest(val recipient: String)
+    data class TestEmailResponse(
+        val status: String,
+        val category: String?,
+        val message: String?,
+        val detail: String?,
+        val hint: String?,
+    )
+
     data class UpdateUserRequest(val displayName: String, val email: String)
     data class UpdateAdminRequest(val admin: Boolean)
     data class UpdateBlockedRequest(val blocked: Boolean)
@@ -39,19 +101,83 @@ class AdminController(
             )
         )
 
+    @ExceptionHandler(InvalidEmailConfigurationException::class)
+    fun emailSettingsError(error: InvalidEmailConfigurationException): ResponseEntity<ErrorResponse> =
+        ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            ErrorResponse(
+                code = "EMAIL_SETTINGS_INVALID",
+                message = error.errors.joinToString("; "),
+            )
+        )
+
+    @ExceptionHandler(InvalidAppSettingsException::class)
+    fun appSettingsError(error: InvalidAppSettingsException): ResponseEntity<ErrorResponse> =
+        ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            ErrorResponse(
+                code = "APP_SETTINGS_INVALID",
+                message = error.errors.joinToString("; "),
+            )
+        )
+
     @GetMapping("/settings")
-    fun settings(@AuthenticationPrincipal userId: UUID): RegistrationSettingResponse {
+    fun settings(@AuthenticationPrincipal userId: UUID): AdminSettingsResponse {
         adminService.requireAdmin(userId)
-        return RegistrationSettingResponse(appSettingsService.isRegistrationEnabled())
+        return AdminSettingsResponse(
+            app = appSettingsService.activeSettings().toAppSettingsResponse(),
+            email = emailSettingsService.activeConfiguration().toEmailSettingsResponse(),
+        )
     }
 
-    @PatchMapping("/settings/registration")
-    fun updateRegistration(
-        @AuthenticationPrincipal userId: UUID,
-        @RequestBody body: UpdateRegistrationRequest,
-    ): RegistrationSettingResponse {
+    @GetMapping("/settings/app")
+    fun appSettings(@AuthenticationPrincipal userId: UUID): AppSettingsResponse {
         adminService.requireAdmin(userId)
-        return RegistrationSettingResponse(appSettingsService.setRegistrationEnabled(body.registrationEnabled))
+        return appSettingsService.activeSettings().toAppSettingsResponse()
+    }
+
+    @PatchMapping("/settings/app")
+    fun updateAppSettings(
+        @AuthenticationPrincipal userId: UUID,
+        @RequestBody body: UpdateAppSettingsRequest,
+    ): AppSettingsResponse {
+        adminService.requireAdmin(userId)
+        return appSettingsService.saveAppSettings(
+            AppSettingsUpdate(
+                registrationEnabled = body.registrationEnabled,
+                publicBaseUrl = body.publicBaseUrl,
+            )
+        ).toAppSettingsResponse()
+    }
+
+    @GetMapping("/settings/email")
+    fun emailSettings(@AuthenticationPrincipal userId: UUID): EmailSettingsResponse {
+        adminService.requireAdmin(userId)
+        return emailSettingsService.activeConfiguration().toEmailSettingsResponse()
+    }
+
+    @PatchMapping("/settings/email")
+    fun updateEmailSettings(
+        @AuthenticationPrincipal userId: UUID,
+        @RequestBody body: UpdateEmailSettingsRequest,
+    ): EmailSettingsResponse {
+        adminService.requireAdmin(userId)
+        return emailSettingsService.saveRuntimeSettings(body.toEmailSettingsUpdate()).toEmailSettingsResponse()
+    }
+
+    @PostMapping("/settings/email/reset")
+    fun resetEmailSettings(@AuthenticationPrincipal userId: UUID): EmailSettingsResponse {
+        adminService.requireAdmin(userId)
+        return emailSettingsService.resetToDeployment().toEmailSettingsResponse()
+    }
+
+    @PostMapping("/settings/email/test")
+    fun testEmailSettings(
+        @AuthenticationPrincipal userId: UUID,
+        @RequestBody body: TestEmailRequest,
+    ): TestEmailResponse {
+        adminService.requireAdmin(userId)
+        val recipient = body.recipient.trim()
+        validateRecipient(recipient)
+        return emailDeliveryService.testEmail(recipient).toTestEmailResponse()
     }
 
     @GetMapping("/stats")
@@ -115,6 +241,64 @@ class AdminController(
         "User not found" -> "USER_NOT_FOUND"
         "Email is already in use" -> "EMAIL_IN_USE"
         "Cannot create recovery for blocked user" -> "USER_BLOCKED"
+        "Invalid test email recipient" -> "EMAIL_RECIPIENT_INVALID"
         else -> "ADMIN_REQUEST_FAILED"
+    }
+
+    private fun UpdateEmailSettingsRequest.toEmailSettingsUpdate() = EmailSettingsUpdate(
+        enabled = enabled,
+        authEnabled = authEnabled,
+        host = host,
+        port = port,
+        protocol = protocol,
+        encryption = encryption,
+        username = username,
+        passwordAction = passwordAction,
+        password = password,
+        from = from,
+        fromName = fromName,
+    )
+
+    private fun AppSettings.toAppSettingsResponse() = AppSettingsResponse(
+        registrationEnabled = registrationEnabled,
+        publicBaseUrl = publicBaseUrl,
+    )
+
+    private fun EmailConfiguration.toEmailSettingsResponse() = EmailSettingsResponse(
+        source = source,
+        enabled = enabled,
+        authEnabled = authEnabled,
+        host = host,
+        port = port,
+        protocol = protocol,
+        encryption = encryption,
+        username = username,
+        passwordConfigured = passwordConfigured,
+        from = from,
+        fromName = fromName,
+        validationErrors = validationErrors(),
+    )
+
+    private fun EmailDeliveryResult.toTestEmailResponse(): TestEmailResponse = when (this) {
+        EmailDeliveryResult.Accepted -> TestEmailResponse("ACCEPTED", null, null, null, null)
+        is EmailDeliveryResult.Unavailable -> TestEmailResponse("UNAVAILABLE", null, reasons.joinToString("; "), null, null)
+        is EmailDeliveryResult.Failed -> TestEmailResponse("FAILED", category.name, message, detail, hint)
+    }
+
+    private fun validateRecipient(recipient: String) {
+        if (
+            recipient.isBlank() ||
+            recipient.any { it.isWhitespace() } ||
+            !recipient.contains("@") ||
+            recipient.substringAfter("@").isBlank() ||
+            !recipient.substringAfter("@").contains(".")
+        ) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid test email recipient")
+        }
+        try {
+            InternetAddress(recipient).validate()
+        } catch (error: AddressException) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid test email recipient")
+        }
     }
 }

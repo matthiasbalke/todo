@@ -3,19 +3,20 @@ export const ssr = false;
 import { redirect } from '@sveltejs/kit';
 import { checkHealth } from '$lib/api/health';
 import { getSetupStatus } from '$lib/api/setup';
-import { restoreSession } from '$lib/stores/auth.svelte';
+import { getCurrentUser, restoreSession } from '$lib/stores/auth.svelte';
 import { loadLists } from '$lib/stores/lists.svelte';
 import { loadPreferences } from '$lib/stores/preferences.svelte';
 import { loadTodayCount } from '$lib/stores/today.svelte';
+import { AUTH_ROUTE, EMAIL_VERIFICATION_ROUTE, SETUP_ROUTE, STARTUP_ROUTE } from '$lib/routes';
 
 export async function load({ fetch }) {
 	if (!(await checkHealth(fetch))) {
-		throw redirect(307, '/');
+		throw redirect(307, STARTUP_ROUTE);
 	}
 	try {
 		const setup = await getSetupStatus(fetch);
 		if (setup.setupRequired) {
-			throw redirect(307, '/setup');
+			throw redirect(307, SETUP_ROUTE);
 		}
 	} catch (error) {
 		if (typeof error === 'object' && error !== null && 'status' in error && 'location' in error) throw error;
@@ -23,10 +24,14 @@ export async function load({ fetch }) {
 
 	const restoreStatus = await restoreSession(fetch);
 	if (restoreStatus === 'unavailable') {
-		throw redirect(307, '/');
+		throw redirect(307, STARTUP_ROUTE);
 	}
 	if (restoreStatus !== 'authenticated') {
-		throw redirect(307, '/auth');
+		throw redirect(307, AUTH_ROUTE);
+	}
+	const user = getCurrentUser();
+	if (user?.emailVerified === false) {
+		throw redirect(307, EMAIL_VERIFICATION_ROUTE);
 	}
 	await Promise.all([loadLists(fetch), loadPreferences(fetch)]);
 	await loadTodayCount(fetch);

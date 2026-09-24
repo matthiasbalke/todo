@@ -18,6 +18,8 @@ export interface AuthUser {
 	email: string;
 	displayName: string;
 	admin?: boolean;
+	emailVerified?: boolean;
+	pendingEmail?: string | null;
 }
 
 export interface TokenResponse {

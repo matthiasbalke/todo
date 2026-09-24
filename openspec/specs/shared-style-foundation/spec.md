@@ -67,6 +67,19 @@ The foundation SHALL define font family, size, weight, line height, and letter s
 - **THEN** its text size is selected through a typography role rather than implicitly reduced by geometry
 - **AND** mobile text entry retains the app's input-size protection
 
+### Requirement: Field control geometry is shared across primitives
+The shared visual foundation SHALL define field control geometry so text inputs and field-adjacent button actions can share the same visual height.
+
+#### Scenario: Field controls are placed in one row
+- **WHEN** a default text input and a field-adjacent button action are placed in the same row
+- **THEN** their visible control boxes align to the same height
+- **AND** their typography remains selected independently from their geometry
+
+#### Scenario: Compact controls are used
+- **WHEN** a compact or specialized control geometry is selected
+- **THEN** the specialized geometry remains distinct from the default field geometry
+- **AND** unrelated compact controls do not inherit default field height accidentally
+
 ### Requirement: Components preserve semantic presentation and behavior
 Shared components SHALL retain native semantics and existing interaction behavior while consuming foundation presets. Consumers SHALL select presentation through semantic props and SHALL continue to supply only approved parent-layout classes.
 

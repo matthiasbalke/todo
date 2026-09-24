@@ -5,6 +5,8 @@ data class AuthUserDto(
     val email: String,
     val displayName: String,
     val admin: Boolean,
+    val emailVerified: Boolean,
+    val pendingEmail: String?,
 )
 
 data class TokenResponse(

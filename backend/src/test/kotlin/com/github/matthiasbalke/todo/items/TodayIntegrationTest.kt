@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
@@ -33,7 +34,15 @@ class TodayIntegrationTest : AbstractIntegrationTest() {
     @Autowired private lateinit var jwtTokenService: JwtTokenService
 
     private fun user(timeZone: String = "UTC") =
-        userRepository.save(User(email = "${UUID.randomUUID()}@example.com", displayName = "Today User", timeZone = timeZone, timeZoneInitialized = true))
+        userRepository.save(
+            User(
+                email = "${UUID.randomUUID()}@example.com",
+                displayName = "Today User",
+                timeZone = timeZone,
+                timeZoneInitialized = true,
+                validatedAt = Instant.now(),
+            )
+        )
 
     private fun list(user: User, role: ListRole = ListRole.OWNER): TodoList =
         listRepository.save(TodoList(name = "Source")).also {

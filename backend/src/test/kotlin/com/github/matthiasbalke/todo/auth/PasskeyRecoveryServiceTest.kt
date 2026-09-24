@@ -1,35 +1,32 @@
 package com.github.matthiasbalke.todo.auth
 
+import org.mockito.Mockito
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
 class PasskeyRecoveryServiceTest {
 
     @Test
-    fun `public recovery URL base uses first configured CORS origin`() {
+    fun `application link service builds encoded recovery URLs from app public base url`() {
+        val appSettingsService = Mockito.mock(AppSettingsService::class.java)
+        Mockito.`when`(appSettingsService.publicBaseUrl()).thenReturn("https://todo.example.com/")
+        val service = ApplicationLinkService(appSettingsService)
+
         assertEquals(
-            "https://todo.example.com",
-            PasskeyRecoveryService.publicBaseUrlFromAllowedOrigins("https://todo.example.com,https://localhost:8443"),
+            "https://todo.example.com/recover/token%20with%2Fslash",
+            service.url(AppRoute.Recovery("token with/slash")),
         )
     }
 
     @Test
-    fun `public recovery URL base removes default ports`() {
-        assertEquals(
-            "https://todo.example.com",
-            PasskeyRecoveryService.publicBaseUrlFromAllowedOrigins("https://todo.example.com:443"),
-        )
-        assertEquals(
-            "http://todo.example.com",
-            PasskeyRecoveryService.publicBaseUrlFromAllowedOrigins("http://todo.example.com:80"),
-        )
-    }
+    fun `application link service builds encoded email verification URLs from app public base url`() {
+        val appSettingsService = Mockito.mock(AppSettingsService::class.java)
+        Mockito.`when`(appSettingsService.publicBaseUrl()).thenReturn("https://todo.example.com/")
+        val service = ApplicationLinkService(appSettingsService)
 
-    @Test
-    fun `public recovery URL base rejects missing configured origin`() {
-        assertFailsWith<IllegalStateException> {
-            PasskeyRecoveryService.publicBaseUrlFromAllowedOrigins(" , ")
-        }
+        assertEquals(
+            "https://todo.example.com/verify-email?validation_token=token%20with%2Fslash",
+            service.url(AppRoute.EmailVerification("token with/slash")),
+        )
     }
 }

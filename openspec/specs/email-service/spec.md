@@ -42,6 +42,43 @@ The email service SHALL support sending passkey recovery links created by the ad
 - **THEN** the admin area shows delivery status to the admin
 - **AND** the system does not expose the recovery token in logs or audit events as a raw secret
 
+### Requirement: Email service sends account verification emails
+The email service SHALL support sending account verification emails that allow a registered user to verify control of their email address.
+
+#### Scenario: Verification email is sent
+- **WHEN** an unverified account requests email verification and email delivery is enabled
+- **THEN** the email service SHALL send a verification email to the account email address
+- **AND** the message SHALL include explanatory text, the manual verification token, and an application verification link containing the token
+
+#### Scenario: Verification email link is composed
+- **WHEN** a verification email template includes an application verification link
+- **THEN** the message composition SHALL use the application link generator to produce the link
+- **AND** it SHALL NOT derive the public application URL from untrusted request headers
+
+#### Scenario: Verification email cannot be sent
+- **WHEN** email delivery is unavailable or fails while sending a verification email
+- **THEN** the email service SHALL report the delivery failure to the verification flow
+- **AND** the failure response SHALL NOT expose provider credentials or raw provider internals to end users
+
+#### Scenario: Verification email delivery metadata is produced
+- **WHEN** a verification email send is requested
+- **THEN** the email service SHALL expose safe delivery metadata identifying the message purpose, target user, recipient address, and delivery result
+- **AND** the metadata SHALL NOT include the raw verification token or full message body content
+
+### Requirement: Email service sends email-change notices
+The email service SHALL support notifying the current verified email address when an account email change is requested.
+
+#### Scenario: Email change notice is sent
+- **WHEN** a verified user requests an account email change and email delivery is enabled
+- **THEN** the email service SHALL send a notice to the current verified email address
+- **AND** the message SHALL explain that an email change was requested
+- **AND** the message SHALL NOT include the raw verification token for the pending email address
+
+#### Scenario: Pending email is verified
+- **WHEN** a pending email address is successfully verified and promoted to the active account email
+- **THEN** the email service SHALL NOT send a separate success email
+- **AND** the application SHALL rely on the verification success screen for confirmation
+
 ### Requirement: Email service does not replace manual recovery link display
 The email service SHALL supplement manual recovery-link delivery rather than making it the only recovery path.
 
@@ -69,11 +106,64 @@ Email delivery activity SHALL provide safe metadata for the future audit logging
 - **THEN** the email service exposes a safe failure category for audit logging
 - **AND** it does not expose provider credentials, raw SMTP/API responses containing secrets, or full message body content
 
+### Requirement: Email service sends through SMTP
+The email service SHALL support SMTP as an outbound provider for application emails.
+
+#### Scenario: SMTP delivery is configured
+- **WHEN** an application feature requests an outbound email and SMTP delivery is enabled with complete configuration
+- **THEN** the email service sends the message through the configured SMTP server
+- **AND** the delivery result reports whether the message was accepted for delivery
+
+#### Scenario: SMTP authentication is configured
+- **WHEN** SMTP authentication is enabled and username and password are configured
+- **THEN** the email service authenticates to the SMTP server with those credentials
+- **AND** the credentials are not exposed in responses, logs, or delivery metadata
+
+#### Scenario: SMTP authentication is omitted
+- **WHEN** SMTP authentication is disabled
+- **THEN** the email service attempts delivery without SMTP authentication
+
+### Requirement: Email service supports SMTP encryption modes
+The email service SHALL allow SMTP delivery to be configured with STARTTLS or SSL/TLS encryption.
+
+#### Scenario: SSL/TLS encryption is configured
+- **WHEN** email delivery is enabled with SSL/TLS encryption
+- **THEN** the email service connects to the SMTP server using the configured secure transport mode
+
+#### Scenario: STARTTLS encryption is configured
+- **WHEN** email delivery is enabled with STARTTLS encryption
+- **THEN** the email service connects to the SMTP server and upgrades the connection using STARTTLS before sending the message
+
+#### Scenario: Unsupported encryption mode is submitted
+- **WHEN** an administrator submits an unsupported email encryption mode
+- **THEN** the configuration change is rejected
+- **AND** the previously active email configuration remains unchanged
+
+### Requirement: Email configuration can be tested safely
+The email service SHALL support a safe test-delivery path for administrators without exposing provider secrets.
+
+#### Scenario: Test email succeeds
+- **WHEN** an administrator sends a test email to a recipient address using complete email configuration
+- **THEN** the system attempts to send a test message
+- **AND** the test message is addressed to the requested recipient address
+- **AND** the administrator receives a success result when the provider accepts the message
+
+#### Scenario: Test email fails
+- **WHEN** the test email cannot be delivered
+- **THEN** the administrator receives a safe failure message
+- **AND** the response MAY include safe diagnostic detail and a remediation hint
+- **AND** the response does not include SMTP credentials, raw provider responses that contain secrets, or full message body content
+
+#### Scenario: Test email is requested while disabled
+- **WHEN** an administrator requests a test email while email delivery is disabled or incomplete
+- **THEN** the system reports that email delivery is unavailable
+- **AND** no SMTP connection is attempted
+
 ### Requirement: Email configuration is explicit
-The email service SHALL require explicit configuration before sending outbound email.
+The email service SHALL require explicit complete configuration before sending outbound email, and SHALL use either deployment configuration or a complete runtime configuration snapshot as the active source.
 
 #### Scenario: Provider configuration is missing
-- **WHEN** no email provider configuration is present
+- **WHEN** no complete email provider configuration is present
 - **THEN** the service remains in disabled mode
 - **AND** application features that can operate manually continue to do so
 
@@ -84,5 +174,45 @@ The email service SHALL require explicit configuration before sending outbound e
 
 #### Scenario: Application base URL is configured
 - **WHEN** an email template includes an application link
-- **THEN** the link uses a configured public application base URL
+- **THEN** the message composition uses the application link generator to produce the link
+- **AND** email provider settings do not accept, return, store, or validate the public application base URL
 - **AND** the service does not derive public links from untrusted request headers
+
+#### Scenario: Deployment defaults configure email
+- **WHEN** complete email defaults are provided by deployment configuration and no runtime email settings exist
+- **THEN** the email service uses those deployment defaults for outbound delivery
+
+#### Scenario: Runtime settings are saved
+- **WHEN** an administrator saves runtime email settings
+- **THEN** the system persists a complete runtime email configuration snapshot
+- **AND** subsequent email delivery uses the runtime snapshot without backend downtime
+- **AND** deployment defaults are no longer mixed with runtime values
+
+#### Scenario: Complete SMTP configuration is required
+- **WHEN** email delivery is enabled
+- **THEN** host, port, encryption mode, and sender identity are required
+- **AND** SMTP authentication enabled state is required
+
+#### Scenario: Authenticated SMTP configuration is required
+- **WHEN** email delivery is enabled with SMTP authentication enabled
+- **THEN** SMTP username and password are required
+
+#### Scenario: Unauthenticated SMTP configuration is allowed
+- **WHEN** email delivery is enabled with SMTP authentication disabled
+- **THEN** SMTP username and password are not required
+
+#### Scenario: Deployment password is kept on first runtime save
+- **WHEN** deployment configuration includes an SMTP password and no runtime email settings exist
+- **AND** an administrator saves runtime email settings without replacing or clearing the SMTP password
+- **THEN** the system copies the deployment SMTP password into the runtime configuration snapshot
+- **AND** the SMTP password is not exposed to the administrator
+
+#### Scenario: Runtime settings are reset
+- **WHEN** an administrator resets runtime email settings
+- **THEN** the runtime email configuration snapshot is removed
+- **AND** subsequent email delivery uses complete deployment defaults when available
+
+#### Scenario: Runtime settings disable email
+- **WHEN** an administrator disables email delivery at runtime
+- **THEN** the email service remains unavailable for outbound delivery
+- **AND** application features that can operate manually continue to do so

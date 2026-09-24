@@ -11,6 +11,7 @@ vi.mock('$app/environment', () => ({
 }));
 vi.mock('$lib/stores/auth.svelte', () => ({
 	restoreSession: vi.fn(),
+	getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'user@example.com', displayName: 'User', emailVerified: true })),
 }));
 vi.mock('$lib/api/health', () => ({
 	checkHealth: vi.fn(),
@@ -47,6 +48,22 @@ describe('root page load guard', () => {
 			location: '/lists',
 		});
 		expect(restoreSession).toHaveBeenCalledWith(fetchFn);
+	});
+
+	it('redirects an unverified authenticated user to email verification', async () => {
+		const { getCurrentUser } = await import('$lib/stores/auth.svelte');
+		vi.mocked(restoreSession).mockResolvedValue('authenticated');
+		vi.mocked(getCurrentUser).mockReturnValue({
+			id: 'user-1',
+			email: 'user@example.com',
+			displayName: 'User',
+			emailVerified: false,
+		});
+
+		await expect(load({ fetch: fetchFn } as never)).rejects.toMatchObject({
+			status: 307,
+			location: '/verify-email',
+		});
 	});
 
 	it('redirects an unauthenticated user to /auth after restoration', async () => {

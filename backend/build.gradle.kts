@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.matthiasbalke"
-val versionBase = "0.6.0"
+val versionBase = "0.7.0"
 version = if (hasProperty("release")) versionBase else "$versionBase-SNAPSHOT"
 
 springBoot {
@@ -28,6 +28,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
+	implementation("org.springframework.boot:spring-boot-starter-mail")
 	implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.security:spring-security-webauthn")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")

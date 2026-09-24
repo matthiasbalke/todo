@@ -1,7 +1,54 @@
 import { authedFetch } from './authedClient';
 
 export interface AdminSettings {
+	app: AppSettings;
+	email: EmailSettings;
+}
+
+export interface AppSettings {
 	registrationEnabled: boolean;
+	publicBaseUrl: string;
+}
+
+export type EmailConfigurationSource = 'DEPLOYMENT' | 'RUNTIME';
+export type EmailEncryption = 'STARTTLS' | 'SSL_TLS';
+export type PasswordAction = 'KEEP' | 'REPLACE' | 'CLEAR';
+
+export interface EmailSettings {
+	source: EmailConfigurationSource;
+	enabled: boolean;
+	authEnabled: boolean;
+	host: string;
+	port: number | null;
+	protocol: string;
+	encryption: EmailEncryption;
+	username: string | null;
+	passwordConfigured: boolean;
+	from: string;
+	fromName: string | null;
+	validationErrors: string[];
+}
+
+export interface UpdateEmailSettingsRequest {
+	enabled: boolean;
+	authEnabled: boolean;
+	host: string;
+	port: number | null;
+	protocol: string;
+	encryption: EmailEncryption;
+	username: string | null;
+	passwordAction: PasswordAction;
+	password: string | null;
+	from: string;
+	fromName: string | null;
+}
+
+export interface TestEmailResponse {
+	status: 'ACCEPTED' | 'UNAVAILABLE' | 'FAILED';
+	category: string | null;
+	message: string | null;
+	detail: string | null;
+	hint: string | null;
 }
 
 export interface AdminStats {
@@ -33,10 +80,28 @@ export async function getAdminSettings(fetchFn: typeof fetch = fetch): Promise<A
 	return authedFetch('/api/admin/settings', undefined, fetchFn);
 }
 
-export async function setRegistrationEnabled(registrationEnabled: boolean): Promise<AdminSettings> {
-	return authedFetch('/api/admin/settings/registration', {
+export async function updateAppSettings(req: AppSettings): Promise<AppSettings> {
+	return authedFetch('/api/admin/settings/app', {
 		method: 'PATCH',
-		body: JSON.stringify({ registrationEnabled }),
+		body: JSON.stringify(req),
+	});
+}
+
+export async function updateEmailSettings(req: UpdateEmailSettingsRequest): Promise<EmailSettings> {
+	return authedFetch('/api/admin/settings/email', {
+		method: 'PATCH',
+		body: JSON.stringify(req),
+	});
+}
+
+export async function resetEmailSettings(): Promise<EmailSettings> {
+	return authedFetch('/api/admin/settings/email/reset', { method: 'POST' });
+}
+
+export async function testEmailSettings(recipient: string): Promise<TestEmailResponse> {
+	return authedFetch('/api/admin/settings/email/test', {
+		method: 'POST',
+		body: JSON.stringify({ recipient }),
 	});
 }
 

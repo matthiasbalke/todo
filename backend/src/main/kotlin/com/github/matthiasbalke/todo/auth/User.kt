@@ -49,6 +49,24 @@ class User(
     @Column(name = "blocked_by_user_id")
     var blockedByUserId: UUID? = null,
 
+    @Column(name = "validated_at")
+    var validatedAt: Instant? = null,
+
+    @Column(name = "validation_token")
+    var validationToken: String? = null,
+
+    @Column(name = "validation_started")
+    var validationStarted: Instant? = null,
+
+    @Column(name = "pending_email")
+    var pendingEmail: String? = null,
+
+    @Column(name = "pending_email_token")
+    var pendingEmailToken: String? = null,
+
+    @Column(name = "pending_email_started")
+    var pendingEmailStarted: Instant? = null,
+
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now(),
 )

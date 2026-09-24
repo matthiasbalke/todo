@@ -19,6 +19,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @EnableWebSecurity
 class SecurityConfig(
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
+    private val emailVerificationRequiredFilter: EmailVerificationRequiredFilter,
     private val authRateLimitFilter: AuthRateLimitFilter,
     @Value("\${app.cors.allowed-origins}") private val allowedOrigins: String,
 ) {
@@ -38,6 +39,7 @@ class SecurityConfig(
             }
             .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterAfter(emailVerificationRequiredFilter, JwtAuthenticationFilter::class.java)
             .headers { headers ->
                 headers.contentTypeOptions { }
                 headers.frameOptions { it.deny() }

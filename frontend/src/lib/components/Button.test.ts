@@ -199,6 +199,14 @@ describe('Button', () => {
 		expect(screen.getByRole('button')).toHaveClass(expectedClass);
 	});
 
+	it('renders field size with default input geometry classes', () => {
+		render(Button, { props: { children: text('Test'), size: 'field', tone: 'neutral', appearance: 'outline' } });
+
+		const button = screen.getByRole('button', { name: 'Test' });
+		expect(button).toHaveClass('px-3', 'py-2', 'typography-control');
+		expect(button).not.toHaveClass('py-1.5');
+	});
+
 	it('supports accessible icon-only usage', () => {
 		render(Button, { props: { children: text('Icon'), size: 'icon', 'aria-label': 'Run action' } });
 		expect(screen.getByRole('button', { name: 'Run action' })).toBeInTheDocument();

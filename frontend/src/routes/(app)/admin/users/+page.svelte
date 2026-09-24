@@ -2,7 +2,6 @@
   import { untrack } from 'svelte';
   import {
     createRecoveryLink,
-    setRegistrationEnabled,
     updateAdminUser,
     updateUserAdmin,
     updateUserBlocked,
@@ -23,9 +22,6 @@
     error: string;
   };
 
-  let registrationEnabled = $state(untrack(() => data.settings.registrationEnabled));
-  let settingsMessage = $state('');
-  let settingsError = $state('');
   let users = $state<EditableUser[]>(untrack(() => data.users.map((user: AdminUser) => ({
     ...user,
     editDisplayName: user.displayName,
@@ -46,20 +42,6 @@
       ? { ...user, ...updated, editDisplayName: updated.displayName, editEmail: updated.email, saving: false, error: '' }
       : user
     );
-  }
-
-  async function saveRegistration(enabled: boolean) {
-    registrationEnabled = enabled;
-    settingsMessage = '';
-    settingsError = '';
-    try {
-      const updated = await setRegistrationEnabled(enabled);
-      registrationEnabled = updated.registrationEnabled;
-      settingsMessage = 'Registration setting saved.';
-    } catch (error) {
-      registrationEnabled = !enabled;
-      settingsError = friendlyError(error, 'Failed to save registration setting');
-    }
   }
 
   async function saveProfile(user: EditableUser) {
@@ -105,24 +87,6 @@
 </script>
 
 <div class="space-y-8">
-  <div>
-    <h1 class="text-2xl font-bold text-heading">Admin</h1>
-    <p class="text-sm text-muted mt-1">Manage this Todo instance.</p>
-  </div>
-
-  <section class="space-y-3">
-    <h2 class="text-lg font-semibold text-heading">Settings</h2>
-    <div class="flex items-center justify-between border border-border rounded-lg p-4">
-      <div>
-        <p class="text-sm font-medium text-heading">Registration</p>
-        <p class="text-sm text-muted">Allow new account creation.</p>
-      </div>
-      <Toggle checked={registrationEnabled} ariaLabel="Registration enabled" onchange={saveRegistration} />
-    </div>
-    {#if settingsMessage}<p class="text-sm text-success-strong">{settingsMessage}</p>{/if}
-    {#if settingsError}<p class="text-sm text-danger-strong">{settingsError}</p>{/if}
-  </section>
-
   <section class="space-y-3">
     <h2 class="text-lg font-semibold text-heading">Usage</h2>
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -156,7 +120,7 @@
           </div>
           <div class="flex flex-wrap gap-2">
             <Button tone="primary" appearance="solid" size="small" onclick={() => saveProfile(user)} disabled={user.saving}>
-              {user.saving ? 'Saving…' : 'Save profile'}
+              {user.saving ? 'Saving...' : 'Save profile'}
             </Button>
             <Button tone="neutral" appearance="outline" size="small" onclick={() => createRecovery(user)} disabled={user.blocked}>
               Create recovery link
