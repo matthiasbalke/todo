@@ -1,4 +1,4 @@
-import { fetchJson } from './client';
+import { authedFetch } from './authedClient';
 
 export interface VerificationAttempt {
 	email: string;
@@ -28,11 +28,11 @@ export interface VerificationSubmitResponse {
 }
 
 export async function getEmailVerificationState(fetchFn: typeof fetch = fetch): Promise<EmailVerificationState> {
-	return fetchJson<EmailVerificationState>('/api/users/me/verification', { method: 'GET' }, fetchFn);
+	return authedFetch<EmailVerificationState>('/api/users/me/verification', { method: 'GET' }, fetchFn);
 }
 
 export async function requestVerificationEmail(fetchFn: typeof fetch = fetch): Promise<VerificationEmailRequestResponse> {
-	return fetchJson<VerificationEmailRequestResponse>(
+	return authedFetch<VerificationEmailRequestResponse>(
 		'/api/users/me/verification/email',
 		{ method: 'POST', body: JSON.stringify({}) },
 		fetchFn,
@@ -43,7 +43,7 @@ export async function submitVerificationToken(
 	validationToken: string,
 	fetchFn: typeof fetch = fetch,
 ): Promise<VerificationSubmitResponse> {
-	return fetchJson<VerificationSubmitResponse>(
+	return authedFetch<VerificationSubmitResponse>(
 		'/api/users/me/verification',
 		{ method: 'POST', body: JSON.stringify({ validationToken }) },
 		fetchFn,
@@ -51,5 +51,5 @@ export async function submitVerificationToken(
 }
 
 export async function cancelPendingEmail(fetchFn: typeof fetch = fetch): Promise<EmailVerificationState> {
-	return fetchJson<EmailVerificationState>('/api/users/me/verification/pending-email', { method: 'DELETE' }, fetchFn);
+	return authedFetch<EmailVerificationState>('/api/users/me/verification/pending-email', { method: 'DELETE' }, fetchFn);
 }

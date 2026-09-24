@@ -8,54 +8,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import type { BrowserContext, CDPSession, Page } from '@playwright/test';
-
-// ---------------------------------------------------------------------------
-// Helpers (mirrored from auth.spec.ts)
-// ---------------------------------------------------------------------------
-
-async function addVirtualAuthenticator(cdp: CDPSession): Promise<void> {
-	await cdp.send('WebAuthn.enable', { enableUI: false });
-	await cdp.send('WebAuthn.addVirtualAuthenticator', {
-		options: {
-			protocol: 'ctap2',
-			transport: 'internal',
-			hasResidentKey: true,
-			hasUserVerification: true,
-			isUserVerified: true,
-		},
-	});
-}
-
-async function waitForHydration(page: Page): Promise<void> {
-	await page.waitForSelector('body[data-hydrated="true"]');
-}
-
-let emailCounter = 0;
-function uniqueEmail(): string {
-	emailCounter += 1;
-	return `e2e-categories-${Date.now()}-${emailCounter}@example.com`;
-}
-
-async function registerPasskey(
-	page: Page,
-	context: BrowserContext,
-	displayName: string,
-	email: string,
-): Promise<void> {
-	await page.goto('/auth');
-	await waitForHydration(page);
-
-	const cdp = await context.newCDPSession(page);
-	await addVirtualAuthenticator(cdp);
-
-	await page.getByRole('button', { name: 'Create account' }).click();
-	await page.getByPlaceholder('Your name').fill(displayName);
-	await page.getByPlaceholder('you@example.com').fill(email);
-	await page.getByRole('button', { name: /Register passkey/ }).click();
-
-	await page.waitForURL('**/lists');
-}
+import { registerPasskey, uniqueEmail, waitForHydration } from './helpers';
 
 // ---------------------------------------------------------------------------
 // API setup helper
@@ -121,7 +74,7 @@ test.describe('Category config dialog', () => {
 	let listId: string;
 
 	test.beforeEach(async ({ page, context }) => {
-		await registerPasskey(page, context, 'E2E Category User', uniqueEmail());
+		await registerPasskey(page, context, 'E2E Category User', uniqueEmail('e2e-categories'));
 		({ listId } = await setupListWithCategories(page));
 		await page.goto(`/lists/${listId}`);
 		await waitForHydration(page);

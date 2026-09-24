@@ -11,56 +11,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import type { BrowserContext, CDPSession, Page } from '@playwright/test';
-
-// ---------------------------------------------------------------------------
-// Helpers (same patterns as auth.spec.ts)
-// ---------------------------------------------------------------------------
-
-async function addVirtualAuthenticator(cdp: CDPSession): Promise<string> {
-	await cdp.send('WebAuthn.enable', { enableUI: false });
-	const { authenticatorId } = (await cdp.send('WebAuthn.addVirtualAuthenticator', {
-		options: {
-			protocol: 'ctap2',
-			transport: 'internal',
-			hasResidentKey: true,
-			hasUserVerification: true,
-			isUserVerified: true,
-		},
-	})) as { authenticatorId: string };
-	return authenticatorId;
-}
-
-async function waitForHydration(page: Page): Promise<void> {
-	await page.waitForSelector('body[data-hydrated="true"]');
-}
-
-let emailCounter = 0;
-function uniqueEmail(): string {
-	emailCounter += 1;
-	return `e2e-account-${Date.now()}-${emailCounter}@example.com`;
-}
-
-async function registerPasskey(
-	page: Page,
-	context: BrowserContext,
-	displayName: string,
-	email: string,
-): Promise<string> {
-	await page.goto('/auth');
-	await waitForHydration(page);
-
-	const cdp = await context.newCDPSession(page);
-	const authenticatorId = await addVirtualAuthenticator(cdp);
-
-	await page.getByRole('button', { name: 'Create account' }).click();
-	await page.getByPlaceholder('Your name').fill(displayName);
-	await page.getByPlaceholder('you@example.com').fill(email);
-	await page.getByRole('button', { name: /Register passkey/ }).click();
-
-	await page.waitForURL('**/lists');
-	return authenticatorId;
-}
+import { addVirtualAuthenticator, registerPasskey, uniqueEmail, waitForHydration } from './helpers';
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -71,7 +22,7 @@ test.describe('Account management', () => {
 		page,
 		context,
 	}) => {
-		await registerPasskey(page, context, 'Original Name', uniqueEmail());
+		await registerPasskey(page, context, 'Original Name', uniqueEmail('e2e-account'));
 
 		await page.goto('/account');
 		await waitForHydration(page);
@@ -89,7 +40,7 @@ test.describe('Account management', () => {
 	});
 
 	test('add a second passkey from /account page', async ({ page, context }) => {
-		const firstAuthId = await registerPasskey(page, context, 'Passkey User', uniqueEmail());
+		const firstAuthId = await registerPasskey(page, context, 'Passkey User', uniqueEmail('e2e-account'));
 
 		await page.goto('/account');
 		await waitForHydration(page);
@@ -114,7 +65,7 @@ test.describe('Account management', () => {
 	});
 
 	test('remove passkey via inline confirmation (not alert)', async ({ page, context }) => {
-		const firstAuthId = await registerPasskey(page, context, 'Remove User', uniqueEmail());
+		const firstAuthId = await registerPasskey(page, context, 'Remove User', uniqueEmail('e2e-account'));
 
 		await page.goto('/account');
 		await waitForHydration(page);

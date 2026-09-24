@@ -34,6 +34,20 @@ async function enableRegistration(page: import('@playwright/test').Page): Promis
 	expect(response.ok()).toBe(true);
 }
 
+async function waitForSetupResult(page: import('@playwright/test').Page, setupSecret: string): Promise<void> {
+	const result = await Promise.race([
+		page.waitForURL('**/admin/settings').then(() => 'admin' as const),
+		page.getByText('Setup secret is invalid. Check the backend logs and try again.').waitFor({ timeout: 10_000 }).then(() => 'invalid-secret' as const),
+	]);
+
+	if (result === 'invalid-secret') {
+		throw new Error(
+			`First-admin setup failed because the backend did not accept the E2E setup secret "${setupSecret}". ` +
+			'Start the backend with SETUP_SECRET matching the test environment, for example SETUP_SECRET=e2e-setup-secret, or export SETUP_SECRET with the backend log secret before running E2E.'
+		);
+	}
+}
+
 test('creates the first admin when setup is required', async ({ page, context }) => {
 	const setupSecret = process.env.SETUP_SECRET ?? 'e2e-setup-secret';
 	const status = await page.request.get('/api/setup');
@@ -59,7 +73,7 @@ test('creates the first admin when setup is required', async ({ page, context })
 	await page.getByLabel('Passkey name (optional)').fill('E2E setup passkey');
 	await page.getByRole('button', { name: /Create admin passkey/ }).click();
 
-	await page.waitForURL('**/admin/settings');
+	await waitForSetupResult(page, setupSecret);
 	await expect(page.getByRole('heading', { name: 'Admin' })).toBeVisible();
 	await enableRegistration(page);
 	await mkdir('.auth', { recursive: true });

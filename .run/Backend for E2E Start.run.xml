@@ -14,6 +14,7 @@
     <envs>
       <env name="JAVA_TOOL_OPTIONS" value="-Djavax.net.ssl.trustStore=$(pwd)/../e2e/certs/e2e-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12" />
       <env name="RATE_LIMIT_CAPACITY" value="50000" />
+      <env name="SETUP_SECRET" value="e2e-setup-secret" />
       <env name="SPRING_DATASOURCE_URL" value="jdbc:postgresql://localhost:5432/todo?currentSchema=e2e" />
     </envs>
     <method v="2" />
