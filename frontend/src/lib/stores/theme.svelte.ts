@@ -1,4 +1,5 @@
 import type { ThemePreference } from '$lib/api/users';
+import { loadCachedThemePreference, saveCachedThemePreference } from '$lib/themePreferenceCache';
 
 export type EffectiveTheme = 'light' | 'dark';
 
@@ -43,6 +44,7 @@ export function getEffectiveTheme(): EffectiveTheme {
 
 export function setThemePreference(preference: ThemePreference): void {
 	themePreference = preference;
+	saveCachedThemePreference(preference);
 	applyCurrentTheme();
 }
 
@@ -57,6 +59,7 @@ export function clearThemeOverride(): void {
 }
 
 export function installThemeHandling(): () => void {
+	themePreference = loadCachedThemePreference() ?? themePreference;
 	const query = window.matchMedia('(prefers-color-scheme: dark)');
 	mediaQuery = query;
 	applyCurrentTheme();

@@ -4,6 +4,40 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="theme-color" content="#f9fafb" />
+		<script nonce="%sveltekit.nonce%">
+			(() => {
+				const cacheKey = 'todo_theme_preference';
+				const themeColors = { light: '#f9fafb', dark: '#111827' };
+				const isPreference = (value) => value === 'SYSTEM' || value === 'LIGHT' || value === 'DARK';
+				const systemTheme = () => {
+					try {
+						return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+					} catch {
+						return 'light';
+					}
+				};
+
+				let preference = null;
+				try {
+					const cached = window.localStorage.getItem(cacheKey);
+					preference = isPreference(cached) ? cached : null;
+				} catch {
+					preference = null;
+				}
+
+				const theme = preference === 'DARK' ? 'dark' : preference === 'LIGHT' ? 'light' : systemTheme();
+				document.documentElement.dataset.theme = theme;
+				document.documentElement.style.colorScheme = theme;
+
+				let meta = document.querySelector('meta[name="theme-color"]');
+				if (!meta) {
+					meta = document.createElement('meta');
+					meta.name = 'theme-color';
+					document.head.append(meta);
+				}
+				meta.content = themeColors[theme];
+			})();
+		</script>
 		<meta name="apple-mobile-web-app-title" content="Todo" />
 		<link rel="shortcut icon" href="/icons/favicon.ico" />
 		<link rel="icon" type="image/png" href="/icons/favicon-16x16.png" sizes="16x16" />
