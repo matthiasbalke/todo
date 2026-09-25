@@ -6,7 +6,8 @@ vi.mock('$lib/api/users', () => ({
 }));
 
 import { getMe, updatePreferences } from '$lib/api/users';
-import { loadPreferences } from './preferences.svelte';
+import { THEME_PREFERENCE_CACHE_KEY } from '$lib/themePreferenceCache';
+import { loadPreferences, savePreferences } from './preferences.svelte';
 
 const profile = {
 	id: 'u1',
@@ -19,7 +20,10 @@ const profile = {
 };
 
 describe('preference initialization', () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.clearAllMocks();
+		localStorage.clear();
+	});
 
 	it('initializes an uninitialized account once from the browser timezone', async () => {
 		vi.mocked(getMe).mockResolvedValue(profile);
@@ -43,5 +47,29 @@ describe('preference initialization', () => {
 		} as never);
 		const loaded = await loadPreferences();
 		expect(loaded.themePreference).toBe('SYSTEM');
+	});
+
+	it('refreshes the startup theme cache after loading the profile', async () => {
+		vi.mocked(getMe).mockResolvedValue({
+			...profile,
+			themePreference: 'DARK',
+			timeZoneInitialized: true,
+		});
+
+		await loadPreferences();
+
+		expect(localStorage.getItem(THEME_PREFERENCE_CACHE_KEY)).toBe('DARK');
+	});
+
+	it('refreshes the startup theme cache after a successful preference update', async () => {
+		vi.mocked(updatePreferences).mockResolvedValue({
+			...profile,
+			themePreference: 'LIGHT',
+			timeZoneInitialized: true,
+		});
+
+		await savePreferences('UTC', true, 'LIGHT');
+
+		expect(localStorage.getItem(THEME_PREFERENCE_CACHE_KEY)).toBe('LIGHT');
 	});
 });
