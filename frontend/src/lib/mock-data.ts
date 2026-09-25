@@ -2,6 +2,7 @@ export type SortField = 'ALPHA' | 'DUE_DATE' | 'STARRED' | 'CREATED' | 'MANUAL';
 export type SortDirection = 'ASC' | 'DESC';
 export type IntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
 import type { ListRole } from '$lib/api/lists';
+import { addDaysToDateOnly, addMonthsToDateOnly, localIsoDate } from '$lib/dateOnly';
 
 export interface RecurrenceRule {
   intervalUnit: IntervalUnit;
@@ -93,14 +94,10 @@ export const mockCategories: Category[] = [
   { id: 'c-finance', listId: 'personal', name: 'Finance', color: null, sortOrder: 2 }
 ];
 
-const today = new Date();
-const todayStr = today.toISOString().split('T')[0];
-const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-const yesterdayStr = yesterday.toISOString().split('T')[0];
-const nextWeek = new Date(today); nextWeek.setDate(today.getDate() + 7);
-const nextWeekStr = nextWeek.toISOString().split('T')[0];
-const lastMonth = new Date(today); lastMonth.setMonth(today.getMonth() - 1);
-const lastMonthStr = lastMonth.toISOString().split('T')[0];
+const todayStr = localIsoDate();
+const yesterdayStr = addDaysToDateOnly(todayStr, -1);
+const nextWeekStr = addDaysToDateOnly(todayStr, 7);
+const lastMonthStr = addMonthsToDateOnly(todayStr, -1);
 
 export const mockItems: TodoItem[] = [
   // Grocery - Produce

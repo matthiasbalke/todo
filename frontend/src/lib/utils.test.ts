@@ -1,7 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { recurrenceRuleToHuman, formatDueDate, isDueDateOverdue, isDueDateToday, applyFilters, applySort, groupByCategory } from './utils';
 import type { Category, TodoItem } from './mock-data';
 import type { Filters } from './utils';
+import { addDaysToDateOnly, localIsoDate } from './dateOnly';
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('recurrenceRuleToHuman', () => {
   it('formats weekly', () => expect(recurrenceRuleToHuman({ intervalUnit: 'WEEKS', intervalValue: 1 })).toBe('Every week'));
@@ -78,6 +83,89 @@ describe('applyFilters — assigneeFilter', () => {
     );
 
     expect(result).toEqual([{ ...noAssignees, starred: true }]);
+  });
+});
+
+describe('date-only due date behavior', () => {
+  const baseItem: Omit<TodoItem, 'id' | 'title' | 'dueDate'> = {
+    listId: 'l1',
+    categoryId: null,
+    notes: null,
+    done: false,
+    starred: false,
+    assignedUserIds: [],
+    recurrenceRule: null,
+    parentItemId: null,
+    createdByUserId: null,
+    updatedByUserId: null,
+    sortOrder: 0,
+    createdAt: '2026-06-01T00:00:00Z',
+    updatedAt: '2026-06-01T00:00:00Z'
+  };
+  const filters: Filters = { starredOnly: false, hideFuture: true, hideUndated: false, assigneeFilters: [] };
+
+  function item(id: string, dueDate: string | null): TodoItem {
+    return { ...baseItem, id, title: id, dueDate };
+  }
+
+  it('returns the local calendar date without UTC conversion', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15, 23, 30));
+
+    expect(localIsoDate()).toBe('2026-06-15');
+  });
+
+  it('keeps undated, overdue, and due-today items while hiding future items', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15, 12));
+
+    const result = applyFilters(
+      [
+        item('undated', null),
+        item('overdue', '2026-06-14'),
+        item('today', '2026-06-15'),
+        item('tomorrow', '2026-06-16')
+      ],
+      filters
+    );
+
+    expect(result.map((entry) => entry.id)).toEqual(['undated', 'overdue', 'today']);
+  });
+
+  it('treats a date-only value equal to local today as today and not overdue', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15, 12));
+
+    expect(formatDueDate('2026-06-15')).toBe('Today');
+    expect(isDueDateToday('2026-06-15')).toBe(true);
+    expect(isDueDateOverdue('2026-06-15')).toBe(false);
+  });
+
+  it('formats adjacent due dates by calendar day', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15, 12));
+
+    expect(formatDueDate('2026-06-14')).toBe('Yesterday');
+    expect(formatDueDate('2026-06-16')).toBe('Tomorrow');
+  });
+
+  it('sorts due dates by calendar order and keeps undated items last when ascending', () => {
+    const result = applySort(
+      [
+        item('undated', null),
+        item('future', '2026-06-16'),
+        item('past', '2026-06-14'),
+        item('today', '2026-06-15')
+      ],
+      'DUE_DATE',
+      'ASC'
+    );
+
+    expect(result.map((entry) => entry.id)).toEqual(['past', 'today', 'future', 'undated']);
+  });
+
+  it('adds days to date-only values using local calendar arithmetic', () => {
+    expect(addDaysToDateOnly('2026-06-15', 1)).toBe('2026-06-16');
   });
 });
 

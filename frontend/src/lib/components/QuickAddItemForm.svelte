@@ -12,6 +12,7 @@
 	import Select from './Select.svelte';
 	import Textarea from './Textarea.svelte';
 	import TextInput from './TextInput.svelte';
+	import { formatDateOnly } from '$lib/dateOnly';
 	import {
 		createQuickAddDraft,
 		getEffectiveDefaultCategoryId,
@@ -120,9 +121,7 @@
 	}
 
 	function formatDate(value: string): string {
-		return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(
-			new Date(`${value}T00:00:00`)
-		);
+		return formatDateOnly(value, undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 	}
 
 	function getTrigger(detail: Detail): HTMLButtonElement | null {

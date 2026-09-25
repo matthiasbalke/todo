@@ -1,4 +1,5 @@
 import type { Category, RecurrenceRule, TodoItem, User } from '$lib/mock-data';
+import { localIsoDate } from '$lib/dateOnly';
 import type { ItemFormDraft } from './ItemForm.svelte';
 
 export const recurrenceOptions = [
@@ -58,7 +59,7 @@ export function quickAddDraftToTodoItem(
 	listId: string,
 	users: User[]
 ): TodoItem {
-	const now = new Date().toISOString().split('T')[0];
+	const now = localIsoDate();
 	const knownUserIds = new Set(users.map((user) => user.id));
 	return {
 		id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2),

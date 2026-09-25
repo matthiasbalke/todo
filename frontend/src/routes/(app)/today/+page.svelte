@@ -12,6 +12,7 @@
   import { getCurrentUser } from '$lib/stores/auth.svelte';
   import type { Category, SortDirection, SortField, TodoItem, User } from '$lib/mock-data';
   import { loadTodayPrefs, saveTodayPrefs } from '$lib/todayPrefs';
+  import { compareOptionalDateOnly } from '$lib/dateOnly';
 
   const profile = $derived(getProfile());
   const entries = $derived(getTodayEntries());
@@ -110,9 +111,7 @@
         cmp = a.title.localeCompare(b.title);
         break;
       case 'DUE_DATE': {
-        const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-        const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-        cmp = da - db;
+        cmp = compareOptionalDateOnly(a.dueDate, b.dueDate);
         break;
       }
       case 'STARRED':
