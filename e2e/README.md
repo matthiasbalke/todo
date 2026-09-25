@@ -62,6 +62,12 @@ To override the target URL:
 BASE_URL=https://other.example.test bun run auth:admin
 ```
 
+If the app tables live in a non-default PostgreSQL schema:
+
+```bash
+E2E_POSTGRES_SCHEMA=e2e bun run auth:admin
+```
+
 ## Mailpit Tests
 
 Before running the email delivery specs locally:

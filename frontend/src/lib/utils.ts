@@ -1,4 +1,11 @@
 import type { TodoItem, Category, SortField, SortDirection, RecurrenceRule } from './mock-data';
+import {
+	compareDateOnly,
+	compareOptionalDateOnly,
+	daysBetweenDateOnly,
+	formatDateOnly,
+	localIsoDate
+} from './dateOnly';
 
 export const ASSIGNEE_FILTER_CRITERIA = ['none', 'me', 'others'] as const;
 export type AssigneeFilterCriterion = typeof ASSIGNEE_FILTER_CRITERIA[number];
@@ -24,13 +31,11 @@ export function normalizeAssigneeFilters(value: unknown): AssigneeFilterCriterio
 
 export function applyFilters(items: TodoItem[], filters: Filters, currentUserId?: string): TodoItem[] {
   const assigneeFilters = normalizeAssigneeFilters(filters.assigneeFilters);
+  const today = localIsoDate();
   return items.filter(item => {
     if (filters.starredOnly && !item.starred) return false;
     if (filters.hideFuture && item.dueDate) {
-      const due = new Date(item.dueDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (due > today) return false;
+      if (compareDateOnly(item.dueDate, today) > 0) return false;
     }
     if (filters.hideUndated && !item.dueDate) return false;
     if (assigneeFilters.length > 0) {
@@ -53,9 +58,7 @@ export function applySort(items: TodoItem[], field: SortField, direction: SortDi
         cmp = a.title.localeCompare(b.title);
         break;
       case 'DUE_DATE': {
-        const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-        const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-        cmp = da - db;
+        cmp = compareOptionalDateOnly(a.dueDate, b.dueDate);
         break;
       }
       case 'STARRED':
@@ -104,31 +107,22 @@ export function groupByCategory(
   return result;
 }
 
-function midnight(d: Date): Date {
-  const copy = new Date(d);
-  copy.setHours(0, 0, 0, 0);
-  return copy;
-}
-
 export function formatDueDate(dueDate: string): string {
-  const date = midnight(new Date(dueDate));
-  const today = midnight(new Date());
-
-  const diff = (date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+  const diff = daysBetweenDateOnly(dueDate, localIsoDate());
 
   if (diff === 0) return 'Today';
   if (diff === 1) return 'Tomorrow';
   if (diff === -1) return 'Yesterday';
 
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return formatDateOnly(dueDate);
 }
 
 export function isDueDateOverdue(dueDate: string): boolean {
-  return midnight(new Date(dueDate)) < midnight(new Date());
+  return compareDateOnly(dueDate, localIsoDate()) < 0;
 }
 
 export function isDueDateToday(dueDate: string): boolean {
-  return midnight(new Date(dueDate)).getTime() === midnight(new Date()).getTime();
+  return compareDateOnly(dueDate, localIsoDate()) === 0;
 }
 
 export function recurrenceRuleToHuman(rule: RecurrenceRule): string {

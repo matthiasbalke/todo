@@ -14,6 +14,7 @@ const outputPath = env.E2E_ADMIN_STORAGE_STATE ?? '.auth/admin.json';
 const composeService = env.E2E_POSTGRES_SERVICE ?? 'postgres';
 const dbName = env.POSTGRES_DB ?? 'todo';
 const dbUser = env.POSTGRES_USER ?? 'todo';
+const dbSchema = env.E2E_POSTGRES_SCHEMA ?? env.POSTGRES_SCHEMA;
 const adminEmail = env.E2E_ADMIN_EMAIL;
 const refreshDays = Number(env.E2E_REFRESH_TOKEN_DAYS ?? '30');
 
@@ -49,6 +50,8 @@ Environment:
   E2E_POSTGRES_SERVICE        Docker Compose service. Default: postgres
   POSTGRES_DB                 Database name. Default: todo
   POSTGRES_USER               Database user. Default: todo
+  E2E_POSTGRES_SCHEMA         Optional schema/search_path for users and refresh_tokens
+  POSTGRES_SCHEMA             Alias for E2E_POSTGRES_SCHEMA
   E2E_REFRESH_TOKEN_DAYS      Refresh token lifetime. Default: 30
 
 Requires the Docker Compose postgres service to be running.`);
@@ -58,6 +61,13 @@ function sqlString(value: string): string {
 	return `'${value.replaceAll("'", "''")}'`;
 }
 
+function pgOptionsSearchPath(value: string): string {
+	if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
+		throw new Error(`E2E_POSTGRES_SCHEMA must be a simple PostgreSQL identifier, got ${value}`);
+	}
+	return `-c search_path=${value},public`;
+}
+
 async function psql(sql: string): Promise<string> {
 	const proc = Bun.spawn({
 		cmd: [
@@ -65,6 +75,7 @@ async function psql(sql: string): Promise<string> {
 			'compose',
 			'exec',
 			'-T',
+			...(dbSchema ? ['-e', `PGOPTIONS=${pgOptionsSearchPath(dbSchema)}`] : []),
 			composeService,
 			'psql',
 			'-U',

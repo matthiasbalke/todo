@@ -1,5 +1,6 @@
 package com.github.matthiasbalke.todo.items
 
+import com.github.matthiasbalke.todo.auth.UserRepository
 import com.github.matthiasbalke.todo.lists.ListAccessService
 import com.github.matthiasbalke.todo.lists.ListRole
 import com.github.matthiasbalke.todo.sse.ItemPayload
@@ -10,8 +11,10 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
+import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.util.UUID
 
 data class CreateItemRequest(
@@ -48,6 +51,8 @@ class ItemService(
     private val itemAssignmentRepository: ItemAssignmentRepository,
     private val listAccessService: ListAccessService,
     private val ssePublisher: SsePublisher,
+    private val userRepository: UserRepository,
+    private val clock: Clock,
 ) {
 
     fun getItems(listId: UUID, userId: UUID): List<ItemWithAssignees> {
@@ -138,7 +143,7 @@ class ItemService(
 
         if (item.done && item.recurrenceRule != null) {
             val rule = item.recurrenceRule!!
-            val base = item.dueDate ?: LocalDate.now()
+            val base = item.dueDate ?: currentDate(userId)
             val nextDue = when (rule.intervalUnit) {
                 IntervalUnit.DAYS -> base.plusDays(rule.intervalValue.toLong())
                 IntervalUnit.WEEKS -> base.plusWeeks(rule.intervalValue.toLong())
@@ -214,6 +219,13 @@ class ItemService(
         userIds.forEach { uid ->
             itemAssignmentRepository.save(ItemAssignment(ItemAssignmentId(itemId, uid)))
         }
+    }
+
+    private fun currentDate(userId: UUID): LocalDate {
+        val user = userRepository.findById(userId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+        }
+        return LocalDate.now(clock.withZone(ZoneId.of(user.timeZone)))
     }
 
     private fun TodoItem.withAssignees(): ItemWithAssignees {

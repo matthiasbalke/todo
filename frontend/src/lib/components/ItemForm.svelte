@@ -33,6 +33,7 @@
   import { controlPlaceholderTextClasses, controlValueTextClasses } from './controlStyles';
   import TextInput from './TextInput.svelte';
   import Button from './Button.svelte';
+  import { localIsoDate } from '$lib/dateOnly';
 
   let {
     item,
@@ -360,7 +361,7 @@
   });
 
   function buildTodoItem(overrides: Partial<TodoItem> = {}): TodoItem {
-    const now = new Date().toISOString().split('T')[0];
+    const now = localIsoDate();
     return {
       id: item?.id ?? (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)),
       listId,

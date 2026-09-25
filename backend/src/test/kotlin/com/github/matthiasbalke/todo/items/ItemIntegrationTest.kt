@@ -8,6 +8,10 @@ import com.github.matthiasbalke.todo.auth.UserRepository
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Primary
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
@@ -15,10 +19,15 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.UUID
 
 @AutoConfigureMockMvc
+@Import(ItemIntegrationTest.FixedClockConfig::class)
 class ItemIntegrationTest : AbstractIntegrationTest() {
 
     @Autowired private lateinit var mockMvc: MockMvc
@@ -27,8 +36,16 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
 
     private val mapper = JsonMapper()
 
-    private fun createUser(): User =
-        userRepository.save(User(email = "user-${UUID.randomUUID()}@example.com", displayName = "Test User", validatedAt = java.time.Instant.now()))
+    private fun createUser(timeZone: String = "UTC"): User =
+        userRepository.save(
+            User(
+                email = "user-${UUID.randomUUID()}@example.com",
+                displayName = "Test User",
+                timeZone = timeZone,
+                timeZoneInitialized = true,
+                validatedAt = java.time.Instant.now(),
+            )
+        )
 
     private fun bearerHeader(user: User) = "Bearer ${jwtTokenService.generateAccessToken(user)}"
 
@@ -373,10 +390,55 @@ class ItemIntegrationTest : AbstractIntegrationTest() {
             header("Authorization", bearerHeader(owner))
         }.andReturn().response.contentAsString)
         val newItem = items.first { !it["done"].asBoolean() }
-        val expectedDueDate = LocalDate.now().plusDays(1).toString()
+        val expectedDueDate = LocalDate.now(FIXED_CLOCK.withZone(ZoneId.of(owner.timeZone))).plusDays(1).toString()
         assert(newItem["dueDate"].asString() == expectedDueDate) {
             "Expected $expectedDueDate but got ${newItem["dueDate"].asString()}"
         }
+    }
+
+    @Test
+    fun `PATCH done - recurring item without due date uses acting user timezone for today`() {
+        val owner = createUser(timeZone = "America/Los_Angeles")
+        val listId = createListAsUser(owner)
+
+        val result = mockMvc.post("/api/lists/$listId/items") {
+            header("Authorization", bearerHeader(owner))
+            contentType = MediaType.APPLICATION_JSON
+            content = """{
+                "title": "Daily task",
+                "recurrenceRule": {"intervalUnit": "DAYS", "intervalValue": 1}
+            }"""
+        }.andExpect { status { isCreated() } }.andReturn()
+        val itemId = UUID.fromString(mapper.readTree(result.response.contentAsString)["id"].asString())
+
+        mockMvc.patch("/api/lists/$listId/items/$itemId/done") {
+            header("Authorization", bearerHeader(owner))
+        }.andExpect { status { isOk() } }
+
+        val items = mapper.readTree(mockMvc.get("/api/lists/$listId/items") {
+            header("Authorization", bearerHeader(owner))
+        }.andReturn().response.contentAsString)
+        val newItem = items.first { !it["done"].asBoolean() }
+        val expectedDueDate = LocalDate.now(FIXED_CLOCK.withZone(ZoneId.of(owner.timeZone))).plusDays(1).toString()
+        val serverTimezoneDueDate = LocalDate.now(FIXED_CLOCK).plusDays(1).toString()
+
+        assert(newItem["dueDate"].asString() == expectedDueDate) {
+            "Expected $expectedDueDate but got ${newItem["dueDate"].asString()}"
+        }
+        assert(newItem["dueDate"].asString() != serverTimezoneDueDate) {
+            "Expected user timezone due date to differ from server timezone due date $serverTimezoneDueDate"
+        }
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    class FixedClockConfig {
+        @Bean
+        @Primary
+        fun fixedClock(): Clock = FIXED_CLOCK
+    }
+
+    companion object {
+        private val FIXED_CLOCK: Clock = Clock.fixed(Instant.parse("2026-06-15T00:30:00Z"), ZoneOffset.UTC)
     }
 
     @Test
