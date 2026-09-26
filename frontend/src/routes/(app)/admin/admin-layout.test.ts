@@ -1,6 +1,9 @@
 import { cleanup, render, screen, within } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('$lib/version', () => ({ appVersion: '0.0.0' }));
+
 import AdminLayout from './+layout.svelte';
 
 afterEach(cleanup);
@@ -47,5 +50,17 @@ describe('admin layout', () => {
 		expect(navs[0]).toHaveClass('md:hidden');
 		expect(navs[1].closest('aside')).toHaveClass('hidden', 'md:block');
 		expect(within(navs[0]).getByRole('link', { name: 'Users' })).toHaveAttribute('aria-current', 'page');
+	});
+
+	it('shows the app version in the admin footer', () => {
+		const children = createRawSnippet(() => ({ render: () => '<p>Settings content</p>' }));
+		render(AdminLayout, {
+			props: {
+				data: { buildNumber: '42', activeAdminPath: '/admin/settings' },
+				children,
+			},
+		});
+
+		expect(screen.getByText('v0.0.0.42')).toBeInTheDocument();
 	});
 });

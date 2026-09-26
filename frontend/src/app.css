@@ -1,2 +1,11 @@
 @import "tailwindcss";
 @import "./lib/styles/foundation.css";
+
+.app-scrollbar-hidden {
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.app-scrollbar-hidden::-webkit-scrollbar {
+	display: none;
+}

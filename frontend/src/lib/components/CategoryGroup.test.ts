@@ -21,6 +21,7 @@ vi.mock('svelte-dnd-action', () => ({
 }));
 
 import CategoryGroup from './CategoryGroup.svelte';
+import { dragHandleZone } from 'svelte-dnd-action';
 
 const category: Category = {
 	id: 'category-1',
@@ -132,6 +133,32 @@ describe('CategoryGroup header alignment', () => {
 });
 
 describe('CategoryGroup drag-and-drop', () => {
+	it('passes tuned auto-scroll options to item dragging', () => {
+		render(CategoryGroup, {
+			props: {
+				categoryId: category.id,
+				category,
+				items: [makeItem('item-1', category.id)],
+				allCategories: [category],
+				users: [],
+				listId: 'list-1',
+				isDraggable: true,
+			}
+		});
+
+		expect(dragHandleZone).toHaveBeenCalledWith(
+			expect.any(HTMLElement),
+			expect.objectContaining({
+				items: expect.any(Array),
+				type: 'category-item',
+				dropTargetStyle: {},
+				useCursorForDetection: true,
+			}),
+		);
+		expect(vi.mocked(dragHandleZone).mock.calls.some(([, options]) => 'centreDraggedOnCursor' in options)).toBe(false);
+		expect(vi.mocked(dragHandleZone).mock.calls.some(([, options]) => 'delayTouchStart' in options)).toBe(false);
+	});
+
 	it('moves finalized items into this category in dropped order', async () => {
 		const itemInCategory = makeItem('item-1', category.id);
 		const movedItem = makeItem('item-2', 'category-2');

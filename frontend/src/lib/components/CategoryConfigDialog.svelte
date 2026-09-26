@@ -3,6 +3,7 @@
   import { saveCategory, deleteCategory, reorderCategoriesOptimistic } from '$lib/stores/lists.svelte';
   import { friendlyError } from '$lib/api/errors';
   import { dragHandleZone, dragHandle, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
+  import { withDragAutoScrollOptions } from '$lib/dndOptions';
   import Button from './Button.svelte';
   import CategoryColorPicker from './CategoryColorPicker.svelte';
   import EditableLabel from './EditableLabel.svelte';
@@ -157,7 +158,7 @@
       {:else}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
-          use:dragHandleZone={{ items: dndCategories, type: CATEGORY_DND_TYPE, flipDurationMs: 200, dropTargetStyle: {} }}
+          use:dragHandleZone={withDragAutoScrollOptions({ items: dndCategories, type: CATEGORY_DND_TYPE, flipDurationMs: 200, dropTargetStyle: {} })}
           onconsider={handleConsider}
           onfinalize={handleFinalize}
           class="space-y-1 min-h-2"

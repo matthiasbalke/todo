@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import type { HTMLAttributes } from 'svelte/elements';
 
@@ -8,9 +9,28 @@
 	}
 
 	let { expanded = false, children, ...restProps }: Props = $props();
+	let footerElement = $state<HTMLElement | null>(null);
+
+	onMount(() => {
+		if (!footerElement || typeof document === 'undefined') return;
+		const rootStyle = document.documentElement.style;
+		const updateFooterHeight = () => {
+			rootStyle.setProperty('--fixed-action-footer-height', `${footerElement?.getBoundingClientRect().height ?? 0}px`);
+		};
+		updateFooterHeight();
+		const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateFooterHeight) : null;
+		observer?.observe(footerElement);
+		window.addEventListener('resize', updateFooterHeight);
+		return () => {
+			observer?.disconnect();
+			window.removeEventListener('resize', updateFooterHeight);
+			rootStyle.removeProperty('--fixed-action-footer-height');
+		};
+	});
 </script>
 
 <footer
+	bind:this={footerElement}
 	{...restProps}
 	data-testid="fixed-action-footer"
 	class="fixed inset-x-0 bottom-0 z-20 border-t border-border-subtle bg-surface shadow-lg"
