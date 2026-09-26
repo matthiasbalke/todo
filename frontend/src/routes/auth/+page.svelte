@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import type { PageData } from './$types';
   import { goto } from '$app/navigation';
   import { WebAuthnError } from '@simplewebauthn/browser';
   import { ApiError, getAuthConfig, loginWithPasskey, registerWithPasskey } from '$lib/api/auth';
@@ -8,6 +9,7 @@
   import EmailInput from '$lib/components/EmailInput.svelte';
   import TextInput from '$lib/components/TextInput.svelte';
   import { EMAIL_VERIFICATION_ROUTE, VERIFIED_LANDING_ROUTE } from '$lib/routes';
+  import { appVersion } from '$lib/version';
 
   type Mode = 'idle' | 'register-form' | 'signing-in' | 'registering' | 'sign-in-error' | 'register-error';
 
@@ -17,6 +19,7 @@
   let displayName = $state('');
   let passkeyLabel = $state('');
   let registrationEnabled = $state(true);
+  let { data = { buildNumber: '0', restoreStatus: 'unauthenticated' } }: { data?: PageData } = $props();
 
   async function loadAuthConfig() {
     try {
@@ -187,5 +190,9 @@
         {/if}
       </div>
     {/if}
+
+    <footer class="mt-6 text-center text-xs text-subdued">
+      v{appVersion}{data.buildNumber !== '0' ? `.${data.buildNumber}` : ''}
+    </footer>
   </div>
 </div>

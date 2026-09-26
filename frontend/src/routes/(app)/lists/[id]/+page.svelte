@@ -335,7 +335,7 @@
 {#if !list}
   <div class="text-center py-12 text-subdued">List not found.</div>
 {:else}
-<div class="pb-32">
+<div class="pb-6">
   <div class="flex items-center gap-3 mb-4">
     <a href="/lists" class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-surface-subtle hover:text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-primary focus-visible:ring-offset-2" aria-label="Back to lists">
       <Icon name="back" size="header" />

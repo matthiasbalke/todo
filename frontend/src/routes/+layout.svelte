@@ -1,11 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import '../app.css';
-  import { appVersion } from '$lib/version';
   import { installThemeHandling } from '$lib/stores/theme.svelte';
   import { pwaInfo } from 'virtual:pwa-info';
 
-  let { children, data } = $props();
+  let { children } = $props();
   let webManifestLink = $derived(pwaInfo ? pwaInfo.webManifest.linkTag : '');
 
   onMount(() => {
@@ -23,7 +22,4 @@
   <div class="flex-1 flex flex-col">
     {@render children()}
   </div>
-  <footer class="py-4 text-center text-xs text-subdued">
-    v{appVersion}{data.buildNumber !== '0' ? `.${data.buildNumber}` : ''}
-  </footer>
 </div>

@@ -16,12 +16,12 @@ vi.mock('$lib/stores/drag.svelte', () => ({
 }));
 
 vi.mock('svelte-dnd-action', () => ({
-  dragHandleZone: (_node: HTMLElement, _options: Record<string, unknown>) => {
-    return { update: () => {}, destroy: () => {} };
-  },
+  dragHandleZone: vi.fn(() => ({ update: vi.fn(), destroy: vi.fn() })),
   dragHandle: () => ({ destroy: () => {} }),
   SHADOW_ITEM_MARKER_PROPERTY_NAME: '__shadow__',
 }));
+
+import { dragHandleZone } from 'svelte-dnd-action';
 
 const group: ListGroup = {
   id: 'group-home',
@@ -83,6 +83,23 @@ describe('ListGroupSection', () => {
 
     const ungrouped = render(ListGroupSection, { props: { group: null, lists, showGroupDragHandle: true } });
     expect(ungrouped.container.querySelector('[aria-label="Drag to reorder list group"]')).toBeNull();
+  });
+
+  it('passes tuned auto-scroll options to list-card dragging', () => {
+    render(ListGroupSection, { props: { group, lists } });
+
+    expect(dragHandleZone).toHaveBeenCalledWith(
+      expect.any(HTMLElement),
+      expect.objectContaining({
+        items: expect.any(Array),
+        type: 'list-card',
+        flipDurationMs: 200,
+        dropTargetStyle: {},
+        useCursorForDetection: true,
+      }),
+    );
+    expect(vi.mocked(dragHandleZone).mock.calls.some(([, options]) => 'centreDraggedOnCursor' in options)).toBe(false);
+    expect(vi.mocked(dragHandleZone).mock.calls.some(([, options]) => 'delayTouchStart' in options)).toBe(false);
   });
 
   it('long-press on list card anchor does not show browser link preview (contextmenu suppressed)', () => {
