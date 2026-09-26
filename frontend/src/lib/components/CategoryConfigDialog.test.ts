@@ -21,6 +21,7 @@ vi.mock('svelte-dnd-action', () => ({
 
 import CategoryConfigDialog from './CategoryConfigDialog.svelte';
 import type { Category } from '$lib/mock-data';
+import { dragHandleZone } from 'svelte-dnd-action';
 
 const categories: Category[] = [
 	{
@@ -257,7 +258,7 @@ describe('CategoryConfigDialog category creation colors', () => {
 
 describe('CategoryConfigDialog category reordering', () => {
 	it('renders drag handles instead of up and down reorder buttons', () => {
-		const { container } = render(CategoryConfigDialog, {
+		render(CategoryConfigDialog, {
 			props: {
 				categories,
 				listId: 'list-1',
@@ -265,15 +266,15 @@ describe('CategoryConfigDialog category reordering', () => {
 			}
 		});
 
-		expect(container.querySelectorAll('[aria-label="Drag to reorder category"]')).toHaveLength(2);
-		expect(container.querySelector('[aria-label="Drag to reorder category"]')?.querySelector('svg')).not.toBeNull();
-		expect(container.querySelector('[aria-label="Drag to reorder category"] svg')).toHaveClass('lucide-grip-vertical');
+		expect(document.body.querySelectorAll('[aria-label="Drag to reorder category"]')).toHaveLength(2);
+		expect(document.body.querySelector('[aria-label="Drag to reorder category"]')?.querySelector('svg')).not.toBeNull();
+		expect(document.body.querySelector('[aria-label="Drag to reorder category"] svg')).toHaveClass('lucide-grip-vertical');
 		expect(screen.queryByRole('button', { name: 'Move up' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Move down' })).not.toBeInTheDocument();
 	});
 
 	it('persists finalized drag order through the store', async () => {
-		const { container } = render(CategoryConfigDialog, {
+		render(CategoryConfigDialog, {
 			props: {
 				categories,
 				listId: 'list-1',
@@ -281,7 +282,7 @@ describe('CategoryConfigDialog category reordering', () => {
 			}
 		});
 
-		const zone = container.querySelector('[data-testid="category-reorder-zone"]');
+		const zone = screen.getByTestId('category-reorder-zone');
 		await fireEvent(
 			zone as Element,
 			new CustomEvent('finalize', {
@@ -291,6 +292,29 @@ describe('CategoryConfigDialog category reordering', () => {
 		);
 
 		expect(storeMocks.reorderCategoriesOptimistic).toHaveBeenCalledWith('list-1', ['category-2', 'category-1']);
+	});
+
+	it('passes tuned auto-scroll options while preserving category reorder zone settings', () => {
+		render(CategoryConfigDialog, {
+			props: {
+				categories,
+				listId: 'list-1',
+				onclose: vi.fn()
+			}
+		});
+
+		expect(dragHandleZone).toHaveBeenCalledWith(
+			expect.any(HTMLElement),
+			expect.objectContaining({
+				items: expect.any(Array),
+				type: 'configure-category',
+				flipDurationMs: 200,
+				dropTargetStyle: {},
+				useCursorForDetection: true,
+			}),
+		);
+		expect(vi.mocked(dragHandleZone).mock.calls.some(([, options]) => 'centreDraggedOnCursor' in options)).toBe(false);
+		expect(vi.mocked(dragHandleZone).mock.calls.some(([, options]) => 'delayTouchStart' in options)).toBe(false);
 	});
 
 	it('keeps rename, color, delete, and add controls available while rows are draggable', async () => {
@@ -311,7 +335,7 @@ describe('CategoryConfigDialog category reordering', () => {
 
 	it('shows reorder errors and restores previous row order on failure', async () => {
 		storeMocks.reorderCategoriesOptimistic.mockRejectedValue(new Error('No connection'));
-		const { container } = render(CategoryConfigDialog, {
+		render(CategoryConfigDialog, {
 			props: {
 				categories,
 				listId: 'list-1',
@@ -319,7 +343,7 @@ describe('CategoryConfigDialog category reordering', () => {
 			}
 		});
 
-		const zone = container.querySelector('[data-testid="category-reorder-zone"]');
+		const zone = screen.getByTestId('category-reorder-zone');
 		await fireEvent(
 			zone as Element,
 			new CustomEvent('finalize', {
@@ -329,7 +353,7 @@ describe('CategoryConfigDialog category reordering', () => {
 		);
 
 		expect(await screen.findByText('Failed to reorder')).toBeInTheDocument();
-		const rowText = Array.from(container.querySelectorAll('[data-testid="category-reorder-zone"] button[aria-label^="Edit category name"]'))
+		const rowText = Array.from(document.body.querySelectorAll('[data-testid="category-reorder-zone"] button[aria-label^="Edit category name"]'))
 			.map(element => element.textContent);
 		expect(rowText).toEqual(['Produce', 'Dairy']);
 	});
@@ -388,7 +412,7 @@ describe('CategoryConfigDialog category deletion', () => {
 
 describe('CategoryConfigDialog layout and accessibility', () => {
 	it('reserves the same color-control space for colored and colorless categories', () => {
-		const { container } = render(CategoryConfigDialog, {
+		render(CategoryConfigDialog, {
 			props: {
 				categories,
 				listId: 'list-1',
@@ -406,8 +430,8 @@ describe('CategoryConfigDialog layout and accessibility', () => {
 		expect(dairyColor.compareDocumentPosition(screen.getByRole('button', { name: 'Edit category name Dairy' }))).toBe(
 			Node.DOCUMENT_POSITION_FOLLOWING
 		);
-		expect(container.querySelector('[data-testid="category-color-control-category-1"] span')).not.toHaveClass('border');
-		expect(container.querySelector('[data-testid="category-color-control-category-2"] span')).toHaveClass('border-dashed');
+		expect(document.body.querySelector('[data-testid="category-color-control-category-1"] span')).not.toHaveClass('border');
+		expect(document.body.querySelector('[data-testid="category-color-control-category-2"] span')).toHaveClass('border-dashed');
 	});
 
 	it('keeps narrow-layout controls accessible with stable target classes', async () => {

@@ -5,6 +5,7 @@
   import { dragHandleZone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { moveItemsToCategoryOptimistic } from '$lib/stores/items.svelte';
   import { friendlyError } from '$lib/api/errors';
+  import { withDragAutoScrollOptions } from '$lib/dndOptions';
   import Button from './Button.svelte';
   import Icon from './Icon.svelte';
 
@@ -98,7 +99,7 @@
   {#if !collapsed}
     {#if isDraggable}
       <div
-        use:dragHandleZone={{ items: dndItems, type: ITEM_DND_TYPE, dropTargetStyle: {} }}
+        use:dragHandleZone={withDragAutoScrollOptions({ items: dndItems, type: ITEM_DND_TYPE, dropTargetStyle: {} })}
         onconsider={handleConsider}
         onfinalize={handleFinalize}
         class="space-y-2 min-h-2"

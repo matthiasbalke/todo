@@ -75,10 +75,12 @@ describe('App layout account menu presentation', () => {
 		const { container } = render(AppLayout, { props: { children } });
 
 		const headerInner = container.querySelector('header > div');
+		const topChrome = container.querySelector('header')?.parentElement;
 		const main = container.querySelector('main');
+		expect(topChrome).toHaveClass('fixed', 'top-0');
 		expect(headerInner).toHaveClass('max-w-2xl');
 		expect(headerInner).not.toHaveClass('max-w-5xl');
-		expect(main).toHaveClass('max-w-5xl');
+		expect(main).toHaveClass('max-w-5xl', 'overflow-y-auto', 'fixed', 'app-scrollbar-hidden');
 		expect(main).not.toHaveClass('max-w-2xl');
 	});
 
@@ -88,7 +90,27 @@ describe('App layout account menu presentation', () => {
 		const { container } = render(AppLayout, { props: { children } });
 
 		const main = container.querySelector('main');
-		expect(main).toHaveClass('max-w-2xl');
+		expect(container.firstElementChild).toHaveClass('fixed', 'inset-0', 'overflow-hidden');
+		expect(main).toHaveClass('max-w-2xl', 'overflow-y-auto', 'fixed', 'app-scrollbar-hidden');
+		expect(main).toHaveAttribute('data-testid', 'app-scroll-container');
+		expect(main?.getAttribute('style')).toContain('top: var(--app-top-chrome-height, 0px)');
+		expect(main?.getAttribute('style')).toContain('bottom: 0');
+		expect(main?.getAttribute('style')).toContain('padding-bottom: calc(var(--fixed-action-footer-height, 0px) + 1.5rem)');
 		expect(main).not.toHaveClass('max-w-5xl');
+	});
+
+	it('forwards header wheel scrolling to the app content pane', async () => {
+		const children = createRawSnippet(() => ({ render: () => '<p>List content</p>' }));
+
+		const { container } = render(AppLayout, { props: { children } });
+
+		const topChrome = container.querySelector('header')?.parentElement;
+		const main = screen.getByTestId('app-scroll-container');
+		Object.defineProperty(main, 'clientHeight', { configurable: true, value: 500 });
+		Object.defineProperty(main, 'scrollHeight', { configurable: true, value: 1500 });
+
+		topChrome?.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 120 }));
+
+		expect(main.scrollTop).toBe(120);
 	});
 });

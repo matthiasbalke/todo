@@ -2,7 +2,6 @@ import { cleanup, render } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/version', () => ({ appVersion: '0.0.0' }));
 import RootLayout from './+layout.svelte';
 
 describe('root layout theme startup', () => {
@@ -24,7 +23,7 @@ describe('root layout theme startup', () => {
 
 	it('applies system theme before marking the app hydrated', () => {
 		const children = createRawSnippet(() => ({ render: () => '<p>Page content</p>' }));
-		render(RootLayout, { props: { data: { buildNumber: '0' }, children } });
+		render(RootLayout, { props: { children } });
 
 		expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
 		expect(document.body).toHaveAttribute('data-hydrated', 'true');

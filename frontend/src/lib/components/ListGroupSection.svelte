@@ -5,10 +5,12 @@
   import { isDraggingAny, setDraggingAny } from '$lib/stores/drag.svelte';
   import { dragHandleZone, dragHandle, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { friendlyError } from '$lib/api/errors';
+  import { withDragAutoScrollOptions } from '$lib/dndOptions';
   import Button from './Button.svelte';
   import Icon from './Icon.svelte';
   import TextInput from './TextInput.svelte';
   import { focusTextInput } from '$lib/utils/focus';
+  import { getPrimaryScrollElement } from '$lib/appScroller';
 
   let {
     group,
@@ -120,7 +122,8 @@
     const visibleTop = viewport?.offsetTop ?? 0;
     const targetTop = visibleTop + 96;
     const currentTop = renameContainer.getBoundingClientRect().top;
-    const scroller = document.scrollingElement ?? document.documentElement;
+    const scroller = getPrimaryScrollElement();
+    if (!scroller) return;
     scroller.scrollTop += currentTop - targetTop;
   }
 
@@ -269,7 +272,7 @@
   {#if !collapsed}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
-      use:dragHandleZone={{ items: dndItems, type: 'list-card', flipDurationMs: 200, dropTargetStyle: {} }}
+      use:dragHandleZone={withDragAutoScrollOptions({ items: dndItems, type: 'list-card', flipDurationMs: 200, dropTargetStyle: {} })}
       onconsider={handleConsider}
       onfinalize={handleFinalize}
       class="space-y-2 min-h-[4px]"

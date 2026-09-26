@@ -150,9 +150,12 @@ describe('ItemForm', () => {
 		});
 
 		it('scrolls edited metadata controls into the upper third before opening them', async () => {
-			const scrollTopDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
+			const appScroller = document.createElement('main');
+			appScroller.dataset.testid = 'app-scroll-container';
+			document.body.appendChild(appScroller);
+			const scrollTopDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTop');
 			let scrollTop = 0;
-			Object.defineProperty(document.documentElement, 'scrollTop', {
+			Object.defineProperty(appScroller, 'scrollTop', {
 				configurable: true,
 				get: () => scrollTop,
 				set: (value) => { scrollTop = value; }
@@ -182,10 +185,11 @@ describe('ItemForm', () => {
 			await fireEvent.pointerDown(screen.getByRole('option', { name: 'Every day' }));
 			expect(scrollTop).toBeCloseTo(600 - 96);
 			if (scrollTopDescriptor) {
-				Object.defineProperty(document.documentElement, 'scrollTop', scrollTopDescriptor);
+				Object.defineProperty(appScroller, 'scrollTop', scrollTopDescriptor);
 			} else {
-				Reflect.deleteProperty(document.documentElement, 'scrollTop');
+				Reflect.deleteProperty(appScroller, 'scrollTop');
 			}
+			appScroller.remove();
 		});
 	});
 

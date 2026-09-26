@@ -7,6 +7,7 @@
   import FixedActionFooter from '$lib/components/FixedActionFooter.svelte';
   import { dragHandleZone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { friendlyError } from '$lib/api/errors';
+  import { withDragAutoScrollOptions } from '$lib/dndOptions';
   import Button from '$lib/components/Button.svelte';
   import Icon from '$lib/components/Icon.svelte';
   import { getProfile } from '$lib/stores/preferences.svelte';
@@ -126,7 +127,7 @@
   }
 </script>
 
-<div class="pb-32">
+<div class="pb-6">
   {#if isLoading()}
     <div class="space-y-3">
       {#each [1, 2, 3] as _}
@@ -154,7 +155,7 @@
 
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
-        use:dragHandleZone={{ items: dndGroupWrappers, type: 'list-group', flipDurationMs: 200, dropTargetStyle: {} }}
+        use:dragHandleZone={withDragAutoScrollOptions({ items: dndGroupWrappers, type: 'list-group', flipDurationMs: 200, dropTargetStyle: {} })}
         onconsider={handleGroupConsider}
         onfinalize={handleGroupFinalize}
         data-testid="list-group-reorder-zone"

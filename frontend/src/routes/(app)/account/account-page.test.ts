@@ -63,6 +63,7 @@ vi.mock('$lib/stores/today.svelte', () => ({
 vi.mock('$lib/passkeys/signals', () => ({
 	signalCurrentUserDetails: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock('$lib/version', () => ({ appVersion: '0.0.0' }));
 
 import AccountPage from './+page.svelte';
 import { updateMe, updatePreferences } from '$lib/api/users';
@@ -108,6 +109,12 @@ describe('AccountPage email inline-edit', () => {
 		const deleteButton = screen.getByRole('button', { name: 'Delete my account' });
 		expect(deleteButton).toHaveClass('bg-danger', 'text-on-action', 'hover:bg-danger-strong');
 		expect(deleteButton).not.toHaveClass('bg-transparent');
+	});
+
+	it('shows the app version in the account page footer', () => {
+		render(AccountPage, { props: { data: { ...mockData, buildNumber: '42' } } });
+
+		expect(screen.getByText('v0.0.0.42')).toBeInTheDocument();
 	});
 
 	it('clicking the email text shows the input and Save button', async () => {

@@ -29,6 +29,7 @@
   import { setProfile } from '$lib/stores/preferences.svelte';
   import { refreshToday } from '$lib/stores/today.svelte';
   import { signalCurrentUserDetails } from '$lib/passkeys/signals';
+  import { appVersion } from '$lib/version';
 
   let { data }: { data: PageData } = $props();
 
@@ -553,4 +554,8 @@
       </div>
     {/if}
   </section>
+
+  <footer class="py-2 text-center text-xs text-subdued">
+    v{appVersion}{data.buildNumber !== '0' ? `.${data.buildNumber}` : ''}
+  </footer>
 </div>
