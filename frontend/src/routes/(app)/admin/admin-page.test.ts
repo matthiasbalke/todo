@@ -182,14 +182,21 @@ describe('admin page', () => {
 
 		expect(screen.queryByLabelText('Password action')).not.toBeInTheDocument();
 		expect(screen.getByPlaceholderText('********')).toBeInTheDocument();
-		await fireEvent.input(screen.getByLabelText('Password'), { target: { value: '' } });
+		const passwordInput = screen.getByLabelText('Password') as HTMLInputElement;
+		const visibilityToggle = screen.getByRole('button', { name: 'Show password' });
+		expect(passwordInput.type).toBe('password');
+		await fireEvent.click(visibilityToggle);
+		expect(passwordInput.type).toBe('text');
+		expect(screen.getByRole('button', { name: 'Hide password' })).toHaveAttribute('aria-pressed', 'true');
+
+		await fireEvent.input(passwordInput, { target: { value: '' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 		await waitFor(() => {
 			expect(screen.getAllByText('SMTP password is required when authentication is enabled.').length).toBeGreaterThan(0);
 		});
 		expect(screen.queryByText('SMTP password cannot be cleared while authentication is enabled.')).not.toBeInTheDocument();
 
-		await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'new-secret' } });
+		await fireEvent.input(passwordInput, { target: { value: 'new-secret' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
 		expect(updateEmailSettings).toHaveBeenCalledWith(expect.objectContaining({

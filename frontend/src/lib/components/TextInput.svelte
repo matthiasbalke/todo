@@ -4,7 +4,9 @@
 
 <script lang="ts">
 	import type { HTMLInputAttributes } from 'svelte/elements';
+	import Button from './Button.svelte';
 	import { controlTypographyPresets, controlGeometryPresets } from './controlStyles';
+	import Icon from './Icon.svelte';
 
 	type Size = 'default' | 'small' | 'compact' | 'title';
 	type Appearance = 'default' | 'inline';
@@ -100,6 +102,10 @@
 				? 'border-danger-indicator bg-danger-surface focus:ring-focus-danger'
 				: 'border-border-strong bg-surface hover:bg-canvas focus:ring-focus-primary'
 	);
+	let isPasswordVisible = $state(false);
+	const isPasswordInput = $derived(type === 'password');
+	const displayedType = $derived(isPasswordInput && isPasswordVisible ? 'text' : type);
+	const visibilityLabel = $derived(isPasswordVisible ? 'Hide password' : 'Show password');
 
 	function runValidation() {
 		if (!validate) {
@@ -137,24 +143,45 @@
 		<p id={descriptionId} class="typography-supporting">{description}</p>
 	{/if}
 
-	<input
-		bind:this={element}
-		id={inputId}
-		{type}
-		{value}
-		{disabled}
-		{required}
-		aria-label={ariaLabel ?? nativeAriaLabel ?? (label || undefined)}
-		aria-invalid={isError}
-		aria-describedby={describedBy}
-		oninput={handleInput}
-		onblur={handleBlur}
-		{onfocus}
-		class="native-placeholder text-value transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {appearanceClasses[
-			appearance
-		]} {stateClasses} disabled:bg-surface disabled:hover:bg-canvas disabled:cursor-not-allowed control-disabled {className}"
-		{...restProps}
-	/>
+	<div class={isPasswordInput ? 'relative' : 'contents'}>
+		<input
+			bind:this={element}
+			id={inputId}
+			type={displayedType}
+			{value}
+			{disabled}
+			{required}
+			aria-label={ariaLabel ?? nativeAriaLabel ?? (label || undefined)}
+			aria-invalid={isError}
+			aria-describedby={describedBy}
+			oninput={handleInput}
+			onblur={handleBlur}
+			{onfocus}
+			class="native-placeholder text-value transition-colors focus:outline-none focus:ring-2 {sizeClasses[size]} {appearanceClasses[
+				appearance
+			]} {stateClasses} disabled:bg-surface disabled:hover:bg-canvas disabled:cursor-not-allowed control-disabled {isPasswordInput ? 'w-full pr-10' : ''} {className}"
+			{...restProps}
+		/>
+
+		{#if isPasswordInput}
+			<Button
+				type="button"
+				tone="neutral"
+				appearance="bare"
+				size="icon-compact"
+				disabled={disabled}
+				aria-label={visibilityLabel}
+				aria-pressed={isPasswordVisible}
+				class="absolute right-1 top-1/2 -translate-y-1/2"
+				onmousedown={(event) => event.preventDefault()}
+				onclick={() => {
+					isPasswordVisible = !isPasswordVisible;
+				}}
+			>
+				<Icon name={isPasswordVisible ? 'passwordVisible' : 'passwordHidden'} size="controlCompact" />
+			</Button>
+		{/if}
+	</div>
 
 	{#if errorMessage}
 		<p id={errorId} class="typography-error">{errorMessage}</p>

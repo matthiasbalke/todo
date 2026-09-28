@@ -11,6 +11,8 @@ import ChevronUp from '@lucide/svelte/icons/chevron-up';
 import Circle from '@lucide/svelte/icons/circle';
 import CircleCheck from '@lucide/svelte/icons/circle-check';
 import Ellipsis from '@lucide/svelte/icons/ellipsis';
+import Eye from '@lucide/svelte/icons/eye';
+import EyeOff from '@lucide/svelte/icons/eye-off';
 import GripVertical from '@lucide/svelte/icons/grip-vertical';
 import Group from '@lucide/svelte/icons/group';
 import List from '@lucide/svelte/icons/list';
@@ -40,6 +42,8 @@ export type AppIconName =
 	| 'drag'
 	| 'edit'
 	| 'ellipsis'
+	| 'passwordHidden'
+	| 'passwordVisible'
 	| 'expand'
 	| 'group'
 	| 'list'
@@ -105,6 +109,8 @@ export const appIcons: Record<AppIconName, Component<any>> = {
 	drag: GripVertical,
 	edit: Pencil,
 	ellipsis: Ellipsis,
+	passwordHidden: Eye,
+	passwordVisible: EyeOff,
 	expand: ChevronDown,
 	group: Group,
 	list: List,

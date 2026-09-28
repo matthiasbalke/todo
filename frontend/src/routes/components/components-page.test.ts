@@ -49,6 +49,29 @@ describe('ComponentsPage theme selector', () => {
 	});
 });
 
+describe('ComponentsPage TextInput showcase', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it('demonstrates password visibility toggling through the shared input', async () => {
+		render(ComponentsPage);
+		const section = screen.getByRole('heading', { name: 'TextInput Component' }).closest('section')!;
+		const showcase = within(section);
+		const passwordInput = showcase.getByLabelText('Password') as HTMLInputElement;
+		const visibilityToggle = showcase.getByRole('button', { name: 'Show password' });
+
+		expect(passwordInput.type).toBe('password');
+		expect(passwordInput).toHaveClass('w-full');
+		expect(visibilityToggle).toHaveAttribute('aria-pressed', 'false');
+
+		await fireEvent.click(visibilityToggle);
+
+		expect(passwordInput.type).toBe('text');
+		expect(showcase.getByRole('button', { name: 'Hide password' })).toHaveAttribute('aria-pressed', 'true');
+	});
+});
+
 describe('ComponentsPage Textarea showcase', () => {
 	afterEach(() => {
 		cleanup();
