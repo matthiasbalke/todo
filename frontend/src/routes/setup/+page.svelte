@@ -54,7 +54,7 @@
 
     <TextInput id="setup-display-name" bind:value={displayName} label="Display name" required class="w-full" />
     <EmailInput id="setup-email" bind:value={email} label="Email" required class="w-full" />
-    <TextInput id="setup-secret" bind:value={setupSecret} label="Setup secret" required placeholder="Shown in backend logs" class="w-full" />
+    <TextInput id="setup-secret" bind:value={setupSecret} label="Setup secret" type="password" required placeholder="Shown in backend logs" class="w-full" />
     <p class="text-xs text-muted -mt-2">Use the setup secret from the backend logs. This is only needed for first setup.</p>
     <TextInput id="setup-passkey-label" bind:value={passkeyLabel} label="Passkey name (optional)" placeholder="e.g. My laptop" class="w-full" />
 

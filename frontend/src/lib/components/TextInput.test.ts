@@ -70,6 +70,57 @@ describe('TextInput', () => {
 		});
 	});
 
+	describe('password visibility', () => {
+		it('toggles a password input between masked and visible text without changing its value', async () => {
+			const { container } = render(TextInput, {
+				props: { type: 'password', value: 'secret-value' }
+			});
+			const input = container.querySelector('input') as HTMLInputElement;
+			const toggle = container.querySelector('button') as HTMLButtonElement;
+
+			expect(input.type).toBe('password');
+			expect(input).toHaveClass('w-full', 'pr-10');
+			expect(input.parentElement).toHaveClass('relative');
+			expect(toggle).toHaveAttribute('aria-label', 'Show password');
+			expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+			input.focus();
+			await fireEvent.mouseDown(toggle);
+			await fireEvent.click(toggle);
+
+			expect(input.type).toBe('text');
+			expect(input.value).toBe('secret-value');
+			expect(document.activeElement).toBe(input);
+			expect(toggle).toHaveAttribute('aria-label', 'Hide password');
+			expect(toggle).toHaveAttribute('aria-pressed', 'true');
+
+			await fireEvent.click(toggle);
+
+			expect(input.type).toBe('password');
+			expect(input.value).toBe('secret-value');
+			expect(toggle).toHaveAttribute('aria-label', 'Show password');
+			expect(toggle).toHaveAttribute('aria-pressed', 'false');
+		});
+
+		it('does not render a visibility control for non-password inputs', () => {
+			const { container } = render(TextInput, { props: { type: 'email' } });
+
+			expect(container.querySelector('button')).toBeNull();
+		});
+
+		it('disables password visibility control when the input is disabled', async () => {
+			const { container } = render(TextInput, {
+				props: { type: 'password', disabled: true }
+			});
+			const input = container.querySelector('input') as HTMLInputElement;
+			const toggle = container.querySelector('button') as HTMLButtonElement;
+
+			expect(toggle).toBeDisabled();
+			await fireEvent.click(toggle);
+			expect(input.type).toBe('password');
+		});
+	});
+
 	describe('validation', () => {
 		it('should call validator function on input', async () => {
 			const validator = vi.fn(() => null);

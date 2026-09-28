@@ -22,6 +22,16 @@ afterEach(() => {
 });
 
 describe('setup page', () => {
+	it('masks the setup secret until the visibility control is activated', async () => {
+		render(SetupPage);
+		const setupSecret = screen.getByLabelText(/setup secret/i) as HTMLInputElement;
+
+		expect(setupSecret.type).toBe('password');
+		await fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+		expect(setupSecret.type).toBe('text');
+		expect(screen.getByRole('button', { name: 'Hide password' })).toHaveAttribute('aria-pressed', 'true');
+	});
+
 	it('creates the first admin and routes to admin area', async () => {
 		render(SetupPage);
 
