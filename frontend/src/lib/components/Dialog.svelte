@@ -36,6 +36,15 @@
 	const titleId = `dialog-title-${nextDialogId++}`;
 	const shouldShowFooter = $derived(showFooter ?? Boolean(footer));
 
+	function portal(node: HTMLElement) {
+		document.body.appendChild(node);
+		return {
+			destroy() {
+				node.remove();
+			}
+		};
+	}
+
 	function getFocusableElements(): HTMLElement[] {
 		if (!dialogElement) return [];
 		return Array.from(
@@ -90,6 +99,7 @@
 </script>
 
 <div
+	use:portal
 	role="presentation"
 	class="fixed inset-0 z-50 bg-overlay/40 p-4"
 	onpointerdown={handleOverlayPointerdown}

@@ -24,6 +24,7 @@ vi.mock('$lib/api/auth', () => ({
 		}
 	},
 }));
+vi.mock('$lib/version', () => ({ appVersion: '0.0.0' }));
 
 import { goto } from '$app/navigation';
 import * as authApi from '$lib/api/auth';
@@ -50,6 +51,13 @@ describe('AuthPage', () => {
 		await waitForIdle();
 		expect(screen.getByRole('button', { name: /sign in with passkey/i })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
+	});
+
+	it('shows the app version on the login screen', async () => {
+		render(AuthPage, { props: { data: { buildNumber: '42', restoreStatus: 'unauthenticated' } } });
+		await waitForIdle();
+
+		expect(screen.getByText('v0.0.0.42')).toBeInTheDocument();
 	});
 
 	it('uses primary styling for passkey sign-in and registration actions', async () => {

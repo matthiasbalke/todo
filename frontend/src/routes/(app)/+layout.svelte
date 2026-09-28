@@ -6,6 +6,7 @@
   import { clearSession, getAccessToken, getCurrentUser, refreshIfExpired } from '$lib/stores/auth.svelte';
   import { flushOfflineQueue, hasPending } from '$lib/stores/offlineQueue.svelte';
   import { loadItemsForList } from '$lib/stores/items.svelte';
+  import { setAppScrollElement } from '$lib/appScroller';
   import Button from '$lib/components/Button.svelte';
 
   interface BeforeInstallPromptEvent extends Event {
@@ -18,7 +19,74 @@
   let offline = $state(false);
   let syncing = $state(false);
   let deferredPrompt = $state<BeforeInstallPromptEvent | null>(null);
+  let mainElement = $state<HTMLElement | null>(null);
+  let topChromeElement = $state<HTMLElement | null>(null);
   const mainWidthClass = $derived(page.url.pathname.startsWith('/admin') ? 'max-w-5xl' : 'max-w-2xl');
+
+  function canScrollMain(deltaY: number): boolean {
+    if (!mainElement || deltaY === 0) return false;
+    const maxScrollTop = mainElement.scrollHeight - mainElement.clientHeight;
+    if (maxScrollTop <= 0) return false;
+    return deltaY > 0 ? mainElement.scrollTop < maxScrollTop : mainElement.scrollTop > 0;
+  }
+
+  function scrollMainBy(deltaY: number): boolean {
+    if (!mainElement || !canScrollMain(deltaY)) return false;
+    mainElement.scrollTop += deltaY;
+    return true;
+  }
+
+  $effect(() => {
+    if (!mainElement) return;
+    return setAppScrollElement(mainElement);
+  });
+
+  $effect(() => {
+    if (!topChromeElement || typeof document === 'undefined') return;
+    const chromeElement = topChromeElement;
+    const rootStyle = document.documentElement.style;
+    let touchY: number | null = null;
+    const updateTopChromeHeight = () => {
+      rootStyle.setProperty('--app-top-chrome-height', `${chromeElement.getBoundingClientRect().height}px`);
+    };
+    const handleWheel = (event: WheelEvent) => {
+      if (scrollMainBy(event.deltaY)) event.preventDefault();
+    };
+    const handleTouchStart = (event: TouchEvent) => {
+      touchY = event.touches.length === 1 ? event.touches[0].clientY : null;
+    };
+    const handleTouchMove = (event: TouchEvent) => {
+      if (touchY === null || event.touches.length !== 1) return;
+      const nextY = event.touches[0].clientY;
+      const deltaY = touchY - nextY;
+      if (scrollMainBy(deltaY)) {
+        touchY = nextY;
+        event.preventDefault();
+      }
+    };
+    const handleTouchEnd = () => {
+      touchY = null;
+    };
+    updateTopChromeHeight();
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateTopChromeHeight) : null;
+    observer?.observe(chromeElement);
+    window.addEventListener('resize', updateTopChromeHeight);
+    chromeElement.addEventListener('wheel', handleWheel, { passive: false });
+    chromeElement.addEventListener('touchstart', handleTouchStart, { passive: true });
+    chromeElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+    chromeElement.addEventListener('touchend', handleTouchEnd);
+    chromeElement.addEventListener('touchcancel', handleTouchEnd);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', updateTopChromeHeight);
+      chromeElement.removeEventListener('wheel', handleWheel);
+      chromeElement.removeEventListener('touchstart', handleTouchStart);
+      chromeElement.removeEventListener('touchmove', handleTouchMove);
+      chromeElement.removeEventListener('touchend', handleTouchEnd);
+      chromeElement.removeEventListener('touchcancel', handleTouchEnd);
+      rootStyle.removeProperty('--app-top-chrome-height');
+    };
+  });
 
   onMount(() => {
     offline = !navigator.onLine;
@@ -72,84 +140,91 @@
   }
 </script>
 
-<div>
-  <header class="bg-surface border-b border-border-subtle sticky top-0 z-10">
-    <div class="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-      <a href="/lists" class="text-lg font-bold text-heading">Todo</a>
-
-      {#if userMenuOpen}
-        <div
-          class="fixed inset-0 z-10"
-          role="presentation"
-          onclick={() => (userMenuOpen = false)}
-        ></div>
-      {/if}
-
-      <div class="flex items-center gap-2">
-        {#if deferredPrompt}
-          <Button tone="primary" appearance="solid"
-            onclick={installApp}
-            size="compact"
-          >
-            Install app
-          </Button>
-        {/if}
-      </div>
-
-      <div class="relative">
-        <Button tone="neutral" appearance="ghost"
-          size="small"
-          onclick={() => (userMenuOpen = !userMenuOpen)}
-          aria-label="User menu"
-        >
-          <span class="text-sm text-muted">{user?.displayName ?? ''}</span>
-          <div class="w-8 h-8 rounded-full bg-primary-subtle text-primary-strong flex items-center justify-center text-sm font-semibold select-none">
-            {(user?.displayName ?? '?')[0]}
-          </div>
-        </Button>
+<div class="fixed inset-0 flex min-h-0 flex-col overflow-hidden">
+  <div bind:this={topChromeElement} class="fixed inset-x-0 top-0 z-30">
+    <header class="bg-surface border-b border-border-subtle">
+      <div class="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+        <a href="/lists" class="text-lg font-bold text-heading">Todo</a>
 
         {#if userMenuOpen}
-          <div class="absolute right-0 top-10 z-20 w-44 bg-surface border border-border rounded-lg shadow-lg py-1">
-            <a
-              href="/account"
-              onclick={() => (userMenuOpen = false)}
-              class="block w-full text-left px-4 py-2 text-sm font-normal text-label hover:bg-canvas"
-            >
-              Account
-            </a>
-            {#if user?.admin}
-              <a
-                href="/admin"
-                onclick={() => (userMenuOpen = false)}
-                class="block w-full text-left px-4 py-2 text-sm font-normal text-danger-strong hover:bg-danger-surface"
-              >
-                Admin
-              </a>
-            {/if}
-            <div class="border-t border-border-subtle my-1"></div>
-            <Button tone="neutral" appearance="bare"
-              size="menu"
-              align="start"
-              weight="normal"
-              onclick={handleLogout}
-            >
-              Log out
-            </Button>
-          </div>
+          <div
+            class="fixed inset-0 z-10"
+            role="presentation"
+            onclick={() => (userMenuOpen = false)}
+          ></div>
         {/if}
+
+        <div class="flex items-center gap-2">
+          {#if deferredPrompt}
+            <Button tone="primary" appearance="solid"
+              onclick={installApp}
+              size="compact"
+            >
+              Install app
+            </Button>
+          {/if}
+        </div>
+
+        <div class="relative">
+          <Button tone="neutral" appearance="ghost"
+            size="small"
+            onclick={() => (userMenuOpen = !userMenuOpen)}
+            aria-label="User menu"
+          >
+            <span class="text-sm text-muted">{user?.displayName ?? ''}</span>
+            <div class="w-8 h-8 rounded-full bg-primary-subtle text-primary-strong flex items-center justify-center text-sm font-semibold select-none">
+              {(user?.displayName ?? '?')[0]}
+            </div>
+          </Button>
+
+          {#if userMenuOpen}
+            <div class="absolute right-0 top-10 z-20 w-44 bg-surface border border-border rounded-lg shadow-lg py-1">
+              <a
+                href="/account"
+                onclick={() => (userMenuOpen = false)}
+                class="block w-full text-left px-4 py-2 text-sm font-normal text-label hover:bg-canvas"
+              >
+                Account
+              </a>
+              {#if user?.admin}
+                <a
+                  href="/admin"
+                  onclick={() => (userMenuOpen = false)}
+                  class="block w-full text-left px-4 py-2 text-sm font-normal text-danger-strong hover:bg-danger-surface"
+                >
+                  Admin
+                </a>
+              {/if}
+              <div class="border-t border-border-subtle my-1"></div>
+              <Button tone="neutral" appearance="bare"
+                size="menu"
+                align="start"
+                weight="normal"
+                onclick={handleLogout}
+              >
+                Log out
+              </Button>
+            </div>
+          {/if}
+        </div>
       </div>
-    </div>
-  </header>
-  {#if syncing}
-    <div class="bg-primary-surface border-b border-primary-soft text-primary-emphasis text-sm text-center py-2 px-4">
-      Syncing…
-    </div>
-  {:else if offline}
-    <div class="bg-warning-surface border-b border-warning-soft text-warning-emphasis text-sm text-center py-2 px-4">
-      You're offline — changes won't be saved until you reconnect.
-    </div>
-  {/if}
-  <main class="{mainWidthClass} mx-auto px-4 py-6">
+    </header>
+    {#if syncing}
+      <div class="bg-primary-surface border-b border-primary-soft text-primary-emphasis text-sm text-center py-2 px-4">
+        Syncing…
+      </div>
+    {:else if offline}
+      <div class="bg-warning-surface border-b border-warning-soft text-warning-emphasis text-sm text-center py-2 px-4">
+        You're offline — changes won't be saved until you reconnect.
+      </div>
+    {/if}
+  </div>
+  <main
+    bind:this={mainElement}
+    data-testid="app-scroll-container"
+    class="{mainWidthClass} app-scrollbar-hidden fixed inset-x-0 mx-auto min-h-0 w-full overflow-y-auto px-4 py-6"
+    style="top: var(--app-top-chrome-height, 0px); bottom: 0; padding-bottom: calc(var(--fixed-action-footer-height, 0px) + 1.5rem);"
+  >
     {@render children()}
   </main>
 </div>

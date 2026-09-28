@@ -34,6 +34,7 @@
   import TextInput from './TextInput.svelte';
   import Button from './Button.svelte';
   import { localIsoDate } from '$lib/dateOnly';
+  import { getPrimaryScrollElement } from '$lib/appScroller';
 
   let {
     item,
@@ -315,7 +316,8 @@
     const visibleTop = viewport?.offsetTop ?? 0;
     const targetTop = visibleTop + 96;
     const currentTop = element.getBoundingClientRect().top;
-    const scroller = document.scrollingElement ?? document.documentElement;
+    const scroller = getPrimaryScrollElement();
+    if (!scroller) return;
     scroller.scrollTop += currentTop - targetTop;
   }
 

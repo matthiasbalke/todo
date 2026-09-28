@@ -49,6 +49,7 @@ import ListsPage from './+page.svelte';
 import { goto } from '$app/navigation';
 import { loadTodayCount } from '$lib/stores/today.svelte';
 import { saveListGroupState, UNGROUPED_LIST_GROUP_STATE_KEY } from '$lib/listGroupState';
+import { dragHandleZone } from 'svelte-dnd-action';
 
 const groups: ListGroup[] = [
 	{ id: 'group-home', userId: 'user-1', name: 'Home', sortOrder: 0, createdAt: '2026-01-01T00:00:00Z' },
@@ -132,7 +133,7 @@ describe('ListsPage creation actions', () => {
 
 		const footer = container.querySelector('[data-testid="fixed-action-footer"]') as HTMLElement;
 		const content = container.querySelector('[data-testid="fixed-action-footer-content"]') as HTMLElement;
-		const pageReserve = container.querySelector('.pb-32');
+		const pageReserve = container.querySelector('.pb-6');
 		expect(footer).not.toBeNull();
 		expect(footer).toHaveClass('fixed', 'bottom-0', 'border-t', 'bg-surface', 'shadow-lg');
 		expect(content).toHaveClass('px-4', 'pt-3', 'max-w-2xl');
@@ -206,6 +207,25 @@ describe('ListsPage creation actions', () => {
 			.filter(Boolean);
 		expect(sectionLabels).toEqual(['Home', 'Work', 'Ungrouped']);
 		expect(container.querySelectorAll('button[aria-expanded] svg').length).toBeGreaterThanOrEqual(3);
+	});
+
+	it('passes tuned auto-scroll options to list group wrapper dragging', () => {
+		storeMocks.getListGroups.mockReturnValue(groups);
+		storeMocks.getLists.mockReturnValue(lists);
+
+		render(ListsPage, { props: { } });
+
+		expect(dragHandleZone).toHaveBeenCalledWith(
+			expect.any(HTMLElement),
+			expect.objectContaining({
+				type: 'list-group',
+				flipDurationMs: 200,
+				dropTargetStyle: {},
+				useCursorForDetection: true,
+			}),
+		);
+		expect(vi.mocked(dragHandleZone).mock.calls.some(([, options]) => 'centreDraggedOnCursor' in options)).toBe(false);
+		expect(vi.mocked(dragHandleZone).mock.calls.some(([, options]) => 'delayTouchStart' in options)).toBe(false);
 	});
 
 	it('persists finalized list group wrapper order without affecting list-card drag handles', async () => {

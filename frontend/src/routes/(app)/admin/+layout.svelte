@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { appVersion } from '$lib/version';
+
   let { data, children } = $props();
 
   const sections = [
@@ -59,4 +61,8 @@
       {@render children()}
     </div>
   </div>
+
+  <footer class="py-2 text-center text-xs text-subdued">
+    v{appVersion}{data.buildNumber !== '0' ? `.${data.buildNumber}` : ''}
+  </footer>
 </div>
