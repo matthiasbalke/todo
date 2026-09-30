@@ -55,6 +55,17 @@ bun install
 bun run dev
 ```
 
+### AI Backend Test Watcher
+
+When a sandboxed AI agent needs to run backend integration tests, install and run the watcher locally on the Docker-capable host. The agent requests a run through `.run-backend-tests`; it does not access Docker or run Gradle directly.
+
+```zsh
+zsh scripts/watch-and-run/install.zsh
+"${HOME}/.local/bin/watch-and-run" --worktree "$(pwd)"
+```
+
+Keep this terminal running while the agent works. The installed watcher and its `actions.zsh` configuration are host-only; review the trust boundary and action configuration in [scripts/watch-and-run/README.md](../scripts/watch-and-run/README.md) before use.
+
 ## Local HTTPS And DNS
 
 Use the local HTTPS setup when testing passkeys, HTTPS-only browser behavior, iPhone/PWA behavior, or another device on your network.

@@ -105,6 +105,14 @@ zsh -n path/to/script.sh               # syntax check a helper
 - If the HTTPS deployment is not reachable, do not assume Docker or PostgreSQL are available to the agent. Escalate or ask the user for the next environment-specific step instead of trying to bring up a local stack.
 - This rule is agent-specific. Keep human-facing setup and local development instructions in `README.md` and related docs.
 
+### Agent backend integration-test workflow
+
+- Do not run `cd backend && ./gradlew test` directly. Backend integration tests require Docker through Testcontainers and must be run by the host-installed `watch-and-run` watcher.
+- Before requesting a run, check whether `.run-backend-tests` or `.run-backend-tests.running` exists at the repository root. Do not overwrite either state; wait for the active request to finish or ask the user to resolve a stale state.
+- After inspecting any prior outcome if needed, remove only the prior transient status with `rm -f .run-backend-tests.results/status`. Request a new run with `touch .run-backend-tests`, then wait for `.run-backend-tests.results/status` to be created. Do not start a local backend test run while waiting. If no status appears after a reasonable timeout, report that the host watcher may not be running and ask the user for the next step.
+- Read `.run-backend-tests.results/status` to determine the outcome, report path, and log path. Read `.run-backend-tests.results/output.log` to analyze the command output. For a failed run, also analyze the generated files under `backend/build/test-results/test/` and `backend/build/reports/tests/test/`; do not rerun the tests directly.
+- This rule is agent-specific. Keep host watcher installation and operation instructions in `scripts/watch-and-run/README.md`.
+
 ## Known Constraints & Future Upgrades
 
 - **Java version is 21 (not 25)** — Kotlin 2.2.x does not yet support JVM target 25 (falls back to 24, causing a Java/Kotlin compiler target mismatch at build time). Java 21 LTS is used until Kotlin adds JVM 25 support. Upgrade path: bump `languageVersion` in `build.gradle.kts` and the base images in `backend/Dockerfile` once a Kotlin release lists JVM 25 as a supported target.
