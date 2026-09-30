@@ -5,6 +5,9 @@
 .certs
 .local-domain
 
+.env
+.env.local
+
 # agent
 .claude/settings.local.json
 
@@ -40,3 +43,6 @@ e2e/certs/mailpit.key
 e2e/certs/mailpit.pem
 
 local
+
+# Host validation action requests and results
+.run-*
