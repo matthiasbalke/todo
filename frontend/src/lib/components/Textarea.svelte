@@ -5,6 +5,7 @@
 <script lang="ts">
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
 	import { controlTypographyPresets, controlGeometryPresets } from './controlStyles';
+	import { mobileViewportPositioning } from '$lib/mobileViewportPositioning';
 
 	type Resize = 'none' | 'vertical' | 'horizontal' | 'both';
 	type Size = 'default' | 'compact';
@@ -40,6 +41,7 @@
 		validate?: ((value: string) => string | null) | null;
 		ariaLabel?: string;
 		class?: string;
+		viewportPositioning?: boolean;
 		element?: HTMLTextAreaElement | null;
 		'aria-describedby'?: string;
 		'aria-label'?: string;
@@ -63,6 +65,7 @@
 		validate = null,
 		ariaLabel,
 		class: className = '',
+		viewportPositioning = true,
 		element = $bindable(null),
 		'aria-describedby': consumerDescribedBy,
 		'aria-label': nativeAriaLabel,
@@ -130,7 +133,7 @@
 	};
 </script>
 
-<div class="flex flex-col gap-1">
+	<div use:mobileViewportPositioning={{ enabled: viewportPositioning }} class="flex flex-col gap-1">
 	{#if label}
 		<label for={instanceId} class="typography-label">
 			{label}

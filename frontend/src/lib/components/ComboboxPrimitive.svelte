@@ -9,6 +9,7 @@
 	import Button from './Button.svelte';
 	import { controlTypographyPresets, controlGeometryPresets } from './controlStyles';
 	import Icon from './Icon.svelte';
+	import { mobileViewportPositioning } from '$lib/mobileViewportPositioning';
 
 	type Size = 'default' | 'compact' | 'dense' | 'display';
 	type Appearance = 'default' | 'inline';
@@ -46,6 +47,7 @@
 		onclose?: () => void;
 		onfocus?: HTMLInputAttributes['onfocus'];
 		onblur?: HTMLInputAttributes['onblur'];
+		viewportPositioning?: boolean;
 	}
 
 	let {
@@ -81,6 +83,7 @@
 		onclose,
 		onfocus,
 		onblur
+		, viewportPositioning = true
 	}: Props<any> = $props();
 
 	let isOpen = $state(false);
@@ -270,7 +273,7 @@
 	});
 </script>
 
-<div bind:this={containerElement} class="flex flex-col gap-1 {className}">
+	<div bind:this={containerElement} use:mobileViewportPositioning={{ enabled: viewportPositioning }} class="flex flex-col gap-1 {className}">
 	{#if label}
 		<label for={triggerId} class="typography-label">
 			{label}

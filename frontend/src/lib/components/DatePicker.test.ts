@@ -38,6 +38,26 @@ describe('DatePicker', () => {
 			expect(trigger.querySelector('svg[aria-hidden="true"]')).toHaveClass('lucide-chevron-up');
 	});
 
+	it('does not reposition the page while calendar-grid focus changes', async () => {
+		vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })));
+		const appScroller = document.createElement('main');
+		Object.defineProperty(appScroller, 'scrollTop', { configurable: true, writable: true, value: 0 });
+		appScroller.dataset.testid = 'app-scroll-container';
+		document.body.append(appScroller);
+		const { container } = render(DatePicker, {
+			props: { value: '2026-06-09', label: 'Due date', locale: 'en-US' }
+		});
+		(container.firstElementChild as HTMLElement).getBoundingClientRect = () => ({ x: 0, y: 300, top: 300, left: 0, right: 100, bottom: 320, width: 100, height: 20, toJSON: () => {} });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Due date' }));
+		appScroller.scrollTop = 0;
+		await fireEvent.focus(screen.getByRole('gridcell', { name: 'Tuesday, June 9, 2026' }));
+
+		expect(appScroller.scrollTop).toBe(0);
+		appScroller.remove();
+		vi.unstubAllGlobals();
+	});
+
 	it('shows a placeholder for null and renders a Monday-first 42-cell grid', async () => {
 		render(DatePicker, {
 			props: { value: null, placeholder: 'Choose date', ariaLabel: 'Pick date', locale: 'en-US' }
