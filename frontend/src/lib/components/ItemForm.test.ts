@@ -735,6 +735,7 @@ describe('ItemForm', () => {
 
 			await fireEvent.click(trigger);
 			let dialog = screen.getByRole('dialog', { name: 'Notes' });
+			expect(dialog.parentElement).toBe(document.body);
 			expect(within(dialog).getByRole('button', { name: 'Cancel' }).querySelector('svg')).toHaveClass('lucide-chevron-left');
 			expect(within(dialog).getByRole('heading', { name: 'Notes' })).toBeInTheDocument();
 			expect(within(dialog).getByRole('button', { name: 'Save' })).toBeInTheDocument();

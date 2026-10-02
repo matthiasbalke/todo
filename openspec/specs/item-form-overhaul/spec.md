@@ -239,7 +239,7 @@ The item form SHALL persist add-item and edit-item value changes automatically w
 - **AND** the UI communicates that the value was not persisted
 
 ### Requirement: Notes support large preview and fullscreen editing
-The item form SHALL display notes with a larger preview area and SHALL open a fullscreen note editor when the user focuses or activates notes editing.
+The item form SHALL display notes with a larger preview area and SHALL open a fullscreen note editor when the user focuses or activates notes editing. The editor header SHALL remain visible and usable within the application's scrolling layout.
 
 #### Scenario: Notes are absent
 - **WHEN** an item form has no notes
@@ -262,9 +262,9 @@ The item form SHALL display notes with a larger preview area and SHALL open a fu
 #### Scenario: User edits notes fullscreen
 - **WHEN** the user focuses or activates the notes row
 - **THEN** a fullscreen editor opens with the current complete notes value
-- **AND** the editor chrome displays a top-left cancel/back action using Lucide `ChevronLeft` followed by the text `Cancel`
+- **AND** the editor chrome displays a visible top-left cancel/back action using Lucide `ChevronLeft` followed by the text `Cancel`
 - **AND** the editor chrome displays the title `Notes` centered in the top bar
-- **AND** the editor chrome displays a right-aligned `Save` action as a button or link that matches the global app action style
+- **AND** the editor chrome displays a visible right-aligned `Save` action as a button or link that matches the global app action style
 - **AND** the fullscreen editor displays the complete notes rather than the truncated preview
 - **AND** the editor focuses the multiline notes entry
 - **AND** saving the fullscreen editor updates the form notes value
