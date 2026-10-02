@@ -198,6 +198,15 @@
     tick().then(() => notesTextarea?.focus());
   }
 
+  function portal(node: HTMLElement) {
+    document.body.appendChild(node);
+    return {
+      destroy() {
+        node.remove();
+      }
+    };
+  }
+
   function closeNotesEditor({ returnFocus = true }: { returnFocus?: boolean } = {}) {
     returningNotesFocus = returnFocus;
     notesEditorOpen = false;
@@ -617,6 +626,7 @@
 
   {#if notesEditorOpen}
     <div
+      use:portal
       role="dialog"
       aria-modal="true"
       aria-labelledby="notes-editor-title"
