@@ -10,7 +10,6 @@
   import Icon from './Icon.svelte';
   import TextInput from './TextInput.svelte';
   import { focusTextInput } from '$lib/utils/focus';
-  import { getPrimaryScrollElement } from '$lib/appScroller';
 
   let {
     group,
@@ -111,20 +110,8 @@
     newName = group.name;
     showMenu = false;
     tick().then(() => {
-      scrollRenameContainerIntoView();
       focusTextInput(renameInput, selectText, { preventScroll: !selectText });
     });
-  }
-
-  function scrollRenameContainerIntoView() {
-    if (!renameContainer || !renameInput || typeof window === 'undefined') return;
-    const viewport = window.visualViewport;
-    const visibleTop = viewport?.offsetTop ?? 0;
-    const targetTop = visibleTop + 96;
-    const currentTop = renameContainer.getBoundingClientRect().top;
-    const scroller = getPrimaryScrollElement();
-    if (!scroller) return;
-    scroller.scrollTop += currentTop - targetTop;
   }
 
   async function handleRename() {

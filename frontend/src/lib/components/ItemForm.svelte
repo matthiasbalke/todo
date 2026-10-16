@@ -34,7 +34,7 @@
   import TextInput from './TextInput.svelte';
   import Button from './Button.svelte';
   import { localIsoDate } from '$lib/dateOnly';
-  import { getPrimaryScrollElement } from '$lib/appScroller';
+  import { mobileViewportPositioning } from '$lib/mobileViewportPositioning';
 
   let {
     item,
@@ -319,45 +319,6 @@
     if (active instanceof HTMLElement) active.blur();
   }
 
-  function scrollEditControlIntoView(element: HTMLElement) {
-    if (isNew || typeof window === 'undefined') return;
-    const viewport = window.visualViewport;
-    const visibleTop = viewport?.offsetTop ?? 0;
-    const targetTop = visibleTop + 96;
-    const currentTop = element.getBoundingClientRect().top;
-    const scroller = getPrimaryScrollElement();
-    if (!scroller) return;
-    scroller.scrollTop += currentTop - targetTop;
-  }
-
-  function scrollEditControlOnInteraction(
-    element: HTMLElement,
-    options: { deferredPointerTarget?: string } = {}
-  ) {
-    const scroll = (event: Event) => {
-      if ((event.target as Element | null)?.closest('[role="listbox"]')) return;
-      scrollEditControlIntoView(element);
-      if (
-        event.type === 'pointerdown' &&
-        options.deferredPointerTarget &&
-        (event.target as Element | null)?.closest(options.deferredPointerTarget)
-      ) {
-        window.setTimeout(() => {
-          scrollEditControlIntoView(element);
-        }, 250);
-      }
-    };
-    const pointerOptions = { capture: true };
-    element.addEventListener('pointerdown', scroll, pointerOptions);
-    element.addEventListener('focusin', scroll);
-    return {
-      destroy() {
-        element.removeEventListener('pointerdown', scroll, pointerOptions);
-        element.removeEventListener('focusin', scroll);
-      }
-    };
-  }
-
   $effect(() => {
     const nextState = currentSelectionState();
     const nextKey = selectionStateKey(nextState);
@@ -491,10 +452,7 @@
   </div>
 
   <div class="space-y-1">
-    <div
-      use:scrollEditControlOnInteraction
-      class="flex items-start gap-3 rounded-lg px-1 py-1"
-    >
+    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
       <Icon name="category" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
     <CategorySelect
@@ -511,20 +469,14 @@
       </div>
     </div>
 
-    <div
-      use:scrollEditControlOnInteraction
-      class="flex items-start gap-3 rounded-lg px-1 py-1"
-    >
+    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
       <Icon name="date" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
         <DatePicker bind:value={dueDate} ariaLabel="Due Date" placeholder="set due date" appearance="inline" />
       </div>
     </div>
 
-    <div
-      use:scrollEditControlOnInteraction
-      class="flex items-start gap-3 rounded-lg px-1 py-1"
-    >
+    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
       <Icon name="recurrence" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
     <Select
@@ -543,10 +495,7 @@
       </div>
     </div>
 
-    <div
-      use:scrollEditControlOnInteraction={{ deferredPointerTarget: '[data-assignee-selected-value]' }}
-      class="flex items-start gap-3 rounded-lg px-1 py-1"
-    >
+    <div class="flex items-start gap-3 rounded-lg px-1 py-1">
       <Icon name="assignee" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
         <MultiSelect
@@ -583,7 +532,7 @@
     </div>
 
     <div
-      use:scrollEditControlOnInteraction
+      use:mobileViewportPositioning={{ enabled: !isNew }}
       class="flex items-start gap-3 rounded-lg px-1 py-1"
     >
       <Icon name="notes" size="action" tone="muted" class="mt-2.5 flex-shrink-0" />

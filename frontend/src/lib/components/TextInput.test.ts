@@ -3,8 +3,29 @@ import { tick } from 'svelte';
 import { describe, it, expect, vi } from 'vitest';
 import TextInput from './TextInput.svelte';
 
+function mobileViewport() {
+	vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })));
+}
+
 describe('TextInput', () => {
 	describe('rendering', () => {
+		it('positions its owning field when focused on mobile', async () => {
+			mobileViewport();
+			const appScroller = document.createElement('main');
+			Object.defineProperty(appScroller, 'scrollTop', { configurable: true, writable: true, value: 0 });
+			appScroller.dataset.testid = 'app-scroll-container';
+			document.body.append(appScroller);
+			const { container } = render(TextInput, { props: { ariaLabel: 'Title' } });
+			const owner = container.firstElementChild as HTMLElement;
+			owner.getBoundingClientRect = () => ({ x: 0, y: 300, top: 300, left: 0, right: 100, bottom: 320, width: 100, height: 20, toJSON: () => {} });
+
+			await fireEvent.focusIn(container.querySelector('input')!);
+
+			expect(appScroller.scrollTop).toBe(204);
+			appScroller.remove();
+			vi.unstubAllGlobals();
+		});
+
 		it('should render an input element', () => {
 			const { container } = render(TextInput);
 			const input = container.querySelector('input');

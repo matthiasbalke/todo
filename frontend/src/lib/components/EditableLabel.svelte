@@ -7,6 +7,7 @@
 	import { tick } from 'svelte';
 	import Button from './Button.svelte';
 	import TextInput from './TextInput.svelte';
+	import { mobileViewportPositioning } from '$lib/mobileViewportPositioning';
 
 	interface Props {
 		value?: string;
@@ -28,6 +29,7 @@
 		onchange?: (value: string) => void;
 		element?: HTMLInputElement | null;
 		selectOnEdit?: boolean;
+		viewportPositioning?: boolean;
 	}
 
 	let {
@@ -49,7 +51,8 @@
 		oncancel,
 		onchange,
 		element = $bindable(null),
-		selectOnEdit = false
+		selectOnEdit = false,
+		viewportPositioning = true
 	}: Props = $props();
 
 	const dispatch = createEventDispatcher<{ change: { value: string } }>();
@@ -160,6 +163,7 @@
 	<div class="flex flex-col gap-1">
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div
+			use:mobileViewportPositioning={{ enabled: viewportPositioning }}
 			class="flex items-center gap-2 {containerClass}"
 			role={saveMode === 'explicit' ? 'group' : undefined}
 			onmousedown={saveMode === 'explicit' ? handleExplicitMouseDown : undefined}

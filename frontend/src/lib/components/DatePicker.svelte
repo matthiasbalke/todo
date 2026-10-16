@@ -8,6 +8,7 @@
 	import CalendarDayButton from './CalendarDayButton.svelte';
 	import { controlPlaceholderTextClasses, controlValueTextClasses } from './controlStyles';
 	import Icon from './Icon.svelte';
+	import { mobileViewportPositioning } from '$lib/mobileViewportPositioning';
 	import {
 		addDays,
 		addMonths,
@@ -34,6 +35,7 @@
 		ariaLabel?: string;
 		appearance?: 'default' | 'inline';
 		onSelect?: (value: string | null) => void;
+		viewportPositioning?: boolean;
 	}
 
 	let {
@@ -47,7 +49,8 @@
 		locale,
 		ariaLabel,
 		appearance = 'default',
-		onSelect
+		onSelect,
+		viewportPositioning = true
 	}: Props = $props();
 
 	let isOpen = $state(false);
@@ -272,7 +275,7 @@
 	});
 </script>
 
-<div bind:this={containerElement} class="relative flex flex-col gap-1">
+<div bind:this={containerElement} use:mobileViewportPositioning={{ enabled: viewportPositioning }} class="relative flex flex-col gap-1">
 	{#if label}
 		<span class="text-sm font-medium text-label">
 			<span id={labelId}>{label}</span>

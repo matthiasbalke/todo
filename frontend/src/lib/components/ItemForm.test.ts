@@ -150,6 +150,7 @@ describe('ItemForm', () => {
 		});
 
 		it('scrolls edited metadata controls into the upper third before opening them', async () => {
+			vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })));
 			const appScroller = document.createElement('main');
 			appScroller.dataset.testid = 'app-scroll-container';
 			document.body.appendChild(appScroller);
@@ -165,14 +166,14 @@ describe('ItemForm', () => {
 				props: { ...defaultProps, item: itemWithDueDate(null) }
 			});
 			const recurrence = screen.getByRole('combobox', { name: 'Recurrence' });
-			const recurrenceRow = recurrence.closest('.rounded-lg') as HTMLElement;
-			recurrenceRow.getBoundingClientRect = vi.fn(() => ({
+			const recurrenceControl = recurrence.closest('.flex.flex-col.gap-1') as HTMLElement;
+			recurrenceControl.getBoundingClientRect = vi.fn(() => ({
 				x: 0,
-				y: 600,
-				top: 600,
+				y: 600 - scrollTop,
+				top: 600 - scrollTop,
 				left: 0,
 				right: 300,
-				bottom: 640,
+				bottom: 640 - scrollTop,
 				width: 300,
 				height: 40,
 				toJSON: () => {}
@@ -190,6 +191,7 @@ describe('ItemForm', () => {
 				Reflect.deleteProperty(appScroller, 'scrollTop');
 			}
 			appScroller.remove();
+			vi.unstubAllGlobals();
 		});
 	});
 

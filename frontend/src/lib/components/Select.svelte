@@ -29,6 +29,7 @@
 		optionContent?: Snippet<[T]>;
 		validate?: ((value: T | null) => string | null) | null;
 		onSelect?: (value: T) => void;
+		viewportPositioning?: boolean;
 	}
 
 	let {
@@ -50,7 +51,8 @@
 		selectedContent: selectedContentSnippet,
 		optionContent: optionContentSnippet,
 		validate = null,
-		onSelect
+		onSelect,
+		viewportPositioning = true
 	}: Props<any> = $props();
 
 	let errorMessage = $state<string | null>(null);
@@ -143,6 +145,7 @@
 	class={className}
 	{size}
 	{appearance}
+	{viewportPositioning}
 	{mutedValue}
 	{getOptionLabel}
 	{errorMessage}

@@ -7,6 +7,7 @@
 	import Button from './Button.svelte';
 	import { controlTypographyPresets, controlGeometryPresets } from './controlStyles';
 	import Icon from './Icon.svelte';
+	import { mobileViewportPositioning } from '$lib/mobileViewportPositioning';
 
 	type Size = 'default' | 'small' | 'compact' | 'title';
 	type Appearance = 'default' | 'inline';
@@ -41,6 +42,7 @@
 		appearance?: Appearance;
 		class?: string;
 		containerClass?: string;
+		viewportPositioning?: boolean;
 		element?: HTMLInputElement | null;
 		'aria-describedby'?: string;
 		'aria-label'?: string;
@@ -63,6 +65,7 @@
 		appearance = 'default',
 		class: className = '',
 		containerClass = '',
+		viewportPositioning = true,
 		element = $bindable(null),
 		'aria-describedby': consumerDescribedBy,
 		'aria-label': nativeAriaLabel,
@@ -131,7 +134,7 @@
 	};
 </script>
 
-<div class="flex flex-col gap-1 {containerClass}">
+	<div use:mobileViewportPositioning={{ enabled: viewportPositioning }} class="flex flex-col gap-1 {containerClass}">
 	{#if label}
 		<label for={inputId} class="typography-label">
 			{label}

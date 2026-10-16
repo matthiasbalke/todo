@@ -28,6 +28,7 @@
 		selectedContent?: Snippet<[T]>;
 		optionContent?: Snippet<[T]>;
 		onChange?: (values: T[]) => void;
+		viewportPositioning?: boolean;
 	}
 
 	const defaultOptionKey = (_option: any, index: number) => String(index);
@@ -49,7 +50,8 @@
 		optionKey = defaultOptionKey,
 		selectedContent: selectedContentSnippet,
 		optionContent: optionContentSnippet,
-		onChange
+		onChange,
+		viewportPositioning = true
 	}: Props<any> = $props();
 
 	let query = $state<string | null>(null);
@@ -130,6 +132,7 @@
 	class={className}
 	{size}
 	{appearance}
+	{viewportPositioning}
 	{getOptionLabel}
 	{optionKey}
 	closeOnSelect={false}
