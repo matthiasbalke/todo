@@ -21,7 +21,7 @@ RUN bun run build
 FROM dhi.io/eclipse-temurin:21.0.12.8-alpine3.23-dev
 
 # renovate: dhi_alpine: datasource=custom.dhi_alpine_3_23 packageName=nodejs
-ARG NODEJS_VERSION=24.18.1-r0
+ARG NODEJS_VERSION=24.22.1-r0
 
 # renovate: dhi_alpine: datasource=custom.dhi_alpine_3_23 packageName=nginx
 ARG NGINX_VERSION=1.29.8-r7
