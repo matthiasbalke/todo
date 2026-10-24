@@ -18,7 +18,7 @@ COPY frontend/ .
 RUN bun run build
 
 # Stage 3: runtime
-FROM dhi.io/eclipse-temurin:21.0.12.8-alpine3.23-dev
+FROM dhi.io/eclipse-temurin:21.0.13.9-alpine3.23-dev
 
 # renovate: dhi_alpine: datasource=custom.dhi_alpine_3_23 packageName=nodejs
 ARG NODEJS_VERSION=24.18.1-r0
