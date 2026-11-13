@@ -102,16 +102,15 @@ zsh -n path/to/script.sh               # syntax check a helper
 - Check whether the shared HTTPS deployment is reachable with `curl` before starting any local stack. Prefer `curl -fsS --cacert .certs/cert.pem https://${LOCAL_HTTPS_DOMAIN}/actuator/health` and treat a successful response as the signal to use that deployment.
 - If the HTTPS deployment is reachable, run Playwright `BASE_URL="https://${LOCAL_HTTPS_DOMAIN}" bunx playwright test` from `e2e/`.
 - To run one spec, append its path, for example `BASE_URL="https://${LOCAL_HTTPS_DOMAIN}" bunx playwright test tests/auth.spec.ts`.
-- If the HTTPS deployment is not reachable, do not assume Docker or PostgreSQL are available to the agent. Escalate or ask the user for the next environment-specific step instead of trying to bring up a local stack.
+- If the HTTPS deployment is not reachable, the agent may use Docker directly to start a local test stack following the repository setup instructions. Run Playwright against that stack using its configured BASE_URL.
 - This rule is agent-specific. Keep human-facing setup and local development instructions in `README.md` and related docs.
 
 ### Agent backend integration-test workflow
 
-- Do not run `cd backend && ./gradlew test` directly. Backend integration tests require Docker through Testcontainers and must be run by the host-installed `watch-and-run` watcher.
-- Before requesting a run, check whether `.run-backend-tests` or `.run-backend-tests.running` exists at the repository root. Do not overwrite either state; wait for the active request to finish or ask the user to resolve a stale state.
-- After inspecting any prior outcome if needed, remove only the prior transient status with `rm -f .run-backend-tests.results/status`. Request a new run with `touch .run-backend-tests`, then wait for `.run-backend-tests.results/status` to be created. Do not start a local backend test run while waiting. If no status appears after a reasonable timeout, report that the host watcher may not be running and ask the user for the next step.
-- Read `.run-backend-tests.results/status` to determine the outcome, report path, and log path. Read `.run-backend-tests.results/output.log` to analyze the command output. For a failed run, also analyze the generated files under `backend/build/test-results/test/` and `backend/build/reports/tests/test/`; do not rerun the tests directly.
-- This rule is agent-specific. Keep host watcher installation and operation instructions in `scripts/watch-and-run/README.md`.
+- The agent has direct access to Docker and may run Docker-backed integration tests itself. Use Testcontainers with real PostgreSQL through the existing shared `AbstractIntegrationTest` container.
+- Run `./gradlew test` from `backend/` for the full backend suite, or `./gradlew test --tests "FullClassName"` for a targeted test class.
+- Run test commands directly; no host watcher or `.run-backend-tests` request/status files are needed.
+- For failures, inspect the command output, `backend/build/test-results/test/`, and `backend/build/reports/tests/test/`. Fix issues and rerun the relevant tests directly.
 
 ## Known Constraints & Future Upgrades
 
