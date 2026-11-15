@@ -18,6 +18,7 @@
 		inputValue?: string;
 		selectedOption?: T | null;
 		disabled?: boolean;
+		busy?: boolean;
 		consumeOutsidePointer?: boolean;
 		inlineOptions?: boolean;
 		required?: boolean;
@@ -44,7 +45,7 @@
 		optionContent?: Snippet<[T]>;
 		inputElement?: HTMLInputElement | null;
 		oninputvalue?: (value: string, event: Event) => void;
-		onoptionselect?: (option: T) => void;
+		onoptionselect?: (option: T) => boolean | void | Promise<boolean | void>;
 		onclose?: () => void;
 		onfocus?: HTMLInputAttributes['onfocus'];
 		onblur?: HTMLInputAttributes['onblur'];
@@ -55,6 +56,7 @@
 		inputValue = '',
 		selectedOption = null,
 		disabled = false,
+		busy = false,
 		consumeOutsidePointer = true,
 		inlineOptions = false,
 		required = false,
@@ -151,8 +153,13 @@
 	}
 
 	function selectOption(option: any) {
-		onoptionselect?.(option);
-		if (closeOnSelect) {
+		if (disabled || busy) return;
+		const result = onoptionselect?.(option);
+		if (result instanceof Promise) {
+			void result.then((shouldClose) => {
+				if (closeOnSelect && shouldClose !== false) closeDropdown();
+			});
+		} else if (closeOnSelect && result !== false) {
 			closeDropdown();
 		}
 	}
@@ -181,6 +188,10 @@
 	}
 
 	function handleKeyDown(event: KeyboardEvent) {
+		if (busy && event.key !== 'Escape' && event.key !== 'Tab') {
+			event.preventDefault();
+			return;
+		}
 		if (!isOpen) {
 			if (event.key === 'Enter' || event.key === 'ArrowDown') {
 				event.preventDefault();
@@ -307,6 +318,8 @@
 				{placeholder}
 				{disabled}
 				{required}
+				readonly={busy}
+				aria-busy={busy || undefined}
 				aria-autocomplete="list"
 				aria-label={ariaLabel || (label ? undefined : placeholder)}
 				aria-haspopup="listbox"
@@ -340,6 +353,7 @@
 					<Button
 						id={`${resolvedListboxId}-option-${index}`}
 						role="option"
+						disabled={busy}
 						aria-selected={isOptionSelected(option)}
 						onpointerdown={(event) => event.preventDefault()}
 						onclick={() => selectOption(option)}
@@ -370,7 +384,7 @@
 	</div>
 
 	{#if errorMessage}
-		<p id={`${triggerId}-error`} class="typography-error">
+		<p id={`${triggerId}-error`} role="alert" class="typography-error">
 			{errorMessage}
 		</p>
 	{/if}

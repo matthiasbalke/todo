@@ -474,3 +474,39 @@ describe('Select Component', () => {
 		});
 	});
 });
+
+
+describe('Select optional creation', () => {
+	it('creates an unmatched value with Enter without emitting an action token or submitting', async () => {
+		const onCreate = vi.fn().mockResolvedValue('persisted-value');
+		const onSelect = vi.fn();
+		render(Select, { options: ['Existing'], onCreate, onSelect });
+		const input = screen.getByRole('combobox');
+		await fireEvent.input(input, { target: { value: 'New' } });
+		const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+		input.dispatchEvent(enter);
+		expect(enter.defaultPrevented).toBe(true);
+		await waitFor(() => expect(input).toHaveValue('persisted-value'));
+		expect(onCreate).toHaveBeenCalledExactlyOnceWith('New');
+		expect(onSelect).toHaveBeenCalledExactlyOnceWith('persisted-value');
+	});
+
+	it('supports a creation option alongside existing results and pointer activation', async () => {
+		const onCreate = vi.fn().mockResolvedValue('New');
+		render(Select, { options: ['Newspaper'], onCreate });
+		await fireEvent.input(screen.getByRole('combobox'), { target: { value: 'New' } });
+		expect(screen.getAllByRole('option').map(option => option.textContent?.trim())).toEqual(['Newspaper', '+ Create "New"']);
+		await fireEvent.click(screen.getByRole('option', { name: '+ Create "New"' }));
+		await waitFor(() => expect(screen.getByRole('combobox')).toHaveValue('New'));
+	});
+
+	it('dismisses creation on Escape without a request', async () => {
+		const onCreate = vi.fn();
+		render(Select, { options: ['Existing'], selected: 'Existing', onCreate });
+		const input = screen.getByRole('combobox');
+		await fireEvent.input(input, { target: { value: 'New' } });
+		await fireEvent.keyDown(input, { key: 'Escape' });
+		expect(input).toHaveValue('Existing');
+		expect(onCreate).not.toHaveBeenCalled();
+	});
+});

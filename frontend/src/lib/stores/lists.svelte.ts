@@ -224,6 +224,16 @@ export async function loadCategoriesForList(listId: string): Promise<void> {
   categories = [...others, ...loaded];
 }
 
+export async function createCategory(listId: string, name: string): Promise<Category> {
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error('Category name is required');
+  const listCategories = getCategoriesForList(listId);
+  const sortOrder = Math.max(0, ...listCategories.map(category => category.sortOrder)) + 1;
+  const category = dtoToCategory(await apiCreateCategory(listId, { name: trimmed, color: null, sortOrder }));
+  upsertCategoryInStore(category);
+  return category;
+}
+
 export async function saveCategory(updated: Category): Promise<void> {
   const existing = categories.find(c => c.id === updated.id);
   if (existing) {

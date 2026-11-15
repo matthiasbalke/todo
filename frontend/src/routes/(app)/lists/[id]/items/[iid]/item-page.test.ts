@@ -35,6 +35,7 @@ vi.mock('$lib/stores/items.svelte', () => ({
 	deleteItem: vi.fn(),
 }));
 vi.mock('$lib/stores/lists.svelte', () => ({
+	createCategory: vi.fn(),
 	getList: vi.fn(() => ({
 		id: 'list-1',
 		name: 'Groceries',
@@ -253,5 +254,40 @@ describe('item detail capabilities', () => {
 		dialog = screen.getByRole('dialog', { name: 'Delete this item?' });
 		expect(dialog).toBeInTheDocument();
 		expect(within(dialog).getByRole('button', { name: 'Delete item' })).not.toBeDisabled();
+	});
+});
+
+describe('inline category creation permissions and autosave', () => {
+	it.each(['OWNER', 'EDITOR'] as const)('creates in the current list and autosaves the returned ID as %s', async (role) => {
+		const { createCategory } = await import('$lib/stores/lists.svelte');
+		pageState.role = role;
+		vi.mocked(createCategory).mockResolvedValue({ id: 'persisted-id', listId: 'list-1', name: 'Garden', color: null, sortOrder: 1 });
+		vi.mocked(updateItem).mockResolvedValue({ ...item, categoryId: 'persisted-id' });
+		render(ItemPage, { data: { id: 'list-1', iid: 'item-1', returnTo: null, buildNumber: '0' } });
+		const input = screen.getByRole('combobox', { name: 'Category' });
+		await fireEvent.input(input, { target: { value: 'Garden' } });
+		await fireEvent.keyDown(input, { key: 'Enter' });
+		await waitFor(() => expect(updateItem).toHaveBeenCalledWith('list-1', 'item-1', expect.objectContaining({ categoryId: 'persisted-id', title: 'Apples', notes: 'Get Braeburn' })));
+		expect(createCategory).toHaveBeenCalledExactlyOnceWith('list-1', 'Garden');
+	});
+
+	it('does not mutate an assignment on authorization failure', async () => {
+		const { createCategory } = await import('$lib/stores/lists.svelte');
+		vi.mocked(createCategory).mockRejectedValue(new Error('Forbidden'));
+		render(ItemPage, { data: { id: 'list-1', iid: 'item-1', returnTo: null, buildNumber: '0' } });
+		const input = screen.getByRole('combobox', { name: 'Category' });
+		await fireEvent.input(input, { target: { value: 'Garden' } });
+		await fireEvent.keyDown(input, { key: 'Enter' });
+		await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Could not create category'));
+		expect(updateItem).not.toHaveBeenCalled();
+		await fireEvent.keyDown(input, { key: 'Escape' });
+		expect(input).toHaveValue('Produce');
+	});
+
+	it('keeps viewers read-only', () => {
+		pageState.role = 'VIEWER';
+		render(ItemPage, { data: { id: 'list-1', iid: 'item-1', returnTo: null, buildNumber: '0' } });
+		expect(screen.getByRole('combobox', { name: 'Category' })).toBeDisabled();
+		expect(screen.queryByRole('option', { name: /Create/ })).not.toBeInTheDocument();
 	});
 });

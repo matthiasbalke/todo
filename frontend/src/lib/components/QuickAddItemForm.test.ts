@@ -459,3 +459,50 @@ async function dismissOutside(name: string) {
 	expect(defaultProps.oncancel).toHaveBeenCalled();
 	await fireEvent.click(within(dialog).getByRole('button', { name: 'Back' }));
 }
+
+describe('QuickAddItemForm category creation', () => {
+	afterEach(cleanup);
+
+	it('waits for creation, preserves the draft, and submits only on title Enter', async () => {
+		const onsubmit = vi.fn();
+		const oncancel = vi.fn();
+		const onDraftChange = vi.fn();
+		let resolve!: (category: Category) => void;
+		const created = { id: 'server-id', listId: 'list-1', name: 'Garden', color: null, sortOrder: 3 };
+		const onCreateCategory = vi.fn(() => new Promise<Category>(res => { resolve = res; }));
+		const { rerender } = render(QuickAddItemForm, { ...defaultProps, onsubmit, oncancel, onDraftChange, onCreateCategory,
+			draft: { title: 'Seeds', notes: 'Keep these notes', dueDate: '2026-06-15', categoryId: 'category-1', assignedUserIds: ['u1'], recurrencePreset: '', done: false, starred: true }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
+		const input = screen.getByRole('combobox', { name: 'Category' });
+		await fireEvent.input(input, { target: { value: 'Garden' } });
+		await fireEvent.keyDown(input, { key: 'Enter' });
+		expect(screen.getByRole('region', { name: 'Category' })).toBeInTheDocument();
+		expect(onsubmit).not.toHaveBeenCalled();
+		expect(oncancel).not.toHaveBeenCalled();
+		resolve(created);
+		await rerender({ categories: [...categories, created] });
+		await waitFor(() => expect(screen.queryByRole('region', { name: 'Category' })).not.toBeInTheDocument());
+		expect(onDraftChange).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Seeds', notes: 'Keep these notes', categoryId: 'server-id', dueDate: '2026-06-15', assignedUserIds: ['u1'], starred: false }));
+		expect(onsubmit).not.toHaveBeenCalled();
+		await fireEvent.keyDown(screen.getByRole('textbox', { name: 'Item title' }), { key: 'Enter' });
+		expect(onsubmit).toHaveBeenCalledWith(expect.objectContaining({ title: 'Seeds', categoryId: 'server-id', notes: 'Keep these notes' }));
+	});
+
+	it('keeps the detail open and the draft intact after creation fails', async () => {
+		const onsubmit = vi.fn();
+		const oncancel = vi.fn();
+		render(QuickAddItemForm, { ...defaultProps, onsubmit, oncancel, onCreateCategory: vi.fn().mockRejectedValue(new Error('Forbidden')) });
+		await fireEvent.input(screen.getByRole('textbox', { name: 'Item title' }), { target: { value: 'Seeds' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
+		const input = screen.getByRole('combobox');
+		await fireEvent.input(input, { target: { value: 'Garden' } });
+		await fireEvent.click(screen.getByRole('option', { name: '+ Create "Garden"' }));
+		await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+		expect(input).toHaveValue('Garden');
+		expect(onsubmit).not.toHaveBeenCalled();
+		expect(oncancel).not.toHaveBeenCalled();
+		await fireEvent.click(within(screen.getByRole('region', { name: 'Category' })).getByRole('button', { name: 'Back' }));
+		expect(screen.getByRole('textbox', { name: 'Item title' })).toHaveValue('Seeds');
+	});
+});

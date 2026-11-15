@@ -764,3 +764,15 @@ describe('ComponentsPage section navigation', () => {
 		expect(within(navigation).getByRole('link', { name: /^MultiSelect$/ })).toHaveAttribute('href', '#multi-select');
 	});
 });
+
+describe('CategorySelect creation showcase', () => {
+	afterEach(cleanup);
+	it('creates a local category and displays the returned selection', async () => {
+		render(ComponentsPage);
+		const input = screen.getByRole('combobox', { name: 'Create a category' });
+		await fireEvent.input(input, { target: { value: 'Garden' } });
+		await fireEvent.keyDown(input, { key: 'Enter' });
+		await waitFor(() => expect(input).toHaveValue('Garden'));
+		expect(screen.getByText(/Created category ID:/)).not.toHaveTextContent('null');
+	});
+});
