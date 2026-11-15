@@ -1,0 +1,16 @@
+FROM eclipse-temurin:21-jdk-jammy
+RUN apt-get update && apt-get install -y --no-install-recommends zsh curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 1000 developer && useradd --uid 1000 --gid 1000 --create-home developer
+# Use the repository wrapper, normalized for Windows checkouts. Sources stay read-only.
+COPY gradlew /opt/gradle-wrapper/gradlew
+COPY gradle/wrapper /opt/gradle-wrapper/gradle/wrapper
+RUN sed -i 's/\r$//' /opt/gradle-wrapper/gradlew \
+    && chmod +x /opt/gradle-wrapper/gradlew \
+    && mkdir -p /workspace/backend/build /workspace/backend/.gradle /workspace/backend/.kotlin /home/developer/.gradle \
+    && chown -R developer:developer /workspace /home/developer/.gradle
+ENV GRADLE_USER_HOME=/home/developer/.gradle
+USER developer
+WORKDIR /workspace/backend
+EXPOSE 8080
+CMD ["zsh", "/workspace/dev/backend.sh"]

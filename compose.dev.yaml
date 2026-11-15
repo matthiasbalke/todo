@@ -1,0 +1,162 @@
+name: todo-dev
+
+x-browser-environment: &browser-environment
+  LOCAL_HTTPS_DOMAIN: ${LOCAL_HTTPS_DOMAIN:?Copy .env.dev.example to .env.dev and configure LOCAL_HTTPS_DOMAIN}
+  DEV_PROXY_PORT: ${DEV_PROXY_PORT:-443}
+  DEV_FRONTEND_PORT: ${DEV_FRONTEND_PORT:-5173}
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: todo
+      POSTGRES_USER: todo
+      POSTGRES_PASSWORD: todo
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U todo -d todo]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit-starttls:
+    image: axllent/mailpit:v1.31.6
+    command: [--smtp, '0.0.0.0:1025', --listen, '0.0.0.0:8025', --smtp-tls-cert, /certs/mailpit.pem, --smtp-tls-key, /certs/mailpit.key, --smtp-require-starttls]
+    ports:
+      - '${DEV_MAILPIT_PORT:-8025}:8025'
+    volumes:
+      - type: bind
+        source: ./e2e/certs/mailpit.pem
+        target: /certs/mailpit.pem
+        read_only: true
+        bind: { create_host_path: false }
+      - type: bind
+        source: ./e2e/certs/mailpit.key
+        target: /certs/mailpit.key
+        read_only: true
+        bind: { create_host_path: false }
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    init: true
+    stop_grace_period: 30s
+    ports:
+      - '${DEV_BACKEND_PORT:-8080}:8080'
+    environment:
+      <<: *browser-environment
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/todo
+      SPRING_DATASOURCE_USERNAME: todo
+      SPRING_DATASOURCE_PASSWORD: todo
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+      # Long-lived SSE requests must not delay a development restart by 30 seconds.
+      SERVER_SHUTDOWN: immediate
+      SETUP_SECRET: ${SETUP_SECRET:-local-dev-setup-secret}
+      # Repeated local sign-in/passkey testing should not exhaust production limits.
+      RATE_LIMIT_CAPACITY: 10000
+      RATE_LIMIT_WINDOW_MINUTES: 1
+      SMTP_HOST: mailpit-starttls
+      SMTP_PORT: 1025
+      EMAIL_ENABLED: 'true'
+      EMAIL_AUTH_ENABLED: 'false'
+      EMAIL_ENCRYPTION: STARTTLS
+      EMAIL_FROM: todo-dev@example.com
+    volumes:
+      - ./backend/src:/workspace/backend/src:ro
+      - ./backend/gradle:/workspace/backend/gradle:ro
+      - ./backend/build.gradle.kts:/workspace/backend/build.gradle.kts:ro
+      - ./backend/settings.gradle.kts:/workspace/backend/settings.gradle.kts:ro
+      - ./dev:/workspace/dev:ro
+      - type: bind
+        source: ./.certs
+        target: /workspace/.certs
+        read_only: true
+        bind: { create_host_path: false }
+      - type: bind
+        source: ./e2e/certs/e2e-truststore.p12
+        target: /e2e-certs/e2e-truststore.p12
+        read_only: true
+        bind: { create_host_path: false }
+      - gradle-cache:/home/developer/.gradle
+      - backend-project-cache:/workspace/backend/.gradle
+      - backend-kotlin-cache:/workspace/backend/.kotlin
+      - backend-build:/workspace/backend/build
+    depends_on:
+      postgres: { condition: service_healthy }
+      mailpit-starttls: { condition: service_started }
+    healthcheck:
+      test: [CMD, curl, -fsS, 'http://localhost:8080/actuator/health']
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 180s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    init: true
+    ports:
+      - '${DEV_FRONTEND_PORT:-5173}:5173'
+    environment:
+      <<: *browser-environment
+      BACKEND_URL: http://backend:8080
+      DEV_FRONTEND_POLLING: ${DEV_FRONTEND_POLLING:-false}
+    volumes:
+      - ./frontend/src:/workspace/frontend/src:ro
+      - ./frontend/static:/workspace/frontend/static:ro
+      - ./frontend/package.json:/workspace/frontend/package.json:ro
+      - ./frontend/bun.lockb:/workspace/frontend/bun.lockb:ro
+      - ./frontend/.npmrc:/workspace/frontend/.npmrc:ro
+      - ./frontend/svelte.config.js:/workspace/frontend/svelte.config.js:ro
+      - ./frontend/tsconfig.json:/workspace/frontend/tsconfig.json:ro
+      - ./frontend/vite.config.ts:/workspace/frontend/vite.config.ts:ro
+      - ./frontend/vite.config.https.ts:/workspace/frontend/vite.config.https.ts:ro
+      - ./frontend/vitest.config.ts:/workspace/frontend/vitest.config.ts:ro
+      - ./dev:/workspace/dev:ro
+      - type: bind
+        source: ./.certs
+        target: /workspace/.certs
+        read_only: true
+        bind: { create_host_path: false }
+      - frontend-dependencies:/workspace/frontend/node_modules
+      - frontend-generated:/workspace/frontend/.svelte-kit
+      - bun-cache:/home/node/.bun
+    healthcheck:
+      test: [CMD, node, -e, "require('https').get('https://localhost:5173/',{rejectUnauthorized:false},r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 120s
+
+  proxy:
+    image: nginx:1.28-alpine
+    ports:
+      - '${DEV_PROXY_PORT:-443}:443'
+    volumes:
+      - ./dev/nginx.conf:/etc/nginx/nginx.conf:ro
+      - type: bind
+        source: ./.certs/cert.pem
+        target: /certs/cert.pem
+        read_only: true
+        bind: { create_host_path: false }
+      - type: bind
+        source: ./.certs/key.pem
+        target: /certs/key.pem
+        read_only: true
+        bind: { create_host_path: false }
+    depends_on:
+      backend: { condition: service_healthy }
+      frontend: { condition: service_healthy }
+
+volumes:
+  postgres-data:
+  gradle-cache:
+  backend-project-cache:
+  backend-kotlin-cache:
+  backend-build:
+  frontend-dependencies:
+  frontend-generated:
+  bun-cache:

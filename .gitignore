@@ -46,3 +46,6 @@ local
 
 # Host validation action requests and results
 .run-*
+
+# Compose development configuration
+.env.dev

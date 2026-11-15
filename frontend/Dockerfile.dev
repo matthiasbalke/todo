@@ -1,0 +1,11 @@
+FROM oven/bun:1.3.14 AS bun
+FROM node:24-bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends zsh ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
+RUN mkdir -p /workspace/frontend/node_modules /workspace/frontend/.svelte-kit /home/node/.bun \
+    && chown -R node:node /workspace /home/node/.bun
+USER node
+WORKDIR /workspace/frontend
+EXPOSE 5173
+CMD ["zsh", "/workspace/dev/frontend.sh"]
