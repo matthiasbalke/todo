@@ -35,7 +35,7 @@ todo/
 ├── e2e/              # Playwright end-to-end tests
 ├── all-in-one/       # combined nginx + backend + frontend container
 ├── openspec/         # specs, archived changes, active proposals
-└── docker-compose.yml
+└── compose.yaml
 ```
 
 ## GitHub Actions

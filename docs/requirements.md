@@ -40,7 +40,7 @@ Build a small, consistent component library in SvelteKit for standard UI primiti
 | Push notifications | Web Push API | Standard browser/PWA push; works on iOS 16.4+ |
 | File storage | Local filesystem or S3-compatible | Item photo attachments |
 | Packaging | Docker images | Backend and frontend each built as Docker images for portability |
-| Orchestration | Docker Compose | Single `docker-compose.yml` runs all services; deployable to any VPS or cloud platform |
+| Orchestration | Docker Compose | Single `compose.yaml` runs all services; deployable to any VPS or cloud platform |
 
 ---
 
@@ -328,7 +328,7 @@ todo/
 │   │   ├── e2e.yml                 # Full-stack Playwright tests (main branch only)
 │   │   └── release.yml             # Build & push Docker images to ghcr.io
 │   └── dependabot.yml              # Weekly dependency updates
-└── docker-compose.yml              # Orchestrates: PostgreSQL + backend + frontend + (optional) MinIO
+└── compose.yaml              # Orchestrates: PostgreSQL + backend + frontend + (optional) MinIO
 ```
 
 ---

@@ -14,7 +14,7 @@ The full requirements and architecture live in [docs/requirements.md](../docs/re
 | `all-in-one/` | Combined nginx, backend, and frontend container |
 | `docs/` | Requirements, setup notes, and feature documentation |
 | `openspec/` | OpenSpec specs, active changes, and archived changes |
-| `docker-compose.yml` | Local and CI service composition |
+| `compose.yaml` | Local and CI service composition |
 
 ## Prerequisites
 
