@@ -29,7 +29,7 @@ export function todayDtoToItem(dto: TodayItemDto): TodoItem {
 		starred: dto.starred,
 		dueDate: dto.dueDate,
 		recurrenceRule: dto.recurrenceRule
-			? { intervalUnit: dto.recurrenceRule.intervalUnit as IntervalUnit, intervalValue: dto.recurrenceRule.intervalValue }
+			? { intervalUnit: dto.recurrenceRule.intervalUnit as IntervalUnit, intervalValue: dto.recurrenceRule.intervalValue, weekdays: dto.recurrenceRule.weekdays }
 		: null,
 		parentItemId: dto.parentItemId,
 		createdByUserId: dto.createdByUserId,

@@ -12,7 +12,7 @@ import java.util.UUID
 @RequestMapping("/api/today")
 class TodayController(private val todayService: TodayService) {
     data class AssignedUserDto(val id: UUID, val displayName: String)
-    data class RecurrenceRuleDto(val intervalUnit: String, val intervalValue: Int)
+    data class RecurrenceRuleDto(val intervalUnit: String, val intervalValue: Int, val weekdays: List<String>? = null)
     data class TodayItemDto(
         val id: UUID,
         val listId: UUID,
@@ -58,7 +58,7 @@ class TodayController(private val todayService: TodayService) {
         done = item.done,
         starred = item.starred,
         dueDate = item.dueDate,
-        recurrenceRule = item.recurrenceRule?.let { RecurrenceRuleDto(it.intervalUnit.name, it.intervalValue) },
+        recurrenceRule = item.recurrenceRule?.let { RecurrenceRuleDto(it.intervalUnit.name, it.intervalValue, it.weekdays?.map { day -> day.name }) },
         parentItemId = item.parentItemId,
         createdByUserId = item.createdByUserId,
         updatedByUserId = item.updatedByUserId,

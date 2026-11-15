@@ -6,6 +6,8 @@
     categoryId: string | null;
     assignedUserIds: string[];
     recurrencePreset: string;
+    recurrenceEditor?: import('$lib/recurrence').RecurrenceEditorState;
+    appliedRecurrenceRule?: import('$lib/mock-data').RecurrenceRule | null;
     done: boolean;
     starred: boolean;
   }
@@ -27,7 +29,8 @@
   import Icon from './Icon.svelte';
   import ItemAuditMetadata from './ItemAuditMetadata.svelte';
   import MultiSelect from './MultiSelect.svelte';
-  import Select from './Select.svelte';
+  import RecurrenceEditor from './RecurrenceEditor.svelte';
+  import { editorFromRule, editorFromLegacy, recurrenceError, recurrenceKey, ruleFromDraft, type RecurrenceEditorState } from '$lib/recurrence';
   import StarToggle from './StarToggle.svelte';
   import Textarea from './Textarea.svelte';
   import { controlPlaceholderTextClasses, controlValueTextClasses } from './controlStyles';
@@ -62,17 +65,6 @@
     defaultCategoryId?: string;
   } = $props();
 
-  const recurrenceOptions = [
-    { value: '', label: 'No recurrence' },
-    { value: '1_DAYS', label: 'Every day' },
-    { value: '1_WEEKS', label: 'Every week' },
-    { value: '2_WEEKS', label: 'Every 2 weeks' },
-    { value: '1_MONTHS', label: 'Every month' },
-    { value: '3_MONTHS', label: 'Every 3 months' },
-    { value: '1_YEARS', label: 'Every year' }
-  ];
-  const recurrencePresetOptions = recurrenceOptions.map((option) => option.value);
-
   const isNew = $derived(!item);
 
   let title = $state(untrack(() => item?.title ?? draft?.title ?? ''));
@@ -80,7 +72,9 @@
   let dueDate = $state<string | null>(untrack(() => item?.dueDate ?? draft?.dueDate ?? null));
   let categoryId = $state<string | null>(untrack(() => item?.categoryId ?? draft?.categoryId ?? getEffectiveDefaultCategoryId()));
   let assignedUserIds = $state(new Set<string>(untrack(() => item?.assignedUserIds ?? draft?.assignedUserIds ?? [])));
-  let recurrencePreset = $state<string>(untrack(() => item ? getInitialRecurrencePreset(item.recurrenceRule ?? null) : draft?.recurrencePreset ?? ''));
+  let recurrenceState = $state<RecurrenceEditorState>(untrack(() => item ? editorFromRule(item.recurrenceRule ?? null) : draft?.recurrenceEditor ?? editorFromLegacy(draft?.recurrencePreset ?? '')));
+  let recurrenceRule = $state<RecurrenceRule | null>(untrack(() => item ? item.recurrenceRule : ruleFromDraft(recurrenceState, draft?.appliedRecurrenceRule)));
+  let recurrenceOpen = $state(false);
   let done = $state(untrack(() => item?.done ?? draft?.done ?? false));
   let starred = $state(untrack(() => item?.starred ?? draft?.starred ?? false));
   let titleInput = $state<HTMLInputElement | null>(null);
@@ -118,28 +112,9 @@
       : null;
   }
 
-  function getRecurrenceLabel(preset: string): string {
-    return recurrenceOptions.find((option) => option.value === preset)?.label ?? preset;
-  }
-
-  function getRecurrenceFormLabel(preset: string): string {
-    return preset ? getRecurrenceLabel(preset) : 'set recurrence';
-  }
-
-  function isRecurrenceMuted(preset: string): boolean {
-    return !preset;
-  }
-
-  function getInitialRecurrencePreset(rule: RecurrenceRule | null): string {
-    if (!rule) return '';
-    const key = `${rule.intervalValue}_${rule.intervalUnit}`;
-    return recurrencePresetOptions.includes(key) ? key : '';
-  }
-
-  function parseRecurrencePreset(preset: string): RecurrenceRule | null {
-    if (!preset) return null;
-    const [val, unit] = preset.split('_');
-    return { intervalValue: parseInt(val), intervalUnit: unit as RecurrenceRule['intervalUnit'] };
+  function applyRecurrence(rule: RecurrenceRule | null) {
+    recurrenceRule = rule;
+    if (!isNew) tick().then(() => commitExisting({}, { releaseFocus: false }));
   }
 
   function currentDraft(): ItemFormDraft {
@@ -149,7 +124,9 @@
       dueDate,
       categoryId,
       assignedUserIds: [...assignedUserIds],
-      recurrencePreset,
+      recurrencePreset: recurrenceState.mode,
+      recurrenceEditor: { ...recurrenceState, weekdays: [...recurrenceState.weekdays] },
+      appliedRecurrenceRule: recurrenceRule,
       done,
       starred
     };
@@ -162,7 +139,8 @@
     dueDate = null;
     categoryId = getEffectiveDefaultCategoryId();
     assignedUserIds = new Set();
-    recurrencePreset = '';
+    recurrenceState = editorFromRule(null);
+    recurrenceRule = null;
     done = false;
     starred = false;
   }
@@ -274,7 +252,7 @@
       categoryId,
       dueDate,
       assignedUserIds: [...assignedUserIds].sort(),
-      recurrencePreset
+      recurrencePreset: recurrenceKey(recurrenceRule)
     };
   }
 
@@ -287,16 +265,11 @@
       const previous = JSON.parse(previousKey) as SelectionState;
       return (
         previous.categoryId !== nextState.categoryId ||
-        previous.dueDate !== nextState.dueDate ||
-        previous.recurrencePreset !== nextState.recurrencePreset
+        previous.dueDate !== nextState.dueDate
       );
     } catch {
       return true;
     }
-  }
-
-  function recurrenceKey(rule: RecurrenceRule | null): string {
-    return rule ? `${rule.intervalValue}_${rule.intervalUnit}` : '';
   }
 
   function itemStateKey(value: TodoItem): string {
@@ -383,7 +356,7 @@
       starred,
       dueDate,
       assignedUserIds: [...assignedUserIds],
-      recurrenceRule: parseRecurrencePreset(recurrencePreset),
+      recurrenceRule,
       parentItemId: item?.parentItemId ?? null,
       createdByUserId: item?.createdByUserId ?? null,
       updatedByUserId: item?.updatedByUserId ?? null,
@@ -418,13 +391,16 @@
     } catch {
       if (token === saveToken) saveError = 'Changes could not be saved.';
     } finally {
-      if (token === saveToken) submitting = false;
+      if (token === saveToken) {
+        submitting = false;
+        if (!saveError && itemStateKey(buildTodoItem()) !== lastCommittedItemState) void commitExisting();
+      }
     }
   }
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    if (submitting) return;
+    if (submitting || recurrenceError(recurrenceState)) return;
     submitting = true;
     try {
       const submitted = buildTodoItem();
@@ -460,7 +436,7 @@
     setTimeout(() => { ignoreNextFocusOut = false; }, 0);
   }}
   onfocusout={(e) => {
-    if (submitting || returningNotesFocus) return;
+    if (submitting || returningNotesFocus || recurrenceOpen) return;
     if (ignoreNextFocusOut) { ignoreNextFocusOut = false; return; }
     if (isNew && !e.currentTarget.contains(e.relatedTarget as Node)) oncancel({ reason: 'focusout' });
   }}
@@ -527,19 +503,8 @@
     >
       <Icon name="recurrence" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
-    <Select
-      options={recurrencePresetOptions}
-      selected={recurrencePreset}
-          ariaLabel="Recurrence"
-          placeholder="set recurrence"
-      labelId="recurrencePreset"
-          size="display"
-          appearance="inline"
-          getOptionLabel={getRecurrenceLabel}
-          getSelectedLabel={getRecurrenceFormLabel}
-          isSelectedMuted={isRecurrenceMuted}
-      onSelect={(value) => { recurrencePreset = value; }}
-    />
+        <RecurrenceEditor standalone bind:value={recurrenceState} rule={recurrenceRule}
+          onapply={applyRecurrence} onopenchange={(open) => { recurrenceOpen = open; }} />
       </div>
     </div>
 

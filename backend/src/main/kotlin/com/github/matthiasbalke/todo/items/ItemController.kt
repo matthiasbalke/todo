@@ -1,5 +1,10 @@
 package com.github.matthiasbalke.todo.items
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonSetter
+import java.math.BigDecimal
+import java.time.DayOfWeek
+import org.springframework.web.server.ResponseStatusException
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -22,7 +27,7 @@ class ItemController(private val itemService: ItemService) {
 
     // ─── DTOs ────────────────────────────────────────────────────────────────
 
-    data class RecurrenceRuleDto(val intervalUnit: String, val intervalValue: Int)
+    data class RecurrenceRuleDto(val intervalUnit: String, val intervalValue: BigDecimal, val weekdays: List<String?>? = null)
 
     data class ItemDto(
         val id: UUID,
@@ -61,10 +66,21 @@ class ItemController(private val itemService: ItemService) {
         val categoryId: UUID? = null,
         val dueDate: LocalDate? = null,
         val starred: Boolean = false,
-        val recurrenceRule: RecurrenceRuleDto? = null,
         val assignedUserIds: List<UUID> = emptyList(),
         val sortOrder: Int = 0,
-    )
+    ) {
+        var recurrenceRule: RecurrenceRuleDto? = null
+            private set
+        @get:JsonIgnore
+        var recurrenceRuleProvided: Boolean = false
+            private set
+
+        @JsonSetter("recurrenceRule")
+        fun readRecurrenceRule(value: RecurrenceRuleDto?) {
+            recurrenceRule = value
+            recurrenceRuleProvided = true
+        }
+    }
 
     data class UpdateOrderRequest(val sortOrder: Int)
 
@@ -158,7 +174,7 @@ class ItemController(private val itemService: ItemService) {
         done = item.done,
         starred = item.starred,
         dueDate = item.dueDate,
-        recurrenceRule = item.recurrenceRule?.let { RecurrenceRuleDto(it.intervalUnit.name, it.intervalValue) },
+        recurrenceRule = item.recurrenceRule?.let { RecurrenceRuleDto(it.intervalUnit.name, it.intervalValue.toBigDecimal(), it.weekdays?.map { day -> day.name }) },
         parentItemId = item.parentItemId,
         createdByUserId = item.createdByUserId,
         updatedByUserId = item.updatedByUserId,
@@ -168,10 +184,13 @@ class ItemController(private val itemService: ItemService) {
         updatedAt = item.updatedAt,
     )
 
-    private fun RecurrenceRuleDto.toDomain() = RecurrenceRule(
-        intervalUnit = IntervalUnit.valueOf(intervalUnit),
-        intervalValue = intervalValue,
-    )
+    private fun RecurrenceRuleDto.toDomain(): RecurrenceRule = try {
+        RecurrenceRule(IntervalUnit.valueOf(intervalUnit), intervalValue.intValueExact(), weekdays?.map { day -> day?.let(DayOfWeek::valueOf) ?: throw IllegalArgumentException("Null weekday") }).validated()
+    } catch (ex: ArithmeticException) {
+        throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Recurrence amount must be a positive 32-bit integer", ex)
+    } catch (ex: IllegalArgumentException) {
+        throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown recurrence unit or weekday", ex)
+    }
 
     private fun CreateItemRequest.toServiceRequest() = com.github.matthiasbalke.todo.items.CreateItemRequest(
         title = title,
@@ -192,6 +211,7 @@ class ItemController(private val itemService: ItemService) {
         dueDate = dueDate,
         starred = starred,
         recurrenceRule = recurrenceRule?.toDomain(),
+        preserveRecurrence = !recurrenceRuleProvided,
         assignedUserIds = assignedUserIds,
         sortOrder = sortOrder,
     )

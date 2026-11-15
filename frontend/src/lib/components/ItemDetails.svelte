@@ -1,5 +1,7 @@
 <script lang="ts">
-  import type { Category, TodoItem, User, RecurrenceRule } from '$lib/mock-data';
+  import { recurrenceRuleToHuman } from '$lib/utils';
+  import { editorFromRule, recurrenceOptions } from '$lib/recurrence';
+  import type { Category, TodoItem, User } from '$lib/mock-data';
   import Button from './Button.svelte';
   import CategorySelect from './CategorySelect.svelte';
   import DatePicker from './DatePicker.svelte';
@@ -16,28 +18,13 @@
     users: User[];
   } = $props();
 
-  const recurrenceOptions = [
-    { value: '', label: 'No recurrence' },
-    { value: '1_DAYS', label: 'Every day' },
-    { value: '1_WEEKS', label: 'Every week' },
-    { value: '2_WEEKS', label: 'Every 2 weeks' },
-    { value: '1_MONTHS', label: 'Every month' },
-    { value: '3_MONTHS', label: 'Every 3 months' },
-    { value: '1_YEARS', label: 'Every year' }
-  ];
   const recurrencePresetOptions = recurrenceOptions.map((option) => option.value);
   const assignedUserIds = $derived(new Set(item.assignedUserIds));
-  const recurrencePreset = $derived(getInitialRecurrencePreset(item.recurrenceRule ?? null));
+  const recurrencePreset = $derived(editorFromRule(item.recurrenceRule ?? null).mode);
   const notes = $derived(item.notes ?? '');
 
   function getRecurrenceLabel(preset: string): string {
     return recurrenceOptions.find((option) => option.value === preset)?.label ?? preset;
-  }
-
-  function getInitialRecurrencePreset(rule: RecurrenceRule | null): string {
-    if (!rule) return '';
-    const key = `${rule.intervalValue}_${rule.intervalUnit}`;
-    return recurrencePresetOptions.includes(key) ? key : '';
   }
 </script>
 
@@ -76,6 +63,7 @@
     label="Recurrence"
     labelId="recurrencePreset"
     getOptionLabel={getRecurrenceLabel}
+    getSelectedLabel={() => item.recurrenceRule ? recurrenceRuleToHuman(item.recurrenceRule) : 'No recurrence'}
     disabled
   />
 

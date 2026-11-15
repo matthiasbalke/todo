@@ -9,17 +9,16 @@
 	import Icon from './Icon.svelte';
 	import MultiSelect from './MultiSelect.svelte';
 	import RemovableChip from './RemovableChip.svelte';
-	import Select from './Select.svelte';
+	import RecurrenceEditor from './RecurrenceEditor.svelte';
+	import { editorFromRule, recurrenceError, ruleFromEditor } from '$lib/recurrence';
+	import { recurrenceRuleToHuman } from '$lib/utils';
 	import Textarea from './Textarea.svelte';
 	import TextInput from './TextInput.svelte';
 	import { formatDateOnly } from '$lib/dateOnly';
 	import {
 		createQuickAddDraft,
 		getEffectiveDefaultCategoryId,
-		getRecurrenceLabel,
-		getRecurrenceSelectedLabel,
-		quickAddDraftToTodoItem,
-		recurrencePresetOptions
+		quickAddDraftToTodoItem
 	} from './quickAddItem';
 
 	type Detail = 'category' | 'dueDate' | 'recurrence' | 'assignees' | 'notes';
@@ -49,7 +48,8 @@
 	let dueDate = $state<string | null>(untrack(() => createQuickAddDraft(draft, defaultCategoryId, categories).dueDate));
 	let categoryId = $state<string | null>(untrack(() => createQuickAddDraft(draft, defaultCategoryId, categories).categoryId));
 	let assignedUserIds = $state(new Set(untrack(() => createQuickAddDraft(draft, defaultCategoryId, categories).assignedUserIds)));
-	let recurrencePreset = $state(untrack(() => createQuickAddDraft(draft, defaultCategoryId, categories).recurrencePreset));
+	let recurrenceState = $state(untrack(() => createQuickAddDraft(draft, defaultCategoryId, categories).recurrenceEditor!));
+	let recurrenceRule = $state(untrack(() => createQuickAddDraft(draft, defaultCategoryId, categories).appliedRecurrenceRule ?? null));
 	let titleInput = $state<HTMLInputElement | null>(null);
 	let categoryTrigger = $state<HTMLButtonElement | null>(null);
 	let dueDateTrigger = $state<HTMLButtonElement | null>(null);
@@ -69,7 +69,7 @@
 	const selectedCategory = $derived(categories.find((category) => category.id === categoryId) ?? null);
 	const categoryChipLabel = $derived(selectedCategory?.name ?? '');
 	const dueDateChipLabel = $derived(dueDate ? formatDate(dueDate) : '');
-	const recurrenceChipLabel = $derived(recurrencePreset ? getRecurrenceLabel(recurrencePreset) : '');
+	const recurrenceChipLabel = $derived(recurrenceRule ? recurrenceRuleToHuman(recurrenceRule) : '');
 	const assigneeChipLabel = $derived(selectedAssignees.map(getUserLabel).join(', '));
 	const notesChipLabel = $derived(notes.trim() ? 'Notes' : '');
 	const dialogTitle = $derived.by(() => {
@@ -92,7 +92,9 @@
 			dueDate,
 			categoryId,
 			assignedUserIds: [...assignedUserIds],
-			recurrencePreset,
+			recurrencePreset: recurrenceState.mode,
+			recurrenceEditor: { ...recurrenceState, weekdays: [...recurrenceState.weekdays] },
+			appliedRecurrenceRule: recurrenceRule,
 			done: false,
 			starred: false
 		};
@@ -105,7 +107,8 @@
 		dueDate = null;
 		categoryId = getEffectiveDefaultCategoryId(defaultCategoryId, categories);
 		assignedUserIds = new Set();
-		recurrencePreset = '';
+		recurrenceState = editorFromRule(null);
+		recurrenceRule = null;
 	}
 
 	function getUserLabel(user: User): string {
@@ -145,6 +148,7 @@
 
 	function closeDetail(returnFocus = true) {
 		const detail = activeDetail;
+		if (detail === 'recurrence' && !recurrenceError(recurrenceState)) recurrenceRule = ruleFromEditor(recurrenceState);
 		returningDialogFocus = returnFocus;
 		activeDetail = null;
 		ignoreNextFocusOut = false;
@@ -166,10 +170,6 @@
 		closeDetail();
 	}
 
-	function selectRecurrence(nextRecurrencePreset: string) {
-		recurrencePreset = nextRecurrencePreset;
-		closeDetail();
-	}
 
 	function saveDetail() {
 		if (activeDetail === 'notes') notes = dialogNotes;
@@ -187,7 +187,8 @@
 				dueDate = null;
 				break;
 			case 'recurrence':
-				recurrencePreset = '';
+				recurrenceState = editorFromRule(null);
+				recurrenceRule = null;
 				break;
 			case 'assignees':
 				assignedUserIds = new Set();
@@ -212,7 +213,7 @@
 
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
-		if (submitting || !title.trim()) return;
+		if (submitting || !title.trim() || recurrenceError(recurrenceState)) return;
 		submitting = true;
 		try {
 			await onsubmit(quickAddDraftToTodoItem(currentDraft(), listId, users));
@@ -387,10 +388,13 @@
 		/>
 	</div>
 
+    {#if recurrenceError(recurrenceState) && activeDetail !== 'recurrence'}
+        <p role="alert" class="text-sm text-danger">{recurrenceError(recurrenceState)}</p>
+    {/if}
 	{#if activeDetail}
 		<Dialog
 			title={dialogTitle}
-			onclose={() => closeDetail(false)}
+			onclose={() => closeDetail()}
 			returnFocusTo={getTrigger(activeDetail)}
 			showFooter={activeDetail === 'notes'}
 		>
@@ -408,17 +412,8 @@
 			{:else if activeDetail === 'dueDate'}
 				<DatePicker value={dueDate} ariaLabel="Due date" placeholder="set due date" onSelect={selectDueDate} />
 			{:else if activeDetail === 'recurrence'}
-				<Select
-					options={recurrencePresetOptions}
-					selected={recurrencePreset}
-					ariaLabel="Recurrence"
-					placeholder="No recurrence"
-					labelId="quick-add-recurrence"
-					getOptionLabel={getRecurrenceLabel}
-					getSelectedLabel={getRecurrenceSelectedLabel}
-					isSelectedMuted={(preset) => !preset}
-					onSelect={selectRecurrence}
-				/>
+                <RecurrenceEditor bind:value={recurrenceState} rule={recurrenceRule}
+                    onapply={(rule) => { recurrenceRule = rule; }} onbasic={() => closeDetail()} />
 			{:else if activeDetail === 'assignees'}
 				<MultiSelect
 					options={users}

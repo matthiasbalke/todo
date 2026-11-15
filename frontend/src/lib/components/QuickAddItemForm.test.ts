@@ -260,7 +260,7 @@ describe('QuickAddItemForm', () => {
 		await fireEvent.click(screen.getByRole('option', { name: 'Household' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Recurrence' }));
 		await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
-		await fireEvent.click(screen.getByRole('option', { name: 'Every month' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'Monthly' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Assignees' }));
 		await fireEvent.keyDown(screen.getByRole('combobox', { name: 'Assignees' }), { key: 'Enter' });
 		await fireEvent.click(screen.getByRole('option', { name: 'Alice' }));

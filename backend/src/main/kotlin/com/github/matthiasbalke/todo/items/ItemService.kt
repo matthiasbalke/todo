@@ -36,6 +36,7 @@ data class UpdateItemRequest(
     val dueDate: LocalDate? = null,
     val starred: Boolean = false,
     val recurrenceRule: RecurrenceRule? = null,
+    val preserveRecurrence: Boolean = false,
     val assignedUserIds: List<UUID> = emptyList(),
     val sortOrder: Int = 0,
 )
@@ -80,7 +81,7 @@ class ItemService(
                 done = req.done,
                 starred = req.starred,
                 dueDate = req.dueDate,
-                recurrenceRule = req.recurrenceRule,
+                recurrenceRule = req.recurrenceRule?.validated(),
                 createdByUserId = userId,
                 updatedByUserId = userId,
                 sortOrder = req.sortOrder,
@@ -95,12 +96,13 @@ class ItemService(
         listAccessService.requireMinRole(listId, userId, ListRole.EDITOR)
         val item = itemRepository.findByIdAndListId(itemId, listId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found")
+        val recurrence = if (req.preserveRecurrence) item.recurrenceRule else req.recurrenceRule?.validated()
         item.title = req.title
         item.notes = req.notes
         item.categoryId = req.categoryId
         item.dueDate = req.dueDate
         item.starred = req.starred
-        item.recurrenceRule = req.recurrenceRule
+        item.recurrenceRule = recurrence
         item.sortOrder = req.sortOrder
         item.updatedAt = Instant.now()
         item.updatedByUserId = userId
@@ -144,12 +146,7 @@ class ItemService(
         if (item.done && item.recurrenceRule != null) {
             val rule = item.recurrenceRule!!
             val base = item.dueDate ?: currentDate(userId)
-            val nextDue = when (rule.intervalUnit) {
-                IntervalUnit.DAYS -> base.plusDays(rule.intervalValue.toLong())
-                IntervalUnit.WEEKS -> base.plusWeeks(rule.intervalValue.toLong())
-                IntervalUnit.MONTHS -> base.plusMonths(rule.intervalValue.toLong())
-                IntervalUnit.YEARS -> base.plusYears(rule.intervalValue.toLong())
-            }
+            val nextDue = RecurrenceCalculator.nextDate(base, rule)
             val assignees = itemAssignmentRepository.findAllByIdItemId(itemId).map { it.id.userId }
             val next = itemRepository.save(
                 TodoItem(
@@ -242,7 +239,7 @@ class ItemService(
         done = item.done,
         starred = item.starred,
         dueDate = item.dueDate,
-        recurrenceRule = item.recurrenceRule?.let { RecurrenceRulePayload(it.intervalUnit.name, it.intervalValue) },
+        recurrenceRule = item.recurrenceRule?.let { RecurrenceRulePayload(it.intervalUnit.name, it.intervalValue, it.weekdays?.map { day -> day.name }) },
         parentItemId = item.parentItemId,
         createdByUserId = item.createdByUserId,
         updatedByUserId = item.updatedByUserId,

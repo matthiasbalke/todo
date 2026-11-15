@@ -182,7 +182,7 @@ describe('ItemForm', () => {
 
 			expect(scrollTop).toBeCloseTo(600 - 96);
 			await fireEvent.click(recurrence);
-			await fireEvent.pointerDown(screen.getByRole('option', { name: 'Every day' }));
+			await fireEvent.pointerDown(screen.getByRole('option', { name: 'Daily' }));
 			expect(scrollTop).toBeCloseTo(600 - 96);
 			if (scrollTopDescriptor) {
 				Object.defineProperty(appScroller, 'scrollTop', scrollTopDescriptor);
@@ -393,12 +393,12 @@ describe('ItemForm', () => {
 			await fireEvent.click(trigger);
 			expect(screen.getAllByRole('option').map((option) => option.textContent?.trim())).toEqual([
 				'No recurrence',
-				'Every day',
-				'Every week',
-				'Every 2 weeks',
-				'Every month',
-				'Every 3 months',
-				'Every year'
+                'Daily',
+                'Weekly',
+                'Monthly',
+                'Yearly',
+                'Weekdays',
+                'Custom'
 			]);
 		});
 
@@ -410,7 +410,7 @@ describe('ItemForm', () => {
 			['quarterly', itemWithRecurrence(3, 'MONTHS'), 'Every 3 months'],
 			['yearly', itemWithRecurrence(1, 'YEARS'), 'Every year'],
 			['no recurrence', itemWithDueDate(null), 'set recurrence'],
-			['unsupported recurrence', itemWithRecurrence(4, 'WEEKS'), 'set recurrence']
+			['custom recurrence', itemWithRecurrence(4, 'WEEKS'), 'Every 4 weeks']
 		])('initializes the %s recurrence state', (_name, item, label) => {
 			render(ItemForm, { props: { ...defaultProps, item } });
 
@@ -418,12 +418,10 @@ describe('ItemForm', () => {
 		});
 
 		it.each([
-			['Every day', 1, 'DAYS'],
-			['Every week', 1, 'WEEKS'],
-			['Every 2 weeks', 2, 'WEEKS'],
-			['Every month', 1, 'MONTHS'],
-			['Every 3 months', 3, 'MONTHS'],
-			['Every year', 1, 'YEARS']
+			['Daily', 1, 'DAYS'],
+			['Weekly', 1, 'WEEKS'],
+			['Monthly', 1, 'MONTHS'],
+			['Yearly', 1, 'YEARS']
 		])('submits %s as its recurrence rule', async (label, intervalValue, intervalUnit) => {
 			const onsubmit = vi.fn();
 			render(ItemForm, { props: { ...defaultProps, onsubmit } });
@@ -467,7 +465,7 @@ describe('ItemForm', () => {
 			});
 			const trigger = screen.getByRole('combobox', { name: 'Recurrence' });
 			await fireEvent.click(trigger);
-			await fireEvent.click(screen.getByRole('option', { name: 'Every month' }));
+			await fireEvent.click(screen.getByRole('option', { name: 'Monthly' }));
 			expect(trigger).toHaveValue('Every month');
 			expect(trigger).not.toHaveClass('typography-placeholder');
 			expect(oncancel).not.toHaveBeenCalled();
@@ -827,7 +825,7 @@ describe('ItemForm', () => {
 				screen.getByRole('gridcell', { name: 'Monday, June 15, 2026' })
 			);
 			await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
-			await fireEvent.click(screen.getByRole('option', { name: 'Every month' }));
+			await fireEvent.click(screen.getByRole('option', { name: 'Monthly' }));
 			await fireEvent.click(screen.getByRole('combobox', { name: 'Assignees' }));
 			await fireEvent.click(screen.getByRole('option', { name: 'Alice' }));
 			await fireEvent.click(screen.getByRole('button', { name: 'Mark done' }));
@@ -841,6 +839,8 @@ describe('ItemForm', () => {
 				categoryId: 'category-2',
 				assignedUserIds: ['u1'],
 				recurrencePreset: '1_MONTHS',
+                recurrenceEditor: { mode: '1_MONTHS', amount: '1', unit: 'DAYS', weekdays: [] },
+                appliedRecurrenceRule: { intervalValue: 1, intervalUnit: 'MONTHS' },
 				done: true,
 				starred: true
 			});

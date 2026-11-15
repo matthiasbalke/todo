@@ -1,3 +1,4 @@
+import { sortedWeekdays, weekdayLabel } from './recurrence';
 import type { TodoItem, Category, SortField, SortDirection, RecurrenceRule } from './mock-data';
 import {
 	compareDateOnly,
@@ -134,6 +135,7 @@ export function recurrenceRuleToHuman(rule: RecurrenceRule): string {
     YEARS: ['year', 'years']
   };
   const [singular, plural] = unitMap[intervalUnit] ?? [intervalUnit.toLowerCase(), intervalUnit.toLowerCase()];
-  if (intervalValue === 1) return `Every ${singular}`;
-  return `Every ${intervalValue} ${plural}`;
+  const interval = intervalValue === 1 ? `Every ${singular}` : `Every ${intervalValue} ${plural}`;
+  const days = sortedWeekdays(rule.weekdays ?? []).map(weekdayLabel);
+  return days.length ? `${interval} on ${days.join(' and ')}` : interval;
 }

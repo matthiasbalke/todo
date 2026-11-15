@@ -93,6 +93,10 @@ zsh -n path/to/script.sh               # syntax check a helper
 
 - Always remove unused imports from implementation and test files when creating or modifying code.
 
+## OpenSpec Workflow
+
+- After an OpenSpec change is implemented and the user has reviewed the changes, automatically sync its delta specs to the main specs and archive the change.
+
 ## Shell Helper Conventions
 
 - Repository-owned `.sh` helper scripts use `#!/usr/bin/env zsh`.

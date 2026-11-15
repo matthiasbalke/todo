@@ -174,14 +174,15 @@ Build a small, consistent component library in SvelteKit for standard UI primiti
 - Inline drag-and-drop reorder (updates `sortOrder`; only active when sort = MANUAL)
 
 ### Recurrence
-- Rule: `intervalValue` + `intervalUnit` (DAYS / WEEKS / MONTHS / YEARS)
-- Supported examples: every 1 day, every 1 week, every 2 weeks, every 1 month, every 3 months, every 1 year
-- On mark-done: backend creates next instance with `dueDate = originalDueDate + interval`
-  - The original due date is always used as the base — completing late does not shift future dates
-  - If the item had no due date: `dueDate = today + interval`
-- The new instance is visible immediately, even if its due date is in the future (it is not hidden by default; "hide future items" filter applies equally to recurring instances)
-- Completed instances kept in history, linked via `parentItemId`
-- Recurrence indicator shown on item cards
+- Rule: positive whole-number `intervalValue` (1–2147483647) + `intervalUnit` (DAYS / WEEKS / MONTHS / YEARS), with optional `weekdays` using ISO names MONDAY through SUNDAY.
+- Missing/null weekdays retains legacy interval-only behavior. Weekdays must be a nonempty unique set on WEEKS only; the API rejects invalid amounts, units, and weekdays with HTTP 400 before mutation or event publication. Equivalent weekday sets are stored in Monday–Sunday order.
+- Forms offer No recurrence, Daily, Weekly, Monthly, Yearly, Weekdays, and Custom. Custom supports any valid amount/unit, including the former two-week and three-month presets. Weekdays lets the user select any days, including weekends.
+- On mark-done, create one incomplete next instance based on the original due date. Undated rules use today in the completing user's persisted timezone. Late completion does not skip missed occurrences; month/year arithmetic clamps month ends and leap days.
+- Weekly weekday rules choose the first selected day remaining in the current Monday–Sunday week; otherwise advance N weeks from that week's Monday and choose its first selected day. Every 2 weeks on Monday/Thursday progresses 2026-11-02 → 2026-11-05 → 2026-11-16 → 2026-11-19. Weekly Monday/Friday progresses 2026-11-02 → 2026-11-06 → 2026-11-09, with only one incomplete occurrence at each step.
+- Date overflow returns HTTP 400 atomically: no completion change, successor, or item event.
+- The successor retains rule, title, notes, list/category, creator, sort order, and assignees, with `parentItemId` linking to the completed occurrence. Completed instances remain in history; Hide checked can hide them. Future successors use the ordinary Hide future filter.
+- List/Today responses, SSE events, unrelated edits, drafts, and list duplication retain complete recurrence rules. Shared summaries include custom amounts and weekdays in Monday–Sunday order.
+- Custom interval edits apply on input commit; weekday edits stage until the editor closes (including Escape/outside dismissal). Invalid input retains the last saved rule and remains recoverable, while blocking new-item creation until corrected or cleared.
 
 ### Grocery Mode
 - Dedicated view accessible per list
