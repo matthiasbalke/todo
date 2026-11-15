@@ -25,4 +25,4 @@ Issue #307 is implemented using the existing category API. Optional creation in 
 
 Compose uses `compose.dev.yaml` and `.env.dev`, preserving existing data. Backend health is checked with `.certs/cert.pem`. The browser runner uses the configured HTTPS origin and Mailpit port. Playwright runs with `TZ=Europe/Berlin`: the sandbox default timezone is rejected by the existing preferences API. Restarted the frontend after production build to refresh dev-generated files.
 
-The dev stack remains running at https://todo-notebook.example.com for review. Delta specs remain active until the user reviews the implementation; sync and archive follow that review.
+The dev stack remains running at https://todo-notebook.example.com for review. User review is complete; delta specs have been synced to the main specs and the change archived.
