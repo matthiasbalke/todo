@@ -26,6 +26,20 @@ async function chooseUnit(label: string) {
 async function close() { await fireEvent.click(dialog().getByRole('button', { name: 'Close' })); }
 afterEach(cleanup);
 
+describe('recurrence option consistency', () => {
+	it('offers the same options in quick-add and item details editing', async () => {
+		const quick = render(QuickAddItemForm, { props: { ...basic, onsubmit: vi.fn() } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Recurrence' }));
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
+		const quickOptions = screen.getAllByRole('option').map(option => option.textContent?.trim());
+		quick.unmount();
+		render(ItemForm, { props: { ...basic, item: item(null), onsubmit: vi.fn() } });
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
+		expect(screen.getAllByRole('option').map(option => option.textContent?.trim())).toEqual(quickOptions);
+		expect(quickOptions).toEqual(['No recurrence', 'Daily', 'Weekly', 'Monthly', 'Yearly', 'Weekdays', 'Custom']);
+	});
+});
+
 describe('custom recurrence in quick-add', () => {
 	it('keeps Custom open, applies an interval, and creates on Enter with its complete rule', async () => {
 		const onsubmit = vi.fn();
