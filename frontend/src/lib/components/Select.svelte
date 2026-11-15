@@ -13,6 +13,8 @@
 		options: T[];
 		selected?: T | null;
 		disabled?: boolean;
+		consumeOutsidePointer?: boolean;
+		inlineOptions?: boolean;
 		label?: string;
 		ariaLabel?: string;
 		placeholder?: string;
@@ -35,6 +37,8 @@
 		options = [],
 		selected = $bindable(null),
 		disabled = false,
+		consumeOutsidePointer = true,
+		inlineOptions = false,
 		label = '',
 		ariaLabel = '',
 		placeholder = 'Select an option',
@@ -133,6 +137,8 @@
 	options={filteredOptions}
 	selectedOption={internalSelected}
 	{inputValue}
+	{inlineOptions}
+	{consumeOutsidePointer}
 	{disabled}
 	{label}
 	{ariaLabel}

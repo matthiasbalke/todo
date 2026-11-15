@@ -28,12 +28,16 @@
 		placeholder?: string;
 		required?: boolean;
 		disabled?: boolean;
+		initiallyOpen?: boolean;
+		inlineCalendar?: boolean;
+		consumeOutsidePointer?: boolean;
 		min?: string | null;
 		max?: string | null;
 		locale?: string;
 		ariaLabel?: string;
 		appearance?: 'default' | 'inline';
 		onSelect?: (value: string | null) => void;
+		onDismiss?: () => void;
 	}
 
 	let {
@@ -42,12 +46,16 @@
 		placeholder = 'Select a date',
 		required = false,
 		disabled = false,
+		initiallyOpen = false,
+		inlineCalendar = false,
+		consumeOutsidePointer = true,
 		min = null,
 		max = null,
 		locale,
 		ariaLabel,
 		appearance = 'default',
-		onSelect
+		onSelect,
+		onDismiss
 	}: Props = $props();
 
 	let isOpen = $state(false);
@@ -228,6 +236,7 @@
 			case 'Escape':
 				event.preventDefault();
 				closeCalendar(true);
+				onDismiss?.();
 				return;
 			default:
 				return;
@@ -239,14 +248,16 @@
 
 	function handleDocumentPointer(event: PointerEvent) {
 		if (isOpen && containerElement && !containerElement.contains(event.target as Node)) {
-			event.preventDefault();
-			event.stopPropagation();
-			suppressNextOutsideClick = true;
+			if (consumeOutsidePointer) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+			suppressNextOutsideClick = consumeOutsidePointer;
 			setTimeout(() => {
 				suppressNextOutsideClick = false;
 			}, 350);
 			closeCalendar();
-			blurActiveElement();
+			if (consumeOutsidePointer) blurActiveElement();
 		}
 	}
 
@@ -262,6 +273,7 @@
 	}
 
 	onMount(() => {
+		if (initiallyOpen) void openCalendar();
 		const pointerOptions = { capture: true };
 		document.addEventListener('pointerdown', handleDocumentPointer, pointerOptions);
 		document.addEventListener('click', handleDocumentClick, pointerOptions);
@@ -303,7 +315,7 @@
 		<div
 			role="dialog"
 			aria-label={label ? `${label} calendar` : 'Calendar'}
-			class="absolute left-0 top-full z-50 mt-1 w-full min-w-72 max-w-sm rounded-lg border border-border bg-surface p-3 shadow-lg"
+			class="{inlineCalendar ? 'relative' : 'absolute left-0 top-full z-50'} mt-1 w-full min-w-72 max-w-sm rounded-lg border border-border bg-surface p-3 shadow-lg"
 		>
 			<div class="mb-3 flex items-center justify-between">
 				<Button

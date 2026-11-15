@@ -9,6 +9,8 @@
 		categories: Category[];
 		selectedCategoryId?: string | null;
 		disabled?: boolean;
+		consumeOutsidePointer?: boolean;
+		inlineOptions?: boolean;
 		label?: string;
 		ariaLabel?: string;
 		placeholder?: string;
@@ -27,6 +29,8 @@
 		categories = [],
 		selectedCategoryId = $bindable(null),
 		disabled = false,
+		consumeOutsidePointer = true,
+		inlineOptions = false,
 		label = 'Category',
 		ariaLabel = '',
 		placeholder = 'Select a category',
@@ -91,6 +95,8 @@
 <Select
 	options={categoryOptions}
 	selected={selectValue}
+	{inlineOptions}
+	{consumeOutsidePointer}
 	{disabled}
 	{label}
 	{ariaLabel}

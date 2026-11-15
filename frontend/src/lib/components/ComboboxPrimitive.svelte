@@ -18,6 +18,8 @@
 		inputValue?: string;
 		selectedOption?: T | null;
 		disabled?: boolean;
+		consumeOutsidePointer?: boolean;
+		inlineOptions?: boolean;
 		required?: boolean;
 		label?: string;
 		ariaLabel?: string;
@@ -53,6 +55,8 @@
 		inputValue = '',
 		selectedOption = null,
 		disabled = false,
+		consumeOutsidePointer = true,
+		inlineOptions = false,
 		required = false,
 		label = '',
 		ariaLabel = '',
@@ -223,16 +227,22 @@
 	}
 
 	function handleDocumentPointerDown(event: PointerEvent) {
+		// Inline lists contribute to the footer height. Keep them in place until
+		// the click completes so neighboring controls do not move under the pointer.
+		if (inlineOptions && !consumeOutsidePointer) return;
 		if (!isOpen || !containerElement?.contains || containerElement.contains(event.target as Node)) {
 			return;
 		}
-		event.preventDefault();
-		event.stopPropagation();
+		if (consumeOutsidePointer) {
+			event.preventDefault();
+			event.stopPropagation();
+		}
 		closeDropdown();
-		blurActiveElement();
+		if (consumeOutsidePointer) blurActiveElement();
 	}
 
 	function handleFocusOut() {
+		if (inlineOptions) return;
 		setTimeout(() => {
 			if (containerElement && !containerElement.contains(document.activeElement)) {
 				closeDropdown();
@@ -324,7 +334,7 @@
 				role="listbox"
 				aria-label={accessibleName}
 				aria-multiselectable={multiselectable || undefined}
-				class="absolute left-0 top-full z-50 max-h-60 w-full overflow-y-auto rounded border border-border-strong bg-surface shadow-lg"
+				class="{inlineOptions ? 'relative mt-1' : 'absolute left-0 top-full z-50'} max-h-60 w-full overflow-y-auto rounded border border-border-strong bg-surface shadow-lg"
 			>
 				{#each options as option, index (optionKey(option, index))}
 					<Button
