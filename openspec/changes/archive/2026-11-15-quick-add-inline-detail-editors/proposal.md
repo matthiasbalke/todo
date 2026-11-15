@@ -8,9 +8,10 @@ Quick-add currently opens a modal for every optional detail, interrupting entry 
 
 - Replace quick-add detail dialogs with a focused detail view that temporarily replaces the compact composer in the same fixed footer.
 - Focus the category or assignee selector input immediately on entry; retain multi-assignee selection.
-- Offer Today, Tomorrow, Next week, and Custom due-date choices, with Next week meaning next Monday and Custom opening the shared date picker.
+- Offer Today, Tomorrow, Next week, and Custom due-date choices, with Next week meaning next Monday and Custom closing the bottom date view and opening the shared date picker centered on the screen.
 - Expose Daily, Weekly, Monthly, and Custom recurrence choices while retaining the additional supported recurrence modes and custom configuration from #311.
 - Show the existing notes textarea in the bottom view with the same Cancel/back and Save workflow as item details; outside interaction keeps the editor open and preserves unsaved text.
+- Keep active drafts visible after outside interaction; only empty drafts collapse to the add-item launcher.
 - Preserve draft values, intentional submission, chip clearing, and incomplete recurrence input through view transitions and minimization.
 
 ## Capabilities
