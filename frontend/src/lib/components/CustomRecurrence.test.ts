@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ItemForm from './ItemForm.svelte';
 import QuickAddItemForm from './QuickAddItemForm.svelte';
+import RecurrenceIndicator from './RecurrenceIndicator.svelte';
 import type { ItemFormDraft } from './ItemForm.svelte';
 import type { TodoItem, RecurrenceRule } from '$lib/mock-data';
 
@@ -41,6 +42,26 @@ describe('recurrence option consistency', () => {
 });
 
 describe('custom recurrence in quick-add', () => {
+	it('keeps Friday and Saturday in the submitted rule, list indicator and item editor', async () => {
+		const onsubmit = vi.fn();
+		const quick = render(QuickAddItemForm, { props: { ...basic, onsubmit } });
+		await fireEvent.input(screen.getByRole('textbox', { name: 'Item title' }), { target: { value: 'Weekend task' } });
+		await selectMode('Weekdays', true);
+		await fireEvent.click(dialog().getByRole('checkbox', { name: 'Friday' }));
+		await fireEvent.click(dialog().getByRole('checkbox', { name: 'Saturday' }));
+		await close();
+		const summary = 'Every week on Friday and Saturday';
+		expect(screen.getByRole('button', { name: 'Recurrence' })).toHaveTextContent(summary);
+		await fireEvent.keyDown(screen.getByRole('textbox', { name: 'Item title' }), { key: 'Enter' });
+		const submitted = onsubmit.mock.calls[0][0] as TodoItem;
+		expect(submitted.recurrenceRule).toEqual({ intervalUnit: 'WEEKS', intervalValue: 1, weekdays: ['FRIDAY', 'SATURDAY'] });
+		quick.unmount();
+		render(RecurrenceIndicator, { props: { rule: submitted.recurrenceRule } });
+		expect(screen.getByText(summary)).toBeInTheDocument();
+		render(ItemForm, { props: { ...basic, item: submitted, onsubmit: vi.fn() } });
+		expect(screen.getByRole('combobox', { name: 'Recurrence' })).toHaveValue(summary);
+	});
+
 	it('keeps Custom open, applies an interval, and creates on Enter with its complete rule', async () => {
 		const onsubmit = vi.fn();
 		render(QuickAddItemForm, { props: { ...basic, onsubmit } });
