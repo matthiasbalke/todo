@@ -11,7 +11,10 @@ val versionBase = "0.7.3"
 version = if (hasProperty("release")) versionBase else "$versionBase-SNAPSHOT"
 
 springBoot {
-	buildInfo()
+	buildInfo {
+		// Keep concurrent development builds from rewriting resources at startup.
+		if (project.hasProperty("composeDev")) excludes.set(setOf("time"))
+	}
 }
 
 java {
