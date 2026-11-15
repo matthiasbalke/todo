@@ -7,8 +7,8 @@
 	import Dialog from './Dialog.svelte';
 	import { untrack } from 'svelte';
 
-	let { value = $bindable<RecurrenceEditorState>(editorFromRule(null)), rule = null, standalone = false, onapply, onbasic, onopenchange }:
-		{ value?: RecurrenceEditorState; rule?: RecurrenceRule | null; standalone?: boolean; onapply: (rule: RecurrenceRule | null) => void; onbasic?: () => void; onopenchange?: (open: boolean) => void } = $props();
+	let { value = $bindable<RecurrenceEditorState>(editorFromRule(null)), rule = null, standalone = false, consumeOutsidePointer = true, inlineOptions = false, onapply, onbasic, onopenchange }:
+		{ value?: RecurrenceEditorState; rule?: RecurrenceRule | null; standalone?: boolean; consumeOutsidePointer?: boolean; inlineOptions?: boolean; onapply: (rule: RecurrenceRule | null) => void; onbasic?: () => void; onopenchange?: (open: boolean) => void } = $props();
 	let open = $state(false);
 	let root = $state<HTMLDivElement>();
 	let stagingWeekdays = $state(untrack(() => value.mode === 'WEEKDAYS' || value.weekdays.length > 0));
@@ -49,7 +49,7 @@
 </script>
 
 {#snippet modeSelect(inDialog: boolean)}
-	<Select options={modeOptions} selected={value.mode} ariaLabel="Recurrence" getOptionLabel={label}
+	<Select {inlineOptions} {consumeOutsidePointer} options={modeOptions} selected={value.mode} ariaLabel="Recurrence" getOptionLabel={label}
 		getSelectedLabel={inDialog ? label : summary} isSelectedMuted={() => !rule} onSelect={selectMode} />
 {/snippet}
 
@@ -61,7 +61,7 @@
 			oninput={(event) => { value = { ...value, amount: event.currentTarget.value }; }}
 			onblur={() => { if (!stagingWeekdays) apply(); }}
 			onkeydown={(event) => { if (event.key === 'Enter') { event.preventDefault(); if (!stagingWeekdays) apply(); } }} />
-		<Select options={['DAYS', 'WEEKS', 'MONTHS', 'YEARS']} selected={value.unit} ariaLabel="Repeat unit"
+		<Select {inlineOptions} {consumeOutsidePointer} options={['DAYS', 'WEEKS', 'MONTHS', 'YEARS']} selected={value.unit} ariaLabel="Repeat unit"
 			getOptionLabel={(unit) => unit.toLowerCase()}
 			onSelect={(unit) => {
 				value = { ...value, unit, weekdays: unit === 'WEEKS' ? value.weekdays : [] };

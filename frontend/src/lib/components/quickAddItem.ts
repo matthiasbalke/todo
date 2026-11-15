@@ -1,5 +1,5 @@
 import type { Category, RecurrenceRule, TodoItem, User } from '$lib/mock-data';
-import { localIsoDate } from '$lib/dateOnly';
+import { addDaysToDateOnly, dateOnlyToLocalDate, localIsoDate } from '$lib/dateOnly';
 import type { ItemFormDraft } from './ItemForm.svelte';
 import { editorFromLegacy, ruleFromEditor, ruleFromDraft } from '$lib/recurrence';
 
@@ -63,4 +63,19 @@ export function quickAddDraftToTodoItem(
 		createdAt: now,
 		updatedAt: now
 	};
+}
+
+/** Relative due dates are calendar dates in the account timezone. */
+export function quickAddDueDate(preset: string, timeZone = 'UTC', now = new Date()): string {
+	const parts = new Intl.DateTimeFormat('en-US', {
+		timeZone, year: 'numeric', month: '2-digit', day: '2-digit'
+	}).formatToParts(now);
+	const part = (type: string) => parts.find(part => part.type === type)!.value;
+	const today = `${part('year')}-${part('month')}-${part('day')}`;
+	if (preset === 'Tomorrow') return addDaysToDateOnly(today, 1);
+	if (preset === 'Next week') {
+		const day = dateOnlyToLocalDate(today)!.getDay();
+		return addDaysToDateOnly(today, (8 - day) % 7 || 7);
+	}
+	return today;
 }

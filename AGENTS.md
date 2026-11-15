@@ -95,6 +95,10 @@ zsh -n path/to/script.sh               # syntax check a helper
 
 ## OpenSpec Workflow
 
+- When asked to implement an OpenSpec change, first check the current Git branch. Reuse an existing feature branch; otherwise, create and switch to a feature branch named for the change before implementing.
+- Use the `openspec-apply-change` skill to implement the change.
+- After implementation, independently verify that the resulting behavior satisfies the change's specs and tasks. Run the appropriate checks and inspect the application behavior, following the agent validation workflows below. Resolve any issues before declaring the change ready for review.
+- Once verification succeeds, leave the dev stack running so the user can review the change, and report how to access it. Follow the environment-specific stack instructions below; if the shared deployment is unavailable, ask for the next environment-specific step instead of starting an unsupported local stack.
 - After an OpenSpec change is implemented and the user has reviewed the changes, automatically sync its delta specs to the main specs and archive the change.
 
 ## Shell Helper Conventions

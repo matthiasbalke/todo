@@ -734,13 +734,13 @@ describe('ListPage menu presentation', () => {
 		});
 		await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
 		expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('Uncategorized');
-		await fireEvent.click(within(screen.getByRole('dialog', { name: 'Category' })).getByRole('button', { name: 'Close' }));
+		await fireEvent.click(within(screen.getByRole('region', { name: 'Category' })).getByRole('button', { name: 'Back' }));
 		await createQuickAddItem();
 
 		expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({ categoryId: null }));
 	});
 
-	it('restores an add-item draft after focus loss minimizes the form', async () => {
+	it('keeps an active add-item draft visible after focus loss', async () => {
 		render(ListPage, { props: { data: mockData } });
 		const externalElement = document.createElement('button');
 		document.body.appendChild(externalElement);
@@ -753,13 +753,13 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
 			target: { value: 'Preserved notes' },
 		});
-		await fireEvent.click(within(screen.getByRole('dialog', { name: 'Notes' })).getByRole('button', { name: 'Save' }));
+		await fireEvent.click(within(screen.getByRole('region', { name: 'Notes' })).getByRole('button', { name: 'Save' }));
 		await fireEvent.focusOut(screen.getByPlaceholderText('Item title'), {
 			relatedTarget: externalElement,
 		});
 
-		expect(screen.queryByPlaceholderText('Item title')).not.toBeInTheDocument();
-		await fireEvent.click(screen.getByRole('button', { name: 'add item' }));
+		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Preserved title');
+		expect(screen.queryByRole('button', { name: 'add item' })).not.toBeInTheDocument();
 
 		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Preserved title');
 		expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Notes');
@@ -781,7 +781,7 @@ describe('ListPage menu presentation', () => {
 		});
 
 		expect(createItem).not.toHaveBeenCalled();
-		await fireEvent.click(screen.getByRole('button', { name: 'add item' }));
+		expect(screen.queryByRole('button', { name: 'add item' })).not.toBeInTheDocument();
 
 		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Preserved blur title');
 		externalElement.remove();
@@ -845,7 +845,7 @@ describe('ListPage menu presentation', () => {
 		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), {
 			target: { value: 'Retry notes' },
 		});
-		await fireEvent.click(within(screen.getByRole('dialog', { name: 'Notes' })).getByRole('button', { name: 'Save' }));
+		await fireEvent.click(within(screen.getByRole('region', { name: 'Notes' })).getByRole('button', { name: 'Save' }));
 		await createQuickAddItem();
 
 		await waitFor(() => expect(alert).toHaveBeenCalledWith('Error: boom'));

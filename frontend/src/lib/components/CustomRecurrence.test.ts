@@ -14,7 +14,8 @@ const item = (rule: RecurrenceRule | null = weekdays): TodoItem => ({
 	parentItemId: null, createdByUserId: null, updatedByUserId: null, sortOrder: 0,
 	createdAt: '2026-11-01', updatedAt: '2026-11-01'
 });
-const dialog = () => within(screen.getByRole('dialog', { name: 'Recurrence' }));
+const editor = () => screen.queryByRole('region', { name: 'Recurrence' }) ?? screen.getByRole('dialog', { name: 'Recurrence' });
+const dialog = () => within(editor());
 async function selectMode(label: string, quick = false) {
 	if (quick) await fireEvent.click(screen.getByRole('button', { name: 'Recurrence' }));
 	await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
@@ -24,8 +25,8 @@ async function chooseUnit(label: string) {
 	await fireEvent.click(dialog().getByRole('combobox', { name: 'Repeat unit' }));
 	await fireEvent.click(screen.getByRole('option', { name: label }));
 }
-async function close() { await fireEvent.click(dialog().getByRole('button', { name: 'Close' })); }
-afterEach(cleanup);
+async function close() { await fireEvent.click(dialog().getByRole('button', { name: screen.queryByRole('region', { name: 'Recurrence' }) ? 'Back' : 'Close' })); }
+afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 describe('recurrence option consistency', () => {
 	it('offers the same options in quick-add and item details editing', async () => {
@@ -70,7 +71,7 @@ describe('custom recurrence in quick-add', () => {
 		await fireEvent.input(dialog().getByRole('textbox', { name: 'Repeat every' }), { target: { value: '3' } });
 		await fireEvent.blur(dialog().getByRole('textbox', { name: 'Repeat every' }));
 		await chooseUnit('months');
-		expect(screen.getByRole('dialog')).toBeInTheDocument();
+		expect(screen.getByRole('region', { name: 'Recurrence' })).toBeInTheDocument();
 		await close();
 		expect(screen.getByRole('button', { name: 'Recurrence' })).toHaveTextContent('Every 3 months');
 		await fireEvent.keyDown(screen.getByRole('textbox', { name: 'Item title' }), { key: 'Enter' });
@@ -84,11 +85,17 @@ describe('custom recurrence in quick-add', () => {
 		await fireEvent.click(dialog().getByRole('checkbox', { name: 'Thursday' }));
 		expect(onDraftChange.mock.calls.at(-1)?.[0].appliedRecurrenceRule).toBeNull();
 		if (dismissal === 'close') await close();
-		else if (dismissal === 'escape') await fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
-		else await fireEvent.pointerDown(screen.getByRole('dialog').parentElement!);
+		else if (dismissal === 'escape') await fireEvent.keyDown(editor(), { key: 'Escape' });
+		else {
+			await fireEvent.pointerDown(document.body);
+			expect(basic.oncancel).not.toHaveBeenCalled();
+			expect(screen.getByRole('textbox', { name: 'Item title' })).toBeInTheDocument();
+			expect(onDraftChange.mock.calls.at(-1)?.[0].appliedRecurrenceRule).toEqual(weekdays);
+			return;
+		}
 		await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 		expect(onDraftChange.mock.calls.at(-1)?.[0].appliedRecurrenceRule).toEqual(weekdays);
-		await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Recurrence' })));
+		await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Item title' })));
 		expect(basic.oncancel).not.toHaveBeenCalled();
 	});
 	it('preserves invalid raw input through dismissal and minimize/reopen and blocks creation', async () => {

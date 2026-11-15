@@ -4,6 +4,7 @@
 	import type { ItemFormCancelContext, ItemFormDraft } from './ItemForm.svelte';
 	import Button from './Button.svelte';
 	import CategorySelect from './CategorySelect.svelte';
+	import Select from './Select.svelte';
 	import DatePicker from './DatePicker.svelte';
 	import Dialog from './Dialog.svelte';
 	import Icon from './Icon.svelte';
@@ -15,8 +16,10 @@
 	import Textarea from './Textarea.svelte';
 	import TextInput from './TextInput.svelte';
 	import { formatDateOnly } from '$lib/dateOnly';
+	import { getProfile } from '$lib/stores/preferences.svelte';
 	import {
 		createQuickAddDraft,
+		quickAddDueDate,
 		getEffectiveDefaultCategoryId,
 		quickAddDraftToTodoItem
 	} from './quickAddItem';
@@ -56,12 +59,14 @@
 	let recurrenceTrigger = $state<HTMLButtonElement | null>(null);
 	let assigneesTrigger = $state<HTMLButtonElement | null>(null);
 	let notesTrigger = $state<HTMLButtonElement | null>(null);
-	let notesTextarea = $state<HTMLTextAreaElement | null>(null);
 	let activeDetail = $state<Detail | null>(null);
-	let dialogNotes = $state('');
+	let notesEditorDraft = $state('');
+	let formElement = $state<HTMLFormElement>();
+	let detailElement = $state<HTMLElement>();
+	let customDate = $state(false);
 	let submitting = $state(false);
 	let suppressNextDraftChange = false;
-	let returningDialogFocus = false;
+	let transitioning = false;
 	let preservingInternalFocus = false;
 	let ignoreNextFocusOut = false;
 
@@ -72,7 +77,7 @@
 	const recurrenceChipLabel = $derived(recurrenceRule ? recurrenceRuleToHuman(recurrenceRule) : '');
 	const assigneeChipLabel = $derived(selectedAssignees.map(getUserLabel).join(', '));
 	const notesChipLabel = $derived(notes.trim() ? 'Notes' : '');
-	const dialogTitle = $derived.by(() => {
+	const detailTitle = $derived.by(() => {
 		switch (activeDetail) {
 			case 'category': return 'Category';
 			case 'dueDate': return 'Due date';
@@ -83,7 +88,31 @@
 		}
 	});
 
-	onMount(() => titleInput?.focus());
+	onMount(() => {
+		titleInput?.focus();
+		function outsidePointer(event: PointerEvent) {
+			if (!formElement?.contains(event.target as Node)) {
+				if (activeDetail === 'notes' || customDate) return;
+				minimize();
+			}
+		}
+		window.addEventListener('pointerdown', outsidePointer, true);
+		return () => window.removeEventListener('pointerdown', outsidePointer, true);
+	});
+
+	function minimize() {
+		if (!formElement?.isConnected || submitting || transitioning || preservingInternalFocus || activeDetail === 'notes' || customDate) return;
+		if (activeDetail === 'recurrence' && !recurrenceError(recurrenceState)) recurrenceRule = ruleFromEditor(recurrenceState);
+		onDraftChange?.(currentDraft());
+		const hasDraft = title.trim() || notes || dueDate || assignedUserIds.size || recurrenceState.mode ||
+			categoryId !== getEffectiveDefaultCategoryId(defaultCategoryId, categories);
+		if (hasDraft) {
+			// Leave the draft visible without taking focus back from the outside target.
+			activeDetail = null;
+			return;
+		}
+		oncancel({ reason: 'focusout' });
+	}
 
 	function currentDraft(): ItemFormDraft {
 		return {
@@ -119,7 +148,7 @@
 		return getUserLabel(user).trim().charAt(0).toUpperCase() || '?';
 	}
 
-	function setDialogAssignedUsers(selectedUsers: User[]) {
+	function setAssignedUsers(selectedUsers: User[]) {
 		assignedUserIds = new Set(selectedUsers.map((user) => user.id));
 	}
 
@@ -137,42 +166,70 @@
 		}
 	}
 
-	function openDetail(detail: Detail) {
-		dialogNotes = notes;
+	async function openDetail(detail: Detail, event: MouseEvent) {
+		// The opening click targets a control replaced by the new view.
+		// Keep it from dismissing the newly mounted selector at document level.
+		event.stopPropagation();
+		transitioning = true;
+		notesEditorDraft = notes;
+		customDate = false;
 		activeDetail = detail;
-		ignoreNextFocusOut = true;
-		if (detail === 'notes') {
-			tick().then(() => notesTextarea?.focus());
+		await tick();
+		const input = detailElement?.querySelector<HTMLInputElement | HTMLTextAreaElement>('input, textarea');
+		if (input) {
+			input.focus();
+			if (detail !== 'notes') input.click();
+		}
+		transitioning = false;
+	}
+
+	async function closeDetail() {
+		const detail = activeDetail;
+		if (detail === 'recurrence' && !recurrenceError(recurrenceState)) recurrenceRule = ruleFromEditor(recurrenceState);
+		transitioning = true;
+		activeDetail = null;
+		await tick();
+		titleInput?.focus();
+		transitioning = false;
+	}
+
+	function detailKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape' && !event.defaultPrevented) {
+			event.preventDefault();
+			void closeDetail();
 		}
 	}
 
-	function closeDetail(returnFocus = true) {
-		const detail = activeDetail;
-		if (detail === 'recurrence' && !recurrenceError(recurrenceState)) recurrenceRule = ruleFromEditor(recurrenceState);
-		returningDialogFocus = returnFocus;
+	async function openCustomDate() {
+		transitioning = true;
 		activeDetail = null;
-		ignoreNextFocusOut = false;
-		if (returnFocus && detail) {
-			tick().then(() => {
-				getTrigger(detail)?.focus();
-				returningDialogFocus = false;
-			});
-		}
+		customDate = true;
+		await tick();
+		transitioning = false;
+	}
+
+	async function closeCustomDate() {
+		transitioning = true;
+		customDate = false;
+		await tick();
+		titleInput?.focus();
+		transitioning = false;
 	}
 
 	function selectCategory(nextCategoryId: string | null) {
 		categoryId = nextCategoryId;
-		closeDetail();
+		void closeDetail();
 	}
 
 	function selectDueDate(nextDueDate: string | null) {
 		dueDate = nextDueDate;
-		closeDetail();
+		customDate = false;
+		void closeDetail();
 	}
 
 
 	function saveDetail() {
-		if (activeDetail === 'notes') notes = dialogNotes;
+		if (activeDetail === 'notes') notes = notesEditorDraft;
 		closeDetail();
 	}
 
@@ -213,7 +270,7 @@
 
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
-		if (submitting || !title.trim() || recurrenceError(recurrenceState)) return;
+		if (customDate || activeDetail || submitting || !title.trim() || recurrenceError(recurrenceState)) return;
 		submitting = true;
 		try {
 			await onsubmit(quickAddDraftToTodoItem(currentDraft(), listId, users));
@@ -230,18 +287,25 @@
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form
+	bind:this={formElement}
 	onsubmit={handleSubmit}
 	onmousedown={() => {
 		ignoreNextFocusOut = true;
 		setTimeout(() => { ignoreNextFocusOut = false; }, 0);
 	}}
 	onfocusout={(event) => {
-		if (submitting || activeDetail || returningDialogFocus || preservingInternalFocus) return;
-		if (ignoreNextFocusOut) { ignoreNextFocusOut = false; return; }
-		if (!event.currentTarget.contains(event.relatedTarget as Node)) oncancel({ reason: 'focusout' });
+		if (submitting || transitioning || preservingInternalFocus || activeDetail === 'notes' || customDate) return;
+		if (event.currentTarget.contains(event.relatedTarget as Node)) return;
+		if (ignoreNextFocusOut) return;
+		if (event.relatedTarget) { minimize(); return; }
+		// Wait until nested controls have completed their own focus restoration.
+		setTimeout(() => {
+			if (!formElement?.contains(document.activeElement)) minimize();
+		}, 0);
 	}}
 	class="rounded-lg border border-border bg-surface p-3"
 >
+	{#if !activeDetail}
 	<div
 		class="quick-add-detail-scroll mb-3 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1"
 		aria-label="Item details"
@@ -252,7 +316,7 @@
 				bind:element={categoryTrigger}
 				aria-label="Category"
 				removeLabel="Clear Category value"
-				onclick={() => openDetail('category')}
+				onclick={(event) => openDetail('category', event)}
 				onremove={() => clearDetail('category')}
 			>
 				<Icon name="category" size="metadata" />
@@ -266,7 +330,7 @@
 				appearance="bare"
 				size="icon-standard"
 				aria-label="Category"
-				onclick={() => openDetail('category')}
+				onclick={(event) => openDetail('category', event)}
 				class="shrink-0"
 			>
 				<Icon name="category" size="compact" />
@@ -277,7 +341,7 @@
 				bind:element={dueDateTrigger}
 				aria-label="Due date"
 				removeLabel="Clear Due date value"
-				onclick={() => openDetail('dueDate')}
+				onclick={(event) => openDetail('dueDate', event)}
 				onremove={() => clearDetail('dueDate')}
 			>
 				<Icon name="date" size="metadata" />
@@ -291,7 +355,7 @@
 				appearance="bare"
 				size="icon-standard"
 				aria-label="Due date"
-				onclick={() => openDetail('dueDate')}
+				onclick={(event) => openDetail('dueDate', event)}
 				class="shrink-0"
 			>
 				<Icon name="date" size="compact" />
@@ -302,7 +366,7 @@
 				bind:element={recurrenceTrigger}
 				aria-label="Recurrence"
 				removeLabel="Clear Recurrence value"
-				onclick={() => openDetail('recurrence')}
+				onclick={(event) => openDetail('recurrence', event)}
 				onremove={() => clearDetail('recurrence')}
 			>
 				<Icon name="recurrence" size="metadata" />
@@ -316,7 +380,7 @@
 				appearance="bare"
 				size="icon-standard"
 				aria-label="Recurrence"
-				onclick={() => openDetail('recurrence')}
+				onclick={(event) => openDetail('recurrence', event)}
 				class="shrink-0"
 			>
 				<Icon name="recurrence" size="compact" />
@@ -327,7 +391,7 @@
 				bind:element={assigneesTrigger}
 				aria-label="Assignees"
 				removeLabel="Clear Assignees value"
-				onclick={() => openDetail('assignees')}
+				onclick={(event) => openDetail('assignees', event)}
 				onremove={() => clearDetail('assignees')}
 			>
 				<Icon name="assignee" size="metadata" />
@@ -341,7 +405,7 @@
 				appearance="bare"
 				size="icon-standard"
 				aria-label="Assignees"
-				onclick={() => openDetail('assignees')}
+				onclick={(event) => openDetail('assignees', event)}
 				class="shrink-0"
 			>
 				<Icon name="assignee" size="compact" />
@@ -352,7 +416,7 @@
 				bind:element={notesTrigger}
 				aria-label="Notes"
 				removeLabel="Clear Notes value"
-				onclick={() => openDetail('notes')}
+				onclick={(event) => openDetail('notes', event)}
 				onremove={() => clearDetail('notes')}
 			>
 				<Icon name="notes" size="metadata" />
@@ -366,7 +430,7 @@
 				appearance="bare"
 				size="icon-standard"
 				aria-label="Notes"
-				onclick={() => openDetail('notes')}
+				onclick={(event) => openDetail('notes', event)}
 				class="shrink-0"
 			>
 				<Icon name="notes" size="compact" />
@@ -388,18 +452,25 @@
 		/>
 	</div>
 
-    {#if recurrenceError(recurrenceState) && activeDetail !== 'recurrence'}
-        <p role="alert" class="text-sm text-danger">{recurrenceError(recurrenceState)}</p>
-    {/if}
-	{#if activeDetail}
-		<Dialog
-			title={dialogTitle}
-			onclose={() => closeDetail()}
-			returnFocusTo={getTrigger(activeDetail)}
-			showFooter={activeDetail === 'notes'}
-		>
+	{#if recurrenceError(recurrenceState)}
+		<p role="alert" class="text-sm text-danger">{recurrenceError(recurrenceState)}</p>
+	{/if}
+	{:else}
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+		<section bind:this={detailElement} aria-label={detailTitle} onkeydown={detailKeydown} class="flex max-h-[min(60dvh,32rem)] flex-col gap-3">
+			<div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+				<Button type="button" tone="neutral" appearance="bare" size="small" align="start" onclick={() => closeDetail()}>
+					<Icon name="back" size="compact" />{activeDetail === 'notes' ? 'Cancel' : 'Back'}
+				</Button>
+				<h2 class="text-sm font-semibold text-heading">{detailTitle}</h2>
+				{#if activeDetail === 'notes'}
+					<Button type="button" appearance="bare" size="small" onclick={saveDetail} class="justify-self-end">Save</Button>
+				{/if}
+			</div>
+			<div class="min-h-0 overflow-y-auto p-1">
 			{#if activeDetail === 'category'}
 				<CategorySelect
+					inlineOptions consumeOutsidePointer={false}
 					categories={categories}
 					selectedCategoryId={categoryId}
 					label=""
@@ -410,12 +481,21 @@
 					onSelect={selectCategory}
 				/>
 			{:else if activeDetail === 'dueDate'}
-				<DatePicker value={dueDate} ariaLabel="Due date" placeholder="set due date" onSelect={selectDueDate} />
+				<Select
+					options={['Today', 'Tomorrow', 'Next week', 'Custom']}
+					ariaLabel="Due date" placeholder="set due date"
+					inlineOptions consumeOutsidePointer={false}
+					onSelect={(preset) => {
+						if (preset === 'Custom') void openCustomDate();
+						else selectDueDate(quickAddDueDate(preset, getProfile()?.timeZone));
+					}}
+				/>
 			{:else if activeDetail === 'recurrence'}
-                <RecurrenceEditor bind:value={recurrenceState} rule={recurrenceRule}
+                <RecurrenceEditor inlineOptions consumeOutsidePointer={false} bind:value={recurrenceState} rule={recurrenceRule}
                     onapply={(rule) => { recurrenceRule = rule; }} onbasic={() => closeDetail()} />
 			{:else if activeDetail === 'assignees'}
 				<MultiSelect
+					inlineOptions consumeOutsidePointer={false}
 					options={users}
 					selected={selectedAssignees}
 					ariaLabel="Assignees"
@@ -423,7 +503,7 @@
 					labelId="quick-add-assignees"
 					getOptionLabel={getUserLabel}
 					optionKey={(user) => user.id}
-					onChange={setDialogAssignedUsers}
+					onChange={setAssignedUsers}
 				>
 					{#snippet selectedContent(user)}
 						<span class="inline-flex min-w-0 items-center gap-1">
@@ -445,8 +525,7 @@
 				</MultiSelect>
 			{:else if activeDetail === 'notes'}
 				<Textarea
-					bind:element={notesTextarea}
-					bind:value={dialogNotes}
+					bind:value={notesEditorDraft}
 					ariaLabel="Notes"
 					placeholder="add note"
 					rows={8}
@@ -455,14 +534,18 @@
 				/>
 			{/if}
 
-			{#snippet footer()}
-				{#if activeDetail === 'notes'}
-					<Button type="button" onclick={saveDetail}>Save</Button>
-				{/if}
-			{/snippet}
-		</Dialog>
+			</div>
+		</section>
 	{/if}
 </form>
+
+{#if customDate}
+	<Dialog title="Due date" onclose={closeCustomDate} returnFocusTo={titleInput} showFooter={false}
+		class="!fixed left-1/2 top-1/2 !m-0 w-[calc(100%-2rem)] !max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto -translate-x-1/2 -translate-y-1/2">
+		<DatePicker initiallyOpen inlineCalendar consumeOutsidePointer={false} value={dueDate}
+			ariaLabel="Due date" onSelect={selectDueDate} onDismiss={closeCustomDate} />
+	</Dialog>
+{/if}
 
 <style>
 	.quick-add-detail-scroll {
