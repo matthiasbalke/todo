@@ -132,7 +132,7 @@ services:
       start_period: 120s
 
   proxy:
-    image: nginx:1.28-alpine
+    image: nginx:1.31-alpine
     ports:
       - '${DEV_PROXY_PORT:-443}:443'
     volumes:
