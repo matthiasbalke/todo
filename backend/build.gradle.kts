@@ -68,3 +68,7 @@ allOpen {
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+if (hasProperty("composeDev")) {
+    apply(from = "gradle/dev.gradle.kts")
+}

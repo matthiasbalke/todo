@@ -3,8 +3,7 @@
 .github
 .claude
 
-docker-compose.yml
-docker-compose.remote.yml
+compose.yaml
 LICENSE
 CLAUDE.md
 README.md

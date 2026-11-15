@@ -4,6 +4,8 @@ WebAuthn (passkeys) requires a secure context. `http://localhost` works on the d
 
 ## Overview
 
+For the unified container workflow, see [Development with Docker Compose](development-compose.md). It reuses these mkcert certificates and runs the frontend, backend, database, Mailpit, and nginx together. The host launcher instructions below remain an alternative.
+
 1. Install mkcert and create a local CA
 2. Generate a TLS certificate for your machine's LAN IP
 3. Configure Vite to serve over HTTPS

@@ -239,7 +239,7 @@ This document maps the OWASP Top 10 risks to this app's specific stack and archi
   uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
   ```
   Dependabot will keep SHAs up to date.
-- **Docker image integrity:** Use digest-pinned base images in Dockerfiles. For your own images, use GHCR with access controls and verify digests in `docker-compose.yml` for production deploys.
+- **Docker image integrity:** Use digest-pinned base images in Dockerfiles. For your own images, use GHCR with access controls and verify digests in `compose.yaml` for production deploys.
 - **No Java object deserialization from untrusted input:** All API endpoints accept JSON (Jackson). Never use Java's `ObjectInputStream` with user-supplied data. Ensure no gadget-chain libraries (Commons Collections, Spring's `SerializationUtils` for untrusted input) are reachable via user input paths.
 
 ---

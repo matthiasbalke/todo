@@ -26,7 +26,7 @@ Checkbox-based task list for tracking implementation progress. Tasks are small a
 - [x] Verify `bun run check` passes with no type errors on the skeleton
 
 ### Docker & CI/CD
-- [x] Create root `docker-compose.yml` with `postgres`, `backend`, `frontend` services
+- [x] Create root `compose.yaml` with `postgres`, `backend`, `frontend` services
 - [x] Create `backend/Dockerfile` (multi-stage: Gradle build → JRE 21 runtime)
 - [x] Create `frontend/Dockerfile` (multi-stage: bun build → Node runtime)
 - [ ] Verify `docker compose up --build` starts all services and each reaches its health check

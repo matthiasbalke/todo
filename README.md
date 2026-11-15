@@ -64,6 +64,8 @@ docker run \
 
 ## Development
 
+See [Development with Docker Compose](docs/development-compose.md) for the complete HTTPS development stack with Vite HMR, Gradle/DevTools reload, and direct service access.
+
 See [Shared style foundation](docs/style-foundation.md) for component styling roles and the development palette review workflow.
 
 See [Contributing](.github/CONTRIBUTING.md) for setup details, validation commands, and pull request expectations.

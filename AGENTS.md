@@ -35,7 +35,7 @@ todo/
 ├── e2e/              # Playwright end-to-end tests
 ├── all-in-one/       # combined nginx + backend + frontend container
 ├── openspec/         # specs, archived changes, active proposals
-└── docker-compose.yml
+└── compose.yaml
 ```
 
 ## GitHub Actions
@@ -82,6 +82,12 @@ bunx playwright test tests/auth.spec.ts # single spec
 zsh scripts/tests/local-domain.test.sh # local HTTPS helper tests
 zsh -n path/to/script.sh               # syntax check a helper
 ```
+
+## Git Workflow
+
+- Use Conventional Commits for commit messages.
+- Develop changes on feature branches and open pull requests targeting `main` to request feature merges.
+- Never merge a pull request yourself or enable automatic merging; leave merging to the user.
 
 ## Development Conventions
 

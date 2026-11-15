@@ -9,6 +9,8 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '0.0.0-dev'),
   },
   server: {
+    allowedHosts: process.env.LOCAL_HTTPS_DOMAIN ? [process.env.LOCAL_HTTPS_DOMAIN] : undefined,
+    watch: process.env.DEV_FRONTEND_POLLING === 'true' ? { usePolling: true } : undefined,
     hmr: process.env.VITE_HMR_HOST
       ? {
           host: process.env.VITE_HMR_HOST,
@@ -17,7 +19,7 @@ export default defineConfig({
       : undefined,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: process.env.BACKEND_URL ?? 'http://localhost:8080',
         changeOrigin: true,
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq) => {
@@ -26,7 +28,7 @@ export default defineConfig({
         },
       },
       '/actuator': {
-        target: 'http://localhost:8080',
+        target: process.env.BACKEND_URL ?? 'http://localhost:8080',
         changeOrigin: true,
       },
     },
