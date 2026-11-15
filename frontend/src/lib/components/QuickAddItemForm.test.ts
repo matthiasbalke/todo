@@ -211,7 +211,7 @@ describe('QuickAddItemForm', () => {
 		expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Notes');
 	});
 
-	it('applies single-value details immediately, closes their dialogs, and returns focus', async () => {
+	it('applies single-value details immediately, returns to the composer, and returns focus', async () => {
 		render(QuickAddItemForm, { props: defaultProps });
 
 		const categoryTrigger = screen.getByRole('button', { name: 'Category' });
@@ -221,8 +221,8 @@ describe('QuickAddItemForm', () => {
 		await vi.runAllTimersAsync();
 		const savedCategoryTrigger = screen.getByRole('button', { name: 'Category' });
 		expect(savedCategoryTrigger).toHaveTextContent('Groceries');
-		expect(screen.queryByRole('dialog', { name: 'Category' })).not.toBeInTheDocument();
-		expect(document.activeElement).toBe(savedCategoryTrigger);
+		expect(screen.queryByRole('region', { name: 'Category' })).not.toBeInTheDocument();
+		expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Item title' }));
 
 		await fireEvent.click(savedCategoryTrigger);
 		await fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
@@ -232,23 +232,23 @@ describe('QuickAddItemForm', () => {
 
 		const dueDateTrigger = screen.getByRole('button', { name: 'Due date' });
 		await fireEvent.click(dueDateTrigger);
+		await fireEvent.click(screen.getByRole('option', { name: 'Custom' }));
 		let dialog = screen.getByRole('dialog', { name: 'Due date' });
-		await fireEvent.click(within(dialog).getByRole('button', { name: 'Due date' }));
 		await fireEvent.click(within(dialog).getByRole('gridcell', { name: 'Monday, June 15, 2026' }));
 		await vi.runAllTimersAsync();
 		const savedDueDateTrigger = screen.getByRole('button', { name: 'Due date' });
 		expect(savedDueDateTrigger).toHaveTextContent('Jun 15, 2026');
-		expect(screen.queryByRole('dialog', { name: 'Due date' })).not.toBeInTheDocument();
-		expect(document.activeElement).toBe(savedDueDateTrigger);
+		expect(screen.queryByRole('region', { name: 'Due date' })).not.toBeInTheDocument();
+		expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Item title' }));
 
 		await fireEvent.click(savedDueDateTrigger);
+		await fireEvent.click(screen.getByRole('option', { name: 'Custom' }));
 		dialog = screen.getByRole('dialog', { name: 'Due date' });
-		await fireEvent.click(within(dialog).getByRole('button', { name: 'Due date' }));
 		await fireEvent.click(within(dialog).getByRole('button', { name: 'Clear' }));
 		expect(dueDateTrigger).not.toHaveTextContent('Jun 15, 2026');
 	});
 
-	it('submits applied optional dialog details and preserves closed assignee changes', async () => {
+	it('submits applied optional details and preserves closed assignee changes', async () => {
 		const onsubmit = vi.fn();
 		render(QuickAddItemForm, { props: { ...defaultProps, onsubmit } });
 
@@ -262,7 +262,7 @@ describe('QuickAddItemForm', () => {
 		await fireEvent.click(screen.getByRole('combobox', { name: 'Recurrence' }));
 		await fireEvent.click(screen.getByRole('option', { name: 'Monthly' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Assignees' }));
-		await fireEvent.keyDown(screen.getByRole('combobox', { name: 'Assignees' }), { key: 'Enter' });
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Assignees' }));
 		await fireEvent.click(screen.getByRole('option', { name: 'Alice' }));
 		await fireEvent.click(screen.getByRole('option', { name: 'bob@example.com' }));
 		await closeDialog('Assignees');
@@ -273,7 +273,7 @@ describe('QuickAddItemForm', () => {
 		await saveDialog('Notes');
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Assignees' }));
-		await fireEvent.keyDown(screen.getByRole('combobox', { name: 'Assignees' }), { key: 'Enter' });
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Assignees' }));
 		await fireEvent.click(screen.getByRole('option', { name: 'Alice' }));
 		await closeDialog('Assignees');
 		await openNotes();
@@ -293,7 +293,7 @@ describe('QuickAddItemForm', () => {
 		});
 	});
 
-	it('submits no recurrence when the recurrence dialog saves the empty preset', async () => {
+	it('submits no recurrence when the recurrence editor selects the empty preset', async () => {
 		const onsubmit = vi.fn();
 		render(QuickAddItemForm, {
 			props: {
@@ -323,37 +323,139 @@ describe('QuickAddItemForm', () => {
 		expect(onsubmit.mock.calls[0][0].recurrenceRule).toBeNull();
 	});
 
-	it('dismisses untouched dialogs outside and keeps already-applied assignee changes', async () => {
+	it('replaces the composer with focused editors and handles nested Escape before Back', async () => {
+		render(QuickAddItemForm, { props: defaultProps });
+		await fireEvent.input(screen.getByRole('textbox', { name: 'Item title' }), { target: { value: 'Keep title' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
+		const input = screen.getByRole('combobox', { name: 'Category' });
+		expect(input).toHaveFocus();
+		expect(screen.queryByRole('textbox', { name: 'Item title' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+		await fireEvent.keyDown(input, { key: 'Escape' });
+		expect(screen.getByRole('region', { name: 'Category' })).toBeInTheDocument();
+		expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+		await fireEvent.keyDown(input, { key: 'Escape' });
+		expect(screen.getByRole('textbox', { name: 'Item title' })).toHaveFocus();
+		expect(screen.getByRole('textbox', { name: 'Item title' })).toHaveValue('Keep title');
+		expect(defaultProps.oncancel).not.toHaveBeenCalled();
+	});
+
+	it('matches item-details notes: outside preserves the buffer, Cancel discards, Save applies', async () => {
+		const onDraftChange = vi.fn();
+		render(QuickAddItemForm, { props: { ...defaultProps, onDraftChange } });
+		await openNotes();
+		const textarea = screen.getByRole('textbox', { name: 'Notes' });
+		expect(textarea).toHaveFocus();
+		await fireEvent.input(textarea, { target: { value: 'Unsaved\nnotes' } });
+		await fireEvent.keyDown(textarea, { key: 'Enter' });
+		await fireEvent.pointerDown(document.body);
+		await fireEvent.focusOut(textarea, { relatedTarget: document.body });
+		await vi.runAllTimersAsync();
+		expect(textarea).toHaveValue('Unsaved\nnotes');
+		expect(defaultProps.oncancel).not.toHaveBeenCalled();
+		expect(defaultProps.onsubmit).not.toHaveBeenCalled();
+		expect(onDraftChange.mock.calls.at(-1)?.[0].notes).toBe('');
+		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+		expect(screen.getByRole('textbox', { name: 'Item title' })).toHaveFocus();
+		await openNotes();
+		expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('');
+		await fireEvent.input(screen.getByRole('textbox', { name: 'Notes' }), { target: { value: 'Saved note' } });
+		await saveDialog('Notes');
+		expect(onDraftChange.mock.calls.at(-1)?.[0].notes).toBe('Saved note');
+		expect(screen.getByRole('textbox', { name: 'Item title' })).toHaveFocus();
+	});
+
+	it.each([['Today', '2026-06-09'], ['Tomorrow', '2026-06-10'], ['Next week', '2026-06-15']])('applies %s without a second confirmation', async (preset, date) => {
+		const onDraftChange = vi.fn();
+		render(QuickAddItemForm, { props: { ...defaultProps, onDraftChange } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Due date' }));
+		expect(screen.getByRole('combobox', { name: 'Due date' })).toHaveFocus();
+		await fireEvent.click(screen.getByRole('option', { name: preset }));
+		expect(onDraftChange.mock.calls.at(-1)?.[0].dueDate).toBe(date);
+		expect(screen.getByRole('textbox', { name: 'Item title' })).toHaveFocus();
+	});
+
+	it('opens Custom in a centered dialog and returns without changing the draft on Escape', async () => {
+		render(QuickAddItemForm, { props: defaultProps });
+		await fireEvent.click(screen.getByRole('button', { name: 'Due date' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'Custom' }));
+		await fireEvent.keyDown(screen.getByRole('gridcell', { name: 'Tuesday, June 9, 2026' }), { key: 'Escape' });
+		expect(screen.queryByRole('region', { name: 'Due date' })).not.toBeInTheDocument();
+		expect(screen.getByRole('textbox', { name: 'Item title' })).toHaveFocus();
+		expect(screen.queryByRole('grid')).not.toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: 'Due date' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'Custom' }));
+		expect(screen.getByRole('grid')).toBeInTheDocument();
+		expect(defaultProps.oncancel).not.toHaveBeenCalled();
+	});
+
+	it('keeps the assignee list in place on Back pointer-down and focuses the title after the click', async () => {
+		render(QuickAddItemForm, { props: defaultProps });
+		await fireEvent.click(screen.getByRole('button', { name: 'Assignees' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'Alice' }));
+		const back = screen.getByRole('button', { name: 'Back' });
+		await fireEvent.pointerDown(back);
+		back.focus();
+		await vi.runAllTimersAsync();
+		expect(screen.getByRole('listbox')).toBeInTheDocument();
+		await fireEvent.click(back);
+		expect(screen.getByRole('textbox', { name: 'Item title' })).toHaveFocus();
+		expect(screen.getByRole('button', { name: 'Assignees' })).toHaveTextContent('Alice');
+		expect(defaultProps.oncancel).not.toHaveBeenCalled();
+	});
+
+	it('keeps a typed draft visible on outside interaction without stealing focus', async () => {
+		render(QuickAddItemForm, { props: defaultProps });
+		const title = screen.getByRole('textbox', { name: 'Item title' });
+		await fireEvent.input(title, { target: { value: 'Keep me visible' } });
+		const outside = document.createElement('button');
+		document.body.appendChild(outside);
+		await fireEvent.pointerDown(outside);
+		outside.focus();
+		await vi.runAllTimersAsync();
+		expect(title).toHaveValue('Keep me visible');
+		expect(outside).toHaveFocus();
+		expect(defaultProps.oncancel).not.toHaveBeenCalled();
+		expect(defaultProps.onsubmit).not.toHaveBeenCalled();
+		outside.remove();
+	});
+
+	it('minimizes untouched selection views outside and keeps already-applied assignee changes', async () => {
 		render(QuickAddItemForm, { props: defaultProps });
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
 		await dismissOutside('Category');
-		expect(screen.queryByRole('dialog', { name: 'Category' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('region', { name: 'Category' })).not.toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Category' })).not.toHaveTextContent('Groceries');
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Assignees' }));
-		await fireEvent.keyDown(screen.getByRole('combobox', { name: 'Assignees' }), { key: 'Enter' });
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Assignees' }));
 		await fireEvent.click(screen.getByRole('option', { name: 'Alice' }));
-		await dismissOutside('Assignees');
+		defaultProps.oncancel.mockClear();
+		await fireEvent.pointerDown(document.body);
+		expect(defaultProps.oncancel).not.toHaveBeenCalled();
+		expect(screen.getByRole('textbox', { name: 'Item title' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Assignees' })).toHaveTextContent('Alice');
 	});
 });
 
 async function openNotes() {
 	await fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
-	expect(screen.getByRole('dialog', { name: 'Notes' })).toBeInTheDocument();
+	expect(screen.getByRole('region', { name: 'Notes' })).toBeInTheDocument();
 }
 
 async function saveDialog(name: string) {
-	await fireEvent.click(within(screen.getByRole('dialog', { name })).getByRole('button', { name: 'Save' }));
+	await fireEvent.click(within(screen.getByRole('region', { name })).getByRole('button', { name: 'Save' }));
 }
 
 async function closeDialog(name: string) {
-	const dialog = screen.getByRole('dialog', { name });
-	await fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+	const dialog = screen.getByRole('region', { name });
+	await fireEvent.click(within(dialog).getByRole('button', { name: 'Back' }));
 }
 
 async function dismissOutside(name: string) {
-	const dialog = screen.getByRole('dialog', { name });
-	await fireEvent.pointerDown(dialog.parentElement!);
+	const dialog = screen.getByRole('region', { name });
+	await fireEvent.pointerDown(document.body);
+	expect(defaultProps.oncancel).toHaveBeenCalled();
+	await fireEvent.click(within(dialog).getByRole('button', { name: 'Back' }));
 }

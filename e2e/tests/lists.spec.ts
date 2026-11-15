@@ -66,6 +66,7 @@ test.describe('Lists page', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('List detail — add item form', () => {
+	test.use({ timezoneId: 'Europe/Berlin', hasTouch: true });
 	let listId: string;
 
 	test.beforeEach(async ({ page, context }) => {
@@ -96,28 +97,89 @@ test.describe('List detail — add item form', () => {
 		await expect(page.getByText('Test Item E2E')).toBeVisible();
 	});
 
-	test('preserves the draft when focus loss minimizes the form', async ({ page }) => {
+	test('keeps an active draft visible after outside interaction', async ({ page }) => {
 		await page.getByRole('button', { name: 'add item' }).click();
 		await page.getByPlaceholder('Item title').fill('Draft Item E2E');
 		await page.getByRole('button', { name: 'Notes' }).click();
 		await page.getByRole('textbox', { name: 'Notes' }).fill('Draft note E2E');
-		await page.getByRole('dialog', { name: 'Notes' }).getByRole('button', { name: 'Save' }).click();
+		await page.getByRole('region', { name: 'Notes' }).getByRole('button', { name: 'Save' }).click();
 		await page.getByRole('button', { name: 'List options' }).click();
 
-		await expect(page.getByPlaceholder('Item title')).not.toBeVisible();
-		await page.getByRole('button', { name: 'add item' }).click();
+		await expect(page.getByPlaceholder('Item title')).toBeVisible();
+		await expect(page.getByRole('button', { name: 'add item', exact: true })).toHaveCount(0);
 
 		await expect(page.getByPlaceholder('Item title')).toHaveValue('Draft Item E2E');
 		await expect(page.getByRole('button', { name: 'Notes', exact: true })).toHaveText(/Notes/);
 	});
 
-	test('title blur preserves the quick-add draft without creating an item', async ({ page }) => {
+	for (const width of [1280, 390]) {
+		test(`inline quick-add details preserve the draft at width ${width}`, async ({ page }) => {
+			await page.setViewportSize({ width, height: 720 });
+			await page.getByRole('button', { name: 'add item' }).click();
+			await page.getByPlaceholder('Item title').fill('Inline draft');
+			await page.getByRole('button', { name: 'Category', exact: true }).click();
+			const category = page.getByRole('region', { name: 'Category', exact: true });
+			await expect(category.getByRole('combobox')).toBeFocused();
+			await expect(page.getByRole('dialog', { name: 'Category' })).toHaveCount(0);
+			await category.getByRole('option', { name: 'Uncategorized' }).click();
+			await expect(page.getByPlaceholder('Item title')).toHaveValue('Inline draft');
+			await expect(page.getByPlaceholder('Item title')).toBeFocused();
+			await page.getByRole('button', { name: 'Due date', exact: true }).click();
+			await page.getByRole('option', { name: 'Next week', exact: true }).click();
+			await expect(page.getByRole('button', { name: 'Clear Due date value' })).toBeVisible();
+			await page.getByRole('button', { name: 'Due date', exact: true }).click();
+			await page.getByRole('option', { name: 'Custom', exact: true }).click();
+			await expect(page.getByRole('grid')).toBeVisible();
+			await expect(page.getByRole('region', { name: 'Due date', exact: true })).toHaveCount(0);
+			const calendarBox = await page.getByRole('dialog', { name: 'Due date', exact: true }).boundingBox();
+			expect(calendarBox).not.toBeNull();
+			expect(Math.abs(calendarBox!.x + calendarBox!.width / 2 - width / 2)).toBeLessThan(2);
+			expect(Math.abs(calendarBox!.y + calendarBox!.height / 2 - 360)).toBeLessThan(2);
+			await page.getByRole('gridcell', { selected: true }).press('Escape');
+			await expect(page.getByRole('dialog', { name: 'Due date', exact: true })).toHaveCount(0);
+			await expect(page.getByPlaceholder('Item title')).toBeFocused();
+			await page.getByRole('button', { name: 'Recurrence', exact: true }).click();
+			await page.getByRole('option', { name: 'Custom', exact: true }).click();
+			await page.getByRole('textbox', { name: 'Repeat every' }).fill('3');
+			await page.getByRole('combobox', { name: 'Repeat unit' }).click();
+			await page.getByRole('option', { name: 'months', exact: true }).click();
+			await page.getByRole('region', { name: 'Recurrence', exact: true }).getByRole('button', { name: 'Back' }).click();
+			await expect(page.getByRole('button', { name: 'Recurrence', exact: true })).toContainText('Every 3 months');
+			await expect(page.getByPlaceholder('Item title')).toBeFocused();
+			await page.getByRole('button', { name: 'Assignees', exact: true }).click();
+			await page.getByRole('option', { name: 'Form User' }).click();
+			const assignees = page.getByRole('region', { name: 'Assignees', exact: true });
+			if (width === 390) await assignees.getByRole('button', { name: 'Back' }).tap();
+			else await assignees.getByRole('button', { name: 'Back' }).click();
+			await expect(page.getByPlaceholder('Item title')).toBeFocused();
+			await page.getByRole('button', { name: 'Notes', exact: true }).click();
+			const notes = page.getByRole('region', { name: 'Notes', exact: true });
+			await notes.getByRole('textbox').fill('Unsaved note');
+			await page.getByText('0 items', { exact: true }).click();
+			await expect(notes.getByRole('textbox')).toHaveValue('Unsaved note');
+			if (width === 390) await notes.getByRole('button', { name: 'Cancel' }).tap();
+			else await notes.getByRole('button', { name: 'Cancel' }).click();
+			await expect(page.getByPlaceholder('Item title')).toBeFocused();
+			await page.getByRole('button', { name: 'Notes', exact: true }).click();
+			await expect(notes.getByRole('textbox')).toHaveValue('');
+			await notes.getByRole('textbox').fill('Saved note');
+			await notes.getByRole('button', { name: 'Save' }).click();
+			await expect(page.getByPlaceholder('Item title')).toBeFocused();
+			await page.getByText('0 items', { exact: true }).click();
+			await expect(page.getByRole('button', { name: 'add item', exact: true })).toHaveCount(0);
+			await expect(page.getByPlaceholder('Item title')).toHaveValue('Inline draft');
+			await page.getByPlaceholder('Item title').press('Enter');
+			await expect(page.getByText('Inline draft', { exact: true })).toBeVisible();
+		});
+	}
+
+	test('title blur keeps the quick-add draft visible without creating an item', async ({ page }) => {
 		await page.getByRole('button', { name: 'add item' }).click();
 		await page.getByPlaceholder('Item title').fill('Blur Draft E2E');
 		await page.getByRole('button', { name: 'List options' }).click();
 
-		await expect(page.getByText('Blur Draft E2E')).not.toBeVisible();
-		await page.getByRole('button', { name: 'add item' }).click();
+		await expect(page.getByText('Blur Draft E2E', { exact: true })).not.toBeVisible();
+		await expect(page.getByRole('button', { name: 'add item', exact: true })).toHaveCount(0);
 		await expect(page.getByPlaceholder('Item title')).toHaveValue('Blur Draft E2E');
 	});
 });
