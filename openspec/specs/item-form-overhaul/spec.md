@@ -56,7 +56,7 @@ The quick-add composer SHALL open a focused dialog for each optional item detail
 #### Scenario: User edits an optional detail
 - **WHEN** the quick-add composer is open
 - **AND** the user activates a category, due date, or recurrence icon control
-- **AND** the user selects a value in the dialog
+- **AND** the user selects a complete single-value preset in the dialog
 - **THEN** the pending quick-add value is updated immediately without requiring a separate Save action
 - **AND** the dialog closes
 - **AND** the quick-add composer remains open
@@ -102,6 +102,16 @@ The quick-add composer SHALL open a focused dialog for each optional item detail
 - **AND** saving the note editor updates the pending quick-add note value without submitting the item
 - **AND** closing, dismissing, or clicking or touching outside the note editor leaves the previously saved quick-add note value unchanged
 - **AND** the note editor does not display a separate Cancel action
+
+
+#### Scenario: User configures multi-field recurrence
+- **WHEN** the user selects Custom or Weekdays in the recurrence dialog
+- **THEN** the dialog remains open for amount, unit, and weekday configuration
+- **AND** weekday edits remain local while open and apply as one complete valid configuration on close, Escape, or outside dismissal without a separate Save action
+- **AND** incomplete or invalid input remains editable without replacing the last valid pending recurrence
+- **AND** intentional creation is blocked while recurrence input is incomplete or invalid
+- **AND** closing the dialog preserves editor input and applies valid staged weekday changes, retaining the last applied rule when input is invalid
+- **AND** focus returns to the recurrence trigger while the composer remains open
 
 ### Requirement: Quick-add submission includes dialog details
 The quick-add composer SHALL submit the pending title and every applied optional detail as a new item when the user presses Enter in the title entry.

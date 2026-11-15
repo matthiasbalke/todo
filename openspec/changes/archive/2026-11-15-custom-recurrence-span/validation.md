@@ -9,7 +9,7 @@ Validated on 2026-11-15 against issue #311.
 
 The shared HTTPS deployment was unreachable, so browser validation used the local development Compose stack, as permitted by the instructions active at the time. Temporary browser configuration and hostname resolution were used only for this sandbox. Backend validation used a temporary wrapper copy and truststore; frontend checks used the development image because host dependency executables were unavailable. No dependency, schema, or production configuration changes were required.
 
-The original stash remains intact; unrelated stashed CSS and Git attribute edits were not restored. This change remains active pending user review, after which its specs will be synced and the change archived.
+The original stash remains intact; unrelated stashed CSS and Git attribute edits were not restored. The user confirmed recurrence works as expected on 2026-11-15. Specs were synced and the change archived after that review.
 
 ## Live review follow-up
 
