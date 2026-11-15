@@ -15,13 +15,14 @@ async function api<T>(page: Page, path: string, method = 'GET', body?: unknown):
 	}, { path, method, body });
 }
 const recurrenceDialog = (page: Page) => page.getByRole('dialog', { name: 'Recurrence' });
+const quickRecurrence = (page: Page) => page.getByRole('region', { name: 'Recurrence', exact: true });
 async function mode(page: Page, name: string, quick = false) {
 	if (quick) await page.getByRole('button', { name: 'Recurrence', exact: true }).click();
 	await page.getByRole('combobox', { name: 'Recurrence' }).click();
 	await page.getByRole('option', { name, exact: true }).click();
 }
-async function unit(page: Page, name: string) {
-	await recurrenceDialog(page).getByRole('combobox', { name: 'Repeat unit' }).click();
+async function unit(page: Page, name: string, quick = false) {
+	await (quick ? quickRecurrence(page) : recurrenceDialog(page)).getByRole('combobox', { name: 'Repeat unit' }).click();
 	await page.getByRole('option', { name, exact: true }).click();
 }
 async function createQuickItem(page: Page, title: string) {
@@ -41,9 +42,10 @@ test.describe('Custom recurrence', () => {
 	test('creates a custom interval, reloads and edits without erasing it', async ({ page }) => {
 		await createQuickItem(page, 'Quarterly review');
 		await mode(page, 'Custom', true);
-		await recurrenceDialog(page).getByRole('textbox', { name: 'Repeat every' }).fill('3');
-		await unit(page, 'months');
-		await recurrenceDialog(page).getByRole('button', { name: 'Close', exact: true }).click();
+		await quickRecurrence(page).getByRole('textbox', { name: 'Repeat every' }).fill('3');
+		await unit(page, 'months', true);
+		await quickRecurrence(page).getByRole('button', { name: 'Back', exact: true }).click();
+		await expect(page.getByPlaceholder('Item title')).toBeFocused();
 		await expect(page.getByRole('button', { name: 'Recurrence', exact: true })).toContainText('Every 3 months');
 		await page.getByPlaceholder('Item title').press('Enter');
 		await expect(page.getByText('Quarterly review', { exact: true })).toBeVisible();
@@ -63,10 +65,11 @@ test.describe('Custom recurrence', () => {
 	test('persists selected weekdays and custom active-week intervals through editing and completion', async ({ page }) => {
 		await createQuickItem(page, 'Monday and Thursday');
 		await mode(page, 'Weekdays', true);
-		await recurrenceDialog(page).getByRole('checkbox', { name: 'Monday', exact: true }).focus();
-        await recurrenceDialog(page).getByRole('checkbox', { name: 'Monday', exact: true }).press('Space');
-		await recurrenceDialog(page).getByRole('checkbox', { name: 'Thursday', exact: true }).check();
-		await recurrenceDialog(page).getByRole('button', { name: 'Close', exact: true }).click();
+		await quickRecurrence(page).getByRole('checkbox', { name: 'Monday', exact: true }).focus();
+        await quickRecurrence(page).getByRole('checkbox', { name: 'Monday', exact: true }).press('Space');
+		await quickRecurrence(page).getByRole('checkbox', { name: 'Thursday', exact: true }).check();
+		await quickRecurrence(page).getByRole('button', { name: 'Back', exact: true }).click();
+		await expect(page.getByPlaceholder('Item title')).toBeFocused();
 		await page.getByPlaceholder('Item title').press('Enter');
 		await expect(page.getByText('Monday and Thursday', { exact: true })).toBeVisible();
 		const [created] = await api<Item[]>(page, `/api/lists/${listId}/items`);
