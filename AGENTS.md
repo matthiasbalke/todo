@@ -83,6 +83,12 @@ zsh scripts/tests/local-domain.test.sh # local HTTPS helper tests
 zsh -n path/to/script.sh               # syntax check a helper
 ```
 
+## Git Workflow
+
+- Use Conventional Commits for commit messages.
+- Develop changes on feature branches and open pull requests targeting `main` to request feature merges.
+- Never merge a pull request yourself or enable automatic merging; leave merging to the user.
+
 ## Development Conventions
 
 - Always remove unused imports from implementation and test files when creating or modifying code.
