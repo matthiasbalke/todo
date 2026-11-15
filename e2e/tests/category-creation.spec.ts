@@ -45,7 +45,7 @@ test.describe('Create a category while assigning an item', () => {
 		const input = page.getByRole('combobox', { name: 'Category', exact: true });
 		await input.fill('Garden');
 		const saved = page.waitForResponse(response => response.url().endsWith(`/api/lists/${listId}/items/${itemId}`) && response.request().method() === 'PUT');
-		await page.getByRole('option', { name: '+ Create Garden', exact: true }).click();
+		await page.getByRole('option', { name: '+ Create "Garden"', exact: true }).click();
 		expect((await saved).ok()).toBe(true);
 		await page.reload();
 		await waitForHydration(page);
@@ -135,7 +135,7 @@ test.describe('Category creation on touch devices', () => {
 		await page.getByRole('textbox', { name: 'Item title' }).fill('Seeds');
 		await page.getByRole('button', { name: 'Category', exact: true }).tap();
 		await page.getByRole('combobox', { name: 'Category', exact: true }).fill('Garden');
-		await page.getByRole('option', { name: '+ Create Garden', exact: true }).tap();
+		await page.getByRole('option', { name: '+ Create "Garden"', exact: true }).tap();
 		await expect(page.getByRole('button', { name: 'Category', exact: true })).toContainText('Garden');
 		await expect(page.getByRole('textbox', { name: 'Item title' })).toHaveValue('Seeds');
 	});

@@ -495,8 +495,8 @@ describe('Select optional creation', () => {
 		const onCreate = vi.fn().mockResolvedValue('New');
 		render(Select, { options: ['Newspaper'], onCreate });
 		await fireEvent.input(screen.getByRole('combobox'), { target: { value: 'New' } });
-		expect(screen.getAllByRole('option').map(option => option.textContent?.trim())).toEqual(['Newspaper', '+ Create New']);
-		await fireEvent.click(screen.getByRole('option', { name: '+ Create New' }));
+		expect(screen.getAllByRole('option').map(option => option.textContent?.trim())).toEqual(['Newspaper', '+ Create "New"']);
+		await fireEvent.click(screen.getByRole('option', { name: '+ Create "New"' }));
 		await waitFor(() => expect(screen.getByRole('combobox')).toHaveValue('New'));
 	});
 

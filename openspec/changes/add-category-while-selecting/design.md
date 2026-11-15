@@ -22,7 +22,7 @@ Add a category-store creation operation returning the server DTO mapped to Categ
 
 ### Creation participates in shared navigation
 
-Extend Select with a narrow optional creation-action facility, keeping the action distinct from ordinary option values. CategorySelect supplies eligibility based on trimmed, case-insensitive exact name comparison and the label `+ Create <name>`. Existing filtered options precede creation. If no options match, creation is the first keyboard target and Enter activates it. If partial matches exist, Enter selects the first match unless the user navigates to creation. Preserve ordinary Select behavior for all consumers without creation enabled.
+Extend Select with a narrow optional creation-action facility, keeping the action distinct from ordinary option values. CategorySelect supplies eligibility based on trimmed, case-insensitive exact name comparison and the label `+ Create "<name>"`. Existing filtered options precede creation. If no options match, creation is the first keyboard target and Enter activates it. If partial matches exist, Enter selects the first match unless the user navigates to creation. Preserve ordinary Select behavior for all consumers without creation enabled.
 
 Do not fork keyboard handling in CategorySelect or replace the shared primitive. A separate button outside the listbox would make Enter and touch behavior inconsistent. A fake category ID emitted through normal selection would corrupt autosave and validation.
 

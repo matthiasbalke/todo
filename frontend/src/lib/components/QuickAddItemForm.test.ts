@@ -497,7 +497,7 @@ describe('QuickAddItemForm category creation', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
 		const input = screen.getByRole('combobox');
 		await fireEvent.input(input, { target: { value: 'Garden' } });
-		await fireEvent.click(screen.getByRole('option', { name: '+ Create Garden' }));
+		await fireEvent.click(screen.getByRole('option', { name: '+ Create "Garden"' }));
 		await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
 		expect(input).toHaveValue('Garden');
 		expect(onsubmit).not.toHaveBeenCalled();

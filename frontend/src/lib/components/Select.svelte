@@ -89,7 +89,7 @@
 	const showCreate = $derived(Boolean(onCreate && !disabled && createName && canCreate(createName)));
 	const displayedOptions = $derived(showCreate ? [...filteredOptions, createAction] : filteredOptions);
 	const inputValue = $derived(query ?? selectedLabel);
-	const optionLabel = (option: any) => option === createAction ? `+ Create ${createName}` : getOptionLabel(option);
+	const optionLabel = (option: any) => option === createAction ? `+ Create "${createName}"` : getOptionLabel(option);
 
 	function handleOptionSelect(option: any): boolean | Promise<boolean> {
 		if (creating || disabled) return false;

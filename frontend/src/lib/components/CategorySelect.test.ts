@@ -135,7 +135,7 @@ describe('CategorySelect creation', () => {
 		const input = screen.getByRole('combobox', { name: 'Category' });
 		await fireEvent.input(input, { target: { value: '  Garden  ' } });
 		if (activation === 'Enter') await fireEvent.keyDown(input, { key: 'Enter' });
-		else await fireEvent.click(screen.getByRole('option', { name: '+ Create Garden' }));
+		else await fireEvent.click(screen.getByRole('option', { name: '+ Create "Garden"' }));
 		await waitFor(() => expect(input).toHaveValue('Garden'));
 		expect(onCreate).toHaveBeenCalledExactlyOnceWith('Garden');
 		expect(onSelect).toHaveBeenCalledExactlyOnceWith('server-id');
@@ -160,7 +160,7 @@ describe('CategorySelect creation', () => {
 		render(CategorySelect, { categories, onCreate });
 		const input = screen.getByRole('combobox');
 		await fireEvent.input(input, { target: { value: 'Gro' } });
-		expect(screen.getAllByRole('option').map(option => option.textContent?.trim())).toEqual(['Groceries', '+ Create Gro']);
+		expect(screen.getAllByRole('option').map(option => option.textContent?.trim())).toEqual(['Groceries', '+ Create "Gro"']);
 		await fireEvent.keyDown(input, { key: 'ArrowDown' });
 		await fireEvent.keyDown(input, { key: 'Enter' });
 		await waitFor(() => expect(input).toHaveValue('Gro'));
@@ -196,7 +196,7 @@ describe('CategorySelect creation', () => {
 		expect(input).toHaveAttribute('aria-busy', 'true');
 		expect(screen.getByRole('status')).toHaveTextContent('Creating Garden');
 		await fireEvent.keyDown(input, { key: 'Enter' });
-		await fireEvent.click(screen.getByRole('option', { name: '+ Create Garden' }));
+		await fireEvent.click(screen.getByRole('option', { name: '+ Create "Garden"' }));
 		expect(onCreate).toHaveBeenCalledTimes(1);
 		expect(onSelect).not.toHaveBeenCalled();
 		resolve(created);

@@ -1,11 +1,11 @@
 ## ADDED Requirements
 
 ### Requirement: Category creation option
-The category picker SHALL offer `+ Create <name>` for a trimmed nonempty search when creation is enabled and no existing category name matches it case-insensitively. Creation SHALL be optional and unavailable in disabled pickers.
+The category picker SHALL offer `+ Create "<name>"` for a trimmed nonempty search when creation is enabled and no existing category name matches it case-insensitively. Creation SHALL be optional and unavailable in disabled pickers.
 
 #### Scenario: User searches for a new category
 - **WHEN** creation is enabled and the user types `  Garden  ` with no exact matching category
-- **THEN** the options include `+ Create Garden`
+- **THEN** the options include `+ Create "Garden"`
 - **AND** existing matching categories remain selectable
 
 #### Scenario: Empty or existing name

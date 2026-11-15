@@ -6,7 +6,7 @@ Assigning an item to a new category currently requires leaving the category pick
 
 ## What Changes
 
-- Show `+ Create <typed name>` inside the category picker when category creation is permitted and the trimmed name is nonempty and has no exact case-insensitive match.
+- Show `+ Create "<typed name>"` inside the category picker when category creation is permitted and the trimmed name is nonempty and has no exact case-insensitive match.
 - Support Enter, mouse, and touch activation; create the category in the current list and select its persisted ID after success.
 - Integrate the behavior with quick-add and existing-item category assignment, preserving drafts and existing autosave behavior.
 - Prevent duplicate submissions while creation is pending and preserve the prior assignment on failure with a visible retryable error.
