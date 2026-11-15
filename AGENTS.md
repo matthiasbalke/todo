@@ -102,10 +102,11 @@ zsh -n path/to/script.sh
 
 ## Git and OpenSpec
 
-- Use Conventional Commits and feature branches; reuse the current feature branch or create one named for the change.
-- Open PRs targeting `main`. Never merge PRs or enable automatic merging.
+- Use Conventional Commits and feature branches; reuse the current feature branch or create one named for the change. use conventional prefixes, like fix/, feat/, chore/, then include the github issue number and a short but descriptive task name.
+- when asked to plan (an implementation), use `openspec-propose`, then `openspec-explore` to plan implementation tasks.
 - Implement OpenSpec changes with `openspec-apply-change`; update task checkboxes as work completes.
 - Independently verify specs/tasks using the validation workflow above before declaring readiness.
+- Open PRs targeting `main`. Never merge PRs or enable automatic merging.
 - After implementation succeeds and the user reviews it, sync delta specs and archive the change.
 
 ## Architecture constraints
