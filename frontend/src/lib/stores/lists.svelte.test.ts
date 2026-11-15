@@ -309,3 +309,38 @@ describe('duplicateList', () => {
 		expect(getList('list-2')).toEqual(duplicated);
 	});
 });
+
+describe('createCategory for assignment', () => {
+	it('returns the server ID, trims the name, and appends within the requested list', async () => {
+		const store = await getStore();
+		store.upsertCategoryInStore({ ...makeDto('existing', 7), color: null });
+		store.upsertCategoryInStore({ ...makeDto('other', 99), listId: 'other-list' });
+		mockCreateCategory.mockResolvedValue(makeDto('server-id', 8, 'Garden'));
+		const created = await store.createCategory('list-1', '  Garden  ');
+		expect(mockCreateCategory).toHaveBeenCalledWith('list-1', { name: 'Garden', color: null, sortOrder: 8 });
+		expect(created.id).toBe('server-id');
+		expect(store.getCategoriesForList('list-1').map(category => category.id)).toEqual(['existing', 'server-id']);
+	});
+
+	it.each(['before', 'after'])('deduplicates an SSE category arriving %s the response', async (arrival) => {
+		const store = await getStore();
+		const dto = makeDto('server-id', 1, 'Garden');
+		let resolve!: (value: CategoryDto) => void;
+		mockCreateCategory.mockReturnValue(new Promise(res => { resolve = res; }));
+		const pending = store.createCategory('list-1', 'Garden');
+		if (arrival === 'before') store.upsertCategoryInStore(dto);
+		resolve(dto);
+		await pending;
+		if (arrival === 'after') store.upsertCategoryInStore(dto);
+		expect(store.getCategoriesForList('list-1')).toHaveLength(1);
+	});
+
+	it('rejects blank names and leaves the store unchanged after API failure', async () => {
+		const store = await getStore();
+		await expect(store.createCategory('list-1', '  ')).rejects.toThrow('Category name is required');
+		expect(mockCreateCategory).not.toHaveBeenCalled();
+		mockCreateCategory.mockRejectedValue(new Error('Forbidden'));
+		await expect(store.createCategory('list-1', 'Garden')).rejects.toThrow('Forbidden');
+		expect(store.getCategoriesForList('list-1')).toEqual([]);
+	});
+});

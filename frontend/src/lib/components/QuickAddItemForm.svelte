@@ -34,6 +34,7 @@
 		oncancel,
 		draft,
 		onDraftChange,
+		onCreateCategory,
 		defaultCategoryId = ''
 	}: {
 		listId: string;
@@ -43,6 +44,7 @@
 		oncancel: (context?: ItemFormCancelContext) => void;
 		draft?: ItemFormDraft | null;
 		onDraftChange?: (draft: ItemFormDraft) => void;
+		onCreateCategory?: (name: string) => Promise<Category>;
 		defaultCategoryId?: string;
 	} = $props();
 
@@ -470,6 +472,7 @@
 			<div class="min-h-0 overflow-y-auto p-1">
 			{#if activeDetail === 'category'}
 				<CategorySelect
+					onCreate={onCreateCategory}
 					inlineOptions consumeOutsidePointer={false}
 					categories={categories}
 					selectedCategoryId={categoryId}

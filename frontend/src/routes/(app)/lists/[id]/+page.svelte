@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { createCategory } from '$lib/stores/lists.svelte';
   import type { PageData } from './$types';
   import { goto } from '$app/navigation';
   import { getItems, loadItemsForList, createItem, deleteFinishedItems } from '$lib/stores/items.svelte';
@@ -661,6 +662,10 @@
   <FixedActionFooter expanded={showAddForm}>
     {#if showAddForm}
           <QuickAddItemForm
+            onCreateCategory={capabilities.canManageCategories ? async (name) => {
+              if (!capabilities.canManageCategories) throw new Error('Category management is unavailable');
+              return createCategory(data.id, name);
+            } : undefined}
             listId={data.id}
             {categories}
             users={members}

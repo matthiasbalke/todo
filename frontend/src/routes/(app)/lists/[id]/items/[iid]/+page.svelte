@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { getItems, loadItemsForList, updateItem, deleteItem, toggleDone, toggleStarred } from '$lib/stores/items.svelte';
-  import { getList, getCategoriesForList, loadCategoriesForList } from '$lib/stores/lists.svelte';
+  import { createCategory, getList, getCategoriesForList, loadCategoriesForList } from '$lib/stores/lists.svelte';
   import type { TodoItem, User } from '$lib/mock-data';
   import ItemForm from '$lib/components/ItemForm.svelte';
   import { goto } from '$app/navigation';
@@ -112,6 +112,10 @@
   {#if item}
     {#if capabilities.canEditItems}
       <ItemForm
+        onCreateCategory={capabilities.canManageCategories ? async (name) => {
+          if (!capabilities.canManageCategories) throw new Error('Category management is unavailable');
+          return createCategory(data.id, name);
+        } : undefined}
         {item}
         listId={data.id}
         {categories}

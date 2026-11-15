@@ -50,6 +50,7 @@
     onStarredChange,
     draft,
     onDraftChange,
+    onCreateCategory,
     defaultCategoryId = ''
   }: {
     item?: TodoItem | null;
@@ -62,6 +63,7 @@
     onStarredChange?: (starred: boolean) => Promise<void> | void;
     draft?: ItemFormDraft | null;
     onDraftChange?: (draft: ItemFormDraft) => void;
+    onCreateCategory?: (name: string) => Promise<Category>;
     defaultCategoryId?: string;
   } = $props();
 
@@ -474,6 +476,7 @@
       <Icon name="category" size="action" tone="muted" class="mt-3 flex-shrink-0" />
       <div class="min-w-0 flex-1">
     <CategorySelect
+      onCreate={onCreateCategory}
       categories={categories}
       bind:selectedCategoryId={categoryId}
           label=""

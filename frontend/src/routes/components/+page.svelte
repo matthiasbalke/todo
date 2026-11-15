@@ -59,6 +59,8 @@
 	let selectedPriority: string | null = null;
 	let selectedCategory: string | null = null;
 	let selectedCategoryId: string | null = 'showcase-produce';
+	let createdCategoryId: string | null = null;
+	let createdCategories: import('$lib/mock-data').Category[] = [];
 	let selectedTimeZone: string | null = 'Europe/Berlin';
 	let selectedAssignees = [
 		{ id: 'showcase-riley', name: 'Riley Chen' },
@@ -2281,6 +2283,22 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 			</div>
 
 			<div class="mt-12 pt-8 border-t border-border">
+				<h3 class="text-lg font-semibold text-value mb-4">Create while selecting</h3>
+				<CategorySelect
+					categories={[...categorySelectCategories, ...createdCategories]}
+					bind:selectedCategoryId={createdCategoryId}
+					label="Create a category"
+					onCreate={async (name) => {
+						const category = { id: crypto.randomUUID(), listId: 'showcase', name, color: null, sortOrder: createdCategories.length + 4 };
+						createdCategories = [...createdCategories, category];
+						return category;
+					}}
+				/>
+				<p class="text-xs text-muted mt-2">Created category ID: <code>{createdCategoryId ?? 'null'}</code></p>
+				<p class="text-sm text-supporting mt-4">Pass onCreate(name) returning a Promise of the persisted category to enable creation. While pending, repeated activation is blocked. Failures preserve the assignment and search for retry. onSelect emits the persisted ID after success.</p>
+			</div>
+
+			<div class="mt-12 pt-8 border-t border-border">
 				<h3 class="text-lg font-semibold text-value mb-4">Usage Example</h3>
 				<p class="text-sm font-mono text-supporting mb-2">Nullable category identifier:</p>
 				<pre class="bg-surface-inverse text-on-inverse p-4 rounded text-sm overflow-x-auto"><code>{categorySelectCode}</code></pre>
@@ -2328,6 +2346,12 @@ const options = ['Option 1', 'Option 2', 'Option 3'];
 								<td class="px-4 py-2 text-supporting">boolean</td>
 								<td class="px-4 py-2 text-supporting">false</td>
 								<td class="px-4 py-2 text-supporting">Disables the shared Select trigger.</td>
+							</tr>
+							<tr>
+								<td class="px-4 py-2 font-mono text-primary">onCreate</td>
+								<td class="px-4 py-2 text-supporting">(name: string) =&gt; Promise&lt;Category&gt;</td>
+								<td class="px-4 py-2 text-supporting">undefined</td>
+								<td class="px-4 py-2 text-supporting">Enables creation; returns the persisted category before its ID is selected.</td>
 							</tr>
 							<tr>
 								<td class="px-4 py-2 font-mono text-primary">onSelect</td>

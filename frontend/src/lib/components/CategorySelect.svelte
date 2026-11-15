@@ -23,6 +23,7 @@
 		emptyLabel?: string;
 		emptySelectedLabel?: string;
 		onSelect?: (categoryId: string | null) => void;
+		onCreate?: (name: string) => Promise<Category>;
 	}
 
 	let {
@@ -42,15 +43,27 @@
 		appearance = 'default',
 		emptyLabel = 'Uncategorized',
 		emptySelectedLabel = emptyLabel,
-		onSelect
+		onSelect,
+		onCreate
 	}: Props = $props();
 
+	let createdCategories = $state<Category[]>([]);
+	const availableCategories = $derived([...categories, ...createdCategories.filter(created => !categories.some(category => category.id === created.id))]);
+	async function createCategory(name: string): Promise<string> {
+		const category = await onCreate!(name);
+		createdCategories = [...createdCategories.filter(existing => existing.id !== category.id), category];
+		return category.id;
+	}
+	$effect(() => {
+		const pending = createdCategories.filter(created => !categories.some(category => category.id === created.id));
+		if (pending.length !== createdCategories.length) createdCategories = pending;
+	});
 	const uncategorizedValue = '';
-	const categoryOptions = $derived([uncategorizedValue, ...categories.map((category) => category.id)]);
+	const categoryOptions = $derived([uncategorizedValue, ...availableCategories.map((category) => category.id)]);
 	const selectValue = $derived(selectedCategoryId ?? uncategorizedValue);
 
 	function findCategory(categoryId: string): Category | undefined {
-		return categories.find((category) => category.id === categoryId);
+		return availableCategories.find((category) => category.id === categoryId);
 	}
 
 	function getCategoryLabel(categoryId: string): string {
@@ -111,6 +124,9 @@
 	getSelectedLabel={getSelectedCategoryLabel}
 	isSelectedMuted={isSelectedCategoryMuted}
 	onSelect={handleSelect}
+	onCreate={onCreate ? createCategory : undefined}
+	canCreate={(name) => !availableCategories.some(category => category.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase())}
+	createErrorMessage="Could not create category. Please try again."
 >
 	{#snippet selectedContent(categoryId)}
 		{@render categorySwatch(categoryId)}

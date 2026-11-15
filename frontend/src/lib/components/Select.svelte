@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { onDestroy, type Snippet } from 'svelte';
 	import ComboboxPrimitive from './ComboboxPrimitive.svelte';
 
 	type Size = 'default' | 'compact' | 'dense' | 'display';
@@ -31,6 +31,9 @@
 		optionContent?: Snippet<[T]>;
 		validate?: ((value: T | null) => string | null) | null;
 		onSelect?: (value: T) => void;
+		onCreate?: (name: string) => Promise<T>;
+		canCreate?: (name: string) => boolean;
+		createErrorMessage?: string;
 	}
 
 	let {
@@ -54,9 +57,16 @@
 		selectedContent: selectedContentSnippet,
 		optionContent: optionContentSnippet,
 		validate = null,
-		onSelect
+		onSelect,
+		onCreate,
+		canCreate = (name: string) => !options.some(option => getOptionLabel(option).trim().toLocaleLowerCase() === name.toLocaleLowerCase()),
+		createErrorMessage = 'Could not create option. Please try again.'
 	}: Props<any> = $props();
 
+	const createAction = Symbol('create');
+	let creating = $state(false);
+	let requestToken = 0;
+	onDestroy(() => { requestToken++; });
 	let errorMessage = $state<string | null>(null);
 	let triggerElement: HTMLInputElement | null = $state(null);
 	let internalSelected = $state(selected ?? null);
@@ -75,7 +85,44 @@
 			getOptionLabel(option).toLocaleLowerCase().includes(normalizedSearch)
 		);
 	});
+	const createName = $derived(searchText.trim());
+	const showCreate = $derived(Boolean(onCreate && !disabled && createName && canCreate(createName)));
+	const displayedOptions = $derived(showCreate ? [...filteredOptions, createAction] : filteredOptions);
 	const inputValue = $derived(query ?? selectedLabel);
+	const optionLabel = (option: any) => option === createAction ? `+ Create ${createName}` : getOptionLabel(option);
+
+	function handleOptionSelect(option: any): boolean | Promise<boolean> {
+		if (creating || disabled) return false;
+		if (option !== createAction) {
+			errorMessage = null;
+			selectOption(option);
+			return true;
+		}
+		return createOption();
+	}
+
+	async function createOption(): Promise<boolean> {
+		if (!onCreate || !showCreate) return false;
+		const name = createName;
+		const token = ++requestToken;
+		creating = true;
+		errorMessage = null;
+		try {
+			const created = await onCreate(name);
+			if (token !== requestToken || disabled) return false;
+			creating = false;
+			selectOption(created);
+			return true;
+		} catch {
+			if (token === requestToken) {
+				query = name;
+				errorMessage = createErrorMessage;
+			}
+			return false;
+		} finally {
+			creating = false;
+		}
+	}
 
 	function selectOption(option: any) {
 		internalSelected = option;
@@ -95,11 +142,13 @@
 	}
 
 	function handleClose() {
+		requestToken++;
 		query = null;
 	}
 
 	function handleInput(value: string) {
-		if (disabled) return;
+		if (disabled || creating) return;
+		errorMessage = null;
 		query = value;
 	}
 
@@ -134,7 +183,8 @@
 </script>
 
 <ComboboxPrimitive
-	options={filteredOptions}
+	options={displayedOptions}
+	busy={creating}
 	selectedOption={internalSelected}
 	{inputValue}
 	{inlineOptions}
@@ -150,13 +200,13 @@
 	{size}
 	{appearance}
 	{mutedValue}
-	{getOptionLabel}
+	getOptionLabel={optionLabel}
 	{errorMessage}
 	emptyMessage={options.length === 0 ? 'No options available' : 'No matching options'}
 	noMatchMessage="No matching options"
 	bind:inputElement={triggerElement}
 	oninputvalue={handleInput}
-	onoptionselect={selectOption}
+	onoptionselect={handleOptionSelect}
 	onclose={handleClose}
 	onfocus={handleFocus}
 	onblur={handleBlur}
@@ -168,10 +218,16 @@
 	{/snippet}
 
 	{#snippet optionContent(option)}
-		{#if optionContentSnippet}
+		{#if option === createAction}
+			{optionLabel(option)}
+		{:else if optionContentSnippet}
 			{@render optionContentSnippet(option)}
 		{:else}
 			{getOptionLabel(option)}
 		{/if}
 	{/snippet}
 </ComboboxPrimitive>
+
+{#if creating}
+	<p role="status" class="text-sm text-muted">Creating {createName}…</p>
+{/if}

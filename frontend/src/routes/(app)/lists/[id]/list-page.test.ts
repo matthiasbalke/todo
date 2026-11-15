@@ -46,6 +46,7 @@ vi.mock('$lib/stores/items.svelte', () => ({
 }));
 
 vi.mock('$lib/stores/lists.svelte', () => ({
+	createCategory: vi.fn(),
 	getList: vi.fn(() => ({
 		id: 'list-1',
 		name: 'Groceries',
@@ -852,5 +853,35 @@ describe('ListPage menu presentation', () => {
 		expect(screen.getByPlaceholderText('Item title')).toHaveValue('Retry title');
 		expect(screen.getByRole('button', { name: 'Notes' })).toHaveTextContent('Notes');
 		vi.unstubAllGlobals();
+	});
+});
+
+
+describe('quick-add inline category creation', () => {
+	afterEach(() => { cleanup(); listStoreState.role = 'OWNER'; vi.clearAllMocks(); });
+
+	it.each(['OWNER', 'EDITOR'] as const)('creates in the current list as %s without submitting the item', async (role) => {
+		const { createCategory } = await import('$lib/stores/lists.svelte');
+		const { createItem } = await import('$lib/stores/items.svelte');
+		listStoreState.role = role;
+		vi.mocked(createCategory).mockResolvedValue({ id: 'persisted-id', listId: 'list-1', name: 'Garden', color: null, sortOrder: 1 });
+		render(ListPage, { data: mockData });
+		await fireEvent.click(screen.getByRole('button', { name: 'add item' }));
+		await fireEvent.input(screen.getByPlaceholderText('Item title'), { target: { value: 'Seeds' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Category' }));
+		const input = screen.getByRole('combobox', { name: 'Category' });
+		await fireEvent.input(input, { target: { value: 'Garden' } });
+		await fireEvent.keyDown(input, { key: 'Enter' });
+		await waitFor(() => expect(createCategory).toHaveBeenCalledExactlyOnceWith('list-1', 'Garden'));
+		await waitFor(() => expect(screen.queryByRole('region', { name: 'Category' })).not.toBeInTheDocument());
+		expect(createItem).not.toHaveBeenCalled();
+		await createQuickAddItem();
+		expect(createItem).toHaveBeenCalledWith('list-1', expect.objectContaining({ title: 'Seeds', categoryId: 'persisted-id' }));
+	});
+
+	it('does not offer quick-add to viewers', () => {
+		listStoreState.role = 'VIEWER';
+		render(ListPage, { data: mockData });
+		expect(screen.queryByRole('button', { name: 'add item' })).not.toBeInTheDocument();
 	});
 });
