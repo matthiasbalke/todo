@@ -3,6 +3,7 @@ import { authedFetch } from './authedClient';
 export interface RecurrenceRuleDto {
 	intervalUnit: string;
 	intervalValue: number;
+	weekdays?: import('$lib/recurrence').Weekday[] | null;
 }
 
 export interface ItemDto {

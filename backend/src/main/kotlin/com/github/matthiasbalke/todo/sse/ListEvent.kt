@@ -61,7 +61,7 @@ data class ItemPayload(
     val updatedAt: Instant,
 )
 
-data class RecurrenceRulePayload(val intervalUnit: String, val intervalValue: Int)
+data class RecurrenceRulePayload(val intervalUnit: String, val intervalValue: Int, val weekdays: List<String>? = null)
 
 data class CategoryPayload(
     val id: UUID,

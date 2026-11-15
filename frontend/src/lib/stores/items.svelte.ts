@@ -17,7 +17,7 @@ export function dtoToItem(dto: ItemDto): TodoItem {
 		dueDate: dto.dueDate,
 		assignedUserIds: dto.assignedUserIds,
 		recurrenceRule: dto.recurrenceRule
-			? { intervalUnit: dto.recurrenceRule.intervalUnit as IntervalUnit, intervalValue: dto.recurrenceRule.intervalValue }
+			? { intervalUnit: dto.recurrenceRule.intervalUnit as IntervalUnit, intervalValue: dto.recurrenceRule.intervalValue, weekdays: dto.recurrenceRule.weekdays }
 			: null,
 		parentItemId: dto.parentItemId,
 		createdByUserId: dto.createdByUserId,

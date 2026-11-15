@@ -18,6 +18,7 @@ interface TodayItemProjection {
     val dueDate: LocalDate?
     val recurrenceIntervalUnit: String?
     val recurrenceIntervalValue: Int?
+    val recurrenceWeekdays: String?
     val parentItemId: UUID?
     val createdByUserId: UUID?
     val updatedByUserId: UUID?
@@ -47,6 +48,7 @@ interface TodayRepository : Repository<TodoItem, UUID> {
                    i.due_date AS "dueDate",
                    i.recurrence_rule ->> 'intervalUnit' AS "recurrenceIntervalUnit",
                    CAST(i.recurrence_rule ->> 'intervalValue' AS integer) AS "recurrenceIntervalValue",
+                   ARRAY_TO_STRING(ARRAY(SELECT jsonb_array_elements_text(NULLIF(i.recurrence_rule -> 'weekdays', 'null'::jsonb))), ',') AS "recurrenceWeekdays",
                    i.parent_item_id AS "parentItemId",
                    i.created_by_user_id AS "createdByUserId",
                    i.updated_by_user_id AS "updatedByUserId",

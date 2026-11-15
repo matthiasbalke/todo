@@ -7,6 +7,7 @@ import { addDaysToDateOnly, addMonthsToDateOnly, localIsoDate } from '$lib/dateO
 export interface RecurrenceRule {
   intervalUnit: IntervalUnit;
   intervalValue: number;
+  weekdays?: import('./recurrence').Weekday[] | null;
 }
 
 export interface User {

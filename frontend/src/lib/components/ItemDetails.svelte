@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { recurrenceRuleToHuman } from '$lib/utils';
   import type { Category, TodoItem, User, RecurrenceRule } from '$lib/mock-data';
   import Button from './Button.svelte';
   import CategorySelect from './CategorySelect.svelte';
@@ -37,7 +38,7 @@
   function getInitialRecurrencePreset(rule: RecurrenceRule | null): string {
     if (!rule) return '';
     const key = `${rule.intervalValue}_${rule.intervalUnit}`;
-    return recurrencePresetOptions.includes(key) ? key : '';
+    return key;
   }
 </script>
 
@@ -76,6 +77,7 @@
     label="Recurrence"
     labelId="recurrencePreset"
     getOptionLabel={getRecurrenceLabel}
+    getSelectedLabel={() => item.recurrenceRule ? recurrenceRuleToHuman(item.recurrenceRule) : 'No recurrence'}
     disabled
   />
 

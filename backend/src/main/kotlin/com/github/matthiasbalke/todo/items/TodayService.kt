@@ -5,6 +5,7 @@ import com.github.matthiasbalke.todo.lists.ListRole
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
@@ -50,6 +51,7 @@ class TodayService(
                             intervalUnit = IntervalUnit.valueOf(intervalUnit),
                             intervalValue = row.recurrenceIntervalValue
                                 ?: throw IllegalStateException("Recurring item is missing intervalValue"),
+                            weekdays = row.recurrenceWeekdays?.takeIf { it.isNotEmpty() }?.split(",")?.map(DayOfWeek::valueOf),
                         )
                     },
                     parentItemId = row.parentItemId,

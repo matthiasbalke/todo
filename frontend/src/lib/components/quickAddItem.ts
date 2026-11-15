@@ -1,31 +1,10 @@
 import type { Category, RecurrenceRule, TodoItem, User } from '$lib/mock-data';
 import { localIsoDate } from '$lib/dateOnly';
 import type { ItemFormDraft } from './ItemForm.svelte';
-
-export const recurrenceOptions = [
-	{ value: '', label: 'No recurrence' },
-	{ value: '1_DAYS', label: 'Every day' },
-	{ value: '1_WEEKS', label: 'Every week' },
-	{ value: '2_WEEKS', label: 'Every 2 weeks' },
-	{ value: '1_MONTHS', label: 'Every month' },
-	{ value: '3_MONTHS', label: 'Every 3 months' },
-	{ value: '1_YEARS', label: 'Every year' }
-];
-
-export const recurrencePresetOptions = recurrenceOptions.map((option) => option.value);
-
-export function getRecurrenceLabel(preset: string): string {
-	return recurrenceOptions.find((option) => option.value === preset)?.label ?? preset;
-}
-
-export function getRecurrenceSelectedLabel(preset: string): string {
-	return preset ? getRecurrenceLabel(preset) : 'No recurrence';
-}
+import { editorFromLegacy, ruleFromEditor, ruleFromDraft } from '$lib/recurrence';
 
 export function parseRecurrencePreset(preset: string): RecurrenceRule | null {
-	if (!preset) return null;
-	const [val, unit] = preset.split('_');
-	return { intervalValue: parseInt(val), intervalUnit: unit as RecurrenceRule['intervalUnit'] };
+	return ruleFromEditor(editorFromLegacy(preset));
 }
 
 export function getEffectiveDefaultCategoryId(
@@ -42,6 +21,9 @@ export function createQuickAddDraft(
 	defaultCategoryId: string | undefined,
 	categories: Category[]
 ): ItemFormDraft {
+	const recurrenceEditor = draft?.recurrenceEditor
+		? { ...draft.recurrenceEditor, weekdays: [...draft.recurrenceEditor.weekdays] }
+		: editorFromLegacy(draft?.recurrencePreset ?? '');
 	return {
 		title: draft?.title ?? '',
 		notes: draft?.notes ?? '',
@@ -49,6 +31,8 @@ export function createQuickAddDraft(
 		categoryId: draft?.categoryId ?? getEffectiveDefaultCategoryId(defaultCategoryId, categories),
 		assignedUserIds: [...(draft?.assignedUserIds ?? [])],
 		recurrencePreset: draft?.recurrencePreset ?? '',
+		recurrenceEditor,
+		appliedRecurrenceRule: ruleFromDraft(recurrenceEditor, draft?.appliedRecurrenceRule),
 		done: draft?.done ?? false,
 		starred: draft?.starred ?? false
 	};
@@ -71,7 +55,7 @@ export function quickAddDraftToTodoItem(
 		starred: draft.starred,
 		dueDate: draft.dueDate,
 		assignedUserIds: draft.assignedUserIds.filter((userId) => knownUserIds.has(userId)),
-		recurrenceRule: parseRecurrencePreset(draft.recurrencePreset),
+		recurrenceRule: draft.recurrenceEditor ? ruleFromEditor(draft.recurrenceEditor) : parseRecurrencePreset(draft.recurrencePreset),
 		parentItemId: null,
 		createdByUserId: null,
 		updatedByUserId: null,
