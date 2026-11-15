@@ -1,7 +1,7 @@
 # item-form-category-selection Specification
 
 ## Purpose
-TBD - created by archiving change item-form-category-select. Update Purpose after archive.
+Define category selection and inline creation in item forms while preserving assignments, permissions, and draft state.
 ## Requirements
 ### Requirement: Shared category selector
 `ItemForm` SHALL render the shared `CategorySelect` component for category entry instead of a browser-native category select.
