@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk-jammy
+FROM eclipse-temurin:25-jdk-jammy
 RUN apt-get update && apt-get install -y --no-install-recommends zsh curl \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 1000 developer && useradd --uid 1000 --gid 1000 --create-home developer
