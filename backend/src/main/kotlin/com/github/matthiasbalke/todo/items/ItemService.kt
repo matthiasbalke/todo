@@ -54,6 +54,7 @@ class ItemService(
     private val ssePublisher: SsePublisher,
     private val userRepository: UserRepository,
     private val clock: Clock,
+    private val agileService: AgileService,
 ) {
 
     fun getItems(listId: UUID, userId: UUID): List<ItemWithAssignees> {
@@ -136,6 +137,7 @@ class ItemService(
     @Transactional
     fun toggleDone(listId: UUID, itemId: UUID, userId: UUID): ItemWithAssignees {
         listAccessService.requireMinRole(listId, userId, ListRole.EDITOR)
+        agileService.lockForCompletion(itemId, listId)
         val item = itemRepository.findByIdAndListId(itemId, listId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found")
         item.done = !item.done
@@ -163,6 +165,7 @@ class ItemService(
                 )
             )
             saveAssignments(next.id, assignees)
+            agileService.inherit(itemId, next.id)
             ssePublisher.publish(ListEvent.ItemCreated(listId, ItemWithAssignees(next, assignees).toPayload()))
         }
 

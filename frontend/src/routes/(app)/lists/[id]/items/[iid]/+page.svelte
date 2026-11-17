@@ -10,6 +10,8 @@
   import Button from '$lib/components/Button.svelte';
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
   import Icon from '$lib/components/Icon.svelte';
+  import AgileToggle from '$lib/components/AgileToggle.svelte';
+  import { getProfile } from '$lib/stores/preferences.svelte';
   import ItemDetails from '$lib/components/ItemDetails.svelte';
   import { getListCapabilities } from '$lib/listCapabilities';
 
@@ -110,6 +112,12 @@
   </div>
 
   {#if item}
+    {#if getProfile()?.agileViewEnabled}
+      <section aria-label="Personal planning" class="mb-4 rounded-lg border border-border p-3">
+        <h2 class="font-semibold text-heading">Personal planning</h2>
+        <AgileToggle itemId={item.id} />
+      </section>
+    {/if}
     {#if capabilities.canEditItems}
       <ItemForm
         onCreateCategory={capabilities.canManageCategories ? async (name) => {

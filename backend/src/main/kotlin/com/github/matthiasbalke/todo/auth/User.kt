@@ -36,6 +36,9 @@ class User(
     @Column(name = "today_view_enabled", nullable = false)
     var todayViewEnabled: Boolean = true,
 
+    @Column(name = "agile_view_enabled", nullable = false)
+    var agileViewEnabled: Boolean = false,
+
     @Enumerated(EnumType.STRING)
     @Column(name = "theme_preference", nullable = false)
     var themePreference: ThemePreference = ThemePreference.SYSTEM,

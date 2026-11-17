@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+vi.mock('$lib/stores/auth.svelte', () => ({ getAccessToken: () => 'test-token', setSession: vi.fn(), clearSession: vi.fn() }));
 import {
 	cancelPendingEmail,
 	getEmailVerificationState,

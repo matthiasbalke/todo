@@ -36,6 +36,8 @@
   let profile = $state(untrack(() => ({ ...data.profile })));
   let passkeys = $state<PasskeyDto[]>(untrack(() => [...data.passkeys]));
   let timeZone = $state(untrack(() => profile.timeZone));
+  let agileViewEnabled = $state(untrack(() => profile.agileViewEnabled ?? false));
+  let persistedAgileViewEnabled = $state(untrack(() => profile.agileViewEnabled ?? false));
   let todayViewEnabled = $state(untrack(() => profile.todayViewEnabled));
   let themePreference = $state<ThemePreference>(untrack(() => profile.themePreference));
   let persistedTimeZone = $state(untrack(() => profile.timeZone));
@@ -56,10 +58,12 @@
     preferencesError = '';
     preferencesSaved = false;
     try {
-      const updated = await updatePreferences({ timeZone, todayViewEnabled, themePreference });
+      const updated = await updatePreferences({ timeZone, todayViewEnabled, agileViewEnabled, themePreference });
       profile = updated;
       timeZone = updated.timeZone;
       todayViewEnabled = updated.todayViewEnabled;
+      agileViewEnabled = updated.agileViewEnabled ?? false;
+      persistedAgileViewEnabled = agileViewEnabled;
       themePreference = updated.themePreference;
       persistedTimeZone = updated.timeZone;
       persistedTodayViewEnabled = updated.todayViewEnabled;
@@ -70,6 +74,7 @@
     } catch (e) {
       timeZone = persistedTimeZone;
       todayViewEnabled = persistedTodayViewEnabled;
+      agileViewEnabled = persistedAgileViewEnabled;
       themePreference = persistedThemePreference;
       preferencesError = friendlyError(e, 'Failed to save preferences');
     } finally {
@@ -396,6 +401,15 @@
         bind:checked={todayViewEnabled}
         disabled={preferencesSaving}
         aria-labelledby="today-view-label"
+        onchange={handlePreferenceChange}
+      />
+    </div>
+    <div class="flex items-center justify-between gap-4">
+      <span id="agile-view-label" class="text-sm font-medium text-label">Show Agile View</span>
+      <Toggle
+        bind:checked={agileViewEnabled}
+        disabled={preferencesSaving}
+        aria-labelledby="agile-view-label"
         onchange={handlePreferenceChange}
       />
     </div>

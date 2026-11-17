@@ -12,6 +12,7 @@ export interface UserProfileDto {
 	timeZone: string;
 	timeZoneInitialized: boolean;
 	todayViewEnabled: boolean;
+	agileViewEnabled?: boolean;
 	themePreference: ThemePreference;
 	admin?: boolean;
 }
@@ -41,6 +42,7 @@ export async function updateMe(req: { displayName: string; email: string }): Pro
 export async function updatePreferences(req: {
 	timeZone: string;
 	todayViewEnabled: boolean;
+	agileViewEnabled?: boolean;
 	themePreference: ThemePreference;
 }): Promise<UserProfileDto> {
 	return authedFetch('/api/users/me/preferences', {

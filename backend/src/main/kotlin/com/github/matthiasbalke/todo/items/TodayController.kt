@@ -43,36 +43,10 @@ class TodayController(private val todayService: TodayService) {
 
     @GetMapping
     fun getToday(@AuthenticationPrincipal userId: UUID): List<TodayItemDto> =
-        todayService.getItems(userId).map { it.toDto() }
+        todayService.getItems(userId).map { it.toCrossListDto() }
 
     @GetMapping("/count")
     fun getCount(@AuthenticationPrincipal userId: UUID) =
         TodayCountDto(todayService.countUnfinished(userId))
 
-    private fun TodayItem.toDto() = TodayItemDto(
-        id = item.id,
-        listId = item.listId,
-        categoryId = item.categoryId,
-        title = item.title,
-        notes = item.notes,
-        done = item.done,
-        starred = item.starred,
-        dueDate = item.dueDate,
-        recurrenceRule = item.recurrenceRule?.let { RecurrenceRuleDto(it.intervalUnit.name, it.intervalValue, it.weekdays?.map { day -> day.name }) },
-        parentItemId = item.parentItemId,
-        createdByUserId = item.createdByUserId,
-        updatedByUserId = item.updatedByUserId,
-        assignedUsers = assignedUsers.map { AssignedUserDto(it.id, it.displayName) },
-        sortOrder = item.sortOrder,
-        createdAt = item.createdAt,
-        updatedAt = item.updatedAt,
-        sourceListName = sourceListName,
-        sourceListEmoji = sourceListEmoji,
-        sourceListRole = sourceListRole.name,
-        sourceListGroupOrder = sourceListGroupOrder,
-        sourceListOrder = sourceListOrder,
-        sourceCategoryName = sourceCategoryName,
-        sourceCategoryColor = sourceCategoryColor,
-        sourceCategoryOrder = sourceCategoryOrder,
-    )
 }
