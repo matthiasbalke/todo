@@ -100,6 +100,8 @@ describe('item detail page loader', () => {
 			url: new URL('https://example.test/lists/list-1/items/item-1?returnTo=https%3A%2F%2Fevil.test'),
 		} as any);
 
+		const fromAgile = load({ params: { id: 'list-1', iid: 'item-1' }, url: new URL('https://example.test/lists/list-1/items/item-1?returnTo=%2Fagile') } as never);
+		expect(fromAgile).toMatchObject({ returnTo: '/agile' });
 		expect(fromToday).toMatchObject({ returnTo: '/today' });
 		expect(arbitrary).toMatchObject({ returnTo: null });
 	});

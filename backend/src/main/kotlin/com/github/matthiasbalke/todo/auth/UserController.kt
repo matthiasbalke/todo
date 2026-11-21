@@ -51,6 +51,7 @@ class UserController(
         val timeZone: String,
         val timeZoneInitialized: Boolean,
         val todayViewEnabled: Boolean,
+        val agileViewEnabled: Boolean,
         val themePreference: ThemePreference,
         val admin: Boolean,
         val emailVerified: Boolean,
@@ -60,6 +61,7 @@ class UserController(
     data class UpdatePreferencesRequest(
         val timeZone: String,
         val todayViewEnabled: Boolean,
+        val agileViewEnabled: Boolean? = null,
         val themePreference: ThemePreference,
     )
     data class PasskeyDto(val id: UUID, val label: String?, val createdAt: Instant)
@@ -121,6 +123,7 @@ class UserController(
         user.timeZone = body.timeZone
         user.timeZoneInitialized = true
         user.todayViewEnabled = body.todayViewEnabled
+        body.agileViewEnabled?.let { user.agileViewEnabled = it }
         user.themePreference = body.themePreference
         return ResponseEntity.ok(userRepository.save(user).toDto())
     }
@@ -233,6 +236,7 @@ class UserController(
         timeZone = timeZone,
         timeZoneInitialized = timeZoneInitialized,
         todayViewEnabled = todayViewEnabled,
+        agileViewEnabled = agileViewEnabled,
         themePreference = themePreference,
         admin = admin,
         emailVerified = validatedAt != null,

@@ -378,3 +378,52 @@ Dependabot is configured to open weekly PRs for:
 - npm dependencies (`/frontend`, `/e2e` — via `package-ecosystem: npm`, which works for bun projects)
 - Dockerfile base images (`/backend`, `/frontend`)
 - GitHub Actions versions (`/`)
+
+## Personal Agile planning
+
+Agile is an optional account view, disabled by default (`agileViewEnabled: false`).
+The profile/preferences API persists the setting; omitting it from an existing
+preferences request preserves its value. Disabling hides navigation and selection
+controls and skips automatic Agile requests, while preserving the backlog and the
+user's browser-specific Hide checked preference. Disabled `/agile` visits return to
+`/lists`. Today and Agile preferences are independent.
+
+A selection belongs to the authenticated user, independent of assignments, stars,
+dates, and source order. Every current member, including viewers, may select and
+personally reorder readable items. Source actions still require editor/owner access.
+Planning writes do not change source fields, audit metadata, or publish source events.
+
+- `GET /api/agile` returns selected accessible items in saved sequence, with source
+  list/category context, membership role, and assigned-user display names.
+- `GET /api/agile/count` returns `{ "count": n }` for unfinished accessible selections.
+- `PUT /api/agile/items/{itemId}` with `{ "selected": true|false }` idempotently
+  changes the current user's selection and returns `{ "selected": true|false, "count": n }`.
+  Missing and inaccessible items both return 404. Repeated selection preserves its
+  slot; removal retains the source item; reselect appends.
+- `PUT /api/agile/order` with `{ "itemIds": [...] }` replaces the complete accessible
+  unfinished sequence. Duplicate IDs return 400; stale/mismatched sets return 409.
+  Validation and updates are atomic. Completed/inaccessible slots are retained.
+  Success returns 204; clients refetch the confirmed backlog.
+
+User-row locks serialize planning writes, including empty backlogs. Concurrent
+same-set reorders use the last successful save; stale sets require refresh/retry.
+Completion follows the same lock protocol. Saved A/B/C becomes C/B/A after checking
+B, reversing unfinished A/C, and reopening B. Rendering shows unfinished selections
+first and checked selections below, preserving saved order within each section.
+
+Recurring successors transactionally inherit each selecting user's flag from their
+immediate parent, even with Agile disabled or another member completing the task.
+Successors append to unfinished work; completed parents keep their slots. Removing
+a successor's flag stops inheritance on its next completion for that user, regardless
+of ancestor flags. Ordinary duplicates start unselected. Item/list/user deletion
+cascades selections. Membership loss hides retained rows; restoration reveals their
+saved relative order. Responses never include inaccessible entries.
+
+The overview places Agile after Today (if enabled) before user groups, outside drag
+zones. Cards and existing details offer personal selection controls. `/agile` is a
+flat cross-list plan with source/detail links, mouse/touch drag handles, keyboard
+movement, and Hide checked. Detail links accept only `/today` and `/agile` as return
+routes. Navigation, visibility regain, and successful local actions refresh planning
+state. Failed writes retain or restore confirmed state and allow retry; conflicts
+refresh before retry. Account changes clear personal state and discard stale responses.
+Cross-list live SSE subscriptions are outside the feature scope.

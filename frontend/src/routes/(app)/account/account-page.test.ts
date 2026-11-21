@@ -262,6 +262,7 @@ describe('AccountPage settings', () => {
 		await fireEvent.click(screen.getByRole('switch', { name: 'Show Today View' }));
 
 		expect(updatePreferences).toHaveBeenCalledWith({
+   agileViewEnabled: false,
 			timeZone: 'UTC',
 			todayViewEnabled: false,
 			themePreference: 'SYSTEM',
@@ -285,6 +286,7 @@ describe('AccountPage settings', () => {
 		await fireEvent.click(screen.getByRole('option', { name: 'Berlin (Europe)' }));
 
 		expect(updatePreferences).toHaveBeenCalledWith({
+   agileViewEnabled: false,
 			timeZone: 'Europe/Berlin',
 			todayViewEnabled: true,
 			themePreference: 'SYSTEM',
@@ -303,6 +305,7 @@ describe('AccountPage settings', () => {
 		await fireEvent.click(screen.getByRole('option', { name: 'Dark' }));
 
 		expect(updatePreferences).toHaveBeenCalledWith({
+   agileViewEnabled: false,
 			timeZone: 'UTC',
 			todayViewEnabled: true,
 			themePreference: 'DARK',
@@ -353,4 +356,25 @@ describe('AccountPage settings', () => {
 		expect(screen.getByRole('combobox', { name: 'Timezone' })).toHaveValue('UTC');
 		expect(screen.getByRole('combobox', { name: 'Theme' })).toHaveValue('System');
 	});
+});
+
+describe('Agile account preference', () => {
+  it('defaults disabled and saves independently from Today', async () => {
+    vi.mocked(updatePreferences).mockResolvedValue({ ...mockProfile, agileViewEnabled: true });
+    render(AccountPage, { props: { data: mockData } });
+    const toggle = screen.getByRole('switch', { name: 'Show Agile View' });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await fireEvent.click(toggle);
+    expect(updatePreferences).toHaveBeenCalledWith({ timeZone: 'UTC', todayViewEnabled: true, agileViewEnabled: true, themePreference: 'SYSTEM' });
+    expect(await screen.findByText('Preferences saved.')).toBeVisible();
+    expect(setProfile).toHaveBeenCalledWith(expect.objectContaining({ agileViewEnabled: true }));
+  });
+  it('rolls back a failed Agile preference save', async () => {
+    vi.mocked(updatePreferences).mockRejectedValue(new Error('save failed'));
+    render(AccountPage, { props: { data: mockData } });
+    const toggle = screen.getByRole('switch', { name: 'Show Agile View' });
+    await fireEvent.click(toggle);
+    expect(await screen.findByText(/save failed/)).toBeVisible();
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+  });
 });

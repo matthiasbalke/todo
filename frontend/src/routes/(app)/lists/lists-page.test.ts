@@ -311,3 +311,22 @@ describe('ListsPage creation actions', () => {
 		expect(localStorage.getItem('todo_list_group_state')).toBeNull();
 	});
 });
+
+describe('Agile fixed overview entry', () => {
+  it('shows zero outside drag zones after Today, independently of Today visibility', async () => {
+    const { getProfile } = await import('$lib/stores/preferences.svelte');
+    vi.mocked(getProfile).mockReturnValue({ todayViewEnabled: true, agileViewEnabled: true } as never);
+    const { container, unmount } = render(ListsPage);
+    const agile = container.querySelector('a[href="/agile"]')!;
+    const today = container.querySelector('a[href="/today"]')!;
+    expect(agile).toHaveTextContent('0');
+    expect(today.compareDocumentPosition(agile) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(agile.closest('[data-testid="list-group-reorder-zone"]')).toBeNull();
+    unmount();
+    vi.mocked(getProfile).mockReturnValue({ todayViewEnabled: false, agileViewEnabled: true } as never);
+    const second = render(ListsPage);
+    expect(second.container.querySelector('a[href="/today"]')).toBeNull();
+    expect(second.container.querySelector('a[href="/agile"]')).toBeVisible();
+    vi.mocked(getProfile).mockReturnValue({ todayViewEnabled: true } as never);
+  });
+});

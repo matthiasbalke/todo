@@ -1,5 +1,13 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
+  import { getProfile } from '$lib/stores/preferences.svelte';
+  import { refreshAgile } from '$lib/stores/agile.svelte';
+  $effect(() => {
+    const profile = getProfile();
+    if (profile?.agileViewEnabled && profile.id === getCurrentUser()?.id) {
+      untrack(() => { void refreshAgile().catch(() => {}); });
+    }
+  });
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { logout } from '$lib/api/auth';
@@ -113,6 +121,7 @@
       if (document.visibilityState === 'visible') {
         const valid = await refreshIfExpired();
         if (!valid) await goto('/auth');
+        else if (getProfile()?.agileViewEnabled) void refreshAgile().catch(() => {});
       }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange);

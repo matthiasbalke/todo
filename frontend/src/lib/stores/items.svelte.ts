@@ -1,3 +1,4 @@
+import { refreshAgile } from './agile.svelte';
 import type { ItemDto } from '$lib/api/items';
 import * as itemsApi from '$lib/api/items';
 import type { TodoItem, IntervalUnit } from '$lib/mock-data';
@@ -50,17 +51,20 @@ export async function updateItem(listId: string, itemId: string, req: itemsApi.U
 	const dto = await itemsApi.updateItem(listId, itemId, req);
 	const updated = dtoToItem(dto);
 	items = items.map(i => i.id === itemId ? updated : i);
+	void refreshAgile().catch(() => {});
 	return updated;
 }
 
 export async function deleteItem(listId: string, itemId: string): Promise<void> {
 	await itemsApi.deleteItem(listId, itemId);
 	items = items.filter(i => i.id !== itemId);
+	void refreshAgile().catch(() => {});
 }
 
 export async function deleteFinishedItems(listId: string): Promise<void> {
 	await itemsApi.deleteFinishedItems(listId);
 	items = items.filter(i => i.listId !== listId || !i.done);
+	void refreshAgile().catch(() => {});
 }
 
 export async function toggleDone(listId: string, itemId: string): Promise<void> {
@@ -75,6 +79,7 @@ export async function toggleDone(listId: string, itemId: string): Promise<void> 
 		await loadItemsForList(listId);
 		// Ensure the toggled item reflects server state
 		items = items.map(i => i.id === itemId ? updated : i);
+		void refreshAgile().catch(() => {});
 	} catch (e) {
 		if (isNetworkError(e)) {
 			enqueue({ type: 'toggleDone', listId, itemId });
@@ -95,6 +100,7 @@ export async function toggleStarred(listId: string, itemId: string): Promise<voi
 		const dto = await itemsApi.toggleItemStarred(listId, itemId);
 		const updated = dtoToItem(dto);
 		items = items.map(i => i.id === itemId ? updated : i);
+		void refreshAgile().catch(() => {});
 	} catch (e) {
 		if (isNetworkError(e)) {
 			enqueue({ type: 'toggleStarred', listId, itemId });
@@ -176,6 +182,7 @@ export function saveItem(item: TodoItem) {
 
 export function removeItemFromStore(itemId: string) {
 	items = items.filter(i => i.id !== itemId);
+	void refreshAgile().catch(() => {});
 }
 
 export function clearCategoryFromItems(categoryId: string) {

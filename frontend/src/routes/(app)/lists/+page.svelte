@@ -10,6 +10,7 @@
   import { withDragAutoScrollOptions } from '$lib/dndOptions';
   import Button from '$lib/components/Button.svelte';
   import Icon from '$lib/components/Icon.svelte';
+  import { getAgileCount, refreshAgile } from '$lib/stores/agile.svelte';
   import { getProfile } from '$lib/stores/preferences.svelte';
   import { getTodayUnfinishedCount, loadTodayCount } from '$lib/stores/today.svelte';
   import { onMount, untrack } from 'svelte';
@@ -29,6 +30,7 @@
 
   onMount(() => {
     if (profile?.todayViewEnabled) loadTodayCount();
+    if (profile?.agileViewEnabled) void refreshAgile().catch(() => {});
     const refresh = () => {
       if (document.visibilityState === 'visible' && profile?.todayViewEnabled) loadTodayCount();
     };
@@ -145,6 +147,19 @@
               <h2 class="font-semibold text-primary-heading">Today</h2>
             </div>
             <span class="rounded-full bg-primary-subtle px-2 py-0.5 text-sm text-primary-emphasis">{todayCount}</span>
+            <Icon name="next" size="compact" tone="muted" class="flex-shrink-0" />
+          </a>
+        </div>
+      {/if}
+      {#if profile?.agileViewEnabled}
+        <div class="flex items-center gap-4 p-4 rounded-xl border border-primary-subtle bg-primary-surface hover:border-primary-soft hover:shadow-sm transition-all mb-4">
+          <div class="flex-shrink-0 w-5" aria-hidden="true"></div>
+          <a href="/agile" class="flex items-center gap-4 flex-1 min-w-0">
+            <span class="text-3xl">📌</span>
+            <div class="flex-1 min-w-0">
+              <h2 class="font-semibold text-primary-heading">Agile</h2>
+            </div>
+            <span class="rounded-full bg-primary-subtle px-2 py-0.5 text-sm text-primary-emphasis">{getAgileCount()}</span>
             <Icon name="next" size="compact" tone="muted" class="flex-shrink-0" />
           </a>
         </div>

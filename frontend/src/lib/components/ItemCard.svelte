@@ -10,6 +10,7 @@
   import StarToggle from './StarToggle.svelte';
   import SwipeDeleteAction from './SwipeDeleteAction.svelte';
   import Icon from './Icon.svelte';
+  import AgileToggle from './AgileToggle.svelte';
 
   let { item, categories, users, editable = true, isDraggable = false, onchanged, returnTo }: {
     item: TodoItem;
@@ -194,4 +195,5 @@
       </span>
     {/if}
   </div>
+  <AgileToggle itemId={item.id} />
 </div>

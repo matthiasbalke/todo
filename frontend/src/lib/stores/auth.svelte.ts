@@ -1,5 +1,7 @@
 import { type AuthUser, ApiError, refreshAccessToken } from '$lib/api/auth';
 
+import { resetAgile } from './agile.svelte';
+
 export type RestoreSessionResult = 'authenticated' | 'unauthenticated' | 'unavailable';
 
 let currentUser = $state<AuthUser | null>(null);
@@ -19,6 +21,7 @@ export function isAuthenticated(): boolean {
 }
 
 export function setSession(response: { accessToken: string; user: AuthUser }): void {
+	if (currentUser?.id !== response.user.id) resetAgile();
 	accessToken = response.accessToken;
 	currentUser = response.user;
 	try {
@@ -30,6 +33,7 @@ export function setSession(response: { accessToken: string; user: AuthUser }): v
 }
 
 export function clearSession(): void {
+	resetAgile();
 	accessToken = null;
 	currentUser = null;
 	tokenExpiresAt = null;
