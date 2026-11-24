@@ -24,7 +24,7 @@ FROM dhi.io/eclipse-temurin:21.0.13.9-alpine3.23-dev
 ARG NODEJS_VERSION=24.22.3-r0
 
 # renovate: dhi_alpine: datasource=custom.dhi_alpine_3_23 packageName=nginx
-ARG NGINX_VERSION=1.29.8-r7
+ARG NGINX_VERSION=1.29.8-r9
 
 # renovate: dhi_alpine: datasource=custom.dhi_alpine_3_23 packageName=supervisor
 ARG SUPERVISOR_VERSION=4.3.0-r0
